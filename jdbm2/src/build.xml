@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JDBM" default="all" basedir="..">
+
+  <target name="init">
+    <property name="project" value="jdbm" />
+    <property name="source" value="./src" />
+    <property name="main" value="${source}/main" />
+    <property name="etc" value="${source}/etc" />
+    <property name="build" value="build" />
+    <property name="classes" value="${build}/classes" />
+    <property name="test-classes" value="${build}/test-classes" />
+    <property name="dist" value="dist" />
+    <property name="lib" value="lib" />
+    <property name="doc" value="${source}/doc" />
+    <property name="schema" value="${source}/schema" />
+    <property name="test" value="${build}/test" />
+
+    <property name="classpath" value="${classpath}:${classes}" />
+    <property name="build.compiler" value="modern" />
+    <property name="deprecation" value="true" />
+    <property file="VERSION" />
+    <property name="version" value="2.0" description="default value; should never happen"/>
+    <property name="archive" value="${project}-${version}" />
+  </target>
+
+
+  <!-- Display all the targets -->
+  <target name="targets">
+    <echo message=""/>
+    <echo message="ANT build for ${project} ${version}"/>
+    <echo message=""/>
+    <echo message="The following targets are available:"/>
+    <echo message="  targets  Lists the build targets"/>
+    <echo message="  clean    Cleans the build and distribution directories"/>
+    <echo message="  all      Cleans and builds all the packages and examples"/>
+    <echo message="  release  Cleans and builds all the release packages"/>
+    <echo message="           (JAR, source, doc, tarball) in the dist directory"/>
+    <echo message="  main     Builds the main packages (including debugging info)"/>
+    <echo message="  examples Builds the example packages (including debugging info)"/>
+    <echo message="  tests    Builds the test packages (including debugging info)"/>
+    <echo message="  tests.run Runs unit tests" />
+    <echo message="  jar      Builds the binary JAR in the dist directory"/>
+    <echo message="  doc      Builds the documentation"/>
+    <echo message="  api      Builds the API JavaDocs"/>
+    <echo message="  javadoc  Builds the full JavaDocs"/>
+    <echo message="  source   Builds the source tarball in the dist directory"/>
+    <echo message="  tarball  Builds the binary distribution in the dist directory"/>
+    <echo message="  cvs      Update the sources from the CVS"/>
+    <echo message=""/>
+  </target>
+
+
+  <!-- Prepare target directories -->
+  <target name="prepare" depends="init">
+    <mkdir dir="${build}"/>
+    <mkdir dir="${classes}"/>
+    <mkdir dir="${dist}"/>
+    <mkdir dir="${test}"/>
+  </target>
+
+  <!-- Kill all the directories created in prepare -->
+  <target name="clean" depends="init">
+    <delete dir="${test}"/>
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+
+  <!-- Build all the sources with debug and deprecation -->
+  <target name="main" depends="prepare">
+    <javac srcdir="${main}" destdir="${classes}" excludes="**/package.html"
+           classpath="${classpath}" debug="on" deprecation="${deprecation}" source="1.5" target="1.5"/>
+  </target>
+
+  <!-- Same as main, but also cleans and additional targets -->
+  <target name="all" depends="clean,main,examples,jar"/>
+
+  <!-- Run the unit tests -->
+  <target name="tests.run" depends="tests">
+        <!-- showoutput 'yes' to allow outputting debug msgs... -->
+        <junit fork="no" printsummary="yes" haltonfailure="no"
+         showoutput="yes">
+            <batchtest fork="no" todir="${test}">
+                <fileset dir="${test-classes}">
+                    <include name="**/Test*.class"/>
+                    <exclude name="**/*$*"/>
+                </fileset>
+            </batchtest>
+            <formatter type="xml" />
+            <classpath>
+                <pathelement path="${classes}" />
+                <pathelement path="${test-classes}" />
+	        <fileset dir="lib">
+	            <include name="*.jar"/>
+	        </fileset>
+
+            </classpath>     
+        </junit>
+
+        <junitreport todir="${build}/test">
+            <fileset dir="${build}/test">
+                <include name="TEST-*.xml" />
+            </fileset>
+            <report todir="${build}/test" />
+        </junitreport>
+   </target>
+
+  <!-- Build the example packages -->
+  <target name="examples" depends="main">
+    <mkdir dir="${build}/examples" />
+    <javac srcdir="${source}/examples" destdir="${build}/examples" 
+           classpath="${classpath}" debug="on" deprecation="${deprecation}" source="1.5" target="1.5"/>
+  </target>
+
+  <!-- Build the test packages -->
+  <target name="tests" depends="main">
+    <mkdir dir="${test-classes}" />
+    <javac srcdir="${source}/tests" destdir="${test-classes}" source="1.5" target="1.5"
+          debug="on" deprecation="${deprecation}" >
+            <classpath>
+                <pathelement path="${classes}" />
+	        <fileset dir="lib/">
+	            <include name="*.jar"/>
+	        </fileset>
+            </classpath>     
+    </javac>
+  </target>
+
+  <!-- Build the JAR file using main -->
+  <target name="jar" depends="main">
+    <delete   file="${dist}/${archive}.jar" />
+
+    <copy file="${etc}/MANIFEST.MF" tofile="${classes}/MANIFEST.MF" />
+    <replace  file="${classes}/MANIFEST.MF" token="$$VERSION$$" value="${version}" />
+    <copy todir="${classes}">
+        <fileset dir="." includes="LICENSE.txt,CHANGES.txt,README.txt" />
+    </copy>
+
+    <jar      jarfile="${dist}/${archive}.jar" basedir="${classes}"
+              manifest="${classes}/MANIFEST.MF" includes="LICENSE.txt,README.txt,CHANGES.txt,jdbm/**" />
+  </target>
+
+
+  <!-- Build the full JavaDocs -->
+  <target name="javadoc" depends="prepare">
+    <mkdir    dir="${build}/doc" />
+    <mkdir    dir="${build}/doc/javadoc" />
+    <property name="copyright"
+              value="Cees de Groot (C) 2000-2001. All rights reserved  http://jdbm.sourceforge.net" />
+    <javadoc  sourcepath="${main}" destdir="${build}/doc/javadoc"
+              doctitle="JDBM JavaDoc" windowtitle="JDBM JavaDoc" bottom="${copyright}"
+              package="true" author="true" version="true" noindex="true"
+              packagenames="jdbm.*">
+        <link href="http://java.sun.com/products/jdk/1.2/docs/api"/>
+        <link href="http://www.junit.org/junit/javadoc/3.8"/>
+    </javadoc>
+  </target>
+
+  <!-- Build the API JavaDocs -->
+  <target name="api" depends="prepare">
+    <mkdir    dir="${build}/doc" />
+    <mkdir    dir="${build}/doc/api" />
+    <property name="copyright"
+              value="Cees de Groot (C) 2000. All rights reserved  http://jdbm.sourceforge.net" />
+    <javadoc  sourcepath="${main}" destdir="${build}/doc/api"
+              doctitle="JDBM JavaDoc" windowtitle="JDBM JavaDoc" bottom="${copyright}"
+              public="true" author="true"
+              packagenames="jdbm.*">
+        <link href="http://java.sun.com/products/jdk/1.2/docs/api"/>
+    </javadoc>
+  </target>
+
+  <!-- Build the docs, API and full JavaDocs, doc archives -->
+  <!-- Note CdG: Removed doc dependency, we don't have it yet... -->
+  <target name="docs" depends="api,javadoc">
+    <zip    zipfile="${dist}/${archive}-doc.zip" basedir="${build}" includes="doc/**" />
+    <tar    tarfile="${dist}/${archive}-doc.tar" basedir="${build}" includes="doc/**" />
+    <gzip   src="${dist}/${archive}-doc.tar" zipfile="${dist}/${archive}-doc.tgz" />
+    <delete file="${dist}/${archive}-doc.tar" />
+  </target>
+
+
+  <!-- Build the source distribution -->
+  <target name="source" depends="prepare">
+    <delete  file="${dist}/${archive}-src.tgz" />
+    <delete  file="${dist}/${archive}-src.zip" />
+    <delete dir="${build}/${archive}" />
+
+    <mkdir   dir="${build}/${archive}" />
+    <mkdir   dir="${build}/${archive}/src" />
+    <copy    todir="${build}/${archive}/src">
+      <fileset dir="${source}"/>
+    </copy>
+    <mkdir   dir="${build}/${archive}/lib" />
+    <copy    todir="${build}/${archive}/lib">
+      <fileset dir="${lib}"/>
+    </copy>
+    <copy    todir="${build}/${archive}">
+      <fileset dir="${source}" includes="*.sh,*.bat"/>
+    </copy>
+
+    <tar     includes="${archive}/**" basedir="${build}"
+             tarfile="${dist}/${archive}-src.tar" />
+    <gzip    src="${dist}/${archive}-src.tar" zipfile="${dist}/${archive}-src.tgz"/>
+    <delete  file="${dist}/${archive}-src.tar" />
+    <zip     zipfile="${dist}/${archive}-src.zip" basedir="${build}"
+             includes="${archive}/**" />
+
+  </target>
+
+
+  <!-- Build a full release including JAR, zip/tarball, source and documentation -->
+  <target name="release" depends="clean,tests.run,jar,source,docs,tarball">
+  </target>
+
+  <!-- Build the tarball including JAR and all dependent packages -->
+  <target name="tarball" depends="prepare,jar,docs">
+    <delete  file="${dist}/${archive}.tgz" />
+    <delete  file="${dist}/${archive}.zip" />
+    <delete  dir="${build}/${archive}" />
+
+    <mkdir   dir="${build}/${archive}" />
+    <copy    todir="${build}/${archive}">
+        <fileset dir="." includes="README.txt,LICENSE.txt,CHANGES.txt" />
+    </copy>
+    <copy    todir="${build}/${archive}/lib">
+        <fileset dir="${dist}" includes="${archive}.jar" />
+    </copy>
+    <copy    todir="${build}/${archive}/doc">
+        <fileset dir="${build}/doc/api" includes="**"/>
+    </copy>
+
+    <copy    todir="${build}/${archive}">
+        <fileset dir="${source}" includes="examples/**"/>
+    </copy>
+
+    <tar     tarfile="${dist}/${archive}.tar" basedir="${build}"
+             includes="${archive}/**" excludes="${archive}/*.tar,${archive}/*.zip" />
+    <gzip    src="${dist}/${archive}.tar" zipfile="${dist}/${archive}.tgz" />
+    <delete  file="${dist}/${archive}.tar" />
+
+    <zip     zipfile="${dist}/${archive}.zip" basedir="${build}" 
+             includes="${archive}/**" excludes="${archive}/*.tar,${archive}/*.tgz" />
+  </target>
+
+
+  <!-- Update the sources from the CVS -->
+  <target name="cvs" depends="clean">
+    <cvs cvsRoot=":pserver:anoncvs@cvs.jdbm.sourceforge.net:/cvs/${project}"
+         dest="." package="${project}" />
+  </target>
+
+
+</project>
+

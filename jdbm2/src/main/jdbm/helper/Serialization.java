@@ -1,0 +1,1134 @@
+package jdbm.helper;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Vector;
+
+import jdbm.recman.BlockIo;
+
+/**
+ * Serialization util. It reduces serialized data size for most common java types. 
+ * <p>
+ * Common pattern is one byte header which identifies data type, then size is written (if required) and 
+ * data. 
+ * <p>
+ * On unknown types normal java serialization is used
+ * 
+ * <p>
+ * Header byte values bellow 180 are reserved by author for future use. If you want to customize
+ * this class, use values over 180, to be compatible with future updates.
+ * 
+ * 
+ * @author Jan Kotek
+ */
+@SuppressWarnings("unchecked")
+public final class Serialization
+{
+	
+	public static final byte END_OF_NORMAL_SERIALIZATION = 111; 
+	
+	/** print statistics to STDOUT */
+	public static final boolean DEBUG = false;
+	
+	public final static int NULL 			=   0;
+	public final static int NORMAL 			=   1;
+	public final static int BOOLEAN_TRUE 	=   2;
+	public final static int BOOLEAN_FALSE 	=   3;
+	public final static int INTEGER_MINUS_1 =   4;
+	public final static int INTEGER_0 		=   5;
+	public final static int INTEGER_1 		=   6;
+	public final static int INTEGER_2 		=   7;
+	public final static int INTEGER_3 		=   8;
+	public final static int INTEGER_4 		=   9;
+	public final static int INTEGER_5 		=  10;
+	public final static int INTEGER_6 		=  11;
+	public final static int INTEGER_7 		=  12;
+	public final static int INTEGER_8 		=  13;
+	public final static int INTEGER_255 	=  14;
+	public final static int INTEGER_SHORT 	=  15;
+	public final static int INTEGER_FULL	=  16;
+	public final static int LONG_MINUS_1 	=  17;
+	public final static int LONG_0 			=  18;
+	public final static int LONG_1 			=  19;
+	public final static int LONG_2 			=  20;
+	public final static int LONG_3 			=  21;
+	public final static int LONG_4 			=  22;
+	public final static int LONG_5 			=  23;
+	public final static int LONG_6 			=  24;
+	public final static int LONG_7 			=  25;
+	public final static int LONG_8 			=  26;
+	public final static int LONG_255 		=  27;
+	public final static int LONG_SHORT 		=  28;
+	public final static int LONG_INT 		=  29;
+	public final static int LONG_FULL		=  30;
+	public final static int SHORT_MINUS_1 	=  31;
+	public final static int SHORT_0 		=  32;
+	public final static int SHORT_1 		=  33;
+	public final static int SHORT_255 		=  34;
+	public final static int SHORT_FULL		=  35;	
+	public final static int BYTE_MINUS_1 	=  36;
+	public final static int BYTE_0 			=  37;
+	public final static int BYTE_1 			=  38;
+	public final static int BYTE_FULL		=  39;	
+	public final static int CHAR			=  40;
+	public final static int FLOAT_MINUS_1 	=  41;
+	public final static int FLOAT_0 		=  42;
+	public final static int FLOAT_1 		=  43;
+	public final static int FLOAT_255		=  44;
+	public final static int FLOAT_SHORT		=  45;		
+	public final static int FLOAT_FULL		=  46;	
+	public final static int DOUBLE_MINUS_1 	=  47;
+	public final static int DOUBLE_0 		=  48;
+	public final static int DOUBLE_1 		=  49;
+	public final static int DOUBLE_255		=  50;
+	public final static int DOUBLE_SHORT	=  51;	
+	public final static int DOUBLE_FULL		=  52;
+	//TODO serialization for bigdecimal and biginteger
+	public final static int BIGDECIMAL_255	=  53;
+	public final static int BIGDECIMAL		=  54;
+	public final static int BIGINTEGER_255	=  55;
+	public final static int BIGINTEGER		=  56;
+	
+ 	
+
+	
+	public final static int ARRAY_INT_B_255		=  60;
+	public final static int ARRAY_INT_B_INT		=  61;
+	public final static int ARRAY_INT_S			=  62;
+	public final static int ARRAY_INT_I			=  63;
+	
+	public final static int ARRAY_LONG_B		=  64;
+	public final static int ARRAY_LONG_S		=  65;
+	public final static int ARRAY_LONG_I		=  66;
+	public final static int ARRAY_LONG_L		=  67;
+
+	public final static int ARRAY_BYTE_255		=  68;
+	public final static int ARRAY_BYTE_INT		=  69;
+	
+	public final static int ARRAY_OBJECT_255	=  70;
+	public final static int ARRAY_OBJECT		=  72;
+
+	
+
+	public final static int BLOCKIO				= 101;
+	public final static int STRING_255			= 102;
+	public final static int STRING				= 103;
+	public final static int ARRAYLIST_255		= 104;
+	public final static int ARRAYLIST			= 105;
+	public final static int TREEMAP_255			= 106;
+	public final static int TREEMAP				= 107;
+	public final static int HASHMAP_255			= 108;
+	public final static int HASHMAP				= 109;
+	public final static int LINKEDHASHMAP_255	= 110;
+	public final static int LINKEDHASHMAP		= 111;
+	
+	public final static int TREESET_255			= 112;
+	public final static int TREESET				= 113;
+	public final static int HASHSET_255			= 114;
+	public final static int HASHSET				= 115;
+	public final static int LINKEDHASHSET_255	= 116;
+	public final static int LINKEDHASHSET		= 117;
+	public final static int LINKEDLIST_255		= 118;
+	public final static int LINKEDLIST			= 119;
+	
+
+	public final static int VECTOR_255			= 120;
+	public final static int VECTOR				= 121;
+	public final static int HASHTABLE_255		= 122;
+	public final static int HASHTABLE			= 123;
+	public final static int PROPERTIES_255		= 124;
+	public final static int PROPERTIES			= 125;
+	
+	
+
+	
+    /**
+     * Serialize the object into a byte array.
+     */
+    public static byte[] serialize( Object obj )
+        throws IOException
+    {
+    	ByteArrayOutputStream ba = new ByteArrayOutputStream();
+    	DataOutputStream da = new DataOutputStream(ba); 
+    	writeObject(da,obj);
+    	
+    	da.close();
+    	return ba.toByteArray();
+    }
+    
+    
+    
+	public static void writeObject(final DataOutputStream da, final Object obj) throws IOException {
+    	final int written = DEBUG?da.size():0;
+
+    	if(obj == null){
+    		da.write(NULL);    		
+    	}else if (obj.getClass() ==  Boolean.class){
+    		if(((Boolean)obj).booleanValue())
+    			da.write(BOOLEAN_TRUE);
+    		else
+    			da.write(BOOLEAN_FALSE);    		
+    	}else if (obj.getClass() ==  Integer.class){
+    		final int val = (Integer) obj;
+    		writeInteger(da, val);
+		}else if (obj.getClass() ==  Double.class){
+			double v = (Double) obj;
+			if(v == -1d)
+				da.write(DOUBLE_MINUS_1);
+			else if(v == 0d)
+				da.write(DOUBLE_0);
+			else if(v == 1d)
+				da.write(DOUBLE_1);
+			else if(v >= 0&& v<=255 && (int)v == v){
+				da.write(DOUBLE_255);
+				da.write((int) v);						
+			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
+				da.write(DOUBLE_SHORT);
+				da.writeShort((int) v);			
+			}else{
+				da.write(DOUBLE_FULL);
+				da.writeDouble(v);
+			}
+		}else if (obj.getClass() ==  Float.class){
+			float v = (Float) obj;
+			if(v == -1f)
+				da.write(FLOAT_MINUS_1);
+			else if(v == 0f)
+				da.write(FLOAT_0);
+			else if(v == 1f)
+				da.write(FLOAT_1);
+			else if(v >= 0&& v<=255 && (int)v == v){
+				da.write(FLOAT_255);
+				da.write((int) v);						
+			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
+				da.write(FLOAT_SHORT);
+				da.writeShort((int) v);			
+			
+			}else{
+				da.write(FLOAT_FULL);
+				da.writeFloat(v);
+			}		
+		}else if (obj.getClass() ==  Long.class){
+			final long val = (Long) obj;
+    		writeLong(da, val);
+		}else if (obj.getClass() ==  Short.class){
+			short val = (Short)obj;
+			if(val == -1)
+				da.write(SHORT_MINUS_1);
+			else if(val == 0)
+				da.write(SHORT_0);
+			else if(val == 1)
+				da.write(SHORT_1);
+			else if(val > 0 && val<255){
+				da.write(SHORT_255);
+				da.write(val);
+			}else{
+				da.write(SHORT_FULL);
+				da.writeShort(val);
+			}					
+		}else if (obj.getClass() ==  Byte.class){
+			byte val = (Byte)obj;
+			if(val == -1)
+				da.write(BYTE_MINUS_1);
+			else if(val == 0)
+				da.write(BYTE_0);
+			else if(val == 1)
+				da.write(BYTE_1);
+			else{
+				da.write(SHORT_FULL);
+				da.writeByte(val);
+			}
+    	}else if (obj.getClass() ==  Character.class){
+    		da.write(CHAR);
+    		da.writeChar((Character)obj);
+		}else if (obj.getClass() ==  BlockIo.class){
+			da.write(BLOCKIO);
+			((BlockIo)obj).writeExternal(da);
+		}else if(obj.getClass() == String.class){
+			String s = (String)obj;
+			if(s.length()<255){
+				da.write(STRING_255);
+				da.write(s.length());
+			}else{
+				da.write(STRING);
+				da.writeInt(s.length());
+			}
+			da.write(s.getBytes());
+		}else if(obj instanceof int[]){
+			writeIntArray(da,(int[])obj);
+		}else if(obj instanceof long[]){
+			writeLongArray(da,(long[])obj);		
+		}else if(obj instanceof byte[]){
+			byte[] b = (byte[]) obj;
+			if(b.length<=255){
+				da.write(ARRAY_BYTE_255);
+				da.write(b.length);
+			}else{
+				da.write(ARRAY_BYTE_INT);
+				da.writeInt(b.length);
+			}
+			da.write(b);
+
+		}else if(obj instanceof Object[]){
+			Object[] b = (Object[]) obj;
+			if(b.length<=255){
+				da.write(ARRAY_OBJECT_255);
+				da.write(b.length);
+			}else{
+				da.write(ARRAY_OBJECT);
+				da.writeInt(b.length);
+			}
+			for(Object o : b)
+				writeObject(da,o);
+			
+		}else if(obj.getClass() ==  ArrayList.class){
+			ArrayList l = (ArrayList) obj;
+			if(l.size()<255){
+				da.write(ARRAYLIST_255);
+				da.write(l.size());
+			}else{
+				da.write(ARRAYLIST);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  LinkedList.class){
+			LinkedList l = (LinkedList) obj;
+			if(l.size()<255){
+				da.write(LINKEDLIST_255);
+				da.write(l.size());
+			}else{
+				da.write(LINKEDLIST);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  Vector.class){
+			Vector l = (Vector) obj;
+			if(l.size()<255){
+				da.write(VECTOR_255);
+				da.write(l.size());
+			}else{
+				da.write(VECTOR);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  TreeSet.class){
+			TreeSet l = (TreeSet) obj;
+			if(l.size()<255){
+				da.write(TREESET_255);
+				da.write(l.size());
+			}else{
+				da.write(TREESET);
+				da.writeInt(l.size());
+			}
+			writeObject(da,l.comparator());
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  HashSet.class){
+			HashSet l = (HashSet) obj;
+			if(l.size()<255){
+				da.write(HASHSET_255);
+				da.write(l.size());
+			}else{
+				da.write(HASHSET);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  LinkedHashSet.class){
+			LinkedHashSet l = (LinkedHashSet) obj;
+			if(l.size()<255){
+				da.write(LINKEDHASHSET_255);
+				da.write(l.size());
+			}else{
+				da.write(LINKEDHASHSET);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l)
+				writeObject(da, o);
+		}else if(obj.getClass() ==  TreeMap.class){
+			TreeMap l = (TreeMap) obj;
+			if(l.size()<255){
+				da.write(TREEMAP_255);
+				da.write(l.size());
+			}else{
+				da.write(TREEMAP);
+				da.writeInt(l.size());
+			}
+
+			writeObject(da, l.comparator());
+			for(Object o:l.keySet()){
+				writeObject(da, o);
+				writeObject(da, l.get(o));
+			}
+		}else if(obj.getClass() ==  HashMap.class){
+			HashMap l = (HashMap) obj;
+			if(l.size()<255){
+				da.write(HASHMAP_255);
+				da.write(l.size());
+			}else{
+				da.write(HASHMAP);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l.keySet()){
+				writeObject(da, o);
+				writeObject(da, l.get(o));
+			}			
+		}else if(obj.getClass() ==  LinkedHashMap.class){
+			LinkedHashMap l = (LinkedHashMap) obj;
+			if(l.size()<255){
+				da.write(LINKEDHASHMAP_255);
+				da.write(l.size());
+			}else{
+				da.write(LINKEDHASHMAP);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l.keySet()){
+				writeObject(da, o);
+				writeObject(da, l.get(o));
+			}					
+		}else if(obj.getClass() ==  Hashtable.class){
+			Hashtable l = (Hashtable) obj;
+			if(l.size()<255){
+				da.write(HASHTABLE_255);
+				da.write(l.size());
+			}else{
+				da.write(HASHTABLE);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l.keySet()){
+				writeObject(da, o);
+				writeObject(da, l.get(o));
+			}					
+			
+		}else if(obj.getClass() ==  Properties.class){
+			Properties l = (Properties) obj;
+			if(l.size()<255){
+				da.write(PROPERTIES_255);
+				da.write(l.size());
+			}else{
+				da.write(PROPERTIES);
+				da.writeInt(l.size());
+			}
+
+			for(Object o:l.keySet()){
+				writeObject(da, o);
+				writeObject(da, l.get(o));
+			}					
+			
+		}else{
+			da.write(serializeNormal(obj));
+			da.writeByte(END_OF_NORMAL_SERIALIZATION);
+		}
+    	if(DEBUG){
+    		System.out.println("SERIAL write object: "+obj.getClass().getSimpleName()+ " - " +(da.size() - written)+"B - "+obj);
+    	}
+	}
+
+
+	private static void writeLongArray(DataOutputStream da, long[] obj) throws IOException {
+		long max = Long.MIN_VALUE;
+		long min = Long.MAX_VALUE;
+		for(long i:obj){
+			max = Math.max(max, i);
+			min = Math.min(min, i);
+		}
+
+		if(0>=min && max<=255){
+			da.write(ARRAY_LONG_B);
+			da.writeInt(obj.length);
+			for(long l : obj)
+				da.write((int) l);			
+		}if(Short.MIN_VALUE>=min && max<=Short.MAX_VALUE){
+			da.write(ARRAY_LONG_S);
+			da.writeInt(obj.length);
+			for(long l : obj)
+				da.writeShort((short) l);			
+		}if(Integer.MIN_VALUE>=min && max<=Integer.MAX_VALUE){
+			da.write(ARRAY_LONG_I);
+			da.writeInt(obj.length);
+			for(long l : obj)
+				da.writeInt((int) l);			
+		}else{
+			da.write(ARRAY_LONG_L);
+			da.writeInt(obj.length);
+			for(long l : obj)
+				da.writeLong(l);
+		}
+		
+	}
+
+
+	private static void writeIntArray(DataOutputStream da, int[] obj) throws IOException {
+		int max = Integer.MIN_VALUE;
+		int min = Integer.MAX_VALUE;
+		for(int i:obj){
+			max = Math.max(max, i);
+			min = Math.min(min, i);
+		}
+		
+		boolean fitsInByte = 0>=min && max<=255;
+		boolean fitsInShort = Short.MIN_VALUE>=min && max<=Short.MAX_VALUE;
+
+
+		if(obj.length<=255 && fitsInByte){
+			da.write(ARRAY_INT_B_255);
+			da.write(obj.length);
+			for(int i:obj)
+				da.write(i);
+		}else if(fitsInByte){
+			da.write(ARRAY_INT_B_INT);
+			da.writeInt(obj.length);
+			for(int i:obj)
+				da.write(i);						
+		} else if(fitsInShort){
+			da.write(ARRAY_INT_S);
+			da.writeInt(obj.length);
+			for(int i:obj)
+				da.writeShort(i);
+		}else{
+			da.write(ARRAY_INT_S);
+			da.writeInt(obj.length);
+			for(int i:obj)
+				da.writeInt(i);									
+		}
+				
+	}
+
+
+	private static void writeInteger(DataOutputStream da, final int val) throws IOException {
+		if(val == -1)
+			da.write(INTEGER_MINUS_1);
+		else if (val == 0)
+			da.write(INTEGER_0);
+		else if (val == 1)
+			da.write(INTEGER_1);
+		else if (val == 2)
+			da.write(INTEGER_2);
+		else if (val == 3)
+			da.write(INTEGER_3);
+		else if (val == 4)
+			da.write(INTEGER_4);
+		else if (val == 5)
+			da.write(INTEGER_5);
+		else if (val == 6)
+			da.write(INTEGER_6);
+		else if (val == 7)
+			da.write(INTEGER_7);
+		else if (val == 8)
+			da.write(INTEGER_8);
+		else if(val >0 && val<255){
+			da.write(INTEGER_255);
+			da.write(val);
+		}else if(val >=Short.MIN_VALUE && val<=Short.MAX_VALUE){
+			da.write(INTEGER_SHORT);
+			da.writeShort(val);
+		}else{
+			da.write(INTEGER_FULL);
+			da.writeInt(val);
+		}
+	}
+
+	private static void writeLong(DataOutputStream da, final long val) throws IOException {
+		if(val == -1)
+			da.write(LONG_MINUS_1);
+		else if (val == 0)
+			da.write(LONG_0);
+		else if (val == 1)
+			da.write(LONG_1);
+		else if (val == 2)
+			da.write(LONG_2);
+		else if (val == 3)
+			da.write(LONG_3);
+		else if (val == 4)
+			da.write(LONG_4);
+		else if (val == 5)
+			da.write(LONG_5);
+		else if (val == 6)
+			da.write(LONG_6);
+		else if (val == 7)
+			da.write(LONG_7);
+		else if (val == 8)
+			da.write(LONG_8);
+		else if(val >0 && val<255){
+			da.write(LONG_255);
+			da.write((int) val);
+		}else if(val >=Short.MIN_VALUE && val<=Short.MAX_VALUE){
+			da.write(LONG_SHORT);
+			da.writeShort((int) val);
+		}else if(val >=Integer.MIN_VALUE && val<=Integer.MAX_VALUE){
+			da.write(LONG_INT);
+			da.writeInt((int) val);
+		}else{
+			da.write(LONG_FULL);
+			da.writeLong(val);
+		}
+	}
+
+
+	/**
+     * Deserialize an object from a byte array
+     * @throws IOException 
+     * @throws ClassNotFoundException 
+     */
+    public static Object deserialize( byte[] buf ) throws ClassNotFoundException, IOException{
+    	ByteArrayInputStream bs =  new ByteArrayInputStream(buf);
+    	DataInputStream das = new DataInputStream(bs);
+    	Object ret = readObject(das);
+		if(bs.available()!=0)
+			throw new InternalError("bytes left: "+bs.available());
+
+    	return ret;
+    }
+
+    
+    private static String deserializeString(DataInputStream buf) throws IOException {
+    	int len  = buf.readInt();
+    	byte[] b=  new byte[len];
+    	buf.readFully(b);
+    	return new String(b);
+	}
+
+	private static String deserializeString256Smaller(DataInputStream buf) throws IOException {
+    	int len  = buf.read();
+    	if (len < 0)
+    	    throw new EOFException();
+
+    	byte[] b=  new byte[len];
+    	buf.readFully(b);
+    	return new String(b);    	
+}
+	/**
+     * Serialize the object into a byte array.
+     */
+    protected static byte[] serializeNormal( Object obj )
+        throws IOException
+    {
+    	
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(NORMAL);
+        ObjectOutputStream oos = new ObjectOutputStream( baos );
+        oos.writeObject( obj );
+        oos.close();
+        
+        
+        return baos.toByteArray();
+    }
+
+
+    /**
+     * Deserialize an object from a byte array
+     */
+    protected static Object deserializeNormal(DataInputStream buf )
+        throws ClassNotFoundException, IOException
+    {
+
+        ObjectInputStream ois = new ObjectInputStream( buf );
+        Object ret =  ois.readObject();
+        if(buf.readByte()!=END_OF_NORMAL_SERIALIZATION)
+        	throw new IOException("Wrong magic after serialization, maybe is Externalizable and wrong amount of bytes was read?");
+        return ret;
+    }
+
+    public static Object readObject(DataInputStream is) throws IOException, ClassNotFoundException{
+    	final int available = DEBUG?is.available():0;
+
+    	Object ret = null;
+    	int head = is.read();
+
+    	switch(head){
+    		case NULL:ret=  null;break;
+			case NORMAL:ret= deserializeNormal(is);break;
+			case BOOLEAN_TRUE:ret= true;break;
+			case BOOLEAN_FALSE:ret= false;break;
+			case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
+			case INTEGER_0:ret= Integer.valueOf(0);break;
+			case INTEGER_1:ret= Integer.valueOf(1);break;
+			case INTEGER_2:ret= Integer.valueOf(2);break;
+			case INTEGER_3:ret= Integer.valueOf(3);break;
+			case INTEGER_4:ret= Integer.valueOf(4);break;
+			case INTEGER_5:ret= Integer.valueOf(5);break;
+			case INTEGER_6:ret= Integer.valueOf(6);break;
+			case INTEGER_7:ret= Integer.valueOf(7);break;
+			case INTEGER_8:ret= Integer.valueOf(8);break;
+			case INTEGER_255:ret= Integer.valueOf(is.read());break;
+			case INTEGER_SHORT:ret=  Integer.valueOf(is.readShort());break;
+			case INTEGER_FULL:ret=  Integer.valueOf(is.readInt());break;
+			case LONG_MINUS_1:ret= Long.valueOf(-1);break;
+			case LONG_0:ret= Long.valueOf(0);break;
+			case LONG_1:ret= Long.valueOf(1);break;
+			case LONG_2:ret= Long.valueOf(2);break;
+			case LONG_3:ret= Long.valueOf(3);break;
+			case LONG_4:ret= Long.valueOf(4);break;
+			case LONG_5:ret= Long.valueOf(5);break;
+			case LONG_6:ret= Long.valueOf(6);break;
+			case LONG_7:ret= Long.valueOf(7);break;
+			case LONG_8:ret= Long.valueOf(8);break;
+			case LONG_255:ret= Long.valueOf(is.read());break;
+			case LONG_SHORT:ret= Long.valueOf(is.readShort());break;
+			case LONG_INT:ret= Long.valueOf(is.readInt());break;
+			case LONG_FULL:ret= Long.valueOf(is.readLong());break;			
+			case SHORT_MINUS_1:ret= Short.valueOf((short)-1);break;
+			case SHORT_0:ret= Short.valueOf((short)0);break;
+			case SHORT_1:ret= Short.valueOf((short)1);break;
+			case SHORT_255:ret= Short.valueOf((short)is.read());break;
+			case SHORT_FULL:ret= Short.valueOf(is.readShort());break;
+			case BYTE_MINUS_1:ret= Byte.valueOf((byte)-1);break;
+			case BYTE_0:ret= Byte.valueOf((byte)0);break;
+			case BYTE_1:ret= Byte.valueOf((byte)1);break;
+			case BYTE_FULL:ret= Byte.valueOf(is.readByte());break;
+			case CHAR:ret= Character.valueOf(is.readChar());break;
+			case FLOAT_MINUS_1:ret= Float.valueOf(-1);break;
+			case FLOAT_0:ret= Float.valueOf(0);break;
+			case FLOAT_1:ret= Float.valueOf(1);break;
+			case FLOAT_255:ret= Float.valueOf(is.read());break;
+			case FLOAT_SHORT:ret=  Float.valueOf(is.readShort());break;
+			case FLOAT_FULL:ret= Float.valueOf(is.readFloat());break;
+			case DOUBLE_MINUS_1:ret= Double.valueOf(-1);break;
+			case DOUBLE_0:ret= Double.valueOf(0);break;
+			case DOUBLE_1:ret= Double.valueOf(1);break;
+			case DOUBLE_255:ret= Double.valueOf(is.read());break;
+			case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
+			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;			
+			case BLOCKIO:ret= deserializeBlockIo(is);break;
+			case STRING_255:ret= deserializeString256Smaller(is);break;
+			case STRING:ret= deserializeString(is);break;
+			case ARRAYLIST_255:ret= deserializeArrayList256Smaller(is);break;
+			case ARRAYLIST:ret= deserializeArrayList(is);break;
+			case ARRAY_OBJECT_255:ret= deserializeArrayObject256Smaller(is);break;
+			case ARRAY_OBJECT:ret= deserializeArrayObject(is);break;			
+			case LINKEDLIST_255:ret= deserializeLinkedList256Smaller(is);break;
+			case LINKEDLIST:ret= deserializeLinkedList(is);break;
+			case TREESET_255:ret= deserializeTreeSet256Smaller(is);break;
+			case TREESET:ret= deserializeTreeSet(is);break;
+			case HASHSET_255:ret= deserializeHashSet256Smaller(is);break;
+			case HASHSET:ret= deserializeHashSet(is);break;
+			case LINKEDHASHSET_255:ret= deserializeLinkedHashSet256Smaller(is);break;
+			case LINKEDHASHSET:ret= deserializeLinkedHashSet(is);break;
+			case VECTOR_255:ret= deserializeVector256Smaller(is);break;
+			case VECTOR:ret= deserializeVector(is);break;
+			case TREEMAP_255:ret= deserializeTreeMap256Smaller(is);break;
+			case TREEMAP:ret= deserializeTreeMap(is);break;
+			case HASHMAP_255:ret= deserializeHashMap256Smaller(is);break;
+			case HASHMAP:ret= deserializeHashMap(is);break;
+			case LINKEDHASHMAP_255:ret= deserializeLinkedHashMap256Smaller(is);break;
+			case LINKEDHASHMAP:ret= deserializeLinkedHashMap(is);break;
+			case HASHTABLE_255:ret= deserializeHashtable256Smaller(is);break;
+			case HASHTABLE:ret= deserializeHashtable(is);break;
+			case PROPERTIES_255:ret= deserializeProperties256Smaller(is);break;
+			case PROPERTIES:ret= deserializeProperties(is);break;
+			
+			
+			case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
+			case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
+			case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
+			case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
+			case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
+			case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
+			case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
+			case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
+			case ARRAY_BYTE_255: ret= deserializeArrayByte255(is);break;
+			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+			
+			case -1: throw new EOFException();
+			
+			default: throw new InternalError("Unknown serialization header: "+head);
+    	}
+    	
+    	if(DEBUG){
+    		System.out.println("SERIAL read object: "+ret.getClass().getSimpleName()+" - "+(available-is.available())+"B - "+ ret);
+    	}
+    
+    	return ret;
+	}
+
+
+	private static byte[] deserializeArrayByteInt(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		byte[] b = new byte[size];
+		is.readFully(b);
+		return b;
+	}
+
+
+	private static byte[] deserializeArrayByte255(DataInputStream is) throws IOException {
+		int size = is.read();
+    	if (size < 0)
+    	    throw new EOFException();
+
+		byte[] b = new byte[size];
+		is.readFully(b);
+		return b;
+
+	}
+
+
+	private static long[] deserializeArrayLongL(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		long[] ret = new long[size];
+		for(int i=0;i<size;i++)
+			ret[i] = is.readLong();
+		return ret;	
+	}
+
+
+	private static long[] deserializeArrayLongI(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		long[] ret = new long[size];
+		for(int i=0;i<size;i++)
+			ret[i] = is.readInt();
+		return ret;	
+	}
+
+
+	private static long[] deserializeArrayLongS(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		long[] ret = new long[size];
+		for(int i=0;i<size;i++)
+			ret[i] = is.readShort();
+		return ret;	
+	}
+
+
+	private static long[] deserializeArrayLongB(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		long[] ret = new long[size];
+		for(int i=0;i<size;i++){
+			ret[i] = is.read();
+			if(ret[i] <0)
+	    	    throw new EOFException();
+		}
+		return ret;
+	}
+
+
+	private static int[] deserializeArrayIntIInt(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		int[] ret = new int[size];
+		for(int i=0;i<size;i++)
+			ret[i] = is.readInt();
+		return ret;
+	}
+
+
+	private static int[] deserializeArrayIntSInt(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		int[] ret = new int[size];
+		for(int i=0;i<size;i++)
+			ret[i] = is.readShort();
+		return ret;
+	}
+
+
+
+	private static int[] deserializeArrayIntBInt(DataInputStream is) throws IOException {
+		int size = is.readInt();
+		int[] ret = new int[size];
+		for(int i=0;i<size;i++){
+			ret[i] = is.read();
+			if(ret[i] <0)
+	    	    throw new EOFException();
+		}
+		return ret;	}
+
+
+	private static int[] deserializeArrayIntB255(DataInputStream is) throws IOException {
+		int size = is.read();
+    	if (size < 0)
+    	    throw new EOFException();
+
+		int[] ret = new int[size];
+		for(int i=0;i<size;i++){
+			ret[i] = is.read();
+			if(ret[i] <0)
+	    	    throw new EOFException();
+		}
+		return ret;	}
+
+
+	private static BlockIo deserializeBlockIo(DataInputStream is) throws IOException, ClassNotFoundException {
+		BlockIo b = new BlockIo();
+		b.readExternal(is);
+		return b;
+	}
+
+	private static Object[] deserializeArrayObject(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		Object[] s = new Object[size];
+		for(int i = 0; i<size;i++)
+			s[i] = readObject(is);
+		return s;
+	}
+
+	private static Object[] deserializeArrayObject256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		Object[] s = new Object[size];
+		for(int i = 0; i<size;i++)
+			s[i] = readObject(is);
+		return s;
+	}
+
+	private static ArrayList<Object> deserializeArrayList(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		ArrayList<Object> s = new ArrayList<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static ArrayList<Object> deserializeArrayList256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		ArrayList<Object> s = new ArrayList<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static LinkedList<Object> deserializeLinkedList(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		LinkedList<Object> s = new LinkedList<Object>();
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static LinkedList<Object> deserializeLinkedList256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		LinkedList<Object> s = new LinkedList<Object>();
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+	
+	private static Vector<Object> deserializeVector(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		Vector<Object> s = new Vector<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static Vector<Object> deserializeVector256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		Vector<Object> s = new Vector<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+	
+	private static HashSet<Object> deserializeHashSet(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		HashSet<Object> s = new HashSet<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static HashSet<Object> deserializeHashSet256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		HashSet<Object> s = new HashSet<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static LinkedHashSet<Object> deserializeLinkedHashSet(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();
+		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static LinkedHashSet<Object> deserializeLinkedHashSet256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+	
+	
+	private static TreeSet<Object> deserializeTreeSet(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+		TreeSet<Object> s = new TreeSet<Object>();
+		Comparator comparator = (Comparator) readObject(is);
+		if(comparator!=null)
+			s = new TreeSet<Object>(comparator);
+		
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	private static TreeSet<Object> deserializeTreeSet256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		TreeSet<Object> s = new TreeSet<Object>();
+		Comparator comparator = (Comparator) readObject(is);
+		if(comparator!=null)
+			s = new TreeSet<Object>(comparator);
+		for(int i = 0; i<size;i++)
+			s.add(readObject(is));
+		return s;
+	}
+
+	
+	private static TreeMap<Object,Object> deserializeTreeMap(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+
+		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
+		Comparator comparator = (Comparator) readObject(is);
+		if(comparator!=null)
+			s = new TreeMap<Object,Object>(comparator);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	private static TreeMap<Object,Object> deserializeTreeMap256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
+		Comparator comparator = (Comparator) readObject(is);
+		if(comparator!=null)
+			s = new TreeMap<Object,Object>(comparator);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	
+	private static HashMap<Object,Object> deserializeHashMap(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+
+		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	private static HashMap<Object,Object> deserializeHashMap256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+	
+	
+	private static LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+
+		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	private static LinkedHashMap<Object,Object> deserializeLinkedHashMap256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	
+	private static Hashtable<Object,Object> deserializeHashtable(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+
+		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	private static Hashtable<Object,Object> deserializeHashtable256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+	
+	
+	private static Properties deserializeProperties(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.readInt();		
+
+		Properties s = new Properties();
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}
+
+	private static Properties deserializeProperties256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		Properties s = new Properties();
+		for(int i = 0; i<size;i++)
+			s.put(readObject(is),readObject(is));
+		return s;
+	}	
+}
