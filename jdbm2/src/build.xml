@@ -19,7 +19,7 @@
     <property name="build.compiler" value="modern" />
     <property name="deprecation" value="true" />
     <property file="VERSION" />
-    <property name="version" value="2.0" description="default value; should never happen"/>
+    <property name="version" value="2.0_alpha_1" description="default value; should never happen"/>
     <property name="archive" value="${project}-${version}" />
   </target>
 
