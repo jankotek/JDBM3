@@ -43,7 +43,7 @@ public class TestPerformance extends TestCase {
     // test parameter: number of records for fetch/update tests
     final int RECORDS = 10000;
     
-    final long DURATION = 100000;
+    final long DURATION = 10000;
 
     
     protected void setUp() throws Exception {
