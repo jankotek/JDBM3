@@ -221,8 +221,10 @@ public class CacheRecordManager
         }
         if(_softCache) synchronized(_softHash) {
         	SoftCacheEntry e = _softHash.remove(recid);
-        	if(e!=null)
+        	if(e!=null){
         		e.clear();
+        		e._serializer = null;
+        	}
         }
 
     }
@@ -258,8 +260,10 @@ public class CacheRecordManager
         if(_softCache) synchronized(_softHash) {
         	//soft cache can not contain dirty objects
         	SoftCacheEntry e = _softHash.remove(recid);
-        	if(e != null)
+        	if(e != null){
         		e.clear();
+        		e._serializer = null;
+        	}
         }
         CacheEntry entry = cacheGet(recid);
         if ( entry != null ) {
@@ -408,8 +412,10 @@ public class CacheRecordManager
         // where part of the transaction
     	_hash.clear();
     	if(_softCache) synchronized(_softHash) {
-    		for(SoftCacheEntry e:_softHash.values())
+    		for(SoftCacheEntry e:_softHash.values()){
     			e.clear();
+    			e._serializer = null;
+    		}
     		_softHash.clear();
     	}
         _first = null;
@@ -489,6 +495,7 @@ public class CacheRecordManager
         CacheEntry entry = _hash.get(recid);
         if (entry != null) {
             entry._obj = value;
+            entry._serializer = serializer;
             touchEntry(entry);
         } else {
 
@@ -498,6 +505,7 @@ public class CacheRecordManager
                 entry._recid  = recid;
                 entry. _obj = value;
                 entry._isDirty = dirty;
+                entry._serializer = serializer;
             } else {
                 entry = new CacheEntry(recid, value, serializer,dirty);
             }
@@ -571,6 +579,7 @@ public class CacheRecordManager
 
 
         entry._obj = null;
+        entry._serializer = null;
         entry._isDirty = false;
         return entry;
     }
