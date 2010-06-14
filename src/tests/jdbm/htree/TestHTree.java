@@ -98,7 +98,7 @@ public class TestHTree extends TestCaseWithTestFile {
     }
 
     public void testRecordListener() throws IOException{
-        RecordManager recman = RecordManagerFactory.createRecordManager( "test" );
+        RecordManager recman = newRecordManager();
         HTree<Integer,String> tree = HTree.createInstance( recman);
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
@@ -169,12 +169,5 @@ public class TestHTree extends TestCaseWithTestFile {
         return testTree;
     }
 
-
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestHTree.class));
-    }
 
 }

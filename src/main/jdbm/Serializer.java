@@ -76,8 +76,10 @@ public interface Serializer<A>
      *
      * @param serialized DataInputStream to read object from
      * @return deserialized object
+     * @throws IOException
+     * @throws ClassNotFoundException 
      */
      public A deserialize( DataInputStream in )
-        throws IOException;
+        throws IOException, ClassNotFoundException;
 
 }

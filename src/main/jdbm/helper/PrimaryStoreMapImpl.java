@@ -182,7 +182,17 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 	}
 
 	public V put(Long key, V value) {
-		throw new UnsupportedOperationException("PrimaryStoreMap uses keys assigned by store, use putValue(val) instead.");
+		if(containsKey(key)){
+			V oldVal = get(key);
+			try {
+				getRecordManager().update(key, value);
+			} catch (IOException e) {
+				throw new IOError(e);
+			}
+			return oldVal;
+		}else{			
+			throw new UnsupportedOperationException("Can not update, key not found, use putValue(val) instead.");
+		}
 	}
 
 	public V remove(Object key) {

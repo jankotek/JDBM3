@@ -60,17 +60,23 @@ import jdbm.helper.StoreReference;
 import jdbm.htree.HTree;
 
 /**
- *  An interface to manages records, which are uninterpreted blobs of data.
+ *  An interface to manages records, which are objects serialized to byte[] on background.
  *  <p>
  *  The set of record operations is simple: fetch, insert, update and delete.
- *  Each record is identified using a "rowid" and contains a byte[] data block.
+ *  Each record is identified using a "rowid" and contains a byte[] data block serialized to object.
  *  Rowids are returned on inserts and you can store them someplace safe
  *  to be able to get  back to them.  Data blocks can be as long as you wish,
  *  and may have lengths different from the original when updating.
- *
+ *  <p>
+ *  RecordManager is responsible for handling transactions. 
+ *  JDBM2 supports only single transaction for data store. 
+ *  See <code>commit</code> and <code>roolback</code> methods for more details. 
+ *  <p> 
+ *  RecordManader is also factory for primary Maps. 
+ *  <p>
+ * @author <a href="mailto:opencoeli@gmail.com">Jan Kotek</a>
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
- * @version $Id: RecordManager.java,v 1.3 2005/06/25 23:12:31 doomdark Exp $
  */
 public abstract class RecordManager
 {
@@ -167,7 +173,8 @@ public abstract class RecordManager
 
 
     /**
-     *  Closes the record manager.
+     *  Closes the record manager and release resources. 
+     *  Record manager can not be used after it was closed	
      *
      *  @throws IOException when one of the underlying I/O operations fails.
      */
@@ -204,6 +211,7 @@ public abstract class RecordManager
 
     /**
      * Commit (make persistent) all changes since beginning of transaction.
+     * JDBM supports only single transaction.
      */
     public abstract void commit()
         throws IOException;
@@ -211,6 +219,8 @@ public abstract class RecordManager
 
     /**
      * Rollback (cancel) all changes since beginning of transaction.
+     * JDBM supports only single transaction. 
+     * This operations affects all maps created by this RecordManager. 	
      */
     public abstract void rollback()
         throws IOException;
@@ -221,6 +231,7 @@ public abstract class RecordManager
     /**
      * Obtain the record id of a named object. Returns 0 if named object
      * doesn't exist.
+     * Named objects are used to store Map views and other well known objects.
      */
     public abstract long getNamedObject( String name )
         throws IOException;
@@ -228,6 +239,7 @@ public abstract class RecordManager
 
     /**
      * Set the record id of a named object.
+     * Named objects are used to store Map views and other well known objects.
      */
     public abstract void setNamedObject( String name, long recid )
         throws IOException;
@@ -235,7 +247,7 @@ public abstract class RecordManager
     
 
     /**
-     * Creates or load existing HashMap which persists data into DB.
+     * Creates or load existing Primary Hash Map which persists data into DB.
      * 
      * 
      * @param <K> Key type
@@ -261,7 +273,7 @@ public abstract class RecordManager
 	}
 
     /**
-     * Creates or load existing TreeMap which persists data into DB.
+     * Creates or load existing Primary TreeMap which persists data into DB.
      * 
      * 
      * @param <K> Key type
@@ -282,7 +294,7 @@ public abstract class RecordManager
      * @param <K> Key type
      * @param <V> Value type
      * @param name record name
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage
+     * @param valueSerializer Serializer used for values. This may reduce disk space usage.
      * @return
      */
 	@SuppressWarnings("unchecked")
@@ -300,7 +312,6 @@ public abstract class RecordManager
      * @param keyComparator Comparator used to sort keys
      * @return
      */
-
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator) {
 		return treeMap(name, keyComparator, null);
 	}
@@ -363,7 +374,7 @@ public abstract class RecordManager
 	}
 	
 	/**
-     * Creates or load existing StoreMap which persists data into DB.
+     * Creates or load existing Primary StoreMap which persists data into DB.
      *  
      * @param <V> Value type
      * @param name record name

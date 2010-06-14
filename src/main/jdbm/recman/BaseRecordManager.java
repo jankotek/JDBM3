@@ -51,6 +51,7 @@ package jdbm.recman;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -480,10 +481,14 @@ public final class BaseRecordManager
 			System.out.println( "BaseRecordManager.fetch() recid " + recid + " length " + insertBAO.size() ) ;
 		}
 		insertBAI.reset(insertBAO.getBuf(), insertBAO.size());
-		if(compress)
-			return serializer.deserialize(decompress( insertIn ));
-		else
-			return serializer.deserialize( insertIn );
+		try{
+			if(compress)
+				return serializer.deserialize(decompress( insertIn ));
+			else
+				return serializer.deserialize( insertIn );
+		}catch(ClassNotFoundException e){
+			throw new IOError(e);
+		}
 	}
 
 

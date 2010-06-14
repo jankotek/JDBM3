@@ -41,5 +41,7 @@ public class PrimaryStoreMapImplTest extends MapInterfaceTest<Long,String>{
 			map.putValue("aa"+i);
 		return map;
 	}
-	
+
+	public void testPutExistingKey() {}
+	public void testPutAllExistingKey() {}
 }

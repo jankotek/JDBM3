@@ -1,13 +1,72 @@
-<!-- $Id: package.html,v 1.1 2001/05/19 16:01:32 boisvert Exp $ -->
 <html>
   <body>
-    <p>Simplified public API corresponding to GDBM APIs.</p>
+    <p>JDBM is simple embedded Key Value database.</p>
+	
+	<h1>JDBM where it fits</h1>
+	Key-Value databases good attention recently, but their history is much older. GDBM on which JDBM is based on started 
+	in 1970 and is called 'pre rational' database. JDBM is under development since 2000. Version 1.0 was in production 
+	since 2005 with little bug reported. JDBM2 adds some features on top of JDBM (most importantly <code>java.util.Map</code> views)
+	<p/>
+	JDBM2 goal is to provide simple and fast persistence. It is very simple to use, have minimal overhead and standalone 
+	JAR have only 130KB. It is excelent choice for Swing application or Android phone. JDBM also handles huge datasets well
+	and can be used for data processing (author is using it to process astronomical data). 
+	Source code is without magic and simple, so it is well readabable and can be used for teaching<<>>.
+	On other side it does not have some important features (concurrent scalability, multiple transaction, annotations...),
+	it is tax to pay to keep it simple. JDBM goal is not to replicate Valdemort, HBase or other
+	Key Value database. 
+	<p/>
+	<h2>JDBM2 is not</h2>
+	
+	<h3>SQL database</h3>
+	JDBM2 is more low level. With this comes great power (speed, resource usage, no ORM) 
+	but also big responsibility. You are responsible for data integrity, partioning, typing etc... 
+	Excelent embedded SQL database is <<H2>> (in fact it is faster then JDBM2 in many cases). 
+	
+	<h3>Object database</h3>
+	The fact JDBM2 uses serialization may give you false sense of security. It does not 
+	magically split huge object graph into smaller pieces, nor handle duplicates. 
+	You may easily end up with single instance being persisted in several copyes in datastore.
+	But object database does this magic for you, it traverses object graph references and 
+	makes sure there are no duplicates in datastore. Have look at <<NeoDatis>> or <<DB4o>>
+	
+	<h3>Enterprise level</h3>
+	JDBM2 codebase is propably very good and without bugs, but it is community project. You may were easily endup without 
+	support. For something more enterprisey have look at <<Berkley DB Java Edition>> from Oracle. BDB have more  
+	features, is more robust, have better documentation, bigger overhead and comes with pricetag.
+	
+	<h3>Distributed</h3>
+	Key Values databases are associated with distributed stores. JDBM is not distributed, it runs on single computer only. 
+	You are propably looking for <<Valdemort>>
+	
+	<h2>JDBM2 features</h2>
+	JDBM2 have some helpfull features to make it easyer to use. It also brings it closer to SQL and helps with data 
+	integrity checks and data queryes. 
+	<h3>Low level page store</h3>
+	
+	
+	
+	
+	
     
-    <h1><b>JDBM</b></h1>
+    <h1>10 things to keep on mind</h1>
+	<ul> 
+	<li>Uncommited data are stored in memory, if you get <code>OutOfMemoryException</code> make commits more
+		often.
+	<li>Keys and values are stored as part of index nodes. They are instanciated each time index is searched.
+		If you have larger value (>512 bytes), this may hurt performance and cause <code>OutOfMemoryException</code>
+		In this case use <<StoreReference>> or <<StorageMap>> to store values outside of index.
+	<li>If you run into performance problems, use profiler rather then ask on internet.	
+	<li>JDBM caches returned object instances. If you modify an object (like set new name on person),
+		next time RecordManager may return object with this modification. 
+	<li>Iteration over Maps is not guaranteed if there are structural changes 
+		(for example adding new entry while iterating). There is no <<fail fast policy>> yet. 
+		So all iterations over Maps should be synchronized on RecordManager.
+	<li>More memory means more performance, use <code>-Xmx000m</code> generously. JDBM have good SoftReference cache.
+	<li>It is safe not to close db before exiting, but there will be cleanup on next start.
+	</ul>
+	
 
-    <p>JDBM is a simple transactional persistent engine for Java.
-       It aims to be for Java what GDBM is for C/C++, Perl, Python, etc: 
-       a fast, simple persistence engine. </p>
+    <p>
 
     <p>You can use it to store a mix of hashtables and blobs, and all updates are 
        done in a transactionally safe manner.</p>

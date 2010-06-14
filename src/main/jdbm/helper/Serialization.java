@@ -177,291 +177,291 @@ public final class Serialization
     
     
     
-	public static void writeObject(final DataOutputStream da, final Object obj) throws IOException {
-    	final int written = DEBUG?da.size():0;
+	public static void writeObject(final DataOutputStream out, final Object obj) throws IOException {
+    	final int written = DEBUG?out.size():0;
 
     	final Class clazz = obj!=null?obj.getClass():null;
     	
     	if(obj == null){
-    		da.write(NULL);    		
+    		out.write(NULL);    		
     	}else if (clazz ==  Boolean.class){
     		if(((Boolean)obj).booleanValue())
-    			da.write(BOOLEAN_TRUE);
+    			out.write(BOOLEAN_TRUE);
     		else
-    			da.write(BOOLEAN_FALSE);    		
+    			out.write(BOOLEAN_FALSE);    		
     	}else if (clazz ==  Integer.class){
     		final int val = (Integer) obj;
-    		writeInteger(da, val);
+    		writeInteger(out, val);
 		}else if (clazz ==  Double.class){
 			double v = (Double) obj;
 			if(v == -1d)
-				da.write(DOUBLE_MINUS_1);
+				out.write(DOUBLE_MINUS_1);
 			else if(v == 0d)
-				da.write(DOUBLE_0);
+				out.write(DOUBLE_0);
 			else if(v == 1d)
-				da.write(DOUBLE_1);
+				out.write(DOUBLE_1);
 			else if(v >= 0&& v<=255 && (int)v == v){
-				da.write(DOUBLE_255);
-				da.write((int) v);						
+				out.write(DOUBLE_255);
+				out.write((int) v);						
 			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
-				da.write(DOUBLE_SHORT);
-				da.writeShort((int) v);			
+				out.write(DOUBLE_SHORT);
+				out.writeShort((int) v);			
 			}else{
-				da.write(DOUBLE_FULL);
-				da.writeDouble(v);
+				out.write(DOUBLE_FULL);
+				out.writeDouble(v);
 			}
 		}else if (clazz ==  Float.class){
 			float v = (Float) obj;
 			if(v == -1f)
-				da.write(FLOAT_MINUS_1);
+				out.write(FLOAT_MINUS_1);
 			else if(v == 0f)
-				da.write(FLOAT_0);
+				out.write(FLOAT_0);
 			else if(v == 1f)
-				da.write(FLOAT_1);
+				out.write(FLOAT_1);
 			else if(v >= 0&& v<=255 && (int)v == v){
-				da.write(FLOAT_255);
-				da.write((int) v);						
+				out.write(FLOAT_255);
+				out.write((int) v);						
 			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
-				da.write(FLOAT_SHORT);
-				da.writeShort((int) v);			
+				out.write(FLOAT_SHORT);
+				out.writeShort((int) v);			
 			
 			}else{
-				da.write(FLOAT_FULL);
-				da.writeFloat(v);
+				out.write(FLOAT_FULL);
+				out.writeFloat(v);
 			}		
 		}else if (clazz ==  Long.class){
 			final long val = (Long) obj;
-    		writeLong(da, val);
+    		writeLong(out, val);
 		}else if (clazz ==  Short.class){
 			short val = (Short)obj;
 			if(val == -1)
-				da.write(SHORT_MINUS_1);
+				out.write(SHORT_MINUS_1);
 			else if(val == 0)
-				da.write(SHORT_0);
+				out.write(SHORT_0);
 			else if(val == 1)
-				da.write(SHORT_1);
+				out.write(SHORT_1);
 			else if(val > 0 && val<255){
-				da.write(SHORT_255);
-				da.write(val);
+				out.write(SHORT_255);
+				out.write(val);
 			}else{
-				da.write(SHORT_FULL);
-				da.writeShort(val);
+				out.write(SHORT_FULL);
+				out.writeShort(val);
 			}					
 		}else if (clazz ==  Byte.class){
 			byte val = (Byte)obj;
 			if(val == -1)
-				da.write(BYTE_MINUS_1);
+				out.write(BYTE_MINUS_1);
 			else if(val == 0)
-				da.write(BYTE_0);
+				out.write(BYTE_0);
 			else if(val == 1)
-				da.write(BYTE_1);
+				out.write(BYTE_1);
 			else{
-				da.write(SHORT_FULL);
-				da.writeByte(val);
+				out.write(SHORT_FULL);
+				out.writeByte(val);
 			}
     	}else if (clazz ==  Character.class){
-    		da.write(CHAR);
-    		da.writeChar((Character)obj);
+    		out.write(CHAR);
+    		out.writeChar((Character)obj);
 		}else if (clazz ==  BlockIo.class){
-			da.write(BLOCKIO);
-			((BlockIo)obj).writeExternal(da);
+			out.write(BLOCKIO);
+			((BlockIo)obj).writeExternal(out);
 		}else if (clazz ==  StoreReference.class){
-			da.write(STOREREFERENCE);
-			((StoreReference)obj).writeExternal(da);			
+			out.write(STOREREFERENCE);
+			((StoreReference)obj).writeExternal(out);			
 		}else if(clazz == String.class){
 			String s = (String)obj;
 			if(s.length()==0){
-				da.write(STRING_EMPTY);
+				out.write(STRING_EMPTY);
 			}else if(s.length()<255){
-				da.write(STRING_255);
-				da.write(s.length());
+				out.write(STRING_255);
+				out.write(s.length());
 			}else{
-				da.write(STRING);
-				da.writeInt(s.length());
+				out.write(STRING);
+				out.writeInt(s.length());
 			}
-			da.write(s.getBytes());
+			out.write(s.getBytes());
 		}else if(obj instanceof Class){
-			da.write(CLASS);
-			writeObject(da, ((Class)obj).getName());
+			out.write(CLASS);
+			writeObject(out, ((Class)obj).getName());
 		}else if(obj instanceof int[]){
-			writeIntArray(da,(int[])obj);
+			writeIntArray(out,(int[])obj);
 		}else if(obj instanceof long[]){
-			writeLongArray(da,(long[])obj);		
+			writeLongArray(out,(long[])obj);		
 		}else if(obj instanceof byte[]){
 			byte[] b = (byte[]) obj;
 			if(b.length<=255){
-				da.write(ARRAY_BYTE_255);
-				da.write(b.length);
+				out.write(ARRAY_BYTE_255);
+				out.write(b.length);
 			}else{
-				da.write(ARRAY_BYTE_INT);
-				da.writeInt(b.length);
+				out.write(ARRAY_BYTE_INT);
+				out.writeInt(b.length);
 			}
-			da.write(b);
+			out.write(b);
 
 		}else if(obj instanceof Object[]){
 			Object[] b = (Object[]) obj;
 			if(b.length<=255){
-				da.write(ARRAY_OBJECT_255);
-				da.write(b.length);
+				out.write(ARRAY_OBJECT_255);
+				out.write(b.length);
 			}else{
-				da.write(ARRAY_OBJECT);
-				da.writeInt(b.length);
+				out.write(ARRAY_OBJECT);
+				out.writeInt(b.length);
 			}
 			for(Object o : b)
-				writeObject(da,o);
+				writeObject(out,o);
 			
 		}else if(clazz ==  ArrayList.class){
 			ArrayList l = (ArrayList) obj;
 			if(l.size()<255){
-				da.write(ARRAYLIST_255);
-				da.write(l.size());
+				out.write(ARRAYLIST_255);
+				out.write(l.size());
 			}else{
-				da.write(ARRAYLIST);
-				da.writeInt(l.size());
+				out.write(ARRAYLIST);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  LinkedList.class){
 			LinkedList l = (LinkedList) obj;
 			if(l.size()<255){
-				da.write(LINKEDLIST_255);
-				da.write(l.size());
+				out.write(LINKEDLIST_255);
+				out.write(l.size());
 			}else{
-				da.write(LINKEDLIST);
-				da.writeInt(l.size());
+				out.write(LINKEDLIST);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  Vector.class){
 			Vector l = (Vector) obj;
 			if(l.size()<255){
-				da.write(VECTOR_255);
-				da.write(l.size());
+				out.write(VECTOR_255);
+				out.write(l.size());
 			}else{
-				da.write(VECTOR);
-				da.writeInt(l.size());
+				out.write(VECTOR);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  TreeSet.class){
 			TreeSet l = (TreeSet) obj;
 			if(l.size()<255){
-				da.write(TREESET_255);
-				da.write(l.size());
+				out.write(TREESET_255);
+				out.write(l.size());
 			}else{
-				da.write(TREESET);
-				da.writeInt(l.size());
+				out.write(TREESET);
+				out.writeInt(l.size());
 			}
-			writeObject(da,l.comparator());
+			writeObject(out,l.comparator());
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  HashSet.class){
 			HashSet l = (HashSet) obj;
 			if(l.size()<255){
-				da.write(HASHSET_255);
-				da.write(l.size());
+				out.write(HASHSET_255);
+				out.write(l.size());
 			}else{
-				da.write(HASHSET);
-				da.writeInt(l.size());
+				out.write(HASHSET);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  LinkedHashSet.class){
 			LinkedHashSet l = (LinkedHashSet) obj;
 			if(l.size()<255){
-				da.write(LINKEDHASHSET_255);
-				da.write(l.size());
+				out.write(LINKEDHASHSET_255);
+				out.write(l.size());
 			}else{
-				da.write(LINKEDHASHSET);
-				da.writeInt(l.size());
+				out.write(LINKEDHASHSET);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l)
-				writeObject(da, o);
+				writeObject(out, o);
 		}else if(clazz ==  TreeMap.class){
 			TreeMap l = (TreeMap) obj;
 			if(l.size()<255){
-				da.write(TREEMAP_255);
-				da.write(l.size());
+				out.write(TREEMAP_255);
+				out.write(l.size());
 			}else{
-				da.write(TREEMAP);
-				da.writeInt(l.size());
+				out.write(TREEMAP);
+				out.writeInt(l.size());
 			}
 
-			writeObject(da, l.comparator());
+			writeObject(out, l.comparator());
 			for(Object o:l.keySet()){
-				writeObject(da, o);
-				writeObject(da, l.get(o));
+				writeObject(out, o);
+				writeObject(out, l.get(o));
 			}
 		}else if(clazz ==  HashMap.class){
 			HashMap l = (HashMap) obj;
 			if(l.size()<255){
-				da.write(HASHMAP_255);
-				da.write(l.size());
+				out.write(HASHMAP_255);
+				out.write(l.size());
 			}else{
-				da.write(HASHMAP);
-				da.writeInt(l.size());
+				out.write(HASHMAP);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l.keySet()){
-				writeObject(da, o);
-				writeObject(da, l.get(o));
+				writeObject(out, o);
+				writeObject(out, l.get(o));
 			}			
 		}else if(clazz ==  LinkedHashMap.class){
 			LinkedHashMap l = (LinkedHashMap) obj;
 			if(l.size()<255){
-				da.write(LINKEDHASHMAP_255);
-				da.write(l.size());
+				out.write(LINKEDHASHMAP_255);
+				out.write(l.size());
 			}else{
-				da.write(LINKEDHASHMAP);
-				da.writeInt(l.size());
+				out.write(LINKEDHASHMAP);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l.keySet()){
-				writeObject(da, o);
-				writeObject(da, l.get(o));
+				writeObject(out, o);
+				writeObject(out, l.get(o));
 			}					
 		}else if(clazz ==  Hashtable.class){
 			Hashtable l = (Hashtable) obj;
 			if(l.size()<255){
-				da.write(HASHTABLE_255);
-				da.write(l.size());
+				out.write(HASHTABLE_255);
+				out.write(l.size());
 			}else{
-				da.write(HASHTABLE);
-				da.writeInt(l.size());
+				out.write(HASHTABLE);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l.keySet()){
-				writeObject(da, o);
-				writeObject(da, l.get(o));
+				writeObject(out, o);
+				writeObject(out, l.get(o));
 			}					
 			
 		}else if(clazz ==  Properties.class){
 			Properties l = (Properties) obj;
 			if(l.size()<255){
-				da.write(PROPERTIES_255);
-				da.write(l.size());
+				out.write(PROPERTIES_255);
+				out.write(l.size());
 			}else{
-				da.write(PROPERTIES);
-				da.writeInt(l.size());
+				out.write(PROPERTIES);
+				out.writeInt(l.size());
 			}
 
 			for(Object o:l.keySet()){
-				writeObject(da, o);
-				writeObject(da, l.get(o));
+				writeObject(out, o);
+				writeObject(out, l.get(o));
 			}					
 			
 		}else{
-			da.write(serializeNormal(obj));
-			da.writeByte(END_OF_NORMAL_SERIALIZATION);
+			out.write(serializeNormal(obj));
+			out.writeByte(END_OF_NORMAL_SERIALIZATION);
 		}
     	if(DEBUG){
-    		System.out.println("SERIAL write object: "+(clazz!=null?clazz.getSimpleName():"null")+ " - " +(da.size() - written)+"B - "+obj);
+    		System.out.println("SERIAL write object: "+(clazz!=null?clazz.getSimpleName():"null")+ " - " +(out.size() - written)+"B - "+obj);
     	}
 	}
 
