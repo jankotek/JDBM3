@@ -13,7 +13,15 @@ import java.util.SortedMap;
  * @param <K> Type of primary key
  * @param <V> Type of value in primary map
  */
-public interface SecondaryTreeMap<A,K,V> extends 
-		SecondaryHashMap<A,K,V>, SortedMap<A,Iterable<K>>{
+public interface SecondaryTreeMap<A,K,V> extends SortedMap<A,Iterable<K>>{
 
+	/**
+	 * Convert primary key to primary value. 
+	 * This will query primary table and returns result, it is little shortcut.
+	 * 
+	 * @param k primary key 
+	 * @return value from primary table
+	 */
+	V getPrimaryValue(K k);
+	
 }

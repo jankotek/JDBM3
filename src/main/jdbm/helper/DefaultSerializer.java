@@ -53,10 +53,9 @@ import java.io.IOException;
 import jdbm.Serializer;
 
 /**
- * Default java serializer.
+ * Default java serializer. Constructor is privite, use  DefaultSerializer.INSTANCE
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: DefaultSerializer.java,v 1.2 2003/09/21 15:47:00 boisvert Exp $
  */
 public class DefaultSerializer
     implements Serializer<Object>

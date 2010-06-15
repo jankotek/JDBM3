@@ -66,6 +66,7 @@ import jdbm.Serializer;
 import jdbm.helper.DefaultSerializer;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
+import jdbm.helper.RecordManagerImpl;
 
 /**
  *  This class manages records, which are uninterpreted blobs of data. The
@@ -91,7 +92,7 @@ import jdbm.helper.OpenByteArrayOutputStream;
  * @version $Id: BaseRecordManager.java,v 1.8 2005/06/25 23:12:32 doomdark Exp $
  */
 public final class BaseRecordManager
-    extends RecordManager
+    extends RecordManagerImpl
 {
 
     /**
@@ -199,7 +200,7 @@ public final class BaseRecordManager
     }
     
     /**
-     * Enable or disable compression of blocks with Deflate alghoritm
+     * Enable or disable compression of blocks with Deflate algorithm
      * @param b
      */
 	public synchronized void setCompress(boolean b) {
@@ -228,19 +229,6 @@ public final class BaseRecordManager
         _file = null;
     }
 
-
-    /**
-     *  Inserts a new record using standard java object serialization.
-     *
-     *  @param obj the object for the new record.
-     *  @return the rowid for the new record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public long insert( Object obj )
-        throws IOException
-    {
-        return insert( obj, DefaultSerializer.INSTANCE );
-    }
 
     
     /**
@@ -321,12 +309,6 @@ public final class BaseRecordManager
     	return new DataInputStream(new InflaterInputStream(data,inflater));    	
 	}
 
-	/**
-     *  Deletes a record.
-     *
-     *  @param recid the rowid for the record that should be deleted.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized void delete( long recid )
         throws IOException
     {
@@ -347,28 +329,7 @@ public final class BaseRecordManager
     }
 
 
-    /**
-     *  Updates a record using standard java object serialization.
-     *
-     *  @param recid the recid for the record that is to be updated.
-     *  @param obj the new object for the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public void update( long recid, Object obj )
-        throws IOException
-    {
-        update( recid, obj, DefaultSerializer.INSTANCE );
-    }
 
-    
-    /**
-     *  Updates a record using a custom serializer.
-     *
-     *  @param recid the recid for the record that is to be updated.
-     *  @param obj the new object for the record.
-     *  @param serializer a custom serializer
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized  <A> void update( long recid, A obj, Serializer<A> serializer )
         throws IOException
     {
@@ -378,7 +339,7 @@ public final class BaseRecordManager
                                                 + recid );
         }
     	if(bufferInUse){
-    		//current reusable buffer is in use, have to fallback into creating new instances
+    		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		OpenByteArrayOutputStream bao = new OpenByteArrayOutputStream(buffer);
     		DataOutputStream out = new DataOutputStream(bao);
@@ -388,6 +349,7 @@ public final class BaseRecordManager
 
         try{        
         	bufferInUse = true;
+        	
         	update2(recid, obj, serializer,_insertBuffer, _insertBAO, _insertOut);
         }finally{
         	bufferInUse = false;
@@ -419,28 +381,8 @@ public final class BaseRecordManager
 	}
 
 
-    /**
-     *  Fetches a record using standard java object serialization.
-     *
-     *  @param recid the recid for the record that must be fetched.
-     *  @return the object contained in the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public Object fetch( long recid )
-        throws IOException
-    {
-        return fetch( recid, DefaultSerializer.INSTANCE );
-    }
 
 
-    /**
-     *  Fetches a record using a custom serializer.
-     *
-     *  @param recid the recid for the record that must be fetched.
-     *  @param serializer a custom serializer
-     *  @return the object contained in the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized <A> A fetch( long recid, Serializer<A> serializer )
         throws IOException
     {        
@@ -452,7 +394,7 @@ public final class BaseRecordManager
         }
         
     	if(bufferInUse){
-    		//current reusable buffer is in use, have to fallback into creating new instances
+    		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		OpenByteArrayOutputStream bao = new OpenByteArrayOutputStream(buffer);
     		DataOutputStream out = new DataOutputStream(bao);
@@ -492,22 +434,11 @@ public final class BaseRecordManager
 	}
 
 
-    /**
-     *  Returns the number of slots available for "root" rowids. These slots
-     *  can be used to store special rowids, like rowids that point to
-     *  other rowids. Root rowids are useful for bootstrapping access to
-     *  a set of data.
-     */
     public int getRootCount()
     {
         return FileHeader.NROOTS;
     }
 
-    /**
-     *  Returns the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
     public synchronized long getRoot( int id )
         throws IOException
     {
@@ -517,11 +448,6 @@ public final class BaseRecordManager
     }
 
 
-    /**
-     *  Sets the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
     public synchronized void setRoot( int id, long rowid )
         throws IOException
     {
@@ -531,10 +457,6 @@ public final class BaseRecordManager
     }
 
 
-    /**
-     * Obtain the record id of a named object. Returns 0 if named object
-     * doesn't exist.
-     */
     public long getNamedObject( String name )
         throws IOException
     {
@@ -548,9 +470,6 @@ public final class BaseRecordManager
         return recid.longValue();
     }
 
-    /**
-     * Set the record id of a named object.
-     */
     public void setNamedObject( String name, long recid )
         throws IOException
     {
@@ -567,9 +486,6 @@ public final class BaseRecordManager
     }
 
 
-    /**
-     * Commit (make persistent) all changes since beginning of transaction.
-     */
     public synchronized void commit()
         throws IOException
     {
@@ -579,9 +495,6 @@ public final class BaseRecordManager
     }
 
 
-    /**
-     * Rollback (cancel) all changes since beginning of transaction.
-     */
     public synchronized void rollback()
         throws IOException
     {

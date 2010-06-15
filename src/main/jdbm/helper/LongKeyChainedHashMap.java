@@ -514,5 +514,9 @@ final public class LongKeyChainedHashMap<E> implements Serializable {
     public int hash(long v) {
         return (int)(v ^ (v >>> 32));
     }
+    
+    public Iterator<E> valuesIterator(){
+    	return values().iterator();
+    }
 
 }

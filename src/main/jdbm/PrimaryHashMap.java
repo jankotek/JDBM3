@@ -1,44 +1,22 @@
 package jdbm;
 
-import java.util.Comparator;
-import java.util.Map;
-
-import jdbm.helper.JdbmBase;
-
-
 /**
- * Primary HashMap which stores data in storage 
- * 
+ * Primary HashMap which persist data in storage.  
+ * Behavior is very similar to  <code>java.util.HashMap/code>, this map also uses hash index to lookup keys
+ * But it adds some methods to create secondary views
+ * <p>
+ * Performance note: keys and values are stored as part of index nodes. 
+ * They are deserialized on each index lookup. 
+ * This may lead to performance degradation and OutOfMemoryExceptions.  
+ * If your values are big (>500 bytes) you may consider using <code>PrimaryStoreMap</code>
+ * or <code<StoreReference</code> to minimalize size of index.
+ *  
  * @author Jan Kotek
  *
  * @param <K> key type
  * @param <V> value type
  */
-public interface PrimaryHashMap<K,V> extends JdbmBase<K,V>, Map<K,V>{
+public interface PrimaryHashMap<K,V> extends PrimaryMap<K,V>{
 	
-	<A> SecondaryHashMap<A,K,V> secondaryHashMap(String objectName, 
-					SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor);
-	
-	<A> SecondaryHashMap<A,K,V> secondaryHashMapManyToOne(String objectName, 
-			SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor);
-
-
-	<A> SecondaryTreeMap<A,K,V> secondaryTreeMap(String objectName, 
-			SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor,Comparator<A> secondaryKeyComparator);
-	
-	@SuppressWarnings("unchecked")
-	<A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMap(String objectName, 
-			SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor);
-
-	<A> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName, 
-			SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor,Comparator<A> secondaryKeyComparator);
-	
-	@SuppressWarnings("unchecked")
-	<A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName, 
-			SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor);
-	
-	InverseHashView<K,V> inverseHashView(String string);
-
-
 
 }

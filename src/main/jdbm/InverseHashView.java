@@ -2,7 +2,7 @@ package jdbm;
 
 /**
  * Provides inverse view on persisted map.
- * It fasts finds Key which belongs to Value. Value must correctly implement hashCode .
+ * It uses hash index to find Key which belongs to Value. Value must correctly implement hashCode .
  * Internally is backed by SecondaryTreeMap which uses value hashCode as Secondary key.  
  * 
  * @author Jan Kotek
@@ -13,10 +13,18 @@ package jdbm;
 public interface InverseHashView<K, V>{
 
 	/**
-	 * Finds primary key which corresponds to value.
+	 * Finds first primary key which corresponds to value. There may be more then one, others are ignored
 	 * @param val 
-	 * @return primary key or null if not found
+	 * @return first primary key found or null if not found
 	 */
 	K findKeyForValue(V val);
+	
+	/**
+	 * Finds primary keys which corresponds to value. There may be more then one, others are ignored
+	 * @param val 
+	 * @return  primary keys found 
+	 */
+	Iterable<K> findKeysForValue(V val);
+
 	
 }

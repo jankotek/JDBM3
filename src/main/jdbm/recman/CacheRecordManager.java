@@ -52,11 +52,12 @@ import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.Iterator;
 
 import jdbm.RecordManager;
 import jdbm.Serializer;
-import jdbm.helper.DefaultSerializer;
 import jdbm.helper.LongKeyChainedHashMap;
+import jdbm.helper.RecordManagerImpl;
 
 /**
  *  A RecordManager wrapping and caching another RecordManager.
@@ -66,7 +67,7 @@ import jdbm.helper.LongKeyChainedHashMap;
  * @version $Id: CacheRecordManager.java,v 1.9 2005/06/25 23:12:32 doomdark Exp $
  */
 public class CacheRecordManager
-    extends RecordManager
+    extends RecordManagerImpl
 {
 
     /**
@@ -140,7 +141,7 @@ public class CacheRecordManager
         _softCache = softCache;
         
         if(softCache){
-        	_softHash = new LongKeyChainedHashMap<SoftCacheEntry>(maxRecords);
+        	_softHash = new LongKeyChainedHashMap<SoftCacheEntry>();
         	_refQueue = new ReferenceQueue<SoftCacheEntry>();
         	_softRefThread = new Thread(
         			new SoftRunnable(this, _refQueue),
@@ -165,28 +166,6 @@ public class CacheRecordManager
 
     
     
-    /**
-     *  Inserts a new record using a custom serializer.
-     *
-     *  @param obj the object for the new record.
-     *  @return the rowid for the new record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public long insert( Object obj )
-        throws IOException
-    {
-        return insert( obj, DefaultSerializer.INSTANCE );
-    }
-        
-        
-    /**
-     *  Inserts a new record using a custom serializer.
-     *
-     *  @param obj the object for the new record.
-     *  @param serializer a custom serializer
-     *  @return the rowid for the new record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized <A> long insert( A obj, Serializer<A> serializer )
         throws IOException
     {
@@ -202,12 +181,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     *  Deletes a record.
-     *
-     *  @param recid the rowid for the record that should be deleted.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized void delete( long recid )
         throws IOException
     {
@@ -229,29 +202,6 @@ public class CacheRecordManager
 
     }
 
-
-    /**
-     *  Updates a record using standard Java serialization.
-     *
-     *  @param recid the recid for the record that is to be updated.
-     *  @param obj the new object for the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public void update( long recid, Object obj )
-        throws IOException
-    {
-        update( recid, obj, DefaultSerializer.INSTANCE );
-    }
-    
-
-    /**
-     *  Updates a record using a custom serializer.
-     *
-     *  @param recid the recid for the record that is to be updated.
-     *  @param obj the new object for the record.
-     *  @param serializer a custom serializer
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized <A> void update( long recid, A obj, 
                                      Serializer<A> serializer )
         throws IOException
@@ -276,30 +226,7 @@ public class CacheRecordManager
         }
     }
 
-
-    
-    /**
-     *  Fetches a record using standard Java serialization.
-     *
-     *  @param recid the recid for the record that must be fetched.
-     *  @return the object contained in the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
-    public Object fetch( long recid )
-        throws IOException
-    {
-        return fetch( recid, DefaultSerializer.INSTANCE );
-    }
-
         
-    /**
-     *  Fetches a record using a custom serializer.
-     *
-     *  @param recid the recid for the record that must be fetched.
-     *  @param serializer a custom serializer
-     *  @return the object contained in the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized <A> A fetch( long recid, Serializer<A> serializer )
         throws IOException
     {
@@ -324,11 +251,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     *  Closes the record manager.
-     *
-     *  @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized void close()
         throws IOException
     {
@@ -344,12 +266,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     *  Returns the number of slots available for "root" rowids. These slots
-     *  can be used to store special rowids, like rowids that point to
-     *  other rowids. Root rowids are useful for bootstrapping access to
-     *  a set of data.
-     */
     public synchronized int getRootCount()
     {
         checkIfClosed();
@@ -357,12 +273,6 @@ public class CacheRecordManager
         return _recman.getRootCount();
     }
 
-
-    /**
-     *  Returns the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
     public synchronized long getRoot( int id )
         throws IOException
     {
@@ -372,11 +282,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     *  Sets the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
     public synchronized void setRoot( int id, long rowid )
         throws IOException
     {
@@ -385,10 +290,6 @@ public class CacheRecordManager
         _recman.setRoot( id, rowid );
     }
 
-
-    /**
-     * Commit (make persistent) all changes since beginning of transaction.
-     */
     public synchronized void commit()
         throws IOException
     {
@@ -397,10 +298,6 @@ public class CacheRecordManager
         _recman.commit();
     }
 
-
-    /**
-     * Rollback (cancel) all changes since beginning of transaction.
-     */
     public synchronized void rollback()
         throws IOException
     {
@@ -412,7 +309,9 @@ public class CacheRecordManager
         // where part of the transaction
     	_hash.clear();
     	if(_softCache) synchronized(_softHash) {
-    		for(SoftCacheEntry e:_softHash.values()){
+        	Iterator<SoftCacheEntry> iter = _softHash.valuesIterator();
+        	while(iter.hasNext()){
+        		SoftCacheEntry e = iter.next();    		
     			e.clear();
     			e._serializer = null;
     		}
@@ -423,10 +322,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     * Obtain the record id of a named object. Returns 0 if named object
-     * doesn't exist.
-     */
     public synchronized long getNamedObject( String name )
         throws IOException
     {
@@ -436,9 +331,6 @@ public class CacheRecordManager
     }
 
 
-    /**
-     * Set the record id of a named object.
-     */
     public synchronized void setNamedObject( String name, long recid )
         throws IOException
     {
@@ -467,12 +359,14 @@ public class CacheRecordManager
     protected void updateCacheEntries()
         throws IOException
     {
-        for(CacheEntry entry: _hash.values()){
+    	Iterator<CacheEntry> iter = _hash.valuesIterator();
+    	while(iter.hasNext()){
+    		CacheEntry entry = iter.next();
             if ( entry._isDirty ) {
                 _recman.update( entry._recid, entry._obj, entry._serializer );
                 entry._isDirty = false;
             }
-        }
+    	}
     }
     
     
@@ -585,13 +479,14 @@ public class CacheRecordManager
     }
 
 
-    
+    @SuppressWarnings("unchecked")
     protected static final class CacheEntry
     {
 
         protected long _recid;
         protected Object _obj;
-        protected Serializer _serializer;
+        
+		protected Serializer _serializer;
         protected boolean _isDirty;
         
         protected CacheEntry _previous;
@@ -608,7 +503,8 @@ public class CacheRecordManager
         
     } 
 
-    protected static final class SoftCacheEntry extends SoftReference
+    @SuppressWarnings("unchecked")
+	protected static final class SoftCacheEntry extends SoftReference
     {
 
         protected long _recid;
@@ -626,6 +522,13 @@ public class CacheRecordManager
     }
     
     
+    /**
+     * Runs in separate thread and cleans SoftCache. 
+     * Runnable auto exists when CacheRecordManager is GCed
+     * 
+     * @author Jan Kotek
+     *
+     */
     protected static final class SoftRunnable  implements Runnable{
 
 		private ReferenceQueue<SoftCacheEntry> entryQueue;

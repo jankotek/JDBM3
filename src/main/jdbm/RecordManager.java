@@ -78,7 +78,7 @@ import jdbm.htree.HTree;
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
  */
-public abstract class RecordManager
+public interface  RecordManager
 {
 
     /**
@@ -255,22 +255,7 @@ public abstract class RecordManager
      * @param name record name
      * @return
      */
-	public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
-		try{
-			HTree<K, V> tree = null;
-        
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = HTree.load( this, recid );
-			} else {
-				tree = HTree.createInstance(this);
-				setNamedObject( name, tree.getRecid() );
-			}
-			return tree.asMap();
-		}catch(IOException  e){
-			throw new IOError(e);
-		}
-	}
+	public <K, V> PrimaryHashMap<K, V> hashMap(String name);
 
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
@@ -283,9 +268,7 @@ public abstract class RecordManager
      */
 
 	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name) {
-		return treeMap(name, ComparableComparator.INSTANCE);
-	}
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name);
 
     /**
      * Creates or load existing TreeMap which persists data into DB.
@@ -298,10 +281,7 @@ public abstract class RecordManager
      * @return
      */
 	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer) {
-		return treeMap(name, ComparableComparator.INSTANCE, valueSerializer);
-	}
-
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer);
     /**
      * Creates or load existing TreeMap which persists data into DB.
      * 
@@ -312,9 +292,7 @@ public abstract class RecordManager
      * @param keyComparator Comparator used to sort keys
      * @return
      */
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator) {
-		return treeMap(name, keyComparator, null);
-	}
+	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator);
 
 	   /**
      * Creates or load existing TreeMap which persists data into DB.
@@ -328,24 +306,7 @@ public abstract class RecordManager
      * @return
      */
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-			Comparator<K> keyComparator, Serializer<V> valueSerializer) {
-		try{
-			BTree<K,V> tree = null;
-        
-			// create or load fruit basket (hashtable of fruits)
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = BTree.load( this, recid );
-			} else {
-				tree = BTree.createInstance(this,keyComparator);
-				setNamedObject( name, tree.getRecid() );
-			}
-			return tree.asMap();
-		}catch(IOException  e){
-			throw new IOError(e);
-		}	
-	}
-
+			Comparator<K> keyComparator, Serializer<V> valueSerializer) ;
 	/**
      * Creates or load existing StoreMap which persists data into DB.
      *  
@@ -355,23 +316,7 @@ public abstract class RecordManager
      * @return map
      */
 	public <V> PrimaryStoreMap<Long, V> storeMap(String name,
-				Serializer<V> valueSerializer) {
-		try{
-			BTree<Long,Object> tree = null;
-        
-			// create or load fruit basket (hashtable of fruits)
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = BTree.load( this, recid );
-			} else {
-				tree = BTree.createInstance(this);
-				setNamedObject( name, tree.getRecid() );
-			}
-			return new PrimaryStoreMapImpl<Long, V>(tree.asMap(),valueSerializer);
-		}catch(IOException  e){
-			throw new IOError(e);
-		}	
-	}
+				Serializer<V> valueSerializer) ;
 	
 	/**
      * Creates or load existing Primary StoreMap which persists data into DB.
@@ -381,10 +326,7 @@ public abstract class RecordManager
      * @return map
      */
 	@SuppressWarnings("unchecked")
-	public <V> PrimaryStoreMap<Long, V> storeMap(String name){
-		return storeMap(name,(Serializer<V>)DefaultSerializer.INSTANCE);
-	}
-
+	public <V> PrimaryStoreMap<Long, V> storeMap(String name);
 
 }
 

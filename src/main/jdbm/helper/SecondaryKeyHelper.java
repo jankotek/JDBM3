@@ -390,6 +390,17 @@ final public class SecondaryKeyHelper {
 				}
 				return null;
 			}
+
+			public Iterable<K> findKeysForValue(V val) {
+				Iterable<K> keys = inverseMap.get(new Integer(val.hashCode()));
+				List<K> ret = new ArrayList<K>();
+				if(keys == null) return null;
+				for(K k:keys){
+					if(val.equals(inverseMap.getPrimaryValue(k)))
+						ret.add(k);
+				}
+				return ret;
+			}
 		};
     }
 }
