@@ -1,49 +1,19 @@
-/**
- * JDBM LICENSE v1.00
- *
- * Redistribution and use of this software and associated documentation
- * ("Software"), with or without modification, are permitted provided
- * that the following conditions are met:
- *
- * 1. Redistributions of source code must retain copyright
- *    statements and notices.  Redistributions must also contain a
- *    copy of this document.
- *
- * 2. Redistributions in binary form must reproduce the
- *    above copyright notice, this list of conditions and the
- *    following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. The name "JDBM" must not be used to endorse or promote
- *    products derived from this Software without prior written
- *    permission of Cees de Groot.  For written permission,
- *    please contact cg@cdegroot.com.
- *
- * 4. Products derived from this Software may not be called "JDBM"
- *    nor may "JDBM" appear in their names without prior written
- *    permission of Cees de Groot.
- *
- * 5. Due credit should be given to the JDBM Project
- *    (http://jdbm.sourceforge.net/).
- *
- * THIS SOFTWARE IS PROVIDED BY THE JDBM PROJECT AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- * NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * CEES DE GROOT OR ANY CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Copyright 2000 (C) Cees de Groot. All Rights Reserved.
- * Contributions are Copyright (C) 2000 by their associated contributors.
- *
- * $Id: RecordFile.java,v 1.6 2005/06/25 23:12:32 doomdark Exp $
- */
+/*******************************************************************************
+ * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 
 package jdbm.recman;
 
@@ -55,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import jdbm.helper.LongKeyChainedHashMap;
+import jdbm.helper.LongHashMap;
 
 /**
  *  This class represents a random access file as a set of fixed size
@@ -81,17 +51,17 @@ public final class RecordFile {
      * 
      * @see BlockIo#isDirty()
      */
-    private final LongKeyChainedHashMap<BlockIo> inUse = new LongKeyChainedHashMap<BlockIo>();
+    private final LongHashMap<BlockIo> inUse = new LongHashMap<BlockIo>();
 
     /**
      * Blocks whose state is dirty.
      */
-    private final LongKeyChainedHashMap<BlockIo> dirty = new LongKeyChainedHashMap<BlockIo>();
+    private final LongHashMap<BlockIo> dirty = new LongHashMap<BlockIo>();
     /**
      * Blocks in a <em>historical</em> transaction(s) that have been written
      * onto the log but which have not yet been committed to the database.
      */
-    private final LongKeyChainedHashMap<BlockIo> inTxn = new LongKeyChainedHashMap<BlockIo>();
+    private final LongHashMap<BlockIo> inTxn = new LongHashMap<BlockIo>();
     
 
     // transactions disabled?
@@ -276,7 +246,7 @@ public final class RecordFile {
     void commit() throws IOException {
         // debugging...
         if (!inUse.isEmpty() && inUse.size() > 1) {
-            showList(inUse.values().iterator());
+            showList(inUse.valuesIterator());
             throw new Error("in use list not empty at commit time ("
                             + inUse.size() + ")");
         }
@@ -292,7 +262,7 @@ public final class RecordFile {
             txnMgr.start();
         }
 
-        for (Iterator<BlockIo> i = dirty.values().iterator(); i.hasNext(); ) {
+        for (Iterator<BlockIo> i = dirty.valuesIterator(); i.hasNext(); ) {
             BlockIo node =  i.next();
             i.remove();
             // System.out.println("node " + node + " map size now " + dirty.size());
@@ -320,7 +290,7 @@ public final class RecordFile {
     void rollback() throws IOException {
         // debugging...
         if (!inUse.isEmpty()) {
-            showList(inUse.values().iterator());
+            showList(inUse.valuesIterator());
             throw new Error("in use list not empty at rollback time ("
                             + inUse.size() + ")");
         }
@@ -330,7 +300,7 @@ public final class RecordFile {
         txnMgr.synchronizeLogFromDisk();
 
         if (!inTxn.isEmpty()) {
-            showList(inTxn.values().iterator());
+            showList(inTxn.valuesIterator());
             throw new Error("in txn list not empty at rollback time ("
                             + inTxn.size() + ")");
         };
@@ -346,19 +316,19 @@ public final class RecordFile {
         txnMgr.shutdown();
 
         if (!inTxn.isEmpty()) {
-            showList(inTxn.values().iterator());
+            showList(inTxn.valuesIterator());
             throw new Error("In transaction not empty");
         }
 
         // these actually ain't that bad in a production release
         if (!dirty.isEmpty()) {
             System.out.println("ERROR: dirty blocks at close time");
-            showList(dirty.values().iterator());
+            showList(dirty.valuesIterator());
             throw new Error("Dirty blocks at close time");
         }
         if (!inUse.isEmpty()) {
             System.out.println("ERROR: inUse blocks at close time");
-            showList(inUse.values().iterator());
+            showList(inUse.valuesIterator());
             throw new Error("inUse blocks at close time");
         }
 
