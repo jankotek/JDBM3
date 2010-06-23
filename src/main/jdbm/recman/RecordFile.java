@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -98,7 +99,13 @@ public final class RecordFile {
 //        file0 = new RandomAccessFile(fileName + extension, "rw"); 
 //        file = file0.getChannel();
         //make sure first file can be opened
-        getChannel(0);
+        FileChannel f0 = getChannel(0);
+        //lock it
+        try{
+        	f0.lock();
+        }catch(OverlappingFileLockException e){
+        	throw new IOException("File already open by another instance: "+fileName);
+        }
         txnMgr = new TransactionManager(this);
     }
 
@@ -335,8 +342,9 @@ public final class RecordFile {
         // debugging stuff to keep an eye on the free list
         // System.out.println("Free list size:" + free.size());
         for(FileChannel buf : fileChannels){
-        	if(buf!=null)
+        	if(buf!=null){
         		buf.close();
+        	}
         }
         fileChannels = null;
         for(RandomAccessFile f :rafs){

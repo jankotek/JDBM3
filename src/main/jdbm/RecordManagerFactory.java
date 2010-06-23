@@ -70,15 +70,21 @@ public final class RecordManagerFactory {
 
 		String provider = options.getProperty(
 				RecordManagerOptions.PROVIDER_FACTORY, "jdbm.recman.Provider");
-
+		Throwable e = null;
 		try {
 			Class clazz = Class.forName(provider);
 			RecordManagerProvider factory = (RecordManagerProvider) clazz.newInstance();
 			return factory.createRecordManager(name, options);
-		} catch (Exception except) {
-			throw new IllegalArgumentException(
-					"Invalid record manager provider: " + provider,except);
+		} catch (InstantiationException except) {
+			e = except;
+		} catch (IllegalAccessException except) {
+			e = except;
+		} catch (ClassNotFoundException except) {
+			e = except;
 		}
+				
+		throw new IllegalArgumentException(
+			"Invalid record manager provider: " + provider,e);
 
 	}
 
