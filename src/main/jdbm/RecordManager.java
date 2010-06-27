@@ -152,6 +152,13 @@ public interface  RecordManager
 
 
     /**
+     * Empty cache. This may be usefull if you need to release memory.
+     * 
+     * @throws IOException
+     */
+    public abstract void clearCache() throws IOException;
+    
+    /**
      *  Returns the number of slots available for "root" rowids. These slots
      *  can be used to store special rowids, like rowids that point to
      *  other rowids. Root rowids are useful for bootstrapping access to

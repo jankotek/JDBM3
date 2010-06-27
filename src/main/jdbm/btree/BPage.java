@@ -968,6 +968,9 @@ public final class BPage<K,V>
 //    }
 
 
+    private static final byte LEAF = 47;
+    private static final byte NOT_LEAF = -120;
+    
     /**
      * Deserialize the content of an object from a byte array.
      *
@@ -981,8 +984,13 @@ public final class BPage<K,V>
     {
 
       BPage<K,V> bpage = new BPage<K,V>();
-      
-      bpage._isLeaf = ois.readBoolean();      
+
+  	  switch(ois.readByte()){
+  		case LEAF:bpage._isLeaf = true;break;
+  		case NOT_LEAF:bpage._isLeaf = false;break;
+  		default: throw new InternalError("wrong BPage header");
+  	  }
+            
       if ( bpage._isLeaf ) {
           bpage._previous = ois.readLong();
           bpage._next = ois.readLong();
@@ -1054,7 +1062,7 @@ public final class BPage<K,V>
         
         BPage<K,V> bpage =  obj;
         
-        oos.writeBoolean( bpage._isLeaf );
+        oos.writeByte( bpage._isLeaf?LEAF:NOT_LEAF );
         if ( bpage._isLeaf ) {
             oos.writeLong( bpage._previous );
             oos.writeLong( bpage._next );

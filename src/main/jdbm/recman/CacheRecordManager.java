@@ -538,6 +538,27 @@ public class CacheRecordManager
 		}
     	
     }
+
+
+	public void clearCache() throws IOException {
+        // discard all cache entries since we don't know which entries
+        // where part of the transaction
+		while(_hash.size()>0)
+			purgeEntry();
+
+    	if(_softCache) synchronized(_softHash) {
+        	Iterator<SoftCacheEntry> iter = _softHash.valuesIterator();
+        	while(iter.hasNext()){
+        		SoftCacheEntry e = iter.next();    		
+    			e.clear();
+    			e._serializer = null;
+    		}
+    		_softHash.clear();
+    	}
+        _first = null;
+        _last = null;
+		
+	}
   
 
 }

@@ -290,4 +290,12 @@ public class SerializationTest extends TestCase{
 		assertEquals(l2,long[].class);
 	}	
 
+	
+	public void testUnicodeString() throws ClassNotFoundException, IOException{
+		String s = "Ciudad Bolíva";
+		byte[] buf = Serialization.serialize(s);
+		Object l2 =  Serialization.deserialize(buf);
+		assertEquals(l2,s);
+		
+	}
 }

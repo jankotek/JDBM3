@@ -516,4 +516,9 @@ public final class BaseRecordManager
     }
 
 
+	public void clearCache() throws IOException {
+		//no cache		
+	}
+
+
 }

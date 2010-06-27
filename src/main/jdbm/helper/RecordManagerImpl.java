@@ -47,7 +47,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 			} else {
 				tree = HTree.createInstance(this);
 				setNamedObject( name, tree.getRecid() );
-			}
+			}			
 			return tree.asMap();
 		}catch(IOException  e){
 			throw new IOError(e);
@@ -92,6 +92,8 @@ public abstract class RecordManagerImpl implements RecordManager{
 				tree = BTree.createInstance(this,keyComparator);
 				setNamedObject( name, tree.getRecid() );
 			}
+			tree.setValueSerializer(valueSerializer);
+			
 			return tree.asMap();
 		}catch(IOException  e){
 			throw new IOError(e);

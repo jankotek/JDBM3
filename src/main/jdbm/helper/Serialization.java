@@ -62,6 +62,12 @@ public final class Serialization
 	/** print statistics to STDOUT */
 	public static final boolean DEBUG = false;
 	
+	/** if set to true, debug informations will be saved to store to make it more robust */
+	public static final boolean DEBUGSTORE = false;
+	
+	private static final int DEBUGSTORE_DUMMY_START = 456456567;
+	private static final int DEBUGSTORE_DUMMY_END = 1234456;
+	
 	public final static int NULL 			=   0;
 	public final static int NORMAL 			=   1;
 	public final static int BOOLEAN_TRUE 	=   2;
@@ -196,7 +202,9 @@ public final class Serialization
     	final int written = DEBUG?out.size():0;
 
     	final Class clazz = obj!=null?obj.getClass():null;
-    	
+    	if(DEBUGSTORE){
+    		out.writeInt(DEBUGSTORE_DUMMY_START);
+    	}
     	if(obj == null){
     		out.write(NULL);    		
     	}else if (clazz ==  Boolean.class){
@@ -284,17 +292,17 @@ public final class Serialization
 			out.write(STOREREFERENCE);
 			((StoreReference)obj).writeExternal(out);			
 		}else if(clazz == String.class){
-			String s = (String)obj;
-			if(s.length()==0){
+			byte[] s = ((String)obj).getBytes();
+			if(s.length==0){
 				out.write(STRING_EMPTY);
-			}else if(s.length()<255){
+			}else if(s.length<255){
 				out.write(STRING_255);
-				out.write(s.length());
+				out.write(s.length);
 			}else{
 				out.write(STRING);
-				out.writeInt(s.length());
+				out.writeInt(s.length);
 			}
-			out.write(s.getBytes());
+			out.write(s);
 		}else if(obj instanceof Class){
 			out.write(CLASS);
 			writeObject(out, ((Class)obj).getName());
@@ -475,6 +483,11 @@ public final class Serialization
 			out.write(serializeNormal(obj));
 			out.writeByte(END_OF_NORMAL_SERIALIZATION);
 		}
+    	
+    	if(DEBUGSTORE){
+    		out.writeInt(DEBUGSTORE_DUMMY_END);
+    	}
+
     	if(DEBUG){
     		System.out.println("SERIAL write object: "+(clazz!=null?clazz.getSimpleName():"null")+ " - " +(out.size() - written)+"B - "+obj);
     	}
@@ -689,6 +702,11 @@ public final class Serialization
     	final int available = DEBUG?is.available():0;
 
     	Object ret = null;
+    	
+    	if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_START){    		
+    		throw new InternalError("Wrong offset");
+    	}    	
+    	
     	int head = is.read();
 
     	switch(head){
@@ -792,10 +810,15 @@ public final class Serialization
 			
 			default: throw new InternalError("Unknown serialization header: "+head);
     	}
-    	
+        	    	
     	if(DEBUG){
     		System.out.println("SERIAL read object: "+ret.getClass().getSimpleName()+" - "+(available-is.available())+"B - "+ ret);
     	}
+
+    	if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_END){
+    		throw new InternalError("Wrong offset '"+ret+ "' - "+ret.getClass());
+    	}
+
     
     	return ret;
 	}
@@ -1059,7 +1082,8 @@ public final class Serialization
     	    throw new EOFException();
 
 		TreeSet<Object> s = new TreeSet<Object>();
-		Comparator comparator = (Comparator) readObject(is);
+		Object obj = readObject(is);
+		Comparator comparator = (Comparator) obj;
 		if(comparator!=null)
 			s = new TreeSet<Object>(comparator);
 		for(int i = 0; i<size;i++)
