@@ -88,9 +88,7 @@ public class CacheRecordManager
      * which has been used most recently.
      */
 	protected CacheEntry _last;
-
-
-
+	
     /**
      * Construct a CacheRecordManager wrapping another RecordManager and
      * using a given cache policy.
@@ -138,13 +136,15 @@ public class CacheRecordManager
         throws IOException
     {
         checkIfClosed();
-
+        
         long recid = _recman.insert( obj, serializer );
-        if(_softCache) synchronized(_softHash) {
-        	_softHash.put(recid, new SoftCacheEntry(recid, obj, serializer,_refQueue));
-        }else {
-        	cachePut(  recid , obj, serializer, false );
-        }
+        
+        //DONT use cache for inserts, it usually hurts performance on batch inserts
+//        if(_softCache) synchronized(_softHash) {
+//        	_softHash.put(recid, new SoftCacheEntry(recid, obj, serializer,_refQueue));
+//        }else {
+//        	cachePut(  recid , obj, serializer, false );
+//        }
         return recid;
     }
 
@@ -512,8 +512,8 @@ public class CacheRecordManager
 			while(true)try{
 
 				//collect next item from cache,
-				//limit 500 ms is to keep periodically checking if recman was GCed 
-				SoftCacheEntry e = (SoftCacheEntry) entryQueue.remove(500);
+				//limit 10000 ms is to keep periodically checking if recman was GCed 
+				SoftCacheEntry e = (SoftCacheEntry) entryQueue.remove(10000);
 
 				//check if  recman was GCed, cancel in that case
 				CacheRecordManager recman = recman2.get();

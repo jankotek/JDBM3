@@ -29,9 +29,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import jdbm.RecordManager;
 import jdbm.Serializer;
-import jdbm.helper.DefaultSerializer;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
 import jdbm.helper.RecordManagerImpl;

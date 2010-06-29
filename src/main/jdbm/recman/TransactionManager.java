@@ -17,6 +17,8 @@
 
 package jdbm.recman;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -70,7 +72,6 @@ public final class TransactionManager {
      */
     private ArrayList<BlockIo>[] txns = new ArrayList[DEFAULT_TXNS_IN_LOG];
     private int curTxn = -1;
-    private boolean compressed = false;
 
     /** Extension of a log file. */
     static final String extension = ".lg";
@@ -170,7 +171,7 @@ public final class TransactionManager {
     /** Opens the log file */
     private void open() throws IOException {
         fos = new FileOutputStream(makeLogName());
-        oos = new DataOutputStream(fos);
+        oos = new DataOutputStream(new BufferedOutputStream(fos));
         oos.writeShort(Magic.LOGFILE_HEADER);
         oos.flush();
         curTxn = -1;
@@ -188,7 +189,7 @@ public final class TransactionManager {
         }
 
         FileInputStream fis = new FileInputStream(logFile);
-        DataInputStream ois = new DataInputStream(fis);
+        DataInputStream ois = new DataInputStream(new BufferedInputStream(fis));
 
         try {
             if (ois.readShort() != Magic.LOGFILE_HEADER)
@@ -294,7 +295,7 @@ public final class TransactionManager {
 
         // open a new ObjectOutputStream in order to store
         // newer states of BlockIo
-        oos = new DataOutputStream(fos);
+        oos = new DataOutputStream(new BufferedOutputStream(fos));
     }
 
     /** Flushes and syncs */

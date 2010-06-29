@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import jdbm.RecordManager;
+import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 
 /**
@@ -45,6 +46,8 @@ final class HashDirectory <K,V>
      *
      * (Must be a power of 2 -- if you update this value, you must also
      *  update BIT_SIZE and MAX_DEPTH.)
+     *  
+     *  !!!! do not change this, it affects storage format !!!
      */
     static final int MAX_CHILDREN = 256;
 
@@ -360,7 +363,9 @@ final class HashDirectory <K,V>
     public void writeExternal(DataOutputStream out)
     throws IOException {
         out.writeByte(_depth);
-        Serialization.writeObject(out, _children);
+        for(int i = 0; i<MAX_CHILDREN;i++){
+        	LongPacker.packLong(out,_children[i]);
+        }
     }
 
 
@@ -370,7 +375,11 @@ final class HashDirectory <K,V>
     public synchronized void readExternal(DataInputStream in)
     throws IOException, ClassNotFoundException {
         _depth = in.readByte();
-        _children = (long[]) Serialization.readObject(in);
+        _children = new long[MAX_CHILDREN];
+        for(int i = 0; i<MAX_CHILDREN;i++){        	
+        	_children[i] = LongPacker.unpackLong(in);
+        }
+
     }
 
 

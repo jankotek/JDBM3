@@ -71,7 +71,7 @@ public final class RecordFile {
     /** The length of a single block. */
     public final static int BLOCK_SIZE = 8192;//4096;
     /** maximal file size not rounded to block size */
-    public final static long _XXXXX = 1000000000l;
+    private final static long _XXXXX = 1000000000l;
     public final static long MAX_FILE_SIZE = _XXXXX - _XXXXX%BLOCK_SIZE;
 
     /** The extension of a record file */
@@ -83,7 +83,6 @@ public final class RecordFile {
     private ArrayList<FileChannel> fileChannels = new ArrayList<FileChannel>();
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
     private final String fileName;
-	
 
     /**
      *  Creates a new object on the indicated filename. The file is
@@ -105,7 +104,7 @@ public final class RecordFile {
         	f0.lock();
         }catch(OverlappingFileLockException e){
         	throw new IOException("File already open by another instance: "+fileName);
-        }
+        }        
         txnMgr = new TransactionManager(this);
     }
 

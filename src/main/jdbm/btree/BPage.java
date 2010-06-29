@@ -26,6 +26,7 @@ import java.util.List;
 
 import jdbm.RecordManager;
 import jdbm.Serializer;
+import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 import jdbm.helper.Tuple;
 import jdbm.helper.TupleBrowser;
@@ -54,11 +55,6 @@ public final class BPage<K,V>
 
     private static final boolean DEBUG = false;
 
-
-    /**
-     * Version id for serialization.
-     */
-    final static long serialVersionUID = 1L;
 
 
     /**
@@ -865,7 +861,7 @@ public final class BPage<K,V>
     static byte[] readByteArray( DataInputStream in )
         throws IOException
     {
-        int len = in.readInt();
+        int len = LongPacker.unpackInt(in);
         if ( len < 0 ) {
             return null;
         }
@@ -881,7 +877,7 @@ public final class BPage<K,V>
         if ( buf == null ) {
             out.write( -1 );
         } else {
-            out.writeInt( buf.length );
+        	LongPacker.packInt( out, buf.length);
             out.write( buf );
         }
     }
@@ -992,12 +988,12 @@ public final class BPage<K,V>
   	  }
             
       if ( bpage._isLeaf ) {
-          bpage._previous = ois.readLong();
-          bpage._next = ois.readLong();
+          bpage._previous = LongPacker.unpackLong(ois);
+          bpage._next = LongPacker.unpackLong(ois);
       }
 
       
-      bpage._first = ois.readInt();
+      bpage._first = LongPacker.unpackInt(ois);
 
       try {
           if ( _btree.keySerializer == null ) {
@@ -1036,7 +1032,7 @@ public final class BPage<K,V>
       } else {
           bpage._children = new long[ _btree._pageSize ];
           for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
-              bpage._children[ i ] = ois.readLong();
+              bpage._children[ i ] = LongPacker.unpackLong(ois);
           }
       }
       
@@ -1064,11 +1060,11 @@ public final class BPage<K,V>
         
         oos.writeByte( bpage._isLeaf?LEAF:NOT_LEAF );
         if ( bpage._isLeaf ) {
-            oos.writeLong( bpage._previous );
-            oos.writeLong( bpage._next );
+            LongPacker.packLong(oos, bpage._previous );
+            LongPacker.packLong(oos, bpage._next );
         }
                 
-        oos.writeInt( bpage._first );
+        LongPacker.packInt(oos, bpage._first );
       
         if ( _btree.keySerializer == null ) {
         	Serialization.writeObject(oos, bpage._keys);        	
@@ -1100,7 +1096,7 @@ public final class BPage<K,V>
             }
         } else {
             for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
-                oos.writeLong( bpage._children[ i ] );
+            	LongPacker.packLong(oos,  bpage._children[ i ] );
             }
         }
         

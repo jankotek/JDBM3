@@ -82,9 +82,9 @@ public final class Serialization
 	public final static int INTEGER_6 		=  11;
 	public final static int INTEGER_7 		=  12;
 	public final static int INTEGER_8 		=  13;
-	public final static int INTEGER_255 	=  14;
-	public final static int INTEGER_SHORT 	=  15;
-	public final static int INTEGER_FULL	=  16;
+	public final static int INTEGER_255		=  14;	
+	public final static int INTEGER_PACK_NEG=  15;
+	public final static int INTEGER_PACK 	=  16;
 	public final static int LONG_MINUS_1 	=  17;
 	public final static int LONG_0 			=  18;
 	public final static int LONG_1 			=  19;
@@ -95,10 +95,10 @@ public final class Serialization
 	public final static int LONG_6 			=  24;
 	public final static int LONG_7 			=  25;
 	public final static int LONG_8 			=  26;
-	public final static int LONG_255 		=  27;
-	public final static int LONG_SHORT 		=  28;
-	public final static int LONG_INT 		=  29;
-	public final static int LONG_FULL		=  30;
+	public final static int LONG_PACK_NEG	=  27;
+	public final static int LONG_PACK 		=  28;
+	public final static int LONG_255 		=  29;
+	public final static int LONG_MINUS_MAX	=  30;
 	public final static int SHORT_MINUS_1 	=  31;
 	public final static int SHORT_0 		=  32;
 	public final static int SHORT_1 		=  33;
@@ -126,7 +126,7 @@ public final class Serialization
 	public final static int BIGDECIMAL		=  54;
 	public final static int BIGINTEGER_255	=  55;
 	public final static int BIGINTEGER		=  56;
-	
+	public final static int INTEGER_MINUS_MAX=  57;	
  	
 
 	
@@ -134,17 +134,19 @@ public final class Serialization
 	public final static int ARRAY_INT_B_INT		=  61;
 	public final static int ARRAY_INT_S			=  62;
 	public final static int ARRAY_INT_I			=  63;
+	public final static int ARRAY_INT_PACKED	=  64;
 	
-	public final static int ARRAY_LONG_B		=  64;
-	public final static int ARRAY_LONG_S		=  65;
-	public final static int ARRAY_LONG_I		=  66;
-	public final static int ARRAY_LONG_L		=  67;
+	public final static int ARRAY_LONG_B		=  65;
+	public final static int ARRAY_LONG_S		=  66;
+	public final static int ARRAY_LONG_I		=  67;
+	public final static int ARRAY_LONG_L		=  68;
+	public final static int ARRAY_LONG_PACKED	=  69;
 
-	public final static int ARRAY_BYTE_255		=  68;
-	public final static int ARRAY_BYTE_INT		=  69;
+	public final static int ARRAY_BYTE_255		=  70;
+	public final static int ARRAY_BYTE_INT		=  71;
 	
-	public final static int ARRAY_OBJECT_255	=  70;
-	public final static int ARRAY_OBJECT		=  72;
+	public final static int ARRAY_OBJECT_255	=  72;
+	public final static int ARRAY_OBJECT		=  73;
 
 	public final static int STRING_EMPTY		= 101;
 	public final static int STRING_255			= 102;
@@ -506,13 +508,18 @@ public final class Serialization
 			da.write(ARRAY_LONG_B);
 			da.writeInt(obj.length);
 			for(long l : obj)
-				da.write((int) l);			
-		}if(Short.MIN_VALUE>=min && max<=Short.MAX_VALUE){
+				da.write((int) l);
+		}else if(0>=min && max<=Long.MAX_VALUE){
+			da.write(ARRAY_LONG_PACKED);
+			da.writeInt(obj.length);
+			for(long l : obj)
+				LongPacker.packLong(da, l);			
+		}else if(Short.MIN_VALUE>=min && max<=Short.MAX_VALUE){
 			da.write(ARRAY_LONG_S);
 			da.writeInt(obj.length);
 			for(long l : obj)
 				da.writeShort((short) l);			
-		}if(Integer.MIN_VALUE>=min && max<=Integer.MAX_VALUE){
+		}else if(Integer.MIN_VALUE>=min && max<=Integer.MAX_VALUE){
 			da.write(ARRAY_LONG_I);
 			da.writeInt(obj.length);
 			for(long l : obj)
@@ -542,13 +549,18 @@ public final class Serialization
 		if(obj.length<=255 && fitsInByte){
 			da.write(ARRAY_INT_B_255);
 			da.write(obj.length);
-			for(int i:obj)
+			for(int i:obj)				
 				da.write(i);
 		}else if(fitsInByte){
 			da.write(ARRAY_INT_B_INT);
 			da.writeInt(obj.length);
 			for(int i:obj)
-				da.write(i);						
+				da.write(i);
+		}else if(0>=min && max<=Integer.MAX_VALUE){
+			da.write(ARRAY_INT_PACKED);
+			da.writeInt(obj.length);
+			for(int l : obj)
+				LongPacker.packInt(da, l);			
 		} else if(fitsInShort){
 			da.write(ARRAY_INT_S);
 			da.writeInt(obj.length);
@@ -585,15 +597,17 @@ public final class Serialization
 			da.write(INTEGER_7);
 		else if (val == 8)
 			da.write(INTEGER_8);
+		else if (val == Integer.MIN_VALUE)
+			da.write(INTEGER_MINUS_MAX);		
 		else if(val >0 && val<255){
 			da.write(INTEGER_255);
 			da.write(val);
-		}else if(val >=Short.MIN_VALUE && val<=Short.MAX_VALUE){
-			da.write(INTEGER_SHORT);
-			da.writeShort(val);
+		}else if(val <0){
+			da.write(INTEGER_PACK_NEG);
+			LongPacker.packInt(da, -val);
 		}else{
-			da.write(INTEGER_FULL);
-			da.writeInt(val);
+			da.write(INTEGER_PACK);
+			LongPacker.packInt(da, val);
 		}
 	}
 
@@ -618,18 +632,17 @@ public final class Serialization
 			da.write(LONG_7);
 		else if (val == 8)
 			da.write(LONG_8);
+		else if (val == Long.MIN_VALUE)
+			da.write(LONG_MINUS_MAX);		
 		else if(val >0 && val<255){
 			da.write(LONG_255);
 			da.write((int) val);
-		}else if(val >=Short.MIN_VALUE && val<=Short.MAX_VALUE){
-			da.write(LONG_SHORT);
-			da.writeShort((int) val);
-		}else if(val >=Integer.MIN_VALUE && val<=Integer.MAX_VALUE){
-			da.write(LONG_INT);
-			da.writeInt((int) val);
+		}else if(val <0){
+			da.write(LONG_PACK_NEG);
+			LongPacker.packLong(da, -val);
 		}else{
-			da.write(LONG_FULL);
-			da.writeLong(val);
+			da.write(LONG_PACK);
+			LongPacker.packLong(da, val);
 		}
 	}
 
@@ -724,9 +737,10 @@ public final class Serialization
 			case INTEGER_6:ret= Integer.valueOf(6);break;
 			case INTEGER_7:ret= Integer.valueOf(7);break;
 			case INTEGER_8:ret= Integer.valueOf(8);break;
+			case INTEGER_MINUS_MAX:ret=  Integer.valueOf(Integer.MIN_VALUE);break;
 			case INTEGER_255:ret= Integer.valueOf(is.read());break;
-			case INTEGER_SHORT:ret=  Integer.valueOf(is.readShort());break;
-			case INTEGER_FULL:ret=  Integer.valueOf(is.readInt());break;
+			case INTEGER_PACK_NEG:ret=  Integer.valueOf(-LongPacker.unpackInt(is));break;
+			case INTEGER_PACK:ret=  Integer.valueOf(LongPacker.unpackInt(is));break;
 			case LONG_MINUS_1:ret= Long.valueOf(-1);break;
 			case LONG_0:ret= Long.valueOf(0);break;
 			case LONG_1:ret= Long.valueOf(1);break;
@@ -738,9 +752,9 @@ public final class Serialization
 			case LONG_7:ret= Long.valueOf(7);break;
 			case LONG_8:ret= Long.valueOf(8);break;
 			case LONG_255:ret= Long.valueOf(is.read());break;
-			case LONG_SHORT:ret= Long.valueOf(is.readShort());break;
-			case LONG_INT:ret= Long.valueOf(is.readInt());break;
-			case LONG_FULL:ret= Long.valueOf(is.readLong());break;			
+			case LONG_PACK_NEG:ret=  Long.valueOf(-LongPacker.unpackLong(is));break;
+			case LONG_PACK:ret=  Long.valueOf(LongPacker.unpackLong(is));break;
+			case LONG_MINUS_MAX:ret=  Long.valueOf(Long.MIN_VALUE);break;
 			case SHORT_MINUS_1:ret= Short.valueOf((short)-1);break;
 			case SHORT_0:ret= Short.valueOf((short)0);break;
 			case SHORT_1:ret= Short.valueOf((short)1);break;
@@ -799,10 +813,12 @@ public final class Serialization
 			case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
 			case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
 			case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
+			case ARRAY_INT_PACKED: ret= deserializeArrayIntPack(is);break;
 			case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
 			case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
 			case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
 			case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
+			case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
 			case ARRAY_BYTE_255: ret= deserializeArrayByte255(is);break;
 			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
 			
@@ -928,6 +944,30 @@ public final class Serialization
 		}
 		return ret;	}
 
+
+	private static int[] deserializeArrayIntPack(DataInputStream is) throws IOException {
+		int size = is.readInt();
+    	if (size < 0)
+    	    throw new EOFException();
+
+		int[] ret = new int[size];
+		for(int i=0;i<size;i++){
+			ret[i] = LongPacker.unpackInt(is);
+		}
+		return ret;	
+	}
+	
+	private static long[] deserializeArrayLongPack(DataInputStream is) throws IOException {
+		int size = is.readInt();
+    	if (size < 0)
+    	    throw new EOFException();
+
+		long[] ret = new long[size];
+		for(int i=0;i<size;i++){
+			ret[i] = LongPacker.unpackLong(is);
+		}
+		return ret;	
+	}
 
 	private static int[] deserializeArrayIntB255(DataInputStream is) throws IOException {
 		int size = is.read();

@@ -23,9 +23,19 @@ package jdbm.recman;
  * used when there is no file block to back the location's data.
  */
 final class Location {
+	
+	static long getBlock(long blockOffset){
+		return blockOffset >> 16;
+	}
+	
+	static short getOffset(long blockOffset){
+		return (short) (blockOffset & 0xffff);
+	}
+
+	
     final private long block;
     final private short offset;
-    private int _hashCode = 0;
+//    private int _hashCode = 0;
 
     /**
      * Creates a location from a (block, offset) tuple.
@@ -87,10 +97,11 @@ final class Location {
          * @see BufferedRecordInstallManager
          */
     public int hashCode() {
-        if( _hashCode == 0 ) {
-                _hashCode = new Long(toLong()).hashCode();
-        }
-        return _hashCode;
+    	throw new UnsupportedOperationException();
+//        if( _hashCode == 0 ) {
+//                _hashCode = new Long(toLong()).hashCode();
+//        }
+//        return _hashCode;
     }
     
     public boolean equals(Object o) {

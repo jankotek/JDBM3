@@ -66,10 +66,6 @@ public class BTree<K,V>
 
     private static final boolean DEBUG = false;
 
-    /**
-     * Version id for serialization.
-     */
-    final static long serialVersionUID = 1L;
 
 
     /**

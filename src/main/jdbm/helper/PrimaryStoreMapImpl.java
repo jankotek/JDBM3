@@ -21,8 +21,8 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import jdbm.PrimaryMap;
 import jdbm.PrimaryStoreMap;
-import jdbm.PrimaryTreeMap;
 import jdbm.RecordListener;
 import jdbm.RecordManager;
 import jdbm.Serializer;
@@ -30,10 +30,10 @@ import jdbm.Serializer;
 public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<Long, V>
 	implements PrimaryStoreMap<K, V>{
 	
-	PrimaryTreeMap<Long,Object> map;	
+	PrimaryMap<Long,Object> map;	
 	Serializer<V> valueSerializer;
 
-	public PrimaryStoreMapImpl(PrimaryTreeMap<Long, Object> map,Serializer<V> valueSerializer) {
+	public PrimaryStoreMapImpl(PrimaryMap<Long, Object> map,Serializer<V> valueSerializer) {
 		this.map = map;
 		this.valueSerializer = valueSerializer;
 		map.addRecordListener(new RecordListener<Long,Object>(){

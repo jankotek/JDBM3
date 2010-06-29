@@ -84,7 +84,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 		try{
 			BTree<K,V> tree = null;
         
-			// create or load fruit basket (hashtable of fruits)
+			// create or load 
 			long recid = getNamedObject( name);
 			if ( recid != 0 ) {
 				tree = BTree.load( this, recid );
@@ -105,7 +105,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 		try{
 			BTree<Long,Object> tree = null;
         
-			// create or load fruit basket (hashtable of fruits)
+			// create or load
 			long recid = getNamedObject( name);
 			if ( recid != 0 ) {
 				tree = BTree.load( this, recid );

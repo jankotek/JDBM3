@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 
 /**
@@ -229,7 +230,7 @@ final class HashBucket<K,V>
     public void writeExternal( DataOutputStream out )
         throws IOException
     {
-        out.writeInt( _depth );
+    	LongPacker.packInt(out,_depth); 
 
         Serialization.writeObject(out, _keys);
         Serialization.writeObject(out, _values);
@@ -241,7 +242,7 @@ final class HashBucket<K,V>
      */
     public void readExternal(DataInputStream in)
     throws IOException, ClassNotFoundException {
-        _depth = in.readInt();
+        _depth = LongPacker.unpackInt(in);
 
         _keys = (ArrayList<K>) Serialization.readObject(in);
         _values = (ArrayList<V>) Serialization.readObject(in);

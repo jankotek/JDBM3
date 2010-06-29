@@ -20,7 +20,8 @@ package jdbm.recman;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
+
+import jdbm.helper.LongPacker;
 
 /**
  *  This class wraps a page-sized byte array and provides methods
@@ -31,7 +32,7 @@ import java.io.Serializable;
  *  @see java.io.DataInput
  *  @see java.io.DataOutput
  */
-public final class BlockIo implements Serializable{
+public final class BlockIo {
 
     private long blockId;
 
@@ -52,9 +53,6 @@ public final class BlockIo implements Serializable{
      *  buffer.
      */
     BlockIo(long blockId, byte[] data) {
-        // removeme for production version
-        if (blockId > 10000000000L)
-            throw new Error("bogus block id " + blockId);
         this.blockId = blockId;
         this.data = data;
     }
@@ -72,9 +70,6 @@ public final class BlockIo implements Serializable{
     void setBlockId(long id) {
         if (isInTransaction())
             throw new Error("BlockId assigned for transaction block");
-        // removeme for production version
-        if (id > 10000000000L)
-            throw new Error("bogus block id " + id);
         blockId = id;
     }
 
@@ -262,16 +257,16 @@ public final class BlockIo implements Serializable{
     // implement externalizable interface
     public void readExternal(DataInputStream in)
     throws IOException, ClassNotFoundException {
-        blockId = in.readLong();
-        int length = in.readInt();
+        blockId = LongPacker.unpackLong(in);
+        int length = LongPacker.unpackInt(in);
         data = new byte[length];
         in.readFully(data);
     }
 
     // implement externalizable interface
     public void writeExternal(DataOutputStream out) throws IOException {
-        out.writeLong(blockId);
-        out.writeInt(data.length);
+    	LongPacker.packLong(out, blockId);
+    	LongPacker.packInt(out, data.length);
         out.write(data);
     }
 
