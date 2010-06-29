@@ -44,7 +44,7 @@ public final class RecordFile {
     // Todo: reorganize in hashes and fifos as necessary.
     // free -> inUse -> dirty -> inTxn -> free
     // free is a cache, thus a FIFO. The rest are hashes.
-    private final LinkedList<BlockIo> free = new LinkedList<BlockIo>();
+    private final LongHashMap<BlockIo> free = new LongHashMap<BlockIo>();
     /**
      * Blocks currently locked for read/update ops. When released the block goes
      * to the dirty or clean list, depending on a flag.  The file header block is
@@ -166,14 +166,13 @@ public final class RecordFile {
              inUse.put(blockid, node);
              return node;
          }
-         for (Iterator<BlockIo> i = free.iterator(); i.hasNext();) {
-        	 BlockIo cur = i.next();
-             if (cur.getBlockId() == blockid) {
-                 node = cur;
-                 i.remove();
-                 inUse.put(blockid, node);
-                 return node;
-             }
+         
+         BlockIo cur = free.get(blockid);
+         if(cur!=null){
+           node = cur;
+           free.remove(blockid);
+           inUse.put(blockid, node);
+           return node;        	 
          }
 
          // sanity check: can't be on in use list
@@ -227,7 +226,7 @@ public final class RecordFile {
             if (!transactionsDisabled && block.isInTransaction()) {
                 inTxn.put(key, block);
             } else {
-                free.add(block);
+                free.put(block.getBlockId(),block);
             }
         }
     }
@@ -278,7 +277,7 @@ public final class RecordFile {
                 file.position(offset % MAX_FILE_SIZE);
                 file.write(ByteBuffer.wrap(node.getData()));
                 node.setClean();
-                free.add(node);
+                free.put(node.getBlockId(),node);
             }
             else {
                 txnMgr.add(node);
@@ -394,7 +393,9 @@ public final class RecordFile {
 
         BlockIo retval = null;
         if (!free.isEmpty()) {
-            retval = (BlockIo) free.removeFirst();
+        	Iterator<BlockIo> it = free.valuesIterator();
+        	retval = it.next();
+        	it.remove();
         }
         if (retval == null)
             retval = new BlockIo(0, new byte[BLOCK_SIZE]);
@@ -428,7 +429,7 @@ public final class RecordFile {
     throws IOException {
         long key = node.getBlockId();
         if ((inTxn.remove(key) != null) && recycle) {
-            free.add(node);
+            free.put(key,node);
         }
     }
 
