@@ -21,10 +21,16 @@ package jdbm.recman;
  * Class describing a page that holds physical rowids that were freed.
  */
 final class FreePhysicalRowIdPage extends PageHeader {
+	
+	static final short FreePhysicalRowId_O_SIZE = PhysicalRowId_SIZE; // int size
+	static final short FreePhysicalRowId_SIZE = FreePhysicalRowId_O_SIZE + Magic.SZ_INT;
+
 	// offsets
 	private static final short O_COUNT = PageHeader.SIZE; // short count
 	static final short O_FREE = O_COUNT + Magic.SZ_SHORT;
-	static final short ELEMS_PER_PAGE = (RecordFile.BLOCK_SIZE - O_FREE) / FreePhysicalRowId.SIZE;
+	static final short ELEMS_PER_PAGE = (RecordFile.BLOCK_SIZE - O_FREE) / FreePhysicalRowId_SIZE;
+	
+
 
 	/**
 	 * Used to place a limit on the wasted capacity resulting in a modified first fit policy for re-allocated of free
@@ -41,14 +47,18 @@ final class FreePhysicalRowIdPage extends PageHeader {
 	 */
 	static public final transient int wasteMargin2 = PageHeader.SIZE / 4;
 
-	// slots we returned.
-	FreePhysicalRowId[] slots = new FreePhysicalRowId[ELEMS_PER_PAGE];
+//	// slots we returned.
+//	FreePhysicalRowId[] slots = new FreePhysicalRowId[ELEMS_PER_PAGE];
 
+	final int[] sizeCache = new int[ELEMS_PER_PAGE];
+	
 	/**
 	 * Constructs a data page view from the indicated block.
 	 */
 	FreePhysicalRowIdPage(BlockIo block) {
 		super(block);
+		for(int i = 0;i<ELEMS_PER_PAGE;i++)
+			sizeCache[i] = -1;
 	}
 
 	/**
@@ -74,19 +84,22 @@ final class FreePhysicalRowIdPage extends PageHeader {
 
 	/** Frees a slot */
 	void free(int slot) {
-		get(slot).setSize(0);
+		short pos = slotToOffset(slot);
+		FreePhysicalRowId_setSize(pos, 0);
+		//get(slot).setSize(0);
 		setCount((short) (getCount() - 1));
 	}
 
 	/** Allocates a slot */
-	FreePhysicalRowId alloc(int slot) {
+	short alloc(int slot) {
 		setCount((short) (getCount() + 1));
-		return get(slot);
+		return slotToOffset(slot);
 	}
 
 	/** Returns true if a slot is allocated */
 	boolean isAllocated(int slot) {
-		return get(slot).getSize() != 0;
+		short pos = slotToOffset(slot);
+		return FreePhysicalRowId_getSize(pos) != 0;
 	}
 
 	/** Returns true if a slot is free */
@@ -94,18 +107,24 @@ final class FreePhysicalRowIdPage extends PageHeader {
 		return !isAllocated(slot);
 	}
 
-	/** Returns the value of the indicated slot */
-	FreePhysicalRowId get(int slot) {
-		if (slots[slot] == null) {
-			slots[slot] = new FreePhysicalRowId(block, slotToOffset(slot));
-		}
-		return slots[slot];
-	}
+//	/** Returns the value of the indicated slot */
+//	FreePhysicalRowId get(int slot) {
+//		if (slots[slot] == null) {
+//			slots[slot] = new FreePhysicalRowId(block, slotToOffset(slot));
+//		}
+//		return slots[slot];
+//	}
 
 	/** Converts slot to offset */
 	short slotToOffset(int slot) {
-		return (short) (O_FREE + (slot * FreePhysicalRowId.SIZE));
+		return (short) (O_FREE + (slot * FreePhysicalRowId_SIZE));
 	}
+	
+	int offsetToSlot(short pos) {
+		int pos2 = pos;
+		return (pos2 - O_FREE)/FreePhysicalRowId_SIZE;			
+	}
+
 
 	/**
 	 * Returns first free slot, -1 if no slots are available
@@ -143,7 +162,9 @@ final class FreePhysicalRowIdPage extends PageHeader {
 			 * wasted capacity given the requested allocation size.
 			 */
 			// Note: isAllocated(i) is equiv to get(i).getSize() != 0
-			long theSize = get(i).getSize(); // capacity of this free record.
+			//long theSize = get(i).getSize(); // capacity of this free record.
+			short pos = slotToOffset(i);
+			long theSize = FreePhysicalRowId_getSize(pos); // capacity of this free record.
 			long waste = theSize - size; // when non-negative, record has suf. capacity.
 			if (waste >= 0) {
 				if (waste < wasteMargin) {
@@ -175,5 +196,26 @@ final class FreePhysicalRowIdPage extends PageHeader {
 		}
 		return -1;
 	}
+
+	public Location slotToLocation(int slot) {
+		short pos = slotToOffset(slot);
+		return new Location(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
+	}
+	
+	/** Returns the size */
+	int FreePhysicalRowId_getSize(short pos) {
+		int slot = offsetToSlot(pos);
+		if(sizeCache[slot] == -1)
+			sizeCache[slot] =  block.readInt(pos + FreePhysicalRowId_O_SIZE);
+		return sizeCache[slot];
+	}
+
+	/** Sets the size */
+	void FreePhysicalRowId_setSize(short pos,int value) {
+		int slot = offsetToSlot(pos);
+		sizeCache[slot] = value;
+		block.writeInt(pos + FreePhysicalRowId_O_SIZE, value);
+	}
+
 
 }

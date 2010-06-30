@@ -27,13 +27,13 @@ final class FreeLogicalRowIdPage extends PageHeader {
     private static final short O_COUNT = PageHeader.SIZE; // short count
     static final short O_FREE = (short)(O_COUNT + Magic.SZ_SHORT);
     static final short ELEMS_PER_PAGE = (short)
-        ((RecordFile.BLOCK_SIZE - O_FREE) / PhysicalRowId.SIZE);
+        ((RecordFile.BLOCK_SIZE - O_FREE) / PhysicalRowId_SIZE);
 
     private int previousFoundFree = 0; // keeps track of the most recent found free slot so we can locate it again quickly 
     private int previousFoundAllocated = 0; // keeps track of the most recent found allocated slot so we can locate it again quickly
     
     // slots we returned.
-    final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
+    //final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
 
     /**
      *  Constructs a data page view from the indicated block.
@@ -67,7 +67,8 @@ final class FreeLogicalRowIdPage extends PageHeader {
 
     /** Frees a slot */
     void free(int slot) {
-        get(slot).setBlock(0);
+    	PhysicalRowId_setBlock(slotToOffset(slot), 0);
+        //get(slot).setBlock(0);
         setCount((short) (getCount() - 1));
         
         // update previousFoundFree if the freed slot is before what we've found in the past
@@ -76,20 +77,23 @@ final class FreeLogicalRowIdPage extends PageHeader {
     }
 
     /** Allocates a slot */
-    PhysicalRowId alloc(int slot) {
+    short alloc(int slot) {
         setCount((short) (getCount() + 1));
-        get(slot).setBlock(-1);
+        short pos = slotToOffset(slot);
+        PhysicalRowId_setBlock(pos, -1);
+        //get(slot).setBlock(-1);
         
         // update previousFoundAllocated if the newly allocated slot is before what we've found in the past
         if (slot < previousFoundAllocated)
             previousFoundAllocated = slot;
         
-        return get(slot);
+        return pos;
     }
 
     /** Returns true if a slot is allocated */
     boolean isAllocated(int slot) {
-        return get(slot).getBlock() > 0;
+        //return get(slot).getBlock() > 0;
+    	return PhysicalRowId_getBlock(slotToOffset(slot)) > 0;
     }
 
     /** Returns true if a slot is free */
@@ -98,17 +102,18 @@ final class FreeLogicalRowIdPage extends PageHeader {
     }
 
 
-    /** Returns the value of the indicated slot */
-    PhysicalRowId get(int slot) {
-        if (slots[slot] == null)
-            slots[slot] = new PhysicalRowId(block, slotToOffset(slot));;
-        return slots[slot];
-    }
+//    /** Returns the value of the indicated slot */
+//    PhysicalRowId get(int slot) {
+//        if (slots[slot] == null)
+//            slots[slot] = new PhysicalRowId(block, slotToOffset(slot));;
+//        return slots[slot];
+//    }
+//    
 
     /** Converts slot to offset */
     private short slotToOffset(int slot) {
         return (short) (O_FREE +
-                        (slot * PhysicalRowId.SIZE));
+                        (slot * PhysicalRowId_SIZE));
     }
 
     /**
@@ -132,4 +137,11 @@ final class FreeLogicalRowIdPage extends PageHeader {
         }
         return -1;
     }
+
+    public Location slotToLocation(int slot) {
+		short pos = slotToOffset(slot);
+		return new Location(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
+	}
+    
+
 }

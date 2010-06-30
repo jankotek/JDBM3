@@ -65,7 +65,7 @@ final class FreePhysicalRowIdPageManager
             int slot = fp.getFirstLargerThan( size );
             if ( slot != -1 ) {
                 // got one!
-                retval = new Location( fp.get( slot ) );
+                retval = fp.slotToLocation(slot);
 
                 fp.free( slot );
                 if ( fp.getCount() == 0 ) {
@@ -92,34 +92,34 @@ final class FreePhysicalRowIdPageManager
     void put(Location rowid, int size)
   throws IOException {
 
-  FreePhysicalRowId free = null;
+  short freePhysRowId = -1;
+  FreePhysicalRowIdPage fp = null;
   PageCursor curs = new PageCursor(_pageman, Magic.FREEPHYSIDS_PAGE);
   long freePage = 0;
   while (curs.next() != 0) {
       freePage = curs.getCurrent();
       BlockIo curBlock = _file.get(freePage);
-      FreePhysicalRowIdPage fp = FreePhysicalRowIdPage
+      fp = FreePhysicalRowIdPage
     .getFreePhysicalRowIdPageView(curBlock);
       int slot = fp.getFirstFree();
       if (slot != -1) {
-    free = fp.alloc(slot);
+    	  freePhysRowId = fp.alloc(slot);
     break;
       }
 
       _file.release(curBlock);
   }
-  if (free == null) {
+  if (freePhysRowId == -1) {
       // No more space on the free list, add a page.
       freePage = _pageman.allocate(Magic.FREEPHYSIDS_PAGE);
       BlockIo curBlock = _file.get(freePage);
-      FreePhysicalRowIdPage fp =
+      fp =
     FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock);
-      free = fp.alloc(0);
+      freePhysRowId = fp.alloc(0);
   }
-
-  free.setBlock(rowid.getBlock());
-  free.setOffset(rowid.getOffset());
-  free.setSize(size);
+  fp.PhysicalRowId_setBlock(freePhysRowId, rowid.getBlock());
+  fp.PhysicalRowId_setOffset(freePhysRowId, rowid.getOffset());
+  fp.FreePhysicalRowId_setSize(freePhysRowId, size);
   _file.release(freePage, true);
     }
 }

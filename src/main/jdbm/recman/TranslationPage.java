@@ -27,10 +27,10 @@ final class TranslationPage extends PageHeader {
     // offsets
     static final short O_TRANS = PageHeader.SIZE; // short count
     static final short ELEMS_PER_PAGE = 
-        (RecordFile.BLOCK_SIZE - O_TRANS) / PhysicalRowId.SIZE;
+        (RecordFile.BLOCK_SIZE - O_TRANS) / PhysicalRowId_SIZE;
     
-    // slots we returned.
-    final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
+//    // slots we returned.
+//    final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
 
     /**
      *  Constructs a data page view from the indicated block.
@@ -51,11 +51,11 @@ final class TranslationPage extends PageHeader {
             return new TranslationPage(block);
     }
 
-    /** Returns the value of the indicated rowid on the page */
-    PhysicalRowId get(short offset) {
-        int slot = (offset - O_TRANS) / PhysicalRowId.SIZE;
-        if (slots[slot] == null) 
-            slots[slot] = new PhysicalRowId(block, offset);
-        return slots[slot];
-    }
+//    /** Returns the value of the indicated rowid on the page */
+//    short get(short offset) {
+//        int slot = (offset - O_TRANS) / PhysicalRowId.SIZE;
+//        if (slots[slot] == null) 
+//            slots[slot] = new PhysicalRowId(block, offset);
+//        return slots[slot];
+//    }
 }

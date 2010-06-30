@@ -56,13 +56,13 @@ final class Location {
         this.block = blockOffset >> 16;
     }
 
-    /**
-     * Creates a location based on the data of the physical rowid.
-     */
-    Location(PhysicalRowId src) {
-        block = src.getBlock();
-        offset = src.getOffset();
-    }
+//    /**
+//     * Creates a location based on the data of the physical rowid.
+//     */
+//    Location(PhysicalRowId src) {
+//        block = src.getBlock();
+//        offset = src.getOffset();
+//    }
 
     /**
      * Returns the file block of the location

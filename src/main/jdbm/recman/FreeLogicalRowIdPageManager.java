@@ -55,8 +55,8 @@ final class FreeLogicalRowIdPageManager {
             int slot = fp.getFirstAllocated();
             if (slot != -1) {
                 // got one!
-                retval =
-                    new Location(fp.get(slot));
+                retval = fp.slotToLocation(slot);
+                    
                 fp.free(slot);
                 if (fp.getCount() == 0) {
                     // page became empty - free it
@@ -82,32 +82,33 @@ final class FreeLogicalRowIdPageManager {
     void put(Location rowid)
     throws IOException {
         
-        PhysicalRowId free = null;
+        short  physRowIdPos = -1;
+        FreeLogicalRowIdPage fp = null;
         PageCursor curs = new PageCursor(pageman, Magic.FREELOGIDS_PAGE);
         long freePage = 0;
         while (curs.next() != 0) {
             freePage = curs.getCurrent();
             BlockIo curBlock = file.get(freePage);
-            FreeLogicalRowIdPage fp = FreeLogicalRowIdPage
+            fp = FreeLogicalRowIdPage
                 .getFreeLogicalRowIdPageView(curBlock);
             int slot = fp.getFirstFree();
             if (slot != -1) {
-                free = fp.alloc(slot);
+            	physRowIdPos = fp.alloc(slot);
                 break;
             }
             
             file.release(curBlock);
         }
-        if (free == null) {
+        if (physRowIdPos == -1) {
             // No more space on the free list, add a page.
             freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
             BlockIo curBlock = file.get(freePage);
-            FreeLogicalRowIdPage fp = 
+            fp = 
                 FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock);
-            free = fp.alloc(0);
+            physRowIdPos = fp.alloc(0);
         }
-        free.setBlock(rowid.getBlock());
-        free.setOffset(rowid.getOffset());
+        fp.PhysicalRowId_setBlock(physRowIdPos, rowid.getBlock());
+        fp.PhysicalRowId_setOffset(physRowIdPos, rowid.getOffset());
         file.release(freePage, true);
     }
 }

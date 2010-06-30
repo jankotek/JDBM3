@@ -30,6 +30,11 @@ public class PageHeader implements BlockView {
     private static final short O_PREV = O_NEXT + Magic.SZ_LONG; // long prev
     protected static final short SIZE = O_PREV + Magic.SZ_LONG;
 
+    static final short PhysicalRowId_O_BLOCK = 0; // long block
+    static final short PhysicalRowId_O_OFFSET = Magic.SZ_LONG; // short offset
+    static final int PhysicalRowId_SIZE = PhysicalRowId_O_OFFSET + Magic.SZ_SHORT;
+
+    
     // my block
     protected BlockIo block;
 
@@ -125,4 +130,26 @@ public class PageHeader implements BlockView {
     void setType(short type) {
         block.writeShort(O_MAGIC, (short) (Magic.BLOCK + type));
     }
+    
+    /** Returns the block number */
+    long PhysicalRowId_getBlock(short pos) {
+        return block.readLong(pos + PhysicalRowId_O_BLOCK);
+    }
+    
+    /** Sets the block number */
+    void PhysicalRowId_setBlock(short pos,long value) {
+        block.writeLong(pos + PhysicalRowId_O_BLOCK, value);
+    }
+    
+    /** Returns the offset */
+    short PhysicalRowId_getOffset(short pos) {
+        return block.readShort(pos + PhysicalRowId_O_OFFSET);
+    }
+    
+    /** Sets the offset */
+    void PhysicalRowId_setOffset(short pos,short value) {
+        block.writeShort(pos + PhysicalRowId_O_OFFSET, value);
+    }
+
+
 }

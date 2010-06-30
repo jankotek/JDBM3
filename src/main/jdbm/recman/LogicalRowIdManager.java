@@ -50,7 +50,7 @@ final class LogicalRowIdManager {
 			short curOffset = TranslationPage.O_TRANS;
 			for (int i = 0; i < TranslationPage.ELEMS_PER_PAGE; i++) {
 				freeman.put(new Location(firstPage, curOffset));
-				curOffset += PhysicalRowId.SIZE;
+				curOffset += PageHeader.PhysicalRowId_SIZE;
 			}
 			retval = freeman.get();
 			if (retval == null) {
@@ -81,9 +81,11 @@ final class LogicalRowIdManager {
 	void update(Location rowid, Location loc) throws IOException {
 
 		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(rowid.getBlock()));
-		PhysicalRowId physid = xlatPage.get(rowid.getOffset());
-		physid.setBlock(loc.getBlock());
-		physid.setOffset(loc.getOffset());
+//		PhysicalRowId physid = xlatPage.get(rowid.getOffset());
+//		physid.setBlock(loc.getBlock());
+//		physid.setOffset(loc.getOffset());
+		xlatPage.PhysicalRowId_setBlock(rowid.getOffset(), loc.getBlock());
+		xlatPage.PhysicalRowId_setOffset(rowid.getOffset(), loc.getOffset());
 		file.release(rowid.getBlock(), true);
 	}
 
@@ -98,7 +100,9 @@ final class LogicalRowIdManager {
 
 		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(rowid.getBlock()));
 		try {
-			Location retval = new Location(xlatPage.get(rowid.getOffset()));
+			Location retval = new Location(
+					xlatPage.PhysicalRowId_getBlock(rowid.getOffset()),
+					xlatPage.PhysicalRowId_getOffset(rowid.getOffset()));
 			return retval;
 		} finally {
 			file.release(rowid.getBlock(), false);
