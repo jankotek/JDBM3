@@ -428,20 +428,21 @@ public class BTree<K,V>
             return null;
         }
 
-        Tuple<K,V> tuple = new Tuple<K,V>( null, null );
-        TupleBrowser<K,V> browser = rootPage.find( _height, key );
-
-        if ( browser.getNext( tuple ) ) {
-            // find returns the matching key or the next ordered key, so we must
-            // check if we have an exact match
-            if ( _comparator.compare( key, tuple.getKey() ) != 0 ) {
-                return null;
-            } else {
-                return tuple.getValue();
-            }
-        } else {
-            return null;
-        }
+        return rootPage.findValue( _height, key );
+//        Tuple<K,V> tuple = new Tuple<K,V>( null, null );
+//        TupleBrowser<K,V> browser = rootPage.find( _height, key );
+//
+//        if ( browser.getNext( tuple ) ) {
+//            // find returns the matching key or the next ordered key, so we must
+//            // check if we have an exact match
+//            if ( _comparator.compare( key, tuple.getKey() ) != 0 ) {
+//                return null;
+//            } else {
+//                return tuple.getValue();
+//            }
+//        } else {
+//            return null;
+//        }
     }
 
 
@@ -614,10 +615,12 @@ public class BTree<K,V>
      *  Browser returning no element.
      */
     static class EmptyBrowser<K,V>
-        extends TupleBrowser<K,V>    {
+    	implements TupleBrowser<K,V>    {
 
         @SuppressWarnings("unchecked")
 		static TupleBrowser INSTANCE = new EmptyBrowser();
+        
+        private EmptyBrowser(){}
 
         public boolean getNext( Tuple<K,V> tuple )
         {

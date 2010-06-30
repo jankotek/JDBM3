@@ -48,12 +48,14 @@ public class LongHashMap<V> implements  Serializable {
     transient int modCount = 0;	
 
     private static final int DEFAULT_SIZE = 16;
+    
+    transient Entry<V> reuseAfterDelete = null;
 
     static final class Entry<V> {
 
         Entry<V> next;
 
-        final long key;
+        long key;
         V value;
         
         public boolean equals(Object object) {
@@ -197,6 +199,14 @@ public class LongHashMap<V> implements  Serializable {
             } else {
                 lastEntry.next = entry;
             }
+            if(lastEntry!=null){
+            	Entry<VT> reuse = lastEntry;
+            	lastEntry = null;
+            	reuse.key = Long.MIN_VALUE;
+            	reuse.value = null;
+            	associatedMap.reuseAfterDelete = reuse;
+            }
+
             associatedMap.elementCount--;
             expectedModCount++;
         }
@@ -445,14 +455,30 @@ public class LongHashMap<V> implements  Serializable {
     }
 
     Entry<V> createEntry(long key, int index, V value) {
-        Entry<V> entry = new Entry<V>(key, value);
+        Entry<V> entry = reuseAfterDelete; 
+        if(entry == null){ 
+        	entry = new Entry<V>(key, value);
+        }else{
+        	reuseAfterDelete = null;
+        	entry.key = key;
+        	entry.value = value;
+        }
+        
         entry.next = elementData[index];
         elementData[index] = entry;
         return entry;
     }
 
     Entry<V> createHashedEntry(long key, int index) {
-        Entry<V> entry = new Entry<V>(key);
+        Entry<V> entry = reuseAfterDelete; 
+        if(entry == null) {
+        	entry = new Entry<V>(key);
+        }else{
+        	reuseAfterDelete = null;
+        	entry.key = key;
+        	entry.value = null;
+        }
+
         entry.next = elementData[index];
         elementData[index] = entry;
         return entry;
@@ -493,10 +519,14 @@ public class LongHashMap<V> implements  Serializable {
     
     public V remove(long key) {
         Entry<V> entry = removeEntry(key);
-        if (entry != null) {
-            return entry.value;
-        }
-        return null;
+        if(entry == null)
+        	return null;
+        V ret = entry.value;
+        entry.value = null;
+        entry.key = Long.MIN_VALUE;
+        reuseAfterDelete = entry;
+        
+        return ret;
     }
 
     Entry<V> removeEntry(long key) {

@@ -266,6 +266,48 @@ public final class BPage<K,V>
 
 
     /**
+     * Find value associated with the given key.
+     *
+     * @param height Height of the current BPage (zero is leaf page)
+     * @param key The key
+     * @return TupleBrowser positionned just before the given key, or before
+     *                      next greater key if key isn't found.
+     */
+    V findValue( int height, K key )
+        throws IOException
+    {
+        int index = findChildren( key );
+
+        /*
+        if ( DEBUG ) {
+            System.out.println( "BPage.find() current: " + this
+                                + " height: " + height);
+        }
+        */
+
+        height -= 1;
+
+        if ( height == 0 ) {
+
+            K key2 =   _keys[ index ];
+//          // find returns the matching key or the next ordered key, so we must
+//          // check if we have an exact match
+          if ( key2==null || _btree._comparator.compare( key, key2 ) != 0 ) 
+              return null;
+            
+            return _values[ index ];
+
+            // leaf BPage
+            //return new Browser<K,V>( this, index );
+        } else {
+            // non-leaf BPage
+            BPage<K,V> child = childBPage( index );
+            return child.findValue( height, key );
+        }
+    }
+
+
+    /**
      * Find first entry and return a browser positioned before it.
      *
      * @return TupleBrowser positionned just before the first entry.
@@ -1141,7 +1183,7 @@ public final class BPage<K,V>
      * Browser to traverse leaf BPages.
      */
     static class Browser<K,V>
-        extends TupleBrowser<K,V>
+        implements TupleBrowser<K,V>
     {
 
         /**
