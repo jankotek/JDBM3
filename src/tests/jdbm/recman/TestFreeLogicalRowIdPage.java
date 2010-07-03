@@ -52,14 +52,14 @@ public class TestFreeLogicalRowIdPage extends TestCase {
   assertEquals("zero count", 0, page.getCount());
 
   // three allocs
-  PhysicalRowId id = page.alloc(0);
+  short id = page.alloc(0);
   id = page.alloc(1);
   id = page.alloc(2);
   assertEquals("three count", 3, page.getCount());
 
   // setup last id (2)
-  id.setBlock(1);
-  id.setOffset((short) 2);
+  page.PhysicalRowId_setBlock(id, 1);
+  page.PhysicalRowId_setOffset(id,(short) 2);
 
   // two frees
   page.free(0);
@@ -78,9 +78,9 @@ public class TestFreeLogicalRowIdPage extends TestCase {
   assertTrue("2: isfree 1", page.isFree(1));
   assertTrue("2: isalloc 2", page.isAllocated(2));
 
-  id = page.get(2);
-  assertEquals("block", 1, id.getBlock());
-  assertEquals("offset", 2, id.getOffset());
+  id = page.slotToOffset(2);
+  assertEquals("block", 1, page.PhysicalRowId_getBlock(id));
+  assertEquals("offset", 2, page.PhysicalRowId_getOffset(id));
 
     }
 

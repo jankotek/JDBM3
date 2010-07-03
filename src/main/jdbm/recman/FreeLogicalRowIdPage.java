@@ -111,7 +111,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
 //    
 
     /** Converts slot to offset */
-    private short slotToOffset(int slot) {
+    short slotToOffset(int slot) {
         return (short) (O_FREE +
                         (slot * PhysicalRowId_SIZE));
     }
