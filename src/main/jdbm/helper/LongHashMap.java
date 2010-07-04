@@ -537,7 +537,7 @@ public class LongHashMap<V> implements  Serializable {
         int hash = (int)(key);
         index = (hash & 0x7FFFFFFF) % elementData.length;
         entry = elementData[index];
-         while (entry != null && !(((int)entry.key) == hash && key == entry.key)) {
+         while (entry != null && !(/*((int)entry.key) == hash &&*/ key == entry.key)) {
              last = entry;
               entry = entry.next;
          }
