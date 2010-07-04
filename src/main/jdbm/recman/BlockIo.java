@@ -200,6 +200,31 @@ public final class BlockIo {
         data[pos+3] = (byte)(0xff & (value >>  0));
         setDirty();
     }
+    
+    static final int ThreeByteInt_MAX = 256 * 256 * 256 -1;
+    
+    /**
+     *  Reads an int from the indicated position
+     */
+    public int readThreeByteInt(int pos) {
+        return
+            (
+             ((int)(data[pos+0] & 0xff) << 16) |
+             ((int)(data[pos+1] & 0xff) <<  8) |
+             ((int)(data[pos+2] & 0xff) <<  0));
+    }
+
+    /**
+     *  Writes an int to the indicated position
+     */
+    public void writeThreeByteInt(int pos, int value) {
+    	if(value<0 || value>ThreeByteInt_MAX)
+    		throw new IllegalArgumentException("out of range: "+value);
+        data[pos+0] = (byte)(0xff & (value >> 16));
+        data[pos+1] = (byte)(0xff & (value >>  8));
+        data[pos+2] = (byte)(0xff & (value >>  0));
+        setDirty();
+    }
 
     /**
      *  Reads a long from the indicated position
@@ -269,5 +294,22 @@ public final class BlockIo {
     	LongPacker.packInt(out, data.length);
         out.write(data);
     }
+
+    static final int UNSIGNED_SHORT_MAX = 256 * 256 -1;  
+
+   
+	public void writeUnsignedShort(int pos, int value) {
+		if(value>UNSIGNED_SHORT_MAX || value<0)
+			throw new IllegalArgumentException("Out of range: "+value);
+        data[pos+0] = (byte)(0xff & (value >>  8));
+        data[pos+1] = (byte)(0xff & (value >>  0));
+        setDirty();		
+	}
+	
+	public int readUnsignedshort(int pos){
+      return 
+        (((int)(data[pos+0] & 0xff) <<  8) |
+        ((int)(data[pos+1] & 0xff) <<  0));
+	}
 
 }

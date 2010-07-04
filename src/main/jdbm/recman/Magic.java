@@ -49,8 +49,13 @@ public interface Magic {
     public short SZ_BYTE = 1;
     /** Size of an externalized short */
     public short SZ_SHORT = 2;
+    /** Size of an externalized unsigned short */
+    public short SZ_UNSIGNED_SHORT = 2;    
     /** Size of an externalized int */
     public short SZ_INT = 4;
     /** Size of an externalized long */
     public short SZ_LONG = 8;
+
+    /** size of three byte integer */
+	public short SZ_THREE_BYTE_INT = 3;
 }

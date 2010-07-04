@@ -30,6 +30,7 @@ final class PhysicalRowIdManager
     private RecordFile file;
     private PageManager pageman;
     private FreePhysicalRowIdPageManager freeman;
+   
 
     /**
      *  Creates a new rowid manager using the indicated record file.
@@ -69,8 +70,14 @@ final class PhysicalRowIdManager
         // fetch the record header
         BlockIo block = file.get( rowid.getBlock() );
         RecordHeader head = new RecordHeader( block, rowid.getOffset() );
-        if ( length > head.getAvailableSize() ) {
-            // not enough space - we need to copy to a new rowid.
+        int availSize = head.getAvailableSize();
+        if (// not enough space - we need to copy to a new rowid.
+        		length > availSize 
+        		||
+        	//this would create too big free space, move to new location
+        		availSize > RecordHeader.MAX_SIZE_SPACE + length
+        		) {
+
             file.release( block );
             free( rowid );
             rowid = alloc( length );
@@ -192,9 +199,10 @@ final class PhysicalRowIdManager
      */
     private Location alloc( int size )
         throws IOException
-    {
+    {    
         Location retval = freeman.get( size );
         if ( retval == null ) {
+        	size = RecordHeader.roundAvailableSize(size);
             retval = allocNew( size, pageman.getLast( Magic.USED_PAGE ) );
         }
         return retval;
@@ -259,13 +267,16 @@ final class PhysicalRowIdManager
             // check whether the last page would have only a small bit left.
             // if yes, increase the allocation. A small bit is a record
             // header plus 16 bytes.
-            int lastSize = (size - freeHere) % DataPage.DATA_PER_PAGE;
-            if (( DataPage.DATA_PER_PAGE - lastSize ) < (RecordHeader.SIZE + 16) ) {
-                size += (DataPage.DATA_PER_PAGE - lastSize);
-            }
+        	// note: size can be linearly increased only at first multiplyer level        	
+        	if(size<RecordHeader.base1-100){ //make sure page rounding does not overflow
+        		int lastSize = (size - freeHere) % DataPage.DATA_PER_PAGE;
+        		if (( DataPage.DATA_PER_PAGE - lastSize ) < (RecordHeader.SIZE + 16) ) {
+        			size += (DataPage.DATA_PER_PAGE - lastSize); 
+        		}
+        	}
 
             // write out the header now so we don't have to come back.
-            hdr.setAvailableSize( size );
+            hdr.setAvailableSize(size );
             file.release( start, true );
 
             int neededLeft = size - freeHere;
@@ -290,9 +301,12 @@ final class PhysicalRowIdManager
             // just update the current page. If there's less than 16 bytes
             // left, we increase the allocation (16 bytes is an arbitrary
             // number).
-            if ( freeHere - size <= (16 + RecordHeader.SIZE) ) {
-                size = freeHere;
-            }
+        	// note: size can be linearly increased only at first multiplyer level
+        	if(size<RecordHeader.base1-100){ //make page rounding does not overflow 
+        		if ( freeHere - size <= (16 + RecordHeader.SIZE) ) {
+        			size = freeHere;
+        		}
+        	}
             hdr.setAvailableSize( size );
             file.release( start, true );
         }

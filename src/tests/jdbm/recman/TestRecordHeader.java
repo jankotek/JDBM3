@@ -16,36 +16,66 @@
 
 package jdbm.recman;
 
+import java.util.Random;
+
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
- *  This class contains all Unit tests for {@link RecordHeader}.
+ * This class contains all Unit tests for {@link RecordHeader}.
  */
 public class TestRecordHeader extends TestCase {
 
-    public TestRecordHeader(String name) {
-  super(name);
-    }
+	public TestRecordHeader(String name) {
+		super(name);
+	}
 
-    /**
-     *  Test basics - read and write at an offset
-     */
-    public void testReadWrite() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
-  BlockIo test = new BlockIo(0, data);
-  RecordHeader hdr = new RecordHeader(test, (short) 6);
-  hdr.setCurrentSize(1000);
-  hdr.setAvailableSize((short) 2345);
-  
-  assertEquals("current size", 1000, hdr.getCurrentSize());
-  assertEquals("available size", 2345, hdr.getAvailableSize());
-    }
-    
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-  junit.textui.TestRunner.run(new TestSuite(TestRecordHeader.class));
-    }
+	/**
+	 * Test basics - read and write at an offset
+	 */
+	public void testReadWrite() throws Exception {
+		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		BlockIo test = new BlockIo(0, data);
+		RecordHeader hdr = new RecordHeader(test, (short) 6);
+		hdr.setAvailableSize(2345);
+		hdr.setCurrentSize(1000);
+
+		assertEquals("current size", 1000, hdr.getCurrentSize());
+		assertEquals("available size", 2345, hdr.getAvailableSize());
+	}
+	
+	public void testRecordSize(){
+		//System.out.println("size "+RecordHeader.roundAvailableSize(100000));
+		
+		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		BlockIo test = new BlockIo(0, data);
+		Random r = new Random();
+		RecordHeader hdr = new RecordHeader(test, (short) 6);
+		double size = 2;
+		while(size<RecordHeader.MAX_RECORD_SIZE){
+			//set size
+			int currSize = (int) size;
+			int availSize = RecordHeader.roundAvailableSize(currSize);
+			 
+			assertTrue(availSize - currSize<RecordHeader.MAX_SIZE_SPACE);
+			assertTrue(currSize<=availSize);
+
+			//make sure it writes and reads back correctly
+			hdr.setAvailableSize(availSize);
+			hdr.setCurrentSize(currSize);
+
+			assertEquals("current size", currSize, hdr.getCurrentSize());
+			assertEquals("available size", availSize, hdr.getAvailableSize());
+			
+			//try random size within given offset
+			int newCurrSize = availSize - r.nextInt(RecordHeader.MAX_SIZE_SPACE);
+			if(newCurrSize<0) newCurrSize = 0;
+			hdr.setCurrentSize(newCurrSize);
+			assertEquals("current size", newCurrSize, hdr.getCurrentSize());
+			
+			hdr.setCurrentSize(0);
+			size = size * 1.1;
+		}
+
+	}
+
 }
