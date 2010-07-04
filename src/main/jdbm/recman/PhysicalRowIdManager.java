@@ -69,8 +69,8 @@ final class PhysicalRowIdManager
     {
         // fetch the record header
         BlockIo block = file.get( rowid.getBlock() );
-        RecordHeader head = new RecordHeader( block, rowid.getOffset() );
-        int availSize = head.getAvailableSize();
+        //RecordHeader head = new RecordHeader( block, rowid.getOffset() );
+        int availSize = RecordHeader.getAvailableSize(block, rowid.getOffset() );
         if (// not enough space - we need to copy to a new rowid.
         		length > availSize 
         		||
@@ -153,11 +153,11 @@ final class PhysicalRowIdManager
   // fetch the record header
   PageCursor curs = new PageCursor( pageman, rowid.getBlock() );
   BlockIo block = file.get( curs.getCurrent() );
-  RecordHeader head = new RecordHeader( block, rowid.getOffset() );
+  //RecordHeader head = new RecordHeader( block, rowid.getOffset() );
 
   // allocate a return buffer
   //byte[] retval = new byte[ head.getCurrentSize() ];
-  final int size = head.getCurrentSize();
+  final int size = RecordHeader.getCurrentSize( block, rowid.getOffset());
   if ( size == 0 ) {
       file.release( curs.getCurrent(), false );
       return;
@@ -224,9 +224,8 @@ final class PhysicalRowIdManager
             curBlock = file.get( start );
             curPage = DataPage.getDataPageView( curBlock );
             curPage.setFirst( DataPage.O_DATA );
-            RecordHeader hdr = new RecordHeader( curBlock, DataPage.O_DATA );
-            hdr.setAvailableSize( 0 );
-            hdr.setCurrentSize( 0 );
+            RecordHeader.setAvailableSize(curBlock, DataPage.O_DATA, 0 );
+            RecordHeader.setCurrentSize(curBlock, DataPage.O_DATA, 0 );
         } else {
             curBlock = file.get( start );
             curPage = DataPage.getDataPageView( curBlock );
@@ -241,16 +240,16 @@ final class PhysicalRowIdManager
             return allocNew( size, 0 );
         }
 
-        RecordHeader hdr = new RecordHeader( curBlock, pos );
-        while ( hdr.getAvailableSize() != 0 && pos < RecordFile.BLOCK_SIZE ) {
-            pos += hdr.getAvailableSize() + RecordHeader.SIZE;
+//        RecordHeader hdr = new RecordHeader( curBlock, pos );
+        while ( RecordHeader.getAvailableSize(curBlock,pos) != 0 && pos < RecordFile.BLOCK_SIZE ) {
+            pos += RecordHeader.getAvailableSize(curBlock,pos) + RecordHeader.SIZE;
             if ( pos == RecordFile.BLOCK_SIZE ) {
                 // Again, a filled page.
                 file.release( curBlock );
                 return allocNew( size, 0 );
             }
 
-            hdr = new RecordHeader( curBlock, pos );
+//            hdr = new RecordHeader( curBlock, pos );
         }
 
         if ( pos == RecordHeader.SIZE ) {
@@ -276,7 +275,7 @@ final class PhysicalRowIdManager
         	}
 
             // write out the header now so we don't have to come back.
-            hdr.setAvailableSize(size );
+        	RecordHeader.setAvailableSize(curBlock, pos,size );
             file.release( start, true );
 
             int neededLeft = size - freeHere;
@@ -302,12 +301,12 @@ final class PhysicalRowIdManager
             // left, we increase the allocation (16 bytes is an arbitrary
             // number).
         	// note: size can be linearly increased only at first multiplyer level
-        	if(size<RecordHeader.base1-100){ //make page rounding does not overflow 
+        	if(size<10000){ //make page rounding does not overflow 
         		if ( freeHere - size <= (16 + RecordHeader.SIZE) ) {
         			size = freeHere;
         		}
         	}
-            hdr.setAvailableSize( size );
+            RecordHeader.setAvailableSize(curBlock,pos, size );
             file.release( start, true );
         }
         return retval;
@@ -321,12 +320,12 @@ final class PhysicalRowIdManager
         // get the rowid, and write a zero current size into it.
         BlockIo curBlock = file.get( id.getBlock() );
         DataPage curPage = DataPage.getDataPageView( curBlock );
-        RecordHeader hdr = new RecordHeader( curBlock, id.getOffset() );
-        hdr.setCurrentSize( 0 );
+//        RecordHeader hdr = new RecordHeader( curBlock, id.getOffset() );
+        RecordHeader.setCurrentSize(curBlock, id.getOffset(), 0 );
         file.release( id.getBlock(), true );
 
         // write the rowid to the free list
-        freeman.put( id, hdr.getAvailableSize() );
+        freeman.put( id, RecordHeader.getAvailableSize( curBlock, id.getOffset()) );
     }
 
     /**
@@ -338,8 +337,8 @@ final class PhysicalRowIdManager
     {
         PageCursor curs = new PageCursor( pageman, rowid.getBlock() );
         BlockIo block = file.get( curs.getCurrent() );
-        RecordHeader hdr = new RecordHeader( block, rowid.getOffset() );
-        hdr.setCurrentSize( length );
+        //RecordHeader hdr = new RecordHeader( block, rowid.getOffset() );
+        RecordHeader.setCurrentSize(block, rowid.getOffset(), length );
         if ( length == 0 ) {
             file.release( curs.getCurrent(), true );
             return;

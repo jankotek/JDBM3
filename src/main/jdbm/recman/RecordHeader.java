@@ -36,45 +36,45 @@ final class RecordHeader {
      */
     static final int MAX_SIZE_SPACE = BlockIo.UNSIGNED_SHORT_MAX -1;
     
-    // my block and the position within the block
-    final private BlockIo block;
-    final private short pos;
-
-    /**
-     *  Constructs a record header from the indicated data starting at
-     *  the indicated position.
-     */
-    RecordHeader(BlockIo block, short pos) {
-        this.block = block;
-        this.pos = pos;
-        if (pos > (RecordFile.BLOCK_SIZE - SIZE))
-            throw new Error("Offset too large for record header (" 
-                            + block.getBlockId() + ":" 
-                            + pos + ")");
-    }
+//    // my block and the position within the block
+//    final private BlockIo block;
+//    final private short pos;
+//
+//    /**
+//     *  Constructs a record header from the indicated data starting at
+//     *  the indicated position.
+//     */
+//    RecordHeader(BlockIo block, short pos) {
+//        this.block = block;
+//        this.pos = pos;
+//        if (pos > (RecordFile.BLOCK_SIZE - SIZE))
+//            throw new Error("Offset too large for record header (" 
+//                            + block.getBlockId() + ":" 
+//                            + pos + ")");
+//    }
 
     /** Returns the current size */
-    int getCurrentSize() {
+    static int getCurrentSize(final BlockIo block, final short pos) {
     	int s = block.readUnsignedshort(pos + O_CURRENTSIZE);
     	if(s == BlockIo.UNSIGNED_SHORT_MAX)
     		return 0;
-        return getAvailableSize() - s;
+        return getAvailableSize(block, pos) - s;
     }
     
     /** Sets the current size */
-    void setCurrentSize(int value) {
+    static void setCurrentSize(final BlockIo block, final short pos,int value) {
     	if(value == 0){
     		block.writeUnsignedShort(pos + O_CURRENTSIZE, BlockIo.UNSIGNED_SHORT_MAX);
     		return;
     	}
-        int availSize = getAvailableSize();
+        int availSize = getAvailableSize(block,pos);
         if(value < (availSize - MAX_SIZE_SPACE) || value>availSize)
         	throw new IllegalArgumentException("currentSize out of bounds, need to realocate "+value+ " - "+availSize);
     	block.writeUnsignedShort(pos + O_CURRENTSIZE, availSize - value);
     }
     
     /** Returns the available size */
-    int getAvailableSize() {
+    static int getAvailableSize(final BlockIo block, final short pos) {
         int val  = block.readUnsignedshort(pos + O_AVAILABLESIZE);
         int multiplier = val & sizeMask;
         int counter = val - multiplier;
@@ -88,11 +88,11 @@ final class RecordHeader {
     }
     
     /** Sets the available size */
-    void setAvailableSize(int value) {    	
+    static void setAvailableSize(final BlockIo block, final short pos,int value) {    	
     	//TODO remove assertion in production code
 //    	if(value != roundAvailableSize(value))
 //    		throw new IllegalArgumentException("value is not rounded");
-    	int oldCurrSize = getCurrentSize();
+    	int oldCurrSize = getCurrentSize(block,pos);
     	int multiplyer = 0;
     	int counter = 0;
     	if(value<base1){
@@ -112,7 +112,7 @@ final class RecordHeader {
     		throw new InternalError(""+value);
         	
         block.writeUnsignedShort(pos + O_AVAILABLESIZE, multiplyer | counter);
-        setCurrentSize(oldCurrSize);
+        setCurrentSize(block,pos,oldCurrSize);
     }
     
     static final int sizeMask = 1<<15 | 1<<14;
@@ -145,10 +145,10 @@ final class RecordHeader {
     }
 
 
-    public String toString() {
-        return "RH(" + block.getBlockId() + ":" + pos 
-            + ", avl=" + getAvailableSize()
-            + ", cur=" + getCurrentSize() 
-            + ")";
-    }
+//    public String toString() {
+//        return "RH(" + block.getBlockId() + ":" + pos 
+//            + ", avl=" + getAvailableSize()
+//            + ", cur=" + getCurrentSize() 
+//            + ")";
+//    }
 }
