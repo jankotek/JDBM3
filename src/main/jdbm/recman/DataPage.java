@@ -23,24 +23,25 @@ final class DataPage extends PageHeader {
 	// offsets
 	private static final short O_FIRST = PageHeader.SIZE; // short firstrowid
 	static final short O_DATA = (short) (O_FIRST + Magic.SZ_SHORT);
-	static final short DATA_PER_PAGE = (short) (RecordFile.BLOCK_SIZE - O_DATA);
+	final short DATA_PER_PAGE ;
 
 	/**
 	 * Constructs a data page view from the indicated block.
 	 */
-	DataPage(BlockIo block) {
+	DataPage(BlockIo block, int blockSize) {
 		super(block);
+		DATA_PER_PAGE = (short) (blockSize - O_DATA);
 	}
 
 	/**
 	 * Factory method to create or return a data page for the indicated block.
 	 */
-	static DataPage getDataPageView(BlockIo block) {
+	static DataPage getDataPageView(BlockIo block, int blockSize) {
 		BlockView view = block.getView();
 		if (view != null && view instanceof DataPage)
 			return (DataPage) view;
 		else
-			return new DataPage(block);
+			return new DataPage(block, blockSize);
 	}
 
 	/** Returns the first rowid's offset */

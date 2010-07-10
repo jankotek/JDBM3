@@ -37,7 +37,7 @@ import jdbm.helper.LongHashMap;
  *<p>
  *  RecordFile is splited between more files, each with max size 1GB. 
  */
-public final class RecordFile {
+final class RecordFile {
     final TransactionManager txnMgr;
 
     // Todo: reorganize in hashes and fifos as necessary.
@@ -52,7 +52,7 @@ public final class RecordFile {
      * @see BlockIo#isDirty()
      */
     private final LongHashMap<BlockIo> inUse = new LongHashMap<BlockIo>();
-
+   
     /**
      * Blocks whose state is dirty.
      */
@@ -66,22 +66,26 @@ public final class RecordFile {
 
     // transactions disabled?
     private boolean transactionsDisabled = false;
+    
+    static final int DEFAULT_BLOCK_SIZE = 4096;
 
-    /** The length of a single block. */
-    public final static int BLOCK_SIZE = 8192;//4096;
-    /** maximal file size not rounded to block size */
-    private final static long _XXXXX = 1000000000l;
-    public final static long MAX_FILE_SIZE = _XXXXX - _XXXXX%BLOCK_SIZE;
+//    /** The length of a single block. */
+    final int BLOCK_SIZE ;//= 8192;//4096;
+//    /** maximal file size not rounded to block size */
+    private final static long _FILESIZE = 1000000000l;
+    private final long MAX_FILE_SIZE;// = _FILESIZE - _FILESIZE%BLOCK_SIZE;
 
-    /** The extension of a record file */
-    final static String extension = ".db";
 
     /** A block of clean data to wipe clean pages. */
-    final static byte[] cleanData = new byte[BLOCK_SIZE];
+    final byte[] cleanData;
 
     private ArrayList<FileChannel> fileChannels = new ArrayList<FileChannel>();
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
     private final String fileName;
+    
+    RecordFile(String fileName) throws IOException {
+    	this(fileName,DEFAULT_BLOCK_SIZE);
+    }
 
     /**
      *  Creates a new object on the indicated filename. The file is
@@ -92,7 +96,10 @@ public final class RecordFile {
      *  @throws IOException whenever the creation of the underlying
      *          RandomAccessFile throws it.
      */
-    RecordFile(String fileName) throws IOException {
+    RecordFile(String fileName, int blockSize) throws IOException {
+    	this.BLOCK_SIZE = blockSize;
+    	MAX_FILE_SIZE =  _FILESIZE - _FILESIZE%BLOCK_SIZE;
+    	cleanData = new byte[BLOCK_SIZE];
         this.fileName = fileName;
 //        file0 = new RandomAccessFile(fileName + extension, "rw"); 
 //        file = file0.getChannel();
@@ -118,7 +125,7 @@ public final class RecordFile {
     		
 		FileChannel ret = fileChannels.get(fileNumber);
 		if(ret == null){
-			String name = fileName+"."+fileNumber+extension;
+			String name = fileName+"."+fileNumber;
 			RandomAccessFile f = new RandomAccessFile(name, "rw");
 			rafs.set(fileNumber, f);
 			ret = f.getChannel();			
@@ -176,7 +183,7 @@ public final class RecordFile {
 
          // sanity check: can't be on in use list
          if (inUse.get(blockid) != null) {
-             throw new Error("double get for block " + blockid);
+             throw new Error("double get for block " + blockid );
          }
 
          // get a new node and read it from the file
@@ -193,15 +200,14 @@ public final class RecordFile {
          return node;
      }
 
-
+     
     /**
      *  Releases a block.
      *
      *  @param blockid The record number to release.
      *  @param isDirty If true, the block was modified since the get().
      */
-    void release(long blockid, boolean isDirty)
-    throws IOException {
+    void release(long blockid, boolean isDirty) throws IOException {
         BlockIo node = inUse.get(blockid);
         if (node == null)
             throw new IOException("bad blockid " + blockid + " on release");
@@ -445,7 +451,7 @@ public final class RecordFile {
     /**
      * Utility method: Read a block from a RandomAccessFile
      */
-    private static void read(FileChannel file, long offset,
+    private void read(FileChannel file, long offset,
                              byte[] buffer, int nBytes) throws IOException {
         file.position(offset);
         int remaining = nBytes;

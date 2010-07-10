@@ -74,7 +74,7 @@ public final class TransactionManager {
     private int curTxn = -1;
 
     /** Extension of a log file. */
-    static final String extension = ".lg";
+    static final String extension = ".t";
 
     /**
      *  Instantiates a transaction manager instance. If recovery

@@ -26,8 +26,7 @@ package jdbm.recman;
 final class TranslationPage extends PageHeader {
     // offsets
     static final short O_TRANS = PageHeader.SIZE; // short count
-    static final short ELEMS_PER_PAGE = 
-        (RecordFile.BLOCK_SIZE - O_TRANS) / PhysicalRowId_SIZE;
+    
     
 //    // slots we returned.
 //    final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
@@ -35,20 +34,21 @@ final class TranslationPage extends PageHeader {
     /**
      *  Constructs a data page view from the indicated block.
      */
-    TranslationPage(BlockIo block) {
+    TranslationPage(BlockIo block, int blockSize) {
         super(block);
+        
     }
 
     /**
      *  Factory method to create or return a data page for the
      *  indicated block.
      */
-    static TranslationPage getTranslationPageView(BlockIo block) {
+    static TranslationPage getTranslationPageView(BlockIo block, int blockSize) {
         BlockView view = block.getView();
         if (view != null && view instanceof TranslationPage)
             return (TranslationPage) view;
         else
-            return new TranslationPage(block);
+            return new TranslationPage(block, blockSize);
     }
 
 //    /** Returns the value of the indicated rowid on the page */

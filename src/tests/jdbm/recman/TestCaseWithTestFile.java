@@ -31,7 +31,7 @@ import junit.framework.TestCase;
  */
 public abstract class TestCaseWithTestFile extends TestCase {
 
-	public static final String testFolder = "_testdb";
+	public static final String testFolder = System.getProperty("java.io.tmpdir",".") + "/_testdb";
 //	public static final String testFileName = "test";
 
 	public static void deleteFile(String filename) {

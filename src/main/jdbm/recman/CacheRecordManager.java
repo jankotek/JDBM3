@@ -559,6 +559,11 @@ public class CacheRecordManager
         _last = null;
 		
 	}
+
+
+	public void defrag() throws IOException {
+		_recman.defrag();		
+	}
   
 
 }

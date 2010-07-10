@@ -33,8 +33,9 @@ class FileHeader implements BlockView {
     private BlockIo block;
 
     /** The number of "root" rowids available in the file. */
-    static final int NROOTS = 
-        (RecordFile.BLOCK_SIZE - O_ROOTS) / Magic.SZ_LONG;
+    static final int NROOTS = (1024 - O_ROOTS) / Magic.SZ_LONG;
+    	//FIXME should this be dynamic
+        //(RecordFile.BLOCK_SIZE - O_ROOTS) / Magic.SZ_LONG;
 
     /**
      *  Constructs a FileHeader object from a block.

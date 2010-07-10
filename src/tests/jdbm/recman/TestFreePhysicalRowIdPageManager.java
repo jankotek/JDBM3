@@ -46,8 +46,8 @@ public class TestFreePhysicalRowIdPageManager extends TestCaseWithTestFile {
 				f, pm);
 
 		// allocate 10,000 bytes - should fail on an empty file.
-		Location loc = freeMgr.get(10000);
-		assertTrue("loc is not null?", loc == null);
+		long loc = freeMgr.get(10000);
+		assertTrue("loc is not null?", loc == 0);
 
 		pm.close();
 		f.close();

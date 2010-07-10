@@ -28,6 +28,7 @@ final class FreeLogicalRowIdPageManager {
     private RecordFile file;
     // our page manager
     private PageManager pageman;
+	private int blockSize;
 
     /**
      *  Creates a new instance using the indicated record file and
@@ -37,21 +38,22 @@ final class FreeLogicalRowIdPageManager {
                                 PageManager pageman) throws IOException {
         this.file = file;
         this.pageman = pageman;
+        this.blockSize = file.BLOCK_SIZE;
     }
 
     /**
      *  Returns a free Logical rowid, or
-     *  null if nothing was found.
+     *  0 if nothing was found.
      */
-    Location get() throws IOException {
+    long get() throws IOException {
   
         // Loop through the free Logical rowid list until we find
         // the first rowid.
-        Location retval = null;
+        long retval = 0;
         PageCursor curs = new PageCursor(pageman, Magic.FREELOGIDS_PAGE);
         while (curs.next() != 0) {
             FreeLogicalRowIdPage fp = FreeLogicalRowIdPage
-                .getFreeLogicalRowIdPageView(file.get(curs.getCurrent()));
+                .getFreeLogicalRowIdPageView(file.get(curs.getCurrent()),blockSize);
             int slot = fp.getFirstAllocated();
             if (slot != -1) {
                 // got one!
@@ -73,13 +75,13 @@ final class FreeLogicalRowIdPageManager {
                 file.release(curs.getCurrent(), false);
             }     
         }
-        return null;
+        return 0;
     }
 
     /**
      *  Puts the indicated rowid on the free list
      */
-    void put(Location rowid)
+    void put(long rowid)
     throws IOException {
         
         short  physRowIdPos = -1;
@@ -90,7 +92,7 @@ final class FreeLogicalRowIdPageManager {
             freePage = curs.getCurrent();
             BlockIo curBlock = file.get(freePage);
             fp = FreeLogicalRowIdPage
-                .getFreeLogicalRowIdPageView(curBlock);
+                .getFreeLogicalRowIdPageView(curBlock,blockSize);
             int slot = fp.getFirstFree();
             if (slot != -1) {
             	physRowIdPos = fp.alloc(slot);
@@ -104,11 +106,11 @@ final class FreeLogicalRowIdPageManager {
             freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
             BlockIo curBlock = file.get(freePage);
             fp = 
-                FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock);
+                FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock,blockSize);
             physRowIdPos = fp.alloc(0);
         }
-        fp.PhysicalRowId_setBlock(physRowIdPos, rowid.getBlock());
-        fp.PhysicalRowId_setOffset(physRowIdPos, rowid.getOffset());
+        fp.PhysicalRowId_setBlock(physRowIdPos, Location.getBlock(rowid));
+        fp.PhysicalRowId_setOffset(physRowIdPos,Location.getOffset(rowid));
         file.release(freePage, true);
     }
 }

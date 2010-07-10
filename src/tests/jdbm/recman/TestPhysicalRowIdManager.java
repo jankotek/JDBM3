@@ -31,7 +31,10 @@ public class TestPhysicalRowIdManager extends TestCaseWithTestFile {
     public void testCtor() throws Exception {
         RecordFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
+        RecordFile free = newRecordFile();
+        PageManager pmfree = new PageManager(free);
+
+        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm,new FreePhysicalRowIdPageManager(free, pmfree));
 
         f.forceClose();
     }
@@ -41,13 +44,15 @@ public class TestPhysicalRowIdManager extends TestCaseWithTestFile {
      */
     public void testBasics() throws Exception {
 
-        RecordFile f = newRecordFile();
+        RecordFile f = newRecordFile();        
         PageManager pm = new PageManager(f);
-        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
+        RecordFile free = newRecordFile();
+        PageManager pmfree = new PageManager(free);
+        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm, new FreePhysicalRowIdPageManager(free, pmfree));
 
         // insert a 10,000 byte record.
         byte[] data = TestUtil.makeRecord(10000, (byte) 1);
-        Location loc = physMgr.insert( data, 0, data.length );
+        long loc = physMgr.insert( data, 0, data.length );
 		ByteArrayOutputStream a1 = new ByteArrayOutputStream();
 		physMgr.fetch(a1,loc);
         assertTrue("check data1",
@@ -55,7 +60,7 @@ public class TestPhysicalRowIdManager extends TestCaseWithTestFile {
 
         // update it as a 20,000 byte record.
         data = TestUtil.makeRecord(20000, (byte) 2);
-        Location loc2 = physMgr.update(loc, data, 0, data.length );
+        long loc2 = physMgr.update(loc, data, 0, data.length );
 		ByteArrayOutputStream a2 = new ByteArrayOutputStream();
 		physMgr.fetch(a2,loc2);
         assertTrue("check data2",
@@ -64,7 +69,7 @@ public class TestPhysicalRowIdManager extends TestCaseWithTestFile {
         // insert a third record. This'll effectively block the first one
         // from growing
         data = TestUtil.makeRecord(20, (byte) 3);
-        Location loc3 = physMgr.insert(data, 0, data.length );
+        long loc3 = physMgr.insert(data, 0, data.length );
 		ByteArrayOutputStream a3 = new ByteArrayOutputStream();
 		physMgr.fetch(a3,loc3);
         assertTrue("check data3",

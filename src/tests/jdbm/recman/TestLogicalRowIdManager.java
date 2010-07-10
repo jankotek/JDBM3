@@ -30,7 +30,10 @@ public class TestLogicalRowIdManager extends TestCaseWithTestFile {
     public void testCtor() throws Exception {
         RecordFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
+        RecordFile free = newRecordFile();
+        PageManager pmfree = new PageManager(free);
+        
+        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm, new FreeLogicalRowIdPageManager(free, pmfree));
 
         f.forceClose();
     }
@@ -41,13 +44,15 @@ public class TestLogicalRowIdManager extends TestCaseWithTestFile {
     public void testBasics() throws Exception {
         RecordFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
-        Location physid = new Location(20, (short) 234);
+        RecordFile free = newRecordFile();
+        PageManager pmfree = new PageManager(free);
+        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm, new FreeLogicalRowIdPageManager(free, pmfree));
+        long physid = Location.toLong(20, (short) 234);
 
-        Location logid = logMgr.insert(physid);
+        long logid = logMgr.insert(physid);
         assertEquals("check one", physid, logMgr.fetch(logid));
 
-        physid = new Location(10, (short) 567);
+        physid = Location.toLong(10, (short) 567);
         logMgr.update(logid, physid);
         assertEquals("check two", physid, logMgr.fetch(logid));
 

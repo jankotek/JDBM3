@@ -19,7 +19,7 @@ package jdbm.recman;
 /**
  *  This interface contains magic cookies.
  */
-public interface Magic {
+interface Magic {
     /** Magic cookie at start of file */
     public short FILE_HEADER = 0x1350;
 

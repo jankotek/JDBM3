@@ -100,7 +100,7 @@ public interface  RecordManager
      *
      *  @param recid the recid for the record that is to be updated.
      *  @param obj the new object for the record.
-     *  @throws IOException when one of the underlying I/O operations fails.
+     *  @throws IOException when one of the underlying I/O operations fails or given recid does not exists.
      */
     public abstract void update( long recid, Object obj )
         throws IOException;
@@ -108,11 +108,13 @@ public interface  RecordManager
 
     /**
      *  Updates a record using a custom serializer.
+     *  If given recid does not exist, IOException will be thrown before/during commit (cache).  
+     *  
      *
      *  @param recid the recid for the record that is to be updated.
      *  @param obj the new object for the record.
      *  @param serializer a custom serializer
-     *  @throws IOException when one of the underlying I/O operations fails.
+     *  @throws IOException when one of the underlying I/O operations fails
      */
     public abstract <A> void update( long recid, A obj, Serializer<A> serializer )
         throws IOException;
@@ -120,9 +122,10 @@ public interface  RecordManager
     
     /**
      *  Fetches a record using standard java object serialization.
+     *  If given recid does not exist, IOException will be thrown before/during commit (cache).  
      *
      *  @param recid the recid for the record that must be fetched.
-     *  @return the object contained in the record.
+     *  @return the object contained in the record, null if given recid does not exist
      *  @throws IOException when one of the underlying I/O operations fails.
      */
     public abstract Object fetch( long recid )
@@ -134,7 +137,7 @@ public interface  RecordManager
      *
      *  @param recid the recid for the record that must be fetched.
      *  @param serializer a custom serializer
-     *  @return the object contained in the record.
+     *  @return the object contained in the record, null if given recid does not exist
      *  @throws IOException when one of the underlying I/O operations fails.
      */
     public abstract <A> A fetch( long recid, Serializer<A> serializer )
@@ -157,6 +160,15 @@ public interface  RecordManager
      * @throws IOException
      */
     public abstract void clearCache() throws IOException;
+
+    /**
+     * Defragments storage, so it consumes less space.
+     * This commits any uncommited data.  
+     * 
+     * @throws IOException
+     */
+    public abstract void defrag() throws IOException;
+    
     
     /**
      *  Returns the number of slots available for "root" rowids. These slots

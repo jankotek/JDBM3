@@ -1069,7 +1069,7 @@ public final class BPage<K,V>
                   }
               }
           } catch ( ClassNotFoundException except ) {
-              throw new IOException( except.getMessage() );
+              throw new IOException( except);
           }
       } else {
           bpage._children = new long[ _btree._pageSize ];

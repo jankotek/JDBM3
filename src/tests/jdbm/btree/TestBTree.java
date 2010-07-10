@@ -546,7 +546,7 @@ public class TestBTree
         props.setProperty(RecordManagerOptions.CACHE_TYPE, "none");
 
         String recordManagerBasename = newTestFile();
-        String recordManagerDBname = recordManagerBasename+".0.db";
+        String recordManagerDBname = recordManagerBasename+".dbr.0";
         
         long previousRecmanSize = 0;
         for (int i = 0; i < 5; i++){
@@ -567,6 +567,10 @@ public class TestBTree
                 }
                 recman.commit();
                 
+                long currentRecmanSize = new File(recordManagerDBname).length();
+                assertTrue("file size too small "+ currentRecmanSize, currentRecmanSize > 0);
+
+                
                 // now remove it all
                 
                 for (int count = 0; count < 1000; count++){
@@ -582,7 +586,7 @@ public class TestBTree
             } finally {
                 recman.close();
                 long currentRecmanSize = new File(recordManagerDBname).length();
-                assertTrue(currentRecmanSize > 0);
+                assertTrue("file size too small "+ currentRecmanSize, currentRecmanSize > 0);
                 if (previousRecmanSize != 0){
                     assertTrue(currentRecmanSize == previousRecmanSize);
                 }

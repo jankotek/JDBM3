@@ -26,8 +26,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
     // offsets
     private static final short O_COUNT = PageHeader.SIZE; // short count
     static final short O_FREE = (short)(O_COUNT + Magic.SZ_SHORT);
-    static final short ELEMS_PER_PAGE = (short)
-        ((RecordFile.BLOCK_SIZE - O_FREE) / PhysicalRowId_SIZE);
+    final short ELEMS_PER_PAGE;
 
     private int previousFoundFree = 0; // keeps track of the most recent found free slot so we can locate it again quickly 
     private int previousFoundAllocated = 0; // keeps track of the most recent found allocated slot so we can locate it again quickly
@@ -38,21 +37,22 @@ final class FreeLogicalRowIdPage extends PageHeader {
     /**
      *  Constructs a data page view from the indicated block.
      */
-    FreeLogicalRowIdPage(BlockIo block) {
+    FreeLogicalRowIdPage(BlockIo block, int blockSize) {
         super(block);
+        ELEMS_PER_PAGE = (short) ((blockSize - O_FREE) / PhysicalRowId_SIZE);
     }
 
     /**
      *  Factory method to create or return a data page for the
      *  indicated block.
      */
-    static FreeLogicalRowIdPage getFreeLogicalRowIdPageView(BlockIo block) {
+    static FreeLogicalRowIdPage getFreeLogicalRowIdPageView(BlockIo block, int blockSize) {
 
         BlockView view = block.getView();
         if (view != null && view instanceof FreeLogicalRowIdPage)
             return (FreeLogicalRowIdPage) view;
         else
-            return new FreeLogicalRowIdPage(block);
+            return new FreeLogicalRowIdPage(block,blockSize);
     }
 
     /** Returns the number of free rowids on this page. */
@@ -138,9 +138,9 @@ final class FreeLogicalRowIdPage extends PageHeader {
         return -1;
     }
 
-    public Location slotToLocation(int slot) {
+    public long slotToLocation(int slot) {
 		short pos = slotToOffset(slot);
-		return new Location(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
+		return Location.toLong(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
 	}
     
 

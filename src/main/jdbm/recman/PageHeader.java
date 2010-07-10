@@ -23,7 +23,7 @@ import java.io.IOException;
  *  This class represents a page header. It is the common superclass for
  *  all different page views.
  */
-public class PageHeader implements BlockView {
+class PageHeader implements BlockView {
     // offsets
     private static final short O_MAGIC = 0; // short magic
     private static final short O_NEXT = Magic.SZ_SHORT;  // long next

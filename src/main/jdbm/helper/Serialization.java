@@ -302,7 +302,7 @@ public final class Serialization
 				out.write(s.length);
 			}else{
 				out.write(STRING);
-				out.writeInt(s.length);
+				LongPacker.packInt(out, s.length);
 			}
 			out.write(s);
 		}else if(obj instanceof Class){
@@ -319,7 +319,7 @@ public final class Serialization
 				out.write(b.length);
 			}else{
 				out.write(ARRAY_BYTE_INT);
-				out.writeInt(b.length);
+				LongPacker.packInt(out,b.length);
 			}
 			out.write(b);
 
@@ -330,7 +330,7 @@ public final class Serialization
 				out.write(b.length);
 			}else{
 				out.write(ARRAY_OBJECT);
-				out.writeInt(b.length);
+				LongPacker.packInt(out,b.length);
 			}
 			for(Object o : b)
 				writeObject(out,o);
@@ -342,7 +342,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(ARRAYLIST);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l)
@@ -354,7 +354,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(LINKEDLIST);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l)
@@ -366,7 +366,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(VECTOR);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l)
@@ -378,7 +378,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(TREESET);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 			writeObject(out,l.comparator());
 
@@ -391,7 +391,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(HASHSET);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l)
@@ -403,7 +403,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(LINKEDHASHSET);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l)
@@ -415,7 +415,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(TREEMAP);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			writeObject(out, l.comparator());
@@ -430,7 +430,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(HASHMAP);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l.keySet()){
@@ -444,7 +444,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(LINKEDHASHMAP);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l.keySet()){
@@ -458,7 +458,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(HASHTABLE);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l.keySet()){
@@ -473,7 +473,7 @@ public final class Serialization
 				out.write(l.size());
 			}else{
 				out.write(PROPERTIES);
-				out.writeInt(l.size());
+				LongPacker.packInt(out,l.size());
 			}
 
 			for(Object o:l.keySet()){
@@ -506,27 +506,27 @@ public final class Serialization
 
 		if(0>=min && max<=255){
 			da.write(ARRAY_LONG_B);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(long l : obj)
 				da.write((int) l);
 		}else if(0>=min && max<=Long.MAX_VALUE){
 			da.write(ARRAY_LONG_PACKED);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(long l : obj)
 				LongPacker.packLong(da, l);			
 		}else if(Short.MIN_VALUE>=min && max<=Short.MAX_VALUE){
 			da.write(ARRAY_LONG_S);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(long l : obj)
 				da.writeShort((short) l);			
 		}else if(Integer.MIN_VALUE>=min && max<=Integer.MAX_VALUE){
 			da.write(ARRAY_LONG_I);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(long l : obj)
 				da.writeInt((int) l);			
 		}else{
 			da.write(ARRAY_LONG_L);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(long l : obj)
 				da.writeLong(l);
 		}
@@ -553,22 +553,22 @@ public final class Serialization
 				da.write(i);
 		}else if(fitsInByte){
 			da.write(ARRAY_INT_B_INT);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(int i:obj)
 				da.write(i);
 		}else if(0>=min && max<=Integer.MAX_VALUE){
 			da.write(ARRAY_INT_PACKED);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(int l : obj)
 				LongPacker.packInt(da, l);			
 		} else if(fitsInShort){
 			da.write(ARRAY_INT_S);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(int i:obj)
 				da.writeShort(i);
 		}else{
 			da.write(ARRAY_INT_S);
-			da.writeInt(obj.length);
+			LongPacker.packInt(da,obj.length);
 			for(int i:obj)
 				da.writeInt(i);									
 		}
@@ -664,7 +664,7 @@ public final class Serialization
 
     
     private static String deserializeString(DataInputStream buf) throws IOException {
-    	int len  = buf.readInt();
+    	int len  = LongPacker.unpackInt(buf);
     	byte[] b=  new byte[len];
     	buf.readFully(b);
     	return new String(b);
@@ -857,7 +857,7 @@ public final class Serialization
 
 
 	private static byte[] deserializeArrayByteInt(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		byte[] b = new byte[size];
 		is.readFully(b);
 		return b;
@@ -877,7 +877,7 @@ public final class Serialization
 
 
 	private static long[] deserializeArrayLongL(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		long[] ret = new long[size];
 		for(int i=0;i<size;i++)
 			ret[i] = is.readLong();
@@ -886,7 +886,7 @@ public final class Serialization
 
 
 	private static long[] deserializeArrayLongI(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		long[] ret = new long[size];
 		for(int i=0;i<size;i++)
 			ret[i] = is.readInt();
@@ -895,7 +895,7 @@ public final class Serialization
 
 
 	private static long[] deserializeArrayLongS(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		long[] ret = new long[size];
 		for(int i=0;i<size;i++)
 			ret[i] = is.readShort();
@@ -904,7 +904,7 @@ public final class Serialization
 
 
 	private static long[] deserializeArrayLongB(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		long[] ret = new long[size];
 		for(int i=0;i<size;i++){
 			ret[i] = is.read();
@@ -916,7 +916,7 @@ public final class Serialization
 
 
 	private static int[] deserializeArrayIntIInt(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		int[] ret = new int[size];
 		for(int i=0;i<size;i++)
 			ret[i] = is.readInt();
@@ -925,7 +925,7 @@ public final class Serialization
 
 
 	private static int[] deserializeArrayIntSInt(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		int[] ret = new int[size];
 		for(int i=0;i<size;i++)
 			ret[i] = is.readShort();
@@ -935,7 +935,7 @@ public final class Serialization
 
 
 	private static int[] deserializeArrayIntBInt(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		int[] ret = new int[size];
 		for(int i=0;i<size;i++){
 			ret[i] = is.read();
@@ -946,7 +946,7 @@ public final class Serialization
 
 
 	private static int[] deserializeArrayIntPack(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
     	if (size < 0)
     	    throw new EOFException();
 
@@ -958,7 +958,7 @@ public final class Serialization
 	}
 	
 	private static long[] deserializeArrayLongPack(DataInputStream is) throws IOException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
     	if (size < 0)
     	    throw new EOFException();
 
@@ -990,7 +990,7 @@ public final class Serialization
 	}
 
 	private static Object[] deserializeArrayObject(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size =LongPacker.unpackInt(is);
 		Object[] s = new Object[size];
 		for(int i = 0; i<size;i++)
 			s[i] = readObject(is);
@@ -1009,7 +1009,7 @@ public final class Serialization
 	}
 
 	private static ArrayList<Object> deserializeArrayList(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		ArrayList<Object> s = new ArrayList<Object>(size);
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
@@ -1028,7 +1028,7 @@ public final class Serialization
 	}
 
 	private static LinkedList<Object> deserializeLinkedList(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		LinkedList<Object> s = new LinkedList<Object>();
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
@@ -1047,7 +1047,7 @@ public final class Serialization
 	}
 	
 	private static Vector<Object> deserializeVector(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		Vector<Object> s = new Vector<Object>(size);
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
@@ -1066,7 +1066,7 @@ public final class Serialization
 	}
 	
 	private static HashSet<Object> deserializeHashSet(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		HashSet<Object> s = new HashSet<Object>(size);
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
@@ -1085,7 +1085,7 @@ public final class Serialization
 	}
 
 	private static LinkedHashSet<Object> deserializeLinkedHashSet(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();
+		int size = LongPacker.unpackInt(is);
 		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
@@ -1105,7 +1105,7 @@ public final class Serialization
 	
 	
 	private static TreeSet<Object> deserializeTreeSet(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 		TreeSet<Object> s = new TreeSet<Object>();
 		Comparator comparator = (Comparator) readObject(is);
 		if(comparator!=null)
@@ -1133,7 +1133,7 @@ public final class Serialization
 
 	
 	private static TreeMap<Object,Object> deserializeTreeMap(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 
 		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
 		Comparator comparator = (Comparator) readObject(is);
@@ -1160,7 +1160,7 @@ public final class Serialization
 
 	
 	private static HashMap<Object,Object> deserializeHashMap(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 
 		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
 		for(int i = 0; i<size;i++)
@@ -1181,7 +1181,7 @@ public final class Serialization
 	
 	
 	private static LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 
 		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
 		for(int i = 0; i<size;i++)
@@ -1202,7 +1202,7 @@ public final class Serialization
 
 	
 	private static Hashtable<Object,Object> deserializeHashtable(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 
 		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
 		for(int i = 0; i<size;i++)
@@ -1223,7 +1223,7 @@ public final class Serialization
 	
 	
 	private static Properties deserializeProperties(DataInputStream is) throws IOException, ClassNotFoundException {
-		int size = is.readInt();		
+		int size = LongPacker.unpackInt(is);		
 
 		Properties s = new Properties();
 		for(int i = 0; i<size;i++)

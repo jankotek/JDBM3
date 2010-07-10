@@ -16,6 +16,7 @@
 
 package jdbm.recman;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -212,10 +213,19 @@ public class TestRecordManager extends TestCaseWithTestFile {
         recman.close();
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestRecordManager.class));
+    
+    public void testNonExistingRecid() throws IOException{
+    	RecordManager recman = newRecordManager();
+    	
+    	Object obj = recman.fetch(6666666);
+    	assertTrue(obj == null);
+    	
+    	try{
+    		recman.update(6666666, obj);
+    		recman.commit();
+    		fail();
+    	}catch(IOException expected){
+
+    	}
     }
 }

@@ -50,7 +50,7 @@ public class TestFileHeader extends TestCase {
      *  Test root rowids
      */
     public void testRootRowids() throws Exception {
-  BlockIo b = new BlockIo(0, new byte[RecordFile.BLOCK_SIZE]);
+  BlockIo b = new BlockIo(0, new byte[RecordFile.DEFAULT_BLOCK_SIZE]);
   FileHeader f = new FileHeader(b, true);
   for (int i = 0; i < FileHeader.NROOTS; i++) {
       f.setRoot(i, 100 * i);

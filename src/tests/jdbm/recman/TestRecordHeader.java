@@ -33,7 +33,7 @@ public class TestRecordHeader extends TestCase {
 	 * Test basics - read and write at an offset
 	 */
 	public void testReadWrite() throws Exception {
-		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		byte[] data = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
 		RecordHeader.setAvailableSize(test, (short) 6,2345);
@@ -43,28 +43,40 @@ public class TestRecordHeader extends TestCase {
 		assertEquals("available size", 2345, RecordHeader.getAvailableSize(test, (short) 6));
 	}
 	
-	public void testRecordSize(){
-		//System.out.println("size "+RecordHeader.roundAvailableSize(100000));
+	public void testRecordSize(){	
 		
-		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		System.out.println("BASE0 "+RecordHeader.base0);
+		System.out.println("BASE1 "+RecordHeader.base1);
+		System.out.println("BASE2 "+RecordHeader.base2);
+		System.out.println("BASE3 "+RecordHeader.base3);
+		System.out.println("MAX_RECORD_SIZE "+RecordHeader.MAX_RECORD_SIZE);
+		
+		assertEquals("inconsistent rounding at max rec size",
+				RecordHeader.MAX_RECORD_SIZE, RecordHeader.roundAvailableSize(RecordHeader.MAX_RECORD_SIZE));
+		
+		byte[] data = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		Random r = new Random();
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
-		double size = 2;
-		while(size<RecordHeader.MAX_RECORD_SIZE){
+		
+		for(int size = 2; size<=RecordHeader.MAX_RECORD_SIZE; size++){
 			//set size
-			int currSize = (int) size;
+			int currSize = size;			
 			int availSize = RecordHeader.roundAvailableSize(currSize);
-			 
+			
 			assertTrue(availSize - currSize<RecordHeader.MAX_SIZE_SPACE);
-			assertTrue(currSize<=availSize);
+			assertTrue(currSize<=availSize);			
+		
+			assertEquals("size rounding function does not provide consistent results "+availSize,
+					availSize,RecordHeader.roundAvailableSize(availSize));
 
 			//make sure it writes and reads back correctly
 			RecordHeader.setAvailableSize(test, (short) 6,availSize);
+			assertEquals("available size", availSize, RecordHeader.getAvailableSize(test, (short) 6));
 			RecordHeader.setCurrentSize(test, (short) 6,currSize);
 
 			assertEquals("current size", currSize, RecordHeader.getCurrentSize(test, (short) 6));
-			assertEquals("available size", availSize, RecordHeader.getAvailableSize(test, (short) 6));
+			
 			
 			//try random size within given offset
 			int newCurrSize = availSize - r.nextInt(RecordHeader.MAX_SIZE_SPACE);
@@ -73,7 +85,12 @@ public class TestRecordHeader extends TestCase {
 			assertEquals("current size", newCurrSize, RecordHeader.getCurrentSize(test, (short) 6));
 			
 			RecordHeader.setCurrentSize(test, (short) 6,0);
-			size = size * 1.1;
+
+			size++;
+			
+			// comment out next line to do full test
+			if(size>1e6)
+				size = (int) (size *1.01);
 		}
 
 	}

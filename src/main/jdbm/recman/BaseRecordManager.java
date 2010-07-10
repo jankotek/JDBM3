@@ -19,16 +19,20 @@ package jdbm.recman;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
@@ -61,12 +65,23 @@ public final class BaseRecordManager
     extends RecordManagerImpl
 {
 
+	private static final String IDR = ".idr";
+	private static final String IDF = ".idf";
+	private static final String DBR = ".dbr";
+	private static final String DBF = ".dbf";
+	static final int DATA_BLOCK_SIZE = 8024 * 4;
+	static final int LOG_BLOCK_SIZE = 1024*1;
+	
     /**
-     * Underlying record file.
+     * Underlying file for store records.
      */
-    private RecordFile _file;
+    private RecordFile _physFile;
 
-
+    /**
+     * Page manager for physical manager.
+     */
+    private PageManager _physPageman;
+    
     /**
      * Physical row identifier manager.
      */
@@ -74,21 +89,48 @@ public final class BaseRecordManager
 
 
     /**
+     * Underlying file for store records.
+     * Traces free records
+     */
+    private RecordFile _physFileFree;
+
+    /**
+     * Page manager for physical manager.
+     * Traces free records
+     */
+    private PageManager _physPagemanFree;
+
+    /**
+     * Underlying file for logical records.
+     */
+    private RecordFile _logicFile;
+
+    /**
+     * Page manager for logical manager.
+     */
+    private PageManager _logicPageman;
+
+
+    /**
      * Logigal to Physical row identifier manager.
      */
-    private LogicalRowIdManager _logMgr;
+    private LogicalRowIdManager _logicMgr;
+
+    /**
+     * Underlying file for logical records.
+     * Traces free records
+     */
+    private RecordFile _logicFileFree;
+
 
 
     /**
-     * Page manager.
+     * Page manager for logical manager.
+     * Traces free records
      */
-    private PageManager _pageman;
+    private PageManager _logicPagemanFree;
 
 
-    /**
-     * Reserved slot for name directory.
-     */
-    public static final int NAME_DIRECTORY_ROOT = 0;
 
 
     /**
@@ -112,14 +154,17 @@ public final class BaseRecordManager
 	/** inflater used to decompress data if needed*/
 	private Inflater inflater;
 	
-	private static final int BUFFER_SIZE = RecordFile.BLOCK_SIZE * 4;
+	private static final int BUFFER_SIZE = 4096 * 2;
 	
 	private final byte[] _insertBuffer = new byte[BUFFER_SIZE];
 	private final OpenByteArrayOutputStream _insertBAO = new OpenByteArrayOutputStream(_insertBuffer);
 	private final DataOutputStream _insertOut = new DataOutputStream(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
 	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
-	volatile private boolean bufferInUse = false; 
+	volatile private boolean bufferInUse = false;
+
+
+	private final String _filename; 
 
 
     /**
@@ -131,22 +176,26 @@ public final class BaseRecordManager
     public BaseRecordManager( String filename )
         throws IOException
     {
-        _file = new RecordFile( filename );
-        _pageman = new PageManager( _file );
-        _physMgr = new PhysicalRowIdManager( _file, _pageman );
-        _logMgr = new LogicalRowIdManager( _file, _pageman );
+    	_filename = filename;
+    	reopen();
     }
 
 
-    /**
-     *  Get the underlying Transaction Manager
-     */
-    public synchronized TransactionManager getTransactionManager()
-    {
-        checkIfClosed();
-
-        return _file.txnMgr;
-    }
+	private void reopen() throws IOException {
+		_physFileFree = new RecordFile( _filename +  DBF, LOG_BLOCK_SIZE);
+    	_physPagemanFree = new PageManager(_physFileFree);    	
+        _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
+        _physPageman = new PageManager( _physFile );
+        _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
+        		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree));
+        
+        _logicFileFree= new RecordFile( _filename +IDF,LOG_BLOCK_SIZE );
+        _logicPagemanFree = new PageManager( _logicFileFree );
+        _logicFile = new RecordFile( _filename +IDR,LOG_BLOCK_SIZE );
+        _logicPageman = new PageManager( _logicFile );
+        _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
+        		new FreeLogicalRowIdPageManager(_logicFileFree, _logicPagemanFree));
+	}
 
 
     /**
@@ -162,7 +211,11 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        _file.disableTransactions();
+        _physFile.disableTransactions();
+        _logicFile.disableTransactions();
+        _physFileFree.disableTransactions();
+        _logicFileFree.disableTransactions();
+
     }
     
     /**
@@ -188,11 +241,30 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        _pageman.close();
-        _pageman = null;
+        _physPageman.close();
+        _physPageman = null;
 
-        _file.close();
-        _file = null;
+        _physFile.close();
+        _physFile = null;
+        
+        _logicPageman.close();
+        _logicPageman = null;
+        
+        _logicFile.close();
+        _logicFile = null;
+        
+        _physPagemanFree.close();
+        _physPagemanFree = null;
+
+        _physFileFree.close();
+        _physFileFree = null;
+        
+        _logicPagemanFree.close();
+        _logicPagemanFree = null;
+        
+        _logicFileFree.close();
+        _logicFileFree = null;
+
     }
 
 
@@ -238,8 +310,8 @@ public final class BaseRecordManager
 			insertBAO.reset(insertBuffer);
 			insertBAO.write(data);
 		}
-		Location physRowId = _physMgr.insert( insertBAO.getBuf(), 0, insertBAO.size() );
-		long recid = _logMgr.insert( physRowId ).toLong();
+		long physRowId = _physMgr.insert( insertBAO.getBuf(), 0, insertBAO.size() );
+		long recid = _logicMgr.insert( physRowId );
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.insert() recid " + recid + " length " + insertBAO.size() ) ;
 		}
@@ -275,23 +347,23 @@ public final class BaseRecordManager
     	return new DataInputStream(new InflaterInputStream(data,inflater));    	
 	}
 
-    public synchronized void delete( long recid )
+    public synchronized void delete( long logRowId )
         throws IOException
     {
         checkIfClosed();
-        if ( recid <= 0 ) {
+        if ( logRowId <= 0 ) {
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
-                                                + recid );
+                                                + logRowId );
         }
 
         if ( DEBUG ) {
-            System.out.println( "BaseRecordManager.delete() recid " + recid ) ;
+            System.out.println( "BaseRecordManager.delete() recid " + logRowId ) ;
         }
 
-        Location logRowId = new Location( recid );
-        Location physRowId = _logMgr.fetch( logRowId );
+        
+        long physRowId = _logicMgr.fetch( logRowId );
         _physMgr.delete( physRowId );
-        _logMgr.delete( logRowId );
+        _logicMgr.delete( logRowId );
     }
 
 
@@ -323,10 +395,11 @@ public final class BaseRecordManager
     }
 
 
-	private <A> void update2(long recid, A obj, Serializer<A> serializer,byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut)
+	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut)
 			throws IOException {
-		Location logRecid = new Location( recid );
-		Location physRecid = _logMgr.fetch( logRecid );
+		long physRecid = _logicMgr.fetch( logRecid );
+		if(physRecid == 0)
+			throw new IOException("Can not update, recid does not exist: "+logRecid);
 		insertBAO.reset(insertBuffer);
 		serializer.serialize(insertOut, obj );
 
@@ -337,13 +410,13 @@ public final class BaseRecordManager
 		}
 		
 		if ( DEBUG ) {
-			System.out.println( "BaseRecordManager.update() recid " + recid + " length " + insertBAO.size() ) ;
+			System.out.println( "BaseRecordManager.update() recid " + logRecid + " length " + insertBAO.size() ) ;
 		}
       
-		Location newRecid = _physMgr.update( physRecid, insertBAO.getBuf(), 0, insertBAO.size() );
-		if ( ! newRecid.equals( physRecid ) ) {
-			_logMgr.update( logRecid, newRecid );
-		}
+		long newRecid = _physMgr.update( physRecid, insertBAO.getBuf(), 0, insertBAO.size() );
+		
+		_logicMgr.update( logRecid, newRecid );
+		
 	}
 
 
@@ -382,8 +455,13 @@ public final class BaseRecordManager
 				OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut,
 				OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
 			throws IOException {
-		insertBAO.reset(insertBuffer);
-		_physMgr.fetch(insertBAO, _logMgr.fetch( new Location( recid ) ) );
+		insertBAO.reset(insertBuffer);		
+		long physLocation = _logicMgr.fetch(recid);
+		if(physLocation == 0){
+			//throw new IOException("Record not found, recid: "+recid);
+			return null;
+		}
+		_physMgr.fetch(insertBAO, physLocation);
 
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.fetch() recid " + recid + " length " + insertBAO.size() ) ;
@@ -410,7 +488,7 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        return _pageman.getFileHeader().getRoot( id );
+        return _physPageman.getFileHeader().getRoot( id );
     }
 
 
@@ -419,7 +497,7 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        _pageman.getFileHeader().setRoot( id, rowid );
+        _physPageman.getFileHeader().setRoot( id, rowid );
     }
 
 
@@ -457,7 +535,10 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        _pageman.commit();
+        _physPageman.commit();
+        _physPagemanFree.commit();
+        _logicPageman.commit();
+        _logicPagemanFree.commit();
     }
 
 
@@ -466,7 +547,10 @@ public final class BaseRecordManager
     {
         checkIfClosed();
 
-        _pageman.rollback();
+        _physPageman.rollback();
+        _physPagemanFree.rollback();
+        _logicPageman.rollback();
+        _logicPagemanFree.rollback();
     }
 
 
@@ -508,15 +592,134 @@ public final class BaseRecordManager
     private void checkIfClosed()
         throws IllegalStateException
     {
-        if ( _file == null ) {
+        if ( _physFile == null ) {
             throw new IllegalStateException( "RecordManager has been closed" );
         }
     }
 
 
-	public void clearCache() throws IOException {
+	public synchronized void clearCache() throws IOException {
 		//no cache		
 	}
+
+
+	public synchronized void defrag() throws IOException {
+		 checkIfClosed();
+		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
+		final String filename1 = _filename; 
+		BaseRecordManager recman2 = new BaseRecordManager(filename2);
+		recman2.disableTransactions();
+	
+		PageCursor logicalCur = new PageCursor(_logicPageman, Magic.TRANSLATION_PAGE);
+		List<Long> logicalPages = new ArrayList<Long>();		
+		long last = logicalCur.next();;
+		while(last!=0){
+			logicalPages.add(last);
+			last = logicalCur.next();			
+		}
+		for(long pageid:logicalPages){			
+			BlockIo io = _logicFile.get(pageid); 
+			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io,LOG_BLOCK_SIZE);
+		
+			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
+				int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
+				if(pos>Short.MAX_VALUE)
+					throw new Error();
+				long logicalRowId = Location.toLong(pageid,(short)pos);
+
+
+				//find physical location
+				long physRowId = Location.toLong(
+						xlatPage.PhysicalRowId_getBlock((short)pos),
+						xlatPage.PhysicalRowId_getOffset((short)pos));
+				if(physRowId == 0)
+					continue;
+
+				//read from physical location
+				ByteArrayOutputStream b = new ByteArrayOutputStream();
+				_physMgr.fetch(b, physRowId);
+				byte[] bb = b.toByteArray();
+				//write to new file
+				recman2.forceInsert(logicalRowId, bb);
+				
+			}
+			_logicFile.release(io);
+			recman2.commit();
+			
+		}
+		recman2.setRoot(RecordManager.NAME_DIRECTORY_ROOT,getRoot(RecordManager.NAME_DIRECTORY_ROOT));
+		recman2.commit();
+		
+		recman2.close();
+		close();
+		List<File> filesToDelete = new ArrayList<File>();
+		//now rename old files 
+		String[] exts = {IDF, IDR, DBR, DBF};
+		for(String ext:exts){
+			String f1 = filename1+ext;			
+			String f2 = filename2+"_OLD"+ext;
+			
+			//first rename transaction log
+			File f1t = new File(f1+TransactionManager.extension);
+			File f2t = new File(f2+TransactionManager.extension);
+			f1t.renameTo(f2t);
+			filesToDelete.add(f2t);
+			
+			//rename data files, iterate until file exist
+			for(int i=0;;i++){
+				File f1d = new File(f1+"."+i);
+				if(!f1d.exists()) break;
+				File f2d = new File(f2+"."+i);
+				f1d.renameTo(f2d);
+				filesToDelete.add(f2d);
+			}
+		}
+		
+		//rename new files 
+		for(String ext:exts){
+			String f1 = filename2+ext;			
+			String f2 = filename1+ext;
+			
+			//first rename transaction log
+			File f1t = new File(f1+TransactionManager.extension);
+			File f2t = new File(f2+TransactionManager.extension);
+			f1t.renameTo(f2t);
+			
+			//rename data files, iterate until file exist
+			for(int i=0;;i++){
+				File f1d = new File(f1+"."+i);
+				if(!f1d.exists()) break;
+				File f2d = new File(f2+"."+i);
+				f1d.renameTo(f2d);			
+			}
+		}
+		
+		for(File d:filesToDelete){
+			d.delete();
+		}
+		
+		
+		reopen();
+	}
+	
+	/**
+	 * Insert data at forced logicalRowId, use only for defragmentation !! 
+	 * @param logicalRowId 
+	 * @param bb data
+	 * @throws IOException 
+	 */
+	private void forceInsert(long logicalRowId, byte[] data) throws IOException {
+		long physLoc = _physMgr.insert(data, 0, data.length);
+		_logicMgr.forceInsert(logicalRowId, physLoc);
+	}
+
+
+	public static void main(String[] args) throws IOException {
+		BaseRecordManager b = new BaseRecordManager("/media/vega/Projects/asterope/profile/db/db");
+//		System.out.println(b.fetch(58854476));
+		b.defrag();
+	}
+
 
 
 }

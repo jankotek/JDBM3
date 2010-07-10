@@ -22,5 +22,5 @@ package jdbm.recman;
  *
  *  @see BlockIo#setView
  */
-public interface BlockView {
+interface BlockView {
 }

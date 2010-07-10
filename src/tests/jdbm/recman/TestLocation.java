@@ -33,13 +33,10 @@ public class TestLocation extends TestCase {
 	 */
 	public void testBasics() {
 
-		Location loc = new Location(10, (short) 20);
-		long longloc = loc.toLong();
-		Location loc2 = new Location(longloc);
-		assertEquals("longloc", longloc, loc2.toLong());
+		long loc = Location.toLong(10, (short) 20);
 
-		assertEquals("block2", 10, loc2.getBlock());
-		assertEquals("offset2", 20, loc2.getOffset());
+		assertEquals("block2", 10, Location.getBlock(loc));
+		assertEquals("offset2", 20, Location.getOffset(loc));
 
 	}
 

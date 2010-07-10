@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -47,7 +48,7 @@ final class HashDirectory <K,V>
      * (Must be a power of 2 -- if you update this value, you must also
      *  update BIT_SIZE and MAX_DEPTH.)
      *  
-     *  !!!! do not change this, it affects storage format !!!
+     *  !!!! do not change this, it affects storage format, there are also magic numbers which relies on 255 !!!
      */
     static final int MAX_CHILDREN = 256;
 
@@ -363,7 +364,29 @@ final class HashDirectory <K,V>
     public void writeExternal(DataOutputStream out)
     throws IOException {
         out.writeByte(_depth);
-        for(int i = 0; i<MAX_CHILDREN;i++){
+
+        int zeroStart = 0;
+        for(int i = 0; i<MAX_CHILDREN;i++){	
+        	if(_children[i]!=0){
+        		zeroStart = i;
+        		break;
+        	}
+        }
+        
+        out.write(zeroStart);
+        if(zeroStart== MAX_CHILDREN)
+        	return;
+
+        int zeroEnd = -1;
+        for(int i = MAX_CHILDREN-1; i>=0;i--){	
+        	if(_children[i]!=0){
+        		zeroEnd = i;
+        		break;
+        	}
+        }                
+        out.write(zeroEnd);
+        
+        for(int i = zeroStart; i<=zeroEnd;i++){	
         	LongPacker.packLong(out,_children[i]);
         }
     }
@@ -376,7 +399,13 @@ final class HashDirectory <K,V>
     throws IOException, ClassNotFoundException {
         _depth = in.readByte();
         _children = new long[MAX_CHILDREN];
-        for(int i = 0; i<MAX_CHILDREN;i++){        	
+        int zeroStart = in.read();
+        if(zeroStart == 255)
+        	return;
+        
+        int zeroEnd = in.read();
+
+        for(int i = zeroStart; i<=zeroEnd;i++){        	
         	_children[i] = LongPacker.unpackLong(in);
         }
 

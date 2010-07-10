@@ -36,22 +36,6 @@ final class RecordHeader {
      */
     static final int MAX_SIZE_SPACE = BlockIo.UNSIGNED_SHORT_MAX -1;
     
-//    // my block and the position within the block
-//    final private BlockIo block;
-//    final private short pos;
-//
-//    /**
-//     *  Constructs a record header from the indicated data starting at
-//     *  the indicated position.
-//     */
-//    RecordHeader(BlockIo block, short pos) {
-//        this.block = block;
-//        this.pos = pos;
-//        if (pos > (RecordFile.BLOCK_SIZE - SIZE))
-//            throw new Error("Offset too large for record header (" 
-//                            + block.getBlockId() + ":" 
-//                            + pos + ")");
-//    }
 
     /** Returns the current size */
     static int getCurrentSize(final BlockIo block, final short pos) {
@@ -76,79 +60,85 @@ final class RecordHeader {
     /** Returns the available size */
     static int getAvailableSize(final BlockIo block, final short pos) {
         int val  = block.readUnsignedshort(pos + O_AVAILABLESIZE);
-        int multiplier = val & sizeMask;
-        int counter = val - multiplier;
-        switch (multiplier){
-        	case 0<<14: return counter * multi0;
-        	case 1<<14: return counter * multi1;
-        	case 2<<14: return counter * multi2;
-        	case 3<<14: return counter * multi3;
-        	default: throw new InternalError();
-        }
+        return deconvert(val);
     }
     
     /** Sets the available size */
-    static void setAvailableSize(final BlockIo block, final short pos,int value) {    	
-    	//TODO remove assertion in production code
+    static void setAvailableSize(final BlockIo block, final short pos,int value) {
 //    	if(value != roundAvailableSize(value))
 //    		throw new IllegalArgumentException("value is not rounded");
     	int oldCurrSize = getCurrentSize(block,pos);
+        	
+        block.writeUnsignedShort(pos + O_AVAILABLESIZE, convert(value));
+        setCurrentSize(block,pos,oldCurrSize);
+    }
+    
+    private static int convert(final int value){
     	int multiplyer = 0;
     	int counter = 0;
-    	if(value<base1){
+    	if(value<=base1){
     		multiplyer = 0;
     		counter = value / multi0;
     	}else if(value<base2){
     		multiplyer = 1 <<14;
-    		counter = value/multi1;    		
+    		int val2 = value -base1;
+    		counter = val2/multi1;
+    		if(val2 %multi1 != 0)
+    			counter++;
     	}else if(value<base3){
     		multiplyer = 2 <<14;
-    		counter = value/multi2;
+    		int val2 = value -base2;
+    		counter = val2/multi2;
+    		if(val2 %multi2 != 0)
+    			counter++;
     	}else{
     		multiplyer = 3 <<14;
-    		counter = value/multi3;
+    		int val2 = value -base3;
+    		counter = val2/multi3;
+    		if(val2 %multi3 != 0)
+    			counter++;    	
     	}
-    	if(counter>(1<<14))
+    	if(counter>=(1<<14))
     		throw new InternalError(""+value);
-        	
-        block.writeUnsignedShort(pos + O_AVAILABLESIZE, multiplyer | counter);
-        setCurrentSize(block,pos,oldCurrSize);
+    	
+    	return  multiplyer + counter;
+    }
+    
+    private static int deconvert(int val){
+        int multiplier = (val & sizeMask) >>14;
+        int counter = val - (val &sizeMask);
+        switch (multiplier){
+        	case 0: return counter * multi0;
+        	case 1: return base1 + counter * multi1;
+        	case 2: return base2 + counter * multi2;
+        	case 3: return base3 + counter * multi3;
+        	default: throw new InternalError("error deconverting: "+val);
+        }
     }
     
     static final int sizeMask = 1<<15 | 1<<14;
     static final int multi0 = 1;
-    static final int multi1 = 1<<2;
+    static final int multi1 = 1<<4;
     static final int multi2 = 1<<8;
-    //is divided by not to make sure currSize does not overflow at multiplier rounding
-    static final int multi3 = MAX_SIZE_SPACE/2 -100;  
+    static final int multi3 = 1<< 13;  
 
     
     static final int base0 = 0;
-    static final int base1 = base0 + multi0 * (1<<14-1);
-    static final int base2 = base0 + multi1 * (1<<14-1);
-    static final int base3 = base0 + multi2 * (1<<14-1);
-    static final int MAX_RECORD_SIZE = base0 + multi3 * (1<<14-1);
+    static final int base1 = base0 + multi0 * ((1<<14)-2);
+    static final int base2 = base1 + multi1 * ((1<<14)-2);
+    static final int base3 = base2 + multi2 * ((1<<14)-2);
+    static final int base4 = base3 + multi3 * (1<<14)-2;
+    
+    static final int MAX_RECORD_SIZE = roundAvailableSize(base4 - multi3 * 100);
     
     
     
     static int roundAvailableSize(int value){
-    	if(value<base1)
-    		return value;
-    	else if(value<base2)
-    		return value + (value%multi1==0?0:(multi1 - value%multi1));
-    	else if(value<base3)
-    		return value + (value%multi2==0?0:(multi2 - value%multi2));
-    	else if(value<MAX_RECORD_SIZE)
-    		return value + (value%multi3==0?0:(multi3 - value%multi3));
-    	throw 
+    	if(value>MAX_RECORD_SIZE && MAX_RECORD_SIZE!=0)    		
     		new InternalError("Maximal record size ("+MAX_RECORD_SIZE+") exceeded: "+value);
+    	return deconvert(convert(value));
     }
+    
 
 
-//    public String toString() {
-//        return "RH(" + block.getBlockId() + ":" + pos 
-//            + ", avl=" + getAvailableSize()
-//            + ", cur=" + getCurrentSize() 
-//            + ")";
-//    }
 }

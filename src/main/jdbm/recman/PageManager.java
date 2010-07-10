@@ -78,9 +78,9 @@ final class PageManager {
         long oldLast = header.getLastOf(type);
         
         // Clean data.
-        System.arraycopy(RecordFile.cleanData, 0, 
+        System.arraycopy(file.cleanData, 0, 
                          buf.getData(), 0, 
-                         RecordFile.BLOCK_SIZE);
+                         file.BLOCK_SIZE);
         pageHdr.setType(type);
         pageHdr.setPrev(oldLast);
         pageHdr.setNext(0);

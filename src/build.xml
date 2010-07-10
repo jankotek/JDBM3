@@ -66,10 +66,12 @@
   </target>
 
 
-  <!-- Build all the sources with debug and deprecation -->
+  <!-- Build all the sources with debug and deprecation 
+  	TODO remove debug infos on production code
+  -->
   <target name="main" depends="prepare">
     <javac srcdir="${main}" destdir="${classes}" excludes="**/package.html"
-           classpath="${classpath}" debug="on" deprecation="${deprecation}" source="1.5" target="1.5"/>
+           classpath="${classpath}" debug="true" deprecation="${deprecation}" source="1.5" target="1.5"/>
   </target>
 
   <!-- Same as main, but also cleans and additional targets -->

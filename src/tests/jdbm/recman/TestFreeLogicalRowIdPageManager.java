@@ -47,8 +47,8 @@ public class TestFreeLogicalRowIdPageManager extends TestCaseWithTestFile {
 				f, pm);
 
 		// allocate a rowid - should fail on an empty file
-		Location loc = freeMgr.get();
-		assertTrue("loc is not null?", loc == null);
+		long loc = freeMgr.get();
+		assertTrue("loc is not null?", loc == 0);
 
 		pm.close();
 		f.close();
