@@ -19,7 +19,9 @@ import java.io.IOError;
 import java.io.IOException;
 import java.util.AbstractSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdbm.PrimaryMap;
 import jdbm.PrimaryStoreMap;
@@ -30,23 +32,33 @@ import jdbm.Serializer;
 public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<Long, V>
 	implements PrimaryStoreMap<K, V>{
 	
-	PrimaryMap<Long,Object> map;	
+	PrimaryMap<Long,String> map;	
 	Serializer<V> valueSerializer;
+	List<RecordListener<Long,V>> listeners = new CopyOnWriteArrayList<RecordListener<Long,V>>();
 
-	public PrimaryStoreMapImpl(PrimaryMap<Long, Object> map,Serializer<V> valueSerializer) {
+	public PrimaryStoreMapImpl(PrimaryMap<Long, String> map,Serializer<V> valueSerializer) {
 		this.map = map;
 		this.valueSerializer = valueSerializer;
-		map.addRecordListener(new RecordListener<Long,Object>(){
+		map.addRecordListener(new RecordListener<Long,String>(){
 
-			public void recordInserted(Long key,Object value) throws IOException {				
+			public void recordInserted(Long key,String value) throws IOException {
+				V v = (V) getRecordManager().fetch(key);
+				for(RecordListener<Long,V> l:listeners)
+					l.recordInserted(key, v);
 			}
 
-			public void recordRemoved(Long key, Object value) throws IOException {
+			public void recordRemoved(Long key, String value) throws IOException {
+				//store reference to value, it is needed to notify listeners
+				V deletedValue = (V) getRecordManager().fetch(key);
+				
+				for(RecordListener<Long,V> l:listeners)
+					l.recordRemoved(key, deletedValue);
+				
 				//dispose old reference
 				getRecordManager().delete(key);
 			}
 
-			public void recordUpdated(Long key, Object oldValue, Object newValue) throws IOException {				
+			public void recordUpdated(Long key, String oldValue, String newValue) throws IOException {				
 				throw new InternalError("should not be here");
 			}});
 	}
@@ -64,23 +76,7 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 	}	
 
 	public void addRecordListener(final RecordListener<Long, V> listener) {
-		map.addRecordListener(new RecordListener<Long, Object>() {
-
-			public void recordInserted(Long key, Object value)
-					throws IOException {
-				listener.recordInserted(key, getRecordManager().fetch(key,valueSerializer));
-			}
-
-			public void recordRemoved(Long key, Object value)
-					throws IOException {
-				listener.recordRemoved(key, getRecordManager().fetch(key,valueSerializer));
-			}
-
-			public void recordUpdated(Long key, Object oldValue,
-					Object newValue) throws IOException {
-				throw new InternalError("Should not happen");
-			}
-		});
+		listeners.add((RecordListener<Long, V>) listener);
 	}
 
 	public RecordManager getRecordManager() {
@@ -88,7 +84,7 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 	}
 
 	public void removeRecordListener(RecordListener<Long, V> listener) {	
-		throw new UnsupportedOperationException("not implemented yet");
+		listeners.remove(listener);
 	}
 
 	public void clear() {

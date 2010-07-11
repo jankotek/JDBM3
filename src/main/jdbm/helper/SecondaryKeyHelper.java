@@ -19,6 +19,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 import jdbm.InverseHashView;
@@ -417,5 +418,35 @@ final public class SecondaryKeyHelper {
 				return ret;
 			}
 		};
+    }
+    
+    public static <K,V> Iterable<V> translateIterable(final JdbmBase<K, V> b, final Iterable<K> keys){
+    	if(keys==null)
+    		return new ArrayList<V>();
+    	return new Iterable<V>(){
+
+			public Iterator<V> iterator() {
+				return new Iterator<V>(){
+					
+					Iterator<K> iter = keys.iterator();
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public V next() {
+						try {
+							return b.find(iter.next());
+						} catch (IOException e) {
+							throw new IOError(e);
+						}
+					}
+
+					public void remove() {
+						iter.remove();						
+					}};
+			}
+    		
+    	};
     }
 }

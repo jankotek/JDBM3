@@ -562,6 +562,7 @@ public class CacheRecordManager
 
 
 	public void defrag() throws IOException {
+		commit();
 		_recman.defrag();		
 	}
   

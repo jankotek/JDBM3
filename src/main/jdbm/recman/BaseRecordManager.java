@@ -604,7 +604,8 @@ public final class BaseRecordManager
 
 
 	public synchronized void defrag() throws IOException {
-		 checkIfClosed();
+		checkIfClosed();
+		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename; 
 		BaseRecordManager recman2 = new BaseRecordManager(filename2);
@@ -654,7 +655,7 @@ public final class BaseRecordManager
 		close();
 		List<File> filesToDelete = new ArrayList<File>();
 		//now rename old files 
-		String[] exts = {IDF, IDR, DBR, DBF};
+		String[] exts = {IDF, IDR, DBF, DBR};
 		for(String ext:exts){
 			String f1 = filename1+ext;			
 			String f2 = filename2+"_OLD"+ext;

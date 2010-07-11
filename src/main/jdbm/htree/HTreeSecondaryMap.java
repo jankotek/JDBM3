@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jdbm.SecondaryHashMap;
 import jdbm.helper.JdbmBase;
+import jdbm.helper.SecondaryKeyHelper;
 
 public class HTreeSecondaryMap<A,K,V> extends HTreeMap<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
 
@@ -35,6 +36,10 @@ public class HTreeSecondaryMap<A,K,V> extends HTreeMap<A,Iterable<K>> implements
 		} catch (IOException e) {
 			throw new IOError(e);
 		}
+	}
+
+	public Iterable<V> getPrimaryValues(A a) {
+		return SecondaryKeyHelper.translateIterable(b, get(a));
 	}
 
 }

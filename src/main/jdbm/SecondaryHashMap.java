@@ -38,5 +38,13 @@ public interface SecondaryHashMap<A,K,V> extends Map<A,Iterable<K>>{
 	 * @return value from primary table
 	 */
 	V getPrimaryValue(K k); 
+	
+	/**
+	 * Returns values from primary map which are matching given secondary key
+	 * @param a
+	 * @return Iterable over values, this never returns null. 
+	 */
+	Iterable<V> getPrimaryValues(A a);
+
 
 }

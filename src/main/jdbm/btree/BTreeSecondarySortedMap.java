@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jdbm.SecondaryTreeMap;
 import jdbm.helper.JdbmBase;
+import jdbm.helper.SecondaryKeyHelper;
 
 public class BTreeSecondarySortedMap<A,K,V> extends BTreeSortedMap<A,Iterable<K>> 
 	implements SecondaryTreeMap<A,K,V>{
@@ -36,6 +37,10 @@ public class BTreeSecondarySortedMap<A,K,V> extends BTreeSortedMap<A,Iterable<K>
 		} catch (IOException e) {
 			throw new IOError(e);
 		}
+	}
+
+	public Iterable<V> getPrimaryValues(A a) { 
+		return SecondaryKeyHelper.translateIterable(b, get(a));
 	}
 
 }

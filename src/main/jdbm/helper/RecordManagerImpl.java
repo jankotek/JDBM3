@@ -103,7 +103,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 	public <V> PrimaryStoreMap<Long, V> storeMap(String name,
 				Serializer<V> valueSerializer) {
 		try{
-			BTree<Long,Object> tree = null;
+			BTree<Long,String> tree = null;
         
 			// create or load
 			long recid = getNamedObject( name);
