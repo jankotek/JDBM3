@@ -181,8 +181,13 @@ public final class Serialization
 	
 	public final static int STOREREFERENCE		= 160;
 	public final static int BLOCKIO				= 161;
-	
 
+	public static final int BPAGE_LEAF 			= 162;
+	public static final int BPAGE_NONLEAF 		= 163;
+	public static final int HTREE_BUCKET 		= 164;
+	public static final int HTREE_DIRECTORY 	= 165;
+	public static final int JAVA_SERIALIZATION 	= 172;
+	
 	
     /**
      * Serialize the object into a byte array.
@@ -821,6 +826,9 @@ public final class Serialization
 			case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
 			case ARRAY_BYTE_255: ret= deserializeArrayByte255(is);break;
 			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+			case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
+			case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
+			case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
 			
 			case -1: throw new EOFException();
 			

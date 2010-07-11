@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import jdbm.Serializer;
+import jdbm.helper.Serialization;
 
 /**
  *  Abstract class for Hashtable directory nodes
@@ -37,18 +38,21 @@ class HashNode<K,V> //implements Serializable, Serializer<HashNode>
 	
 	public HashNode deserialize(DataInputStream ds) throws IOException {
 		try{
-			if(ds.readBoolean()){ //is HashBucket?
+			int i = ds.read();
+			if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
 				HashBucket ret = new HashBucket();
 				ret.readExternal(ds);
 				if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
 					throw new InternalError("bytes left: "+ds.available()+1);
 				return ret;
-			}else{
+			}else if( i == Serialization.HTREE_DIRECTORY){
 				HashDirectory ret = new HashDirectory();
 				ret.readExternal(ds);
 				if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
 					throw new InternalError("bytes left: "+ds.available()+1);
 				return ret;
+			}else {
+				throw new InternalError("Wrong HTree header: "+i);
 			}
 		}catch(ClassNotFoundException e){
 			throw new IOException(e);
@@ -57,11 +61,11 @@ class HashNode<K,V> //implements Serializable, Serializer<HashNode>
 	}
 	public void serialize(DataOutputStream out, HashNode obj) throws IOException {
 		if(obj.getClass() ==  HashBucket.class){
-			out.writeBoolean(true);
+			out.write(Serialization.HTREE_BUCKET);
 			HashBucket b = (HashBucket) obj;
 			b.writeExternal(out);
 		}else{
-			out.writeBoolean(false);
+			out.write(Serialization.HTREE_DIRECTORY);
 			HashDirectory n = (HashDirectory) obj;
 			n.writeExternal(out);
 		}

@@ -15,7 +15,10 @@
  ******************************************************************************/
 package jdbm.helper;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -294,8 +297,28 @@ public class SerializationTest extends TestCase{
 	public void testUnicodeString() throws ClassNotFoundException, IOException{
 		String s = "Ciudad Bolíva";
 		byte[] buf = Serialization.serialize(s);
+		assertTrue("text is not unicode",buf.length!=s.length());
 		Object l2 =  Serialization.deserialize(buf);
-		assertEquals(l2,s);
+		assertEquals(l2,s);		
+	}
+	
+	public void testSerializationHeader() throws IOException{
+		ByteArrayOutputStream b = new ByteArrayOutputStream();
+		new ObjectOutputStream(b).writeObject("lalala");
+		ByteArrayInputStream i = new ByteArrayInputStream(b.toByteArray());
+		final int header1 = i.read();
+
+		ByteArrayOutputStream b2 = new ByteArrayOutputStream();
+		new ObjectOutputStream(b2).writeObject(new Integer(1));
+		ByteArrayInputStream i2 = new ByteArrayInputStream(b2.toByteArray());
+		final int header2 = i2.read();
+
+		assertEquals(header1, header2);
+		assertEquals(header1, Serialization.JAVA_SERIALIZATION);
+		System.out.println("serialization header: "+header1);
+		
+		
+		
 		
 	}
 }

@@ -1006,8 +1006,8 @@ public final class BPage<K,V>
 //    }
 
 
-    private static final byte LEAF = 47;
-    private static final byte NOT_LEAF = -120;
+    private static final int LEAF = Serialization.BPAGE_LEAF;
+    private static final int NOT_LEAF = Serialization.BPAGE_NONLEAF;
     
     /**
      * Deserialize the content of an object from a byte array.
@@ -1023,7 +1023,7 @@ public final class BPage<K,V>
 
       BPage<K,V> bpage = new BPage<K,V>();
 
-  	  switch(ois.readByte()){
+  	  switch(ois.read()){
   		case LEAF:bpage._isLeaf = true;break;
   		case NOT_LEAF:bpage._isLeaf = false;break;
   		default: throw new InternalError("wrong BPage header");
