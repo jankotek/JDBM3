@@ -273,9 +273,7 @@ public class LongTreeMap<V> {
 		}
 		
 		
-	    @SuppressWarnings("unchecked")
 	    private Entry<V> find(long object) {
-	        int result;
 	        Entry<V> x = root;
 	        while (x != null) {
 //	            result = object != null ? object.compareTo(x.key) : comparator

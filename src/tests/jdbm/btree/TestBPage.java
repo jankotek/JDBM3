@@ -23,7 +23,6 @@ import jdbm.RecordManager;
 import jdbm.helper.Tuple;
 import jdbm.helper.TupleBrowser;
 import jdbm.recman.TestCaseWithTestFile;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link Bpage}.

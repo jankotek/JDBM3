@@ -169,7 +169,6 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 
 
 
-			@SuppressWarnings("unchecked")
 			public int size() {
 				return PrimaryStoreMapImpl.this.size();
 			}

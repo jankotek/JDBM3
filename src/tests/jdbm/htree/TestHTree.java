@@ -18,18 +18,14 @@
 package jdbm.htree;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.AbstractMap.SimpleEntry;
 
-import jdbm.PrimaryHashMap;
 import jdbm.RecordListener;
 import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
 import jdbm.recman.TestCaseWithTestFile;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link HTree}.

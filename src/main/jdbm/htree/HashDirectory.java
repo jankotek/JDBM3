@@ -21,13 +21,11 @@ import java.io.DataOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import jdbm.RecordManager;
 import jdbm.helper.LongPacker;
-import jdbm.helper.Serialization;
 
 /**
  *  Hashtable directory page.

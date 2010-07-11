@@ -17,23 +17,15 @@ package jdbm.htree;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import jdbm.InverseHashView;
 import jdbm.PrimaryHashMap;
 import jdbm.RecordListener;
 import jdbm.RecordManager;
-import jdbm.SecondaryHashMap;
-import jdbm.SecondaryKeyExtractor;
-import jdbm.SecondaryTreeMap;
 import jdbm.helper.AbstractPrimaryMap;
-import jdbm.helper.ComparableComparator;
-import jdbm.helper.SecondaryKeyHelper;
 
 
 public class HTreeMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>{

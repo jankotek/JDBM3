@@ -320,7 +320,7 @@ final class PhysicalRowIdManager
     {
         // get the rowid, and write a zero current size into it.
         BlockIo curBlock = file.get(Location.getBlock(id));
-        DataPage curPage = DataPage.getDataPageView( curBlock,blockSize );
+//        DataPage curPage = DataPage.getDataPageView( curBlock,blockSize );
 //        RecordHeader hdr = new RecordHeader( curBlock, id.getOffset() );
         RecordHeader.setCurrentSize(curBlock, Location.getOffset(id), 0 );
         file.release( Location.getBlock(id), true );

@@ -17,16 +17,8 @@
 
 package jdbm;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.util.Comparator;
-
-import jdbm.btree.BTree;
-import jdbm.helper.ComparableComparator;
-import jdbm.helper.DefaultSerializer;
-import jdbm.helper.PrimaryStoreMapImpl;
-import jdbm.helper.StoreReference;
-import jdbm.htree.HTree;
 
 /**
  *  An interface to manages records, which are objects serialized to byte[] on background.
@@ -313,7 +305,6 @@ public interface  RecordManager
      * @param name record name
      * @return map
      */
-	@SuppressWarnings("unchecked")
 	public <V> PrimaryStoreMap<Long, V> storeMap(String name);
 
 }

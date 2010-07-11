@@ -17,7 +17,6 @@ package jdbm.btree;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -25,16 +24,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 
-import jdbm.InverseHashView;
 import jdbm.PrimaryTreeMap;
 import jdbm.RecordListener;
 import jdbm.RecordManager;
-import jdbm.SecondaryHashMap;
-import jdbm.SecondaryKeyExtractor;
-import jdbm.SecondaryTreeMap;
 import jdbm.helper.AbstractPrimaryMap;
-import jdbm.helper.ComparableComparator;
-import jdbm.helper.SecondaryKeyHelper;
 import jdbm.helper.Tuple;
 import jdbm.helper.TupleBrowser;
 

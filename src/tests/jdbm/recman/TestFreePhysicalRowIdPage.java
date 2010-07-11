@@ -17,7 +17,6 @@
 package jdbm.recman;
 
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link FreePhysicalRowIdPage}.

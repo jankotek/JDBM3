@@ -23,7 +23,6 @@ import java.util.Properties;
 import jdbm.RecordManager;
 import jdbm.RecordManagerFactory;
 import jdbm.RecordManagerOptions;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link RecordManager}.
