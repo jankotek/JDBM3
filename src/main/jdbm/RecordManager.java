@@ -161,32 +161,6 @@ public interface  RecordManager
      */
     public abstract void defrag() throws IOException;
     
-    
-    /**
-     *  Returns the number of slots available for "root" rowids. These slots
-     *  can be used to store special rowids, like rowids that point to
-     *  other rowids. Root rowids are useful for bootstrapping access to
-     *  a set of data.
-     */
-    public abstract int getRootCount();
-
-
-    /**
-     *  Returns the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
-    public abstract long getRoot( int id )
-        throws IOException;
-
-
-    /**
-     *  Sets the indicated root rowid.
-     *
-     *  @see #getRootCount
-     */
-    public abstract void setRoot( int id, long rowid )
-        throws IOException;
 
 
     /**

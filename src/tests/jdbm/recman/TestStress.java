@@ -79,11 +79,10 @@ public class TestStress extends TestCaseWithTestFile {
     /**
      *  Test basics
      */
-    public void testBasics() throws Exception {
-        RecordManager recman;
+    public void testBasics() throws Exception {        
 
         String file = newTestFile();
-        recman = RecordManagerFactory.createRecordManager(file);
+        BaseRecordManager recman = new BaseRecordManager(file);
 
         // as this code is meant to test data structure calculcations
         // and stuff like that, we may want to disable transactions
@@ -109,7 +108,7 @@ public class TestStress extends TestCaseWithTestFile {
                     System.out.print(" (reopened at round "
                     + i/RPPROMILLE + ")");
                     recman.close();
-                    recman =RecordManagerFactory.createRecordManager(file);
+                    recman = new BaseRecordManager(file);
                     //        recman.disableTransactions();
                 }
 

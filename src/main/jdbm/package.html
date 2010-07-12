@@ -1,84 +1,92 @@
 <html>
   <body>
-    <p>JDBM is simple embedded Key Value database.</p>
+    <p>This package contains public API and introduction</p>
 	
-	<h1>JDBM where it fits</h1>
-	Key-Value databases good attention recently, but their history is much older. GDBM on which JDBM is based on started 
-	in 1970 and is called 'pre rational' database. JDBM is under development since 2000. Version 1.0 was in production 
-	since 2005 with little bug reported. JDBM2 adds some features on top of JDBM (most importantly <code>java.util.Map</code> views)
+	<h2>JDBM intro</h2>
+	Key-Value databases have got a lot of attention recently, but their history is much older. GDBM (predecessor of JDBM) started 
+	in 1970 and was called 'pre rational' database. JDBM is under development since 2000. Version 1.0 was in production 
+	since 2005 with only a few bugs reported. Version 2.0 adds some features on top of JDBM (most importantly <code>java.util.Map</code> views)
 	<p/>
-	JDBM2 goal is to provide simple and fast persistence. It is very simple to use, have minimal overhead and standalone 
-	JAR have only 130KB. It is excelent choice for Swing application or Android phone. JDBM also handles huge datasets well
+	JDBM 2.0 goal is to provide simple and fast persistence. It is very simple to use, it has minimal overhead and standalone 
+	JAR takes only 130KB. It is excelent choice for Swing application or Android phone. JDBM also handles huge datasets well
 	and can be used for data processing (author is using it to process astronomical data). 
-	Source code is without magic and simple, so it is well readabable and can be used for teaching.
-	On other side it does not have some important features (concurrent scalability, multiple transaction, annotations,
-	clustering...).
-	It is tax payd for simplicity and small size. For example multiple transaction would bring whole new dimension  problems
-	like concurrent updates, optimistic/pesimistic record locking, etc.
-	JDBM goal is not to replicate Valdemort, HBase or other more advanced Key Value database. 
+	The source code is not complicated; it is well readabable and can also be used for teaching.
+	On the other hand, it does not have some important features (concurrent scalability, multiple transaction, annotations,
+	clustering...), which is the reason why it is so simple and small. For example, multiple transaction would introduce a new dimension  of problems, such as concurrent updates, optimistic/pesimistic record locking, etc.
+	JDBM does not try to replicate Valdemort, HBase or other more advanced Key Value databases. 
 	<p/>
-	<h2>JDBM2 is not</h2>
+	<h2>JDBM2 is </h2>
 	
-	<h3>SQL database</h3>
+	<p/><b>Not a SQL database</b><br/>
 	JDBM2 is more low level. With this comes great power (speed, resource usage, no ORM) 
 	but also big responsibility. You are responsible for data integrity, partioning, typing etc... 
-	Excelent embedded SQL database is <a href="http://www.h2database.com">H2</a> (in fact it is faster then JDBM2 in many cases). 
+	Excelent embedded SQL database is <a href="http://www.h2database.com">H2</a> (in fact it is faster than JDBM2 in many cases). 
 	
-	<h3>Object database</h3>
-	The fact JDBM2 uses serialization may give you false sense of security. It does not 
-	magically split huge object graph into smaller pieces, nor handle duplicates. 
-	You may easily end up with single instance being persisted in several copyes in datastore.
-	But object database does this magic for you, it traverses object graph references and 
-	makes sure there are no duplicates in datastore. Have look at 
+	<p/><b>Not an Object database</b><br/>
+	The fact that JDBM2 uses serialization may give you a false sense of security. It does not 
+	magically split a huge object graph into smaller pieces, nor does it handle duplicates. 
+	With JDBM you may easily end up with single instance being persisted in several copies over a datastore.
+	An object database would do this magic for you as it traverses object graph references and 
+	makes sure there are no duplicates in a datastore. Have look at 
 	<a href="http://www.neodatis.org/">NeoDatis</a> or <a href="http://www.db4o.com/">DB4o</a>
 	
-	<h3>Enterprise level</h3>
-	JDBM2 codebase is propably very good and without bugs, but it is community project. You may were easily endup without 
-	support. For something more enterprisey have look at 
-	<a href="http://www.oracle.com/database/berkeley-db/je/index.html ">Berkley DB Java Edition</a> from Oracle. BDB have more  
-	features, is more robust, have better documentation, bigger overhead and comes with pricetag.
+	<p/><b>Not at enterprise level</b><br/>
+	JDBM2 codebase is propably very good and without bugs, but it is a community project. You may easily endup without 
+	support. For something more enterprisey have a look at 
+	<a href="http://www.oracle.com/database/berkeley-db/je/index.html ">Berkley DB Java Edition</a> from Oracle. BDB has more  
+	features, it is more robust, it has better documentation, bigger overhead and comes with a pricetag.
 	
-	<h3>Distributed</h3>
-	Key Values databases are associated with distributed stores. JDBM is not distributed, it runs on single computer only. 
-	You are propably looking for <a href="http://project-voldemort.com/">Valdemort</a>
+	<p/><b>Not distributed</b><br/>
+	Key Value databases are associated with distributed stores, map reduce etc. JDBM is not distributed, it runs on single computer only. 
+	It does not even have a network interface and can not act as a server. 
+	You would be propably looking for <a href="http://project-voldemort.com/">Valdemort</a>. 
 	
-	<h2>JDBM2 features</h2>
-	JDBM2 have some helpfull features to make it easyer to use. It also brings it closer to SQL and helps with data 
-	integrity checks and data queryes. 
-	<h3>Low level page store</h3>
-	
-	
-	
-	
-	
+	<h2>JDBM2 overview</h2>
+	JDBM2 has some helpfull features to make it easier to use. It also brings it closer to SQL and helps with data 
+	integrity checks and data queries. 
+	<p/><b>Low level page store</b><br/>
+	This is Key-Value database in its literal mean. Key is a record identifier number (recid) which points to a location in file. 
+	Since recid is a physical pointer, new key values must be assgned by store (wherever the free space is found).
+	Value can be any object, serializable to a byte[] array. Page store also provides transaction and cache.  
+	<p/><b>Named objects</b><br/>
+	Number as an identifier is not very practical. So there is a table that translates Strings to recid. This is recommended 
+	approach for persisting singletons. 
+	<p/><b>Primary maps</b><br/>	
+	{@link jdbm.PrimaryStoreMap}, 	{@link jdbm.PrimaryTreeMap} and {@link jdbm.PrimaryHashMap} implements <code>java.util.map</code> interface
+	from Java Collections. But they use page store for persistence. So you can create HashMap with bilions of items and worry only about the commits.
+	<p/><b>Secondary maps</b><br/>	
+	Secondary maps (indexes) provide side information and associations for the primary map. For example, if there is a Person class persisted in the primary map, 
+	the secondary maps can provide fast lookup by name, address, age... The secondary maps are 'views' to the primary map and are readonly. 
+	They are updated by the primary map automatically. 
+	<p/><b>Cache</b><br/>	
+	JDBM has object instance cache. This reduces the serialization time and disk IO. By default JDBM uses SoftReference cache. If JVM have 
+	less then 50MB heap space available, MRU (Most Recently Used) fixed size cache is used instead.
+	<p/><b>Transactions</b><br/>	
+	JDBM provides transactions with commit and rollback. The transaction mechanism is safe and tested (in usage for the last 5 years). JDBM allows only
+	single concurrent transactions and there are no problems with concurrent updates and locking. 
     
-    <h1>10 things to keep on mind</h1>
+    <h1>10 things to keep in mind</h1>
 	<ul> 
-	<li>Uncommited data are stored in memory, if you get <code>OutOfMemoryException</code> make commits more
-		often.
-	<li>Keys and values are stored as part of index nodes. They are instanciated each time index is searched.
-		If you have larger value (>512 bytes), this may hurt performance and cause <code>OutOfMemoryException</code>
-		In this case use <<StoreReference>> or <<StorageMap>> to store values outside of index.
-	<li>If you run into performance problems, use profiler rather then ask on internet.	
-	<li>JDBM caches returned object instances. If you modify an object (like set new name on person),
-		next time RecordManager may return object with this modification. 
+	<li>Uncommited data are stored in memory, and if you get <code>OutOfMemoryException</code> you have to make commits more
+		frequently.
+	<li>Keys and values are stored as part of the index nodes. They are instanciated each time the index is searched.
+		If you have larger values (>512 bytes), these may hurt performance and cause <code>OutOfMemoryException</code>
+		In this case use  {@link jdbm.helper.StoreReference} or {@link jdbm.PrimaryStoreMap} to store values outside of the index.
+	<li>If you run into performance problems, use the profiler rather then asking for it over the internet.	
+	<li>JDBM caches returned object instances. If you modify an object (like set new name on a person),
+		next time RecordManager may return the object with this modification. 
 	<li>Iteration over Maps is not guaranteed if there are changes 
-		(for example adding new entry while iterating). There is no fail fast policy yet. 
+		(for example adding a new entry while iterating). There is no fail fast policy yet. 
 		So all iterations over Maps should be synchronized on RecordManager.
-	<li>More memory means more performance, use <code>-Xmx000m</code> generously. JDBM have good SoftReference cache.
-	<li>SoftReference cache may be blocking memory for other tasks.	It is released automatically, but it may slow down JVM.
-		Consider clearing cache manually with <code>RecordManager.clearCache()</code> before starting new type 
+	<li>More memory means better performance; use <code>-Xmx000m</code> generously. JDBM has good SoftReference cache.
+	<li>SoftReference cache may be blocking some memory for other tasks. The memory is released automatically, but it may take longer then you expect.
+		Consider clearing the cache manually with <code>RecordManager.clearCache()</code> before starting a new type 
 		of task. 	
-	<li>It is safe not to close db before exiting, but there will be cleanup on next start.
-	<li>JDBM may have problem reclaiming free space after many record were delete/updated. You may want to run
+	<li>It is safe not to close the db before exiting, but if you that there will be a long cleanup upon the next start.
+	<li>JDBM may have problem reclaiming free space after many records are delete/updated. You may want to run
 		<code>RecordManager.defrag()</code> from time to time.
+	<li>A Key-Value db does not support N-M relations easily. It takes a lot of care to handle them correctly. 
 	</ul>
-	
-
-    <p>
-
-    <p>You can use it to store a mix of hashtables and blobs, and all updates are 
-       done in a transactionally safe manner.</p>
 
     <dl>
     </dl>

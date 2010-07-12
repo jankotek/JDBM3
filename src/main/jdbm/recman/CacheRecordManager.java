@@ -234,29 +234,6 @@ public class CacheRecordManager
     }
 
 
-    public synchronized int getRootCount()
-    {
-        checkIfClosed();
-
-        return _recman.getRootCount();
-    }
-
-    public synchronized long getRoot( int id )
-        throws IOException
-    {
-        checkIfClosed();
-
-        return _recman.getRoot( id );
-    }
-
-
-    public synchronized void setRoot( int id, long rowid )
-        throws IOException
-    {
-        checkIfClosed();
-
-        _recman.setRoot( id, rowid );
-    }
 
     public synchronized void commit()
         throws IOException
