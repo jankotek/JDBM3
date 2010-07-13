@@ -22,10 +22,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import jdbm.RecordManager;
 import jdbm.Serializer;
+import jdbm.helper.ComparableComparator;
 import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 import jdbm.helper.Tuple;
@@ -1020,6 +1022,7 @@ public final class BPage<K,V>
 	public BPage<K,V> deserialize( DataInputStream ois ) 
         throws IOException
     {
+    	
 
       BPage<K,V> bpage = new BPage<K,V>();
 
@@ -1039,7 +1042,7 @@ public final class BPage<K,V>
 
       try {
           if ( _btree.keySerializer == null ) {
-              bpage._keys = (K[]) Serialization.readObject(ois);
+              bpage._keys = readKeys(ois);
           }else{
         	  bpage._keys = (K[]) new Object[ _btree._pageSize ];
       
@@ -1081,7 +1084,7 @@ public final class BPage<K,V>
       return bpage;
 
     }
-    
+
     
     /** 
      * Serialize the content of an object into a byte array.
@@ -1107,9 +1110,9 @@ public final class BPage<K,V>
         }
                 
         LongPacker.packInt(oos, bpage._first );
-      
+
         if ( _btree.keySerializer == null ) {
-        	Serialization.writeObject(oos, bpage._keys);        	
+        	writeKeys(oos, bpage._keys);        	
         }else{
         	for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                   
                 if ( bpage._keys[ i ] != null ) {
@@ -1143,7 +1146,160 @@ public final class BPage<K,V>
         }
         
     }
+
+
+	private static final int ALL_NULL = 0;
+	private static final int ALL_INTEGERS = 1 << 4;
+	private static final int ALL_INTEGERS_NEGATIVE = 2 <<4;
+	private static final int ALL_LONGS = 3 <<4;
+	private static final int ALL_LONGS_NEGATIVE = 4 <<4;
+	private static final int ALL_OTHER = 5 <<4;
+
+	
+	private K[] readKeys(DataInputStream ois) throws IOException, ClassNotFoundException {
+		Object[] ret = new Object[BTree.DEFAULT_SIZE];
+		final int head = ois.read();
+		final int type = head & 0xf0;
+		final int nullOffset = head - type;
+		if(type == ALL_NULL){
+			return (K[])ret;
+		}else if(type == ALL_INTEGERS || type == ALL_INTEGERS_NEGATIVE){
+			long first = LongPacker.unpackLong(ois);
+			if(type == ALL_INTEGERS_NEGATIVE)
+				first = -first;
+			ret[nullOffset] = Integer.valueOf((int)first);
+			for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+//				ret[i] = Serialization.readObject(ois);
+				long v = LongPacker.unpackLong(ois);
+				if(v == 0) continue; //null
+				v = v +first -1;
+				ret[i] = Integer.valueOf((int)v);				
+			}
+			return (K[]) ret;
+		}else if(type == ALL_LONGS || type == ALL_LONGS_NEGATIVE){
+			long first = LongPacker.unpackLong(ois);
+			if(type == ALL_LONGS_NEGATIVE)
+				first = -first;
+
+			ret[nullOffset] = Long.valueOf(first);
+			for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+				//ret[i] = Serialization.readObject(ois);
+				long v = LongPacker.unpackLong(ois);
+				if(v == 0) continue; //null
+				v = v +first -1;
+				ret[i] = Long.valueOf(v);
+			}
+			return (K[]) ret;
+			
+		}else if(type == ALL_OTHER){
+			for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++)
+				ret[i] = Serialization.readObject(ois);
+			return (K[]) ret;
+		}else{ 
+			throw new InternalError("unknown bpage header type: "+type);
+		}
+		
+	}
     
+	
+	
+	private void writeKeys(DataOutputStream oos, K[] keys) throws IOException {
+		
+		//check if all items are null;
+		int nullOffset = 0;
+		for(;nullOffset<BTree.DEFAULT_SIZE;nullOffset++){
+			if(keys[nullOffset]!=null) 
+				break;
+		}
+		
+		if(nullOffset == BTree.DEFAULT_SIZE){
+			oos.write(ALL_NULL);
+			return;
+		}
+
+		/**
+		 * Special compression to compress Long and Integer
+		 */
+		if (_btree._comparator == ComparableComparator.INSTANCE) {
+			boolean allInteger = true;
+			for (int i = nullOffset ; i < BTree.DEFAULT_SIZE; i++) {
+				if (keys[i]!=null && keys[i].getClass() != Integer.class) {
+					allInteger = false;
+					break;
+				}
+			}
+			boolean allLong = true;
+			for (int i = nullOffset ; i < BTree.DEFAULT_SIZE; i++) {
+				if (keys[i]!=null &&  (keys[i].getClass() != Long.class ||
+						//special case to exclude Long.MIN_VALUE from conversion, causes problems to LongPacker
+					((Long)keys[i]).longValue() == Long.MIN_VALUE)
+				) {
+					allLong = false;
+					break;
+				}												
+			}
+			
+			if(allLong){
+				//check that diff between MIN and MAX fits into PACKED_LONG
+				long max = Long.MIN_VALUE;
+				long min = Long.MAX_VALUE;
+				for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++){
+					if(keys[i] == null) continue;
+					long v = (Long)keys[i];
+					if(v>max) max = v;
+					if(v<min) min = v;
+				}
+				//now convert to Double to prevent overflow errors
+				double max2 = max;
+				double min2 = min;
+				double maxDiff = Long.MAX_VALUE;
+				if(max2 - min2 >maxDiff/2) // divide by two just to by sure
+					allLong = false;
+				
+			}
+			
+			if(allLong && allInteger)
+				throw new InternalError();
+
+			if ( allLong || allInteger) {
+				long first = ((Number) keys[nullOffset ]).longValue();
+				//write header
+				if(allInteger){ 
+					if(first>0)oos.write(ALL_INTEGERS | nullOffset);
+					else oos.write(ALL_INTEGERS_NEGATIVE | nullOffset);
+				}else if(allLong){
+					if(first>0)oos.write(ALL_LONGS | nullOffset);
+					else oos.write(ALL_LONGS_NEGATIVE | nullOffset);
+				}else{
+					throw new InternalError();
+				}
+				
+				//write first
+				LongPacker.packLong(oos,Math.abs(first));
+				//write others
+				for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+//					Serialization.writeObject(oos, keys[i]);
+					long v = 0;
+					if(keys[i]!=null)
+						v = ((Number) keys[i]).longValue()  - first +1;
+					LongPacker.packLong(oos, v);
+				}
+				return;
+			}
+		}
+		
+		/**
+		 * other case, fallback into normal serialization
+		 */
+		oos.write(ALL_OTHER | nullOffset);
+		for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++)
+			Serialization.writeObject(oos, keys[i]);
+		return;
+		
+		
+	}
+    
+ 
     
     /** STATIC INNER CLASS
      *  Result from insert() method call
