@@ -69,8 +69,8 @@ public final class BaseRecordManager
 	private static final String IDF = ".idf";
 	private static final String DBR = ".dbr";
 	private static final String DBF = ".dbf";
-	static final int DATA_BLOCK_SIZE = 8024 * 4;
-	static final int LOG_BLOCK_SIZE = 1024*1;
+	static final int DATA_BLOCK_SIZE = 1024 * 8 ;
+	static final int LOG_BLOCK_SIZE = 1024;
 	
     /**
      * Underlying file for store records.
