@@ -36,20 +36,20 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 	Serializer<V> valueSerializer;
 	List<RecordListener<Long,V>> listeners = new CopyOnWriteArrayList<RecordListener<Long,V>>();
 
-	public PrimaryStoreMapImpl(PrimaryMap<Long, String> map,Serializer<V> valueSerializer) {
+	public PrimaryStoreMapImpl(PrimaryMap<Long, String> map,Serializer<V> valueSerializer2) {
 		this.map = map;
-		this.valueSerializer = valueSerializer;
+		this.valueSerializer = valueSerializer2;
 		map.addRecordListener(new RecordListener<Long,String>(){
 
 			public void recordInserted(Long key,String value) throws IOException {
-				V v = (V) getRecordManager().fetch(key);
+				V v = (V) getRecordManager().fetch(key,valueSerializer);
 				for(RecordListener<Long,V> l:listeners)
 					l.recordInserted(key, v);
 			}
 
 			public void recordRemoved(Long key, String value) throws IOException {
 				//store reference to value, it is needed to notify listeners
-				V deletedValue = (V) getRecordManager().fetch(key);
+				V deletedValue = (V) getRecordManager().fetch(key,valueSerializer);
 				
 				for(RecordListener<Long,V> l:listeners)
 					l.recordRemoved(key, deletedValue);
