@@ -73,9 +73,9 @@ final class LogicalRowIdManager {
 	 */
 	void forceInsert(long logicalRowId, long physLoc) throws IOException {
 		//create pages until we reach requested block
-		long lastBlock  = pageman.getLast(Magic.USED_PAGE);
+		long lastBlock  = pageman.getLast(Magic.TRANSLATION_PAGE);
 		while(lastBlock!=Location.getBlock(logicalRowId)){
-			lastBlock = pageman.allocate(Magic.USED_PAGE);
+			lastBlock = pageman.allocate(Magic.TRANSLATION_PAGE);
 			if(lastBlock>Location.getBlock(logicalRowId))
 				throw new Error("outallocated");
 		}

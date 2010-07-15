@@ -18,6 +18,25 @@ public class TestDefrag extends TestCaseWithTestFile{
 		assertEquals(m.fetch(loc),"123");
 	}
 	
+	
+	public void testDefrag2() throws IOException{
+		String file = newTestFile();
+		BaseRecordManager m = new BaseRecordManager(file);
+		TreeMap<Long,String> map = new TreeMap<Long, String>();
+		for(int i = 0;i<10000;i++){
+			long loc = m.insert(""+i);
+			map.put(loc, ""+i);
+		}
+		
+		m.defrag();		
+		m.close();
+		m = new BaseRecordManager(file);
+		for(Long l : map.keySet()){
+			String val = map.get(l);
+			assertEquals(val,m.fetch(l));
+		}
+	}
+	
 
 	
 	public void testDefragBtree() throws IOException{
