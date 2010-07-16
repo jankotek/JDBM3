@@ -270,6 +270,39 @@ public final class BlockIo {
         setDirty();
     }
 
+
+    /**
+     *  Reads a long from the indicated position
+     */
+    public long readSixByteLong( int pos )
+    {
+        return
+            (((long)(data[pos+0] & 0xff) << 40) |
+             ((long)(data[pos+1] & 0xff) << 32) |
+             ((long)(data[pos+2] & 0xff) << 24) |
+             ((long)(data[pos+3] & 0xff) << 16) |
+             ((long)(data[pos+4] & 0xff) << 8) |
+             ((long)(data[pos+5] & 0xff) << 0)); 
+        
+    }
+
+    /**
+     *  Writes a long to the indicated position
+     */
+    public void writeSixByteLong(int pos, long value) {
+//    	if(value >> (6*8)!=0)
+//    		throw new IllegalArgumentException("does not fit");
+    	
+        data[pos+0] = (byte)(0xff & (value >> 40));
+        data[pos+1] = (byte)(0xff & (value >> 32));
+        data[pos+2] = (byte)(0xff & (value >> 24));
+        data[pos+3] = (byte)(0xff & (value >> 16));
+        data[pos+4] = (byte)(0xff & (value >> 8 ));
+        data[pos+5] = (byte)(0xff & (value >> 0 ));
+        setDirty();
+    }
+
+    
     // overrides java.lang.Object
 
     public String toString() {

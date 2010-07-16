@@ -58,4 +58,8 @@ interface Magic {
 
     /** size of three byte integer */
 	public short SZ_THREE_BYTE_INT = 3;
+	
+    /** size of three byte integer */
+	public short SZ_SIX_BYTE_LONG = 6;
+
 }
