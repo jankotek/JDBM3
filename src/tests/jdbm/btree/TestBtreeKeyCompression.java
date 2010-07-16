@@ -105,8 +105,26 @@ public class TestBtreeKeyCompression extends TestCaseWithTestFile{
 		recman.close();		
 	}
 	
-	public void testStrings(){
-		
+	public void testStrings() throws IOException{
+		long init = Long.MAX_VALUE - size*2;
+		String file = newTestFile();
+		RecordManager recman = new BaseRecordManager(file);
+		PrimaryTreeMap<String, String> map = recman.treeMap("aa");
+		for(long i = init; i<init+size/10;i++){
+			map.put("aaaaa"+i, "");			
+		}
+		recman.commit();
+		recman.defrag();		
+		recman.close();
+		recman = new BaseRecordManager(file);
+		map = recman.treeMap("aa");
+		for(long i = init; i<init+size/10;i++){
+			assertTrue(map.containsKey("aaaaa"+i));			
+		}
+
+		long fileSize = new File(file+".dbr.0").length()/1024;
+		System.out.println("file size with Strings: "+fileSize);
+		assertTrue("file is too big, compression failed", fileSize<120);
 	}
 
 	

@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -316,9 +317,16 @@ public class SerializationTest extends TestCase{
 		assertEquals(header1, header2);
 		assertEquals(header1, Serialization.JAVA_SERIALIZATION);
 		System.out.println("serialization header: "+header1);
-		
-		
-		
-		
+	}
+	
+	public void testPackedLongCollection() throws ClassNotFoundException, IOException{
+		ArrayList l1 = new ArrayList();
+		l1.add(0L);
+		l1.add(1L);
+		l1.add(0L);
+		assertEquals(l1,Serialization.deserialize(Serialization.serialize(l1)));
+		l1.add(-1L);
+		assertEquals(l1,Serialization.deserialize(Serialization.serialize(l1)));
+
 	}
 }

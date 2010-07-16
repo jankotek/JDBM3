@@ -147,12 +147,16 @@ public final class Serialization
 	
 	public final static int ARRAY_OBJECT_255	=  72;
 	public final static int ARRAY_OBJECT		=  73;
-
+	//special cases for BTree values which stores references
+	public final static int ARRAY_OBJECT_PACKED_LONG =  74;
+	public final static int ARRAYLIST_PACKED_LONG =  75;
+	
 	public final static int STRING_EMPTY		= 101;
 	public final static int STRING_255			= 102;
 	public final static int STRING				= 103;
 	public final static int ARRAYLIST_255		= 104;
 	public final static int ARRAYLIST			= 105;
+	
 	public final static int TREEMAP_255			= 106;
 	public final static int TREEMAP				= 107;
 	public final static int HASHMAP_255			= 108;
@@ -331,27 +335,73 @@ public final class Serialization
 		}else if(obj instanceof Object[]){
 			Object[] b = (Object[]) obj;
 			if(b.length<=255){
-				out.write(ARRAY_OBJECT_255);
-				out.write(b.length);
+				//check if it contains packable longs
+				boolean packableLongs = true;
+				for(Object o:b){
+					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
+						packableLongs = false;
+						break;
+					}					
+				}
+				if(packableLongs){
+					out.write(ARRAY_OBJECT_PACKED_LONG);
+					out.write(b.length);
+					for(Object o : b){
+						if(o == null)
+							LongPacker.packLong(out,0);
+						else
+							LongPacker.packLong(out,((Long)o).longValue()+1);
+					}
+
+				}else{				
+					out.write(ARRAY_OBJECT_255);
+					out.write(b.length);
+					for(Object o : b)
+						writeObject(out,o);
+				}
+
 			}else{
 				out.write(ARRAY_OBJECT);
 				LongPacker.packInt(out,b.length);
+				for(Object o : b)
+					writeObject(out,o);
+
 			}
-			for(Object o : b)
-				writeObject(out,o);
 			
 		}else if(clazz ==  ArrayList.class){
 			ArrayList l = (ArrayList) obj;
 			if(l.size()<255){
-				out.write(ARRAYLIST_255);
-				out.write(l.size());
+				//check if it contains packable longs
+				boolean packableLongs = true;
+				for(Object o:l){
+					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
+						packableLongs = false;
+						break;
+					}					
+				}
+				if(packableLongs){
+					out.write(ARRAYLIST_PACKED_LONG);
+					out.write(l.size());
+					for(Object o : l){
+						if(o == null)
+							LongPacker.packLong(out,0);
+						else
+							LongPacker.packLong(out,((Long)o).longValue()+1);
+					}
+				}else{
+					out.write(ARRAYLIST_255);
+					out.write(l.size());
+					for(Object o:l)
+						writeObject(out, o);					
+				}
+
 			}else{
 				out.write(ARRAYLIST);
 				LongPacker.packInt(out,l.size());
+				for(Object o:l)
+					writeObject(out, o);
 			}
 
-			for(Object o:l)
-				writeObject(out, o);
 		}else if(clazz ==  LinkedList.class){
 			LinkedList l = (LinkedList) obj;
 			if(l.size()<255){
@@ -789,8 +839,10 @@ public final class Serialization
 			case STRING_EMPTY:ret= "";break;
 			case ARRAYLIST_255:ret= deserializeArrayList256Smaller(is);break;
 			case ARRAYLIST:ret= deserializeArrayList(is);break;
+			case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
 			case ARRAY_OBJECT_255:ret= deserializeArrayObject256Smaller(is);break;
-			case ARRAY_OBJECT:ret= deserializeArrayObject(is);break;			
+			case ARRAY_OBJECT:ret= deserializeArrayObject(is);break;
+			case ARRAY_OBJECT_PACKED_LONG:ret= deserializeArrayObjectPackedLong(is);break;
 			case LINKEDLIST_255:ret= deserializeLinkedList256Smaller(is);break;
 			case LINKEDLIST:ret= deserializeLinkedList(is);break;
 			case TREESET_255:ret= deserializeTreeSet256Smaller(is);break;
@@ -996,7 +1048,7 @@ public final class Serialization
 		b.readExternal(is);
 		return b;
 	}
-
+	
 	private static Object[] deserializeArrayObject(DataInputStream is) throws IOException, ClassNotFoundException {
 		int size =LongPacker.unpackInt(is);
 		Object[] s = new Object[size];
@@ -1004,6 +1056,20 @@ public final class Serialization
 			s[i] = readObject(is);
 		return s;
 	}
+	
+	private static Object[] deserializeArrayObjectPackedLong(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		Object[] s = new Object[size];
+		for(int i = 0; i<size;i++){
+			long l = LongPacker.unpackLong(is);
+			if(l == 0)
+				s[i] = null;
+			else
+				s[i] = Long.valueOf(l-1);			
+		}
+		return s;
+	}
+
 
 	private static Object[] deserializeArrayObject256Smaller(DataInputStream is) throws IOException, ClassNotFoundException {
 		int size = is.read();
@@ -1021,6 +1087,22 @@ public final class Serialization
 		ArrayList<Object> s = new ArrayList<Object>(size);
 		for(int i = 0; i<size;i++)
 			s.add(readObject(is));
+		return s;
+	}
+	
+	private static ArrayList<Object> deserializeArrayListPackedLong(DataInputStream is) throws IOException, ClassNotFoundException {
+		int size = is.read();
+		if(size <0)
+    	    throw new EOFException();
+
+		ArrayList<Object> s = new ArrayList<Object>(size);
+		for(int i = 0; i<size;i++){
+			long l = LongPacker.unpackLong(is);
+			if(l == 0)
+				s.add(null);
+			else
+				s.add( Long.valueOf(l-1));			
+		}
 		return s;
 	}
 

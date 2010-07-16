@@ -79,5 +79,15 @@ public class TestBPage extends TestCaseWithTestFile {
     }
 
 
+//    public void testFindCommonStringPrefix(){
+//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAAB","AAAAC"}));
+//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAAXXX","AAAAB","AAAAC"}));
+//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA",null}));
+//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAAA",null}));
+//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAAA"}));
+//    	assertEquals("AAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAA"}));
+//    	assertEquals("",BPage.findCommonStringPrefix(new String[]{"AAAA",null,"BBBB"}));
+//    	assertEquals(null,BPage.findCommonStringPrefix(new String[]{null,null,null}));
+//    }
 
 }

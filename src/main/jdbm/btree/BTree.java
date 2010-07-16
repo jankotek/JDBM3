@@ -71,7 +71,7 @@ public class BTree<K,V>
     /**
      * Default page size (number of entries per node)
      */
-    public static final int DEFAULT_SIZE = 16;
+    public static final int DEFAULT_SIZE = 32;
 
 
     /**

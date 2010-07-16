@@ -28,7 +28,10 @@ import java.util.List;
 import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.helper.ComparableComparator;
+import jdbm.helper.DefaultSerializer;
 import jdbm.helper.LongPacker;
+import jdbm.helper.OpenByteArrayInputStream;
+import jdbm.helper.OpenByteArrayOutputStream;
 import jdbm.helper.Serialization;
 import jdbm.helper.Tuple;
 import jdbm.helper.TupleBrowser;
@@ -1041,18 +1044,9 @@ public final class BPage<K,V>
       bpage._first = LongPacker.unpackInt(ois);
 
       try {
-          if ( _btree.keySerializer == null ) {
-              bpage._keys = readKeys(ois);
-          }else{
-        	  bpage._keys = (K[]) new Object[ _btree._pageSize ];
-      
-        	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {              
-                  byte[] serialized = readByteArray( ois );
-                  if ( serialized != null ) {
-                      bpage._keys[ i ] = _btree.keySerializer.deserialize(new DataInputStream( new ByteArrayInputStream(serialized)));
-                  }
-              }
-          }
+
+           bpage._keys = readKeys(ois,bpage._first);
+           
       } catch ( ClassNotFoundException except ) {
           throw new IOException( except.getMessage() );
       }
@@ -1060,17 +1054,7 @@ public final class BPage<K,V>
       if ( bpage._isLeaf ) {
           
           try {
-              if ( _btree.valueSerializer == null ) {
-                  bpage._values =  (V[]) Serialization.readObject(ois);
-              }else{
-            	  bpage._values = (V[]) new Object[ _btree._pageSize ];          
-            	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                  
-                      byte[] serialized = readByteArray( ois );
-                      if ( serialized != null ) {
-                          bpage._values[ i ] = _btree.valueSerializer.deserialize( new DataInputStream( new ByteArrayInputStream(serialized)) );
-                      }
-                  }
-              }
+              readValues(ois, bpage);
           } catch ( ClassNotFoundException except ) {
               throw new IOException( except);
           }
@@ -1111,34 +1095,10 @@ public final class BPage<K,V>
                 
         LongPacker.packInt(oos, bpage._first );
 
-        if ( _btree.keySerializer == null ) {
-        	writeKeys(oos, bpage._keys);        	
-        }else{
-        	for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                   
-                if ( bpage._keys[ i ] != null ) {
-                	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    _btree.keySerializer.serialize(new DataOutputStream(baos), bpage._keys[ i ] );
-                    writeByteArray( oos, baos.toByteArray() );
-                } else {
-                    writeByteArray( oos, null );
-                }
-            }
-        }
+       	writeKeys(oos, bpage._keys,bpage._first);        	
 
         if ( bpage._isLeaf ) {
-        	if ( _btree.valueSerializer == null ) {
-        		Serialization.writeObject(oos, bpage._values);
-        	}else{
-        		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                                
-                    if ( bpage._values[ i ] != null ) {
-                    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        _btree.valueSerializer.serialize(new DataOutputStream(baos), bpage._values[ i ] );
-                        writeByteArray( oos, baos.toByteArray() );
-                    } else {
-                        writeByteArray( oos, null );
-                    }
-                }
-            }
+        	writeValues(oos, bpage);
         } else {
             for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
             	LongPacker.packLong(oos,  bpage._children[ i ] );
@@ -1146,34 +1106,72 @@ public final class BPage<K,V>
         }
         
     }
+    
+
+	private void readValues(DataInputStream ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
+		  bpage._values = (V[]) new Object[ _btree._pageSize ];
+	
+		  if ( _btree.valueSerializer == null||   _btree.valueSerializer == DefaultSerializer.INSTANCE) {
+			  V[] vals= (V[]) Serialization.readObject(ois);
+			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+				  bpage._values[i] = vals[i - bpage._first];	  
+			  }
+		  }else{
+	          
+			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                  
+		          byte[] serialized = readByteArray( ois );
+		          if ( serialized != null ) {
+		              bpage._values[ i ] = _btree.valueSerializer.deserialize( new DataInputStream( new ByteArrayInputStream(serialized)) );
+		          }
+		      }
+		  }
+	}
+
+
+	private void writeValues(DataOutputStream oos, BPage<K, V> bpage) throws IOException {
+		if ( _btree.valueSerializer == null ) {
+			Object[] vals2 = Arrays.copyOfRange(bpage._values, bpage._first, bpage._values.length);
+			Serialization.writeObject(oos, vals2);
+		}else{
+			for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                                
+		        if ( bpage._values[ i ] != null ) {
+		        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		            _btree.valueSerializer.serialize(new DataOutputStream(baos), bpage._values[ i ] );
+		            writeByteArray( oos, baos.toByteArray() );
+		        } else {
+		            writeByteArray( oos, null );
+		        }
+		    }
+		}
+	}
 
 
 	private static final int ALL_NULL = 0;
-	private static final int ALL_INTEGERS = 1 << 4;
-	private static final int ALL_INTEGERS_NEGATIVE = 2 <<4;
-	private static final int ALL_LONGS = 3 <<4;
-	private static final int ALL_LONGS_NEGATIVE = 4 <<4;
-	private static final int ALL_OTHER = 5 <<4;
+	private static final int ALL_INTEGERS = 1 << 5;
+	private static final int ALL_INTEGERS_NEGATIVE = 2 <<5;
+	private static final int ALL_LONGS = 3 <<5;
+	private static final int ALL_LONGS_NEGATIVE = 4 <<5;
+	private static final int ALL_STRINGS = 5 <<5;
+	private static final int ALL_OTHER = 6 <<5;
 
 	
-	private K[] readKeys(DataInputStream ois) throws IOException, ClassNotFoundException {
-		Object[] ret = new Object[BTree.DEFAULT_SIZE];
-		final int head = ois.read();
-		final int type = head & 0xf0;
-		final int nullOffset = head - type;
+	private K[] readKeys(DataInputStream ois, final int firstUse) throws IOException, ClassNotFoundException {
+		Object[] ret = new Object[_btree._pageSize];
+		final int type = ois.read();
 		if(type == ALL_NULL){
 			return (K[])ret;
 		}else if(type == ALL_INTEGERS || type == ALL_INTEGERS_NEGATIVE){
 			long first = LongPacker.unpackLong(ois);
 			if(type == ALL_INTEGERS_NEGATIVE)
 				first = -first;
-			ret[nullOffset] = Integer.valueOf((int)first);
-			for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+			ret[firstUse] = Integer.valueOf((int)first);
+			for(int i = firstUse+1;i<_btree._pageSize;i++){
 //				ret[i] = Serialization.readObject(ois);
 				long v = LongPacker.unpackLong(ois);
 				if(v == 0) continue; //null
-				v = v +first -1;
-				ret[i] = Integer.valueOf((int)v);				
+				v = v +first ;
+				ret[i] = Integer.valueOf((int)v);
+				first =v;
 			}
 			return (K[]) ret;
 		}else if(type == ALL_LONGS || type == ALL_LONGS_NEGATIVE){
@@ -1181,20 +1179,52 @@ public final class BPage<K,V>
 			if(type == ALL_LONGS_NEGATIVE)
 				first = -first;
 
-			ret[nullOffset] = Long.valueOf(first);
-			for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+			ret[firstUse] = Long.valueOf(first);
+			for(int i = firstUse+1;i<_btree._pageSize;i++){
 				//ret[i] = Serialization.readObject(ois);
 				long v = LongPacker.unpackLong(ois);
 				if(v == 0) continue; //null
-				v = v +first -1;
+				v = v +first ;
 				ret[i] = Long.valueOf(v);
+				first = v;
 			}
 			return (K[]) ret;
+		}else if(type == ALL_STRINGS){			
+			byte[] previous = null;
+			for(int i = firstUse;i<_btree._pageSize;i++){
+				byte[] b = LeadingValueCompressionProvider.readByteArray(ois, previous, 0);
+				if(b == null ) continue;
+				ret[i] = new String(b);
+				previous = b;
+			}
+			return (K[]) ret;			
 			
 		}else if(type == ALL_OTHER){
-			for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++)
-				ret[i] = Serialization.readObject(ois);
-			return (K[]) ret;
+			if(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE){
+				for (int i = firstUse ; i < _btree._pageSize; i++) {
+					ret[i] = DefaultSerializer.INSTANCE.deserialize(ois);
+				}			
+				return (K[]) ret;
+			}
+
+			
+			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : DefaultSerializer.INSTANCE;
+			OpenByteArrayInputStream in1 = null;
+			DataInputStream in2 = null;
+			byte[] previous = null;
+			for(int i = firstUse;i<_btree._pageSize;i++){
+				byte[] b = LeadingValueCompressionProvider.readByteArray(ois, previous, 0);
+				if(b == null ) continue;
+				if(in1 == null){
+					in1 = new OpenByteArrayInputStream(b);
+					in2 = new DataInputStream(in1);
+				}
+				in1.reset(b, b.length);
+				ret[i] = ser.deserialize(in2);
+				previous = b;
+			}
+			return (K[]) ret;			
+
 		}else{ 
 			throw new InternalError("unknown bpage header type: "+type);
 		}
@@ -1203,16 +1233,20 @@ public final class BPage<K,V>
     
 	
 	
-	private void writeKeys(DataOutputStream oos, K[] keys) throws IOException {
-		
-		//check if all items are null;
-		int nullOffset = 0;
-		for(;nullOffset<BTree.DEFAULT_SIZE;nullOffset++){
-			if(keys[nullOffset]!=null) 
+	@SuppressWarnings("unchecked")
+	private void writeKeys(DataOutputStream oos, K[] keys, final int firstUse) throws IOException {		
+		if(keys.length!=_btree._pageSize)
+			throw new IllegalArgumentException("wrong keys size");
+				
+		//check if all items on key are null
+		boolean allNull = true;
+		for (int i = firstUse ; i < _btree._pageSize; i++) {
+			if(keys[i]!=null){
+				allNull = false;
 				break;
+			}
 		}
-		
-		if(nullOffset == BTree.DEFAULT_SIZE){
+		if(allNull){
 			oos.write(ALL_NULL);
 			return;
 		}
@@ -1220,16 +1254,17 @@ public final class BPage<K,V>
 		/**
 		 * Special compression to compress Long and Integer
 		 */
-		if (_btree._comparator == ComparableComparator.INSTANCE) {
+		if (_btree._comparator == ComparableComparator.INSTANCE && 
+				(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE)) {
 			boolean allInteger = true;
-			for (int i = nullOffset ; i < BTree.DEFAULT_SIZE; i++) {
+			for (int i = firstUse ; i <_btree._pageSize; i++) {
 				if (keys[i]!=null && keys[i].getClass() != Integer.class) {
 					allInteger = false;
 					break;
 				}
 			}
 			boolean allLong = true;
-			for (int i = nullOffset ; i < BTree.DEFAULT_SIZE; i++) {
+			for (int i = firstUse ; i < _btree._pageSize; i++) {
 				if (keys[i]!=null &&  (keys[i].getClass() != Long.class ||
 						//special case to exclude Long.MIN_VALUE from conversion, causes problems to LongPacker
 					((Long)keys[i]).longValue() == Long.MIN_VALUE)
@@ -1243,7 +1278,7 @@ public final class BPage<K,V>
 				//check that diff between MIN and MAX fits into PACKED_LONG
 				long max = Long.MIN_VALUE;
 				long min = Long.MAX_VALUE;
-				for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++){
+				for(int i = firstUse;i <_btree._pageSize;i++){
 					if(keys[i] == null) continue;
 					long v = (Long)keys[i];
 					if(v>max) max = v;
@@ -1262,14 +1297,14 @@ public final class BPage<K,V>
 				throw new InternalError();
 
 			if ( allLong || allInteger) {
-				long first = ((Number) keys[nullOffset ]).longValue();
+				long first = ((Number) keys[firstUse ]).longValue();
 				//write header
 				if(allInteger){ 
-					if(first>0)oos.write(ALL_INTEGERS | nullOffset);
-					else oos.write(ALL_INTEGERS_NEGATIVE | nullOffset);
+					if(first>0)oos.write(ALL_INTEGERS );
+					else oos.write(ALL_INTEGERS_NEGATIVE );
 				}else if(allLong){
-					if(first>0)oos.write(ALL_LONGS | nullOffset);
-					else oos.write(ALL_LONGS_NEGATIVE | nullOffset);
+					if(first>0)oos.write(ALL_LONGS );
+					else oos.write(ALL_LONGS_NEGATIVE );
 				}else{
 					throw new InternalError();
 				}
@@ -1277,31 +1312,83 @@ public final class BPage<K,V>
 				//write first
 				LongPacker.packLong(oos,Math.abs(first));
 				//write others
-				for(int i = nullOffset+1;i<BTree.DEFAULT_SIZE;i++){
+				for(int i = firstUse+1;i<_btree._pageSize;i++){
 //					Serialization.writeObject(oos, keys[i]);
-					long v = 0;
-					if(keys[i]!=null)
-						v = ((Number) keys[i]).longValue()  - first +1;
-					LongPacker.packLong(oos, v);
+					if(keys[i] == null)
+						LongPacker.packLong(oos,0);
+					else{
+						long v = ((Number) keys[i]).longValue();
+						if(v<=first) throw new InternalError("not ordered");
+						LongPacker.packLong(oos, v-first);
+						first=  v;
+					}
 				}
 				return;
+			}else{
+				//another special case for Strings
+				boolean allString = true;
+				for (int i = firstUse ; i < _btree._pageSize; i++) {
+					if (keys[i]!=null &&  (keys[i].getClass() != String.class)
+					) {
+						allString = false;
+						break;
+					}												
+				}
+				if(allString){
+					oos.write(ALL_STRINGS );
+					byte[] previous = null;
+					for (int i = firstUse ; i < _btree._pageSize; i++) {
+						if(keys[i] == null){
+							LeadingValueCompressionProvider.writeByteArray(oos, null, previous, 0);
+						}else{
+							byte[] b = ((String)keys[i]).getBytes();
+							LeadingValueCompressionProvider.writeByteArray(oos, b, previous, 0);
+							previous = b;
+						}
+					}
+					return;
+				}
 			}
 		}
 		
 		/**
-		 * other case, fallback into normal serialization
+		 * other case, serializer is provided or other stuff
 		 */
-		oos.write(ALL_OTHER | nullOffset);
-		for(int i = nullOffset;i<BTree.DEFAULT_SIZE;i++)
-			Serialization.writeObject(oos, keys[i]);
+		oos.write(ALL_OTHER );
+		if(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE){
+			for (int i = firstUse ; i < _btree._pageSize; i++) {
+				DefaultSerializer.INSTANCE.serialize(oos, keys[i]);
+			}		
+			return;
+		}
+		
+		//custom serializer is provided, use it
+		
+		Serializer ser = _btree.keySerializer;
+		byte[] previous = null;
+		byte[] buffer = new byte[1024];
+		OpenByteArrayOutputStream out2 = new OpenByteArrayOutputStream(buffer);
+		DataOutputStream out3 = new DataOutputStream(out2);
+		for (int i = firstUse ; i < _btree._pageSize; i++) {
+			if(keys[i] == null){
+				LeadingValueCompressionProvider.writeByteArray(oos, null, previous, 0);
+			}else{
+				out2.reset();
+				ser.serialize(out3,keys[i]);
+				byte[] b = out2.toByteArray();
+				LeadingValueCompressionProvider.writeByteArray(oos, b, previous, 0);
+				previous = b;
+			}			
+		}
+			
 		return;
 		
 		
 	}
-    
- 
-    
-    /** STATIC INNER CLASS
+
+
+
+	/** STATIC INNER CLASS
      *  Result from insert() method call
      */
     static class InsertResult<K,V> {
