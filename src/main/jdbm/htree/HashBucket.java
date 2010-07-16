@@ -233,7 +233,12 @@ final class HashBucket<K,V>
     	LongPacker.packInt(out,_depth); 
 
         Serialization.writeObject(out, _keys);
-        Serialization.writeObject(out, _values);
+        for(int i = 0;i<_keys.size();i++){
+        	if(_keys.get(i) == null)
+        		continue;
+        	Serialization.writeObject(out, _values.get(i));	
+        }
+        
     }
 
 
@@ -245,7 +250,14 @@ final class HashBucket<K,V>
         _depth = LongPacker.unpackInt(in);
 
         _keys = (ArrayList<K>) Serialization.readObject(in);
-        _values = (ArrayList<V>) Serialization.readObject(in);
+        _values = new ArrayList<V>(_keys.size());
+        for(int i = 0;i<_keys.size();i++){
+        	if(_keys.get(i) == null)
+        		_values.add(null);
+        	else
+        		_values.add((V) Serialization.readObject(in));
+        }
+
     }
 
     public String toString() {
