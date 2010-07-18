@@ -70,7 +70,8 @@ public final class BaseRecordManager
 	private static final String DBR = ".dbr";
 	private static final String DBF = ".dbf";
 	static final int DATA_BLOCK_SIZE = 1024 * 8 ;
-	static final int LOG_BLOCK_SIZE = 1024;
+	static final int TRANS_BLOCK_SIZE = 1024 * 2;
+	static final int FREE_BLOCK_SIZE = 1024;
 	
     /**
      * Underlying file for store records.
@@ -182,16 +183,18 @@ public final class BaseRecordManager
 
 
 	private void reopen() throws IOException {
-		_physFileFree = new RecordFile( _filename +  DBF, LOG_BLOCK_SIZE);
+		_physFileFree = new RecordFile( _filename +  DBF, FREE_BLOCK_SIZE);
     	_physPagemanFree = new PageManager(_physFileFree);    	
         _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree));
         
-        _logicFileFree= new RecordFile( _filename +IDF,LOG_BLOCK_SIZE );
+        _logicFileFree= new RecordFile( _filename +IDF,FREE_BLOCK_SIZE );
         _logicPagemanFree = new PageManager( _logicFileFree );
-        _logicFile = new RecordFile( _filename +IDR,LOG_BLOCK_SIZE );
+        if(TRANS_BLOCK_SIZE>256*8)
+        	throw new InternalError(); //to big page, slot number would not fit into page
+        _logicFile = new RecordFile( _filename +IDR,TRANS_BLOCK_SIZE );
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_logicFileFree, _logicPagemanFree));
@@ -315,7 +318,7 @@ public final class BaseRecordManager
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.insert() recid " + recid + " length " + insertBAO.size() ) ;
 		}
-		return recid;
+		return compressRecid(recid);
 	}
 
     private synchronized byte[] compress(byte[] data, int length) throws IOException {
@@ -350,6 +353,7 @@ public final class BaseRecordManager
     public synchronized void delete( long logRowId )
         throws IOException
     {
+    	
         checkIfClosed();
         if ( logRowId <= 0 ) {
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
@@ -360,6 +364,7 @@ public final class BaseRecordManager
             System.out.println( "BaseRecordManager.delete() recid " + logRowId ) ;
         }
 
+        logRowId = decompressRecid(logRowId);
         
         long physRowId = _logicMgr.fetch( logRowId );
         _physMgr.delete( physRowId );
@@ -397,6 +402,7 @@ public final class BaseRecordManager
 
 	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut)
 			throws IOException {
+		logRecid = decompressRecid(logRecid);
 		long physRecid = _logicMgr.fetch( logRecid );
 		if(physRecid == 0)
 			throw new IOException("Can not update, recid does not exist: "+logRecid);
@@ -455,6 +461,9 @@ public final class BaseRecordManager
 				OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut,
 				OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
 			throws IOException {
+		
+		recid = decompressRecid(recid);
+		
 		insertBAO.reset(insertBuffer);		
 		long physLocation = _logicMgr.fetch(recid);
 		if(physLocation == 0){
@@ -620,7 +629,7 @@ public final class BaseRecordManager
 		}
 		for(long pageid:logicalPages){			
 			BlockIo io = _logicFile.get(pageid); 
-			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io,LOG_BLOCK_SIZE);
+			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io,TRANS_BLOCK_SIZE);
 		
 			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
 				int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
@@ -631,8 +640,8 @@ public final class BaseRecordManager
 
 				//find physical location
 				long physRowId = Location.toLong(
-						xlatPage.PhysicalRowId_getBlock((short)pos),
-						xlatPage.PhysicalRowId_getOffset((short)pos));
+						xlatPage.getLocationBlock((short)pos),
+						xlatPage.getLocationOffset((short)pos));
 				if(physRowId == 0)
 					continue;
 
@@ -714,11 +723,30 @@ public final class BaseRecordManager
 		_logicMgr.forceInsert(logicalRowId, physLoc);
 	}
 
+	
+	/**
+	 * Compress recid from physical form (block - offset) to (block - slot). 
+	 * This way resulting number is smaller and can be easyer packed with LongPacker  
+	 */
+	static long compressRecid(long recid){
+		long block = Location.getBlock(recid);
+		short offset=  Location.getOffset(recid);
 
-	public static void main(String[] args) throws IOException {
-		BaseRecordManager b = new BaseRecordManager("/media/vega/Projects/asterope/profile/db/db");
-//		System.out.println(b.fetch(58854476));
-		b.defrag();
+		offset = (short) (offset - TranslationPage.O_TRANS);
+		if(offset%8!=0)
+			throw new InternalError("not 8");
+		long slot = offset /8;
+		if(slot<0||slot>255)
+			throw new InternalError("too big slot: "+slot);
+			
+		return (block << 8) + (long) slot;
+
+	}
+	
+	static long decompressRecid(long recid){
+		long block = recid >>8;
+        short offset = (short) (((recid & 0xff) ) * 8+TranslationPage.O_TRANS);
+		return Location.toLong(block, offset);
 	}
 
 
