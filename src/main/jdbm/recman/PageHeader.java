@@ -132,22 +132,22 @@ class PageHeader implements BlockView {
     }
     
     /** Returns the block number */
-    long PhysicalRowId_getBlock(short pos) {
+    long getLocationBlock(short pos) {
         return block.readSixByteLong(pos + PhysicalRowId_O_BLOCK);
     }
     
     /** Sets the block number */
-    void PhysicalRowId_setBlock(short pos,long value) {
+    void setLocationBlock(short pos,long value) {
         block.writeSixByteLong(pos + PhysicalRowId_O_BLOCK, value);
     }
     
     /** Returns the offset */
-    short PhysicalRowId_getOffset(short pos) {
+    short getLocationOffset(short pos) {
         return block.readShort(pos + PhysicalRowId_O_OFFSET);
     }
     
     /** Sets the offset */
-    void PhysicalRowId_setOffset(short pos,short value) {
+    void setLocationOffset(short pos,short value) {
         block.writeShort(pos + PhysicalRowId_O_OFFSET, value);
     }
 

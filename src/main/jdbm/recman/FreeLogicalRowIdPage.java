@@ -67,7 +67,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
 
     /** Frees a slot */
     void free(int slot) {
-    	PhysicalRowId_setBlock(slotToOffset(slot), 0);
+    	setLocationBlock(slotToOffset(slot), 0);
         //get(slot).setBlock(0);
         setCount((short) (getCount() - 1));
         
@@ -80,7 +80,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
     short alloc(int slot) {
         setCount((short) (getCount() + 1));
         short pos = slotToOffset(slot);
-        PhysicalRowId_setBlock(pos, -1);
+        setLocationBlock(pos, -1);
         //get(slot).setBlock(-1);
         
         // update previousFoundAllocated if the newly allocated slot is before what we've found in the past
@@ -93,7 +93,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
     /** Returns true if a slot is allocated */
     boolean isAllocated(int slot) {
         //return get(slot).getBlock() > 0;
-    	return PhysicalRowId_getBlock(slotToOffset(slot)) > 0;
+    	return getLocationBlock(slotToOffset(slot)) > 0;
     }
 
     /** Returns true if a slot is free */
@@ -140,7 +140,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
 
     public long slotToLocation(int slot) {
 		short pos = slotToOffset(slot);
-		return Location.toLong(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
+		return Location.toLong(getLocationBlock(pos),getLocationOffset(pos));
 	}
     
 

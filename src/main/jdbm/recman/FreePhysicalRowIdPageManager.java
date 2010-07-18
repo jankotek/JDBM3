@@ -121,8 +121,8 @@ final class FreePhysicalRowIdPageManager
     FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock,blockSize);
       freePhysRowId = fp.alloc(0);
   }
-  fp.PhysicalRowId_setBlock(freePhysRowId, Location.getBlock(rowid));
-  fp.PhysicalRowId_setOffset(freePhysRowId, Location.getOffset(rowid));
+  fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
+  fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
   fp.FreePhysicalRowId_setSize(freePhysRowId, size);
   _file.release(freePage, true);
     }

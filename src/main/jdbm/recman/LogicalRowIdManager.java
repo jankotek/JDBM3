@@ -92,8 +92,8 @@ final class LogicalRowIdManager {
 	void delete(long rowid) throws IOException {
 		//zero out old location, is needed for defragmentation
 		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)),blockSize);
-		xlatPage.PhysicalRowId_setBlock(Location.getOffset(rowid), 0);
-		xlatPage.PhysicalRowId_setOffset(Location.getOffset(rowid), (short)0);
+		xlatPage.setLocationBlock(Location.getOffset(rowid), 0);
+		xlatPage.setLocationOffset(Location.getOffset(rowid), (short)0);
 		file.release(Location.getBlock(rowid), true);
 		freeman.put(rowid);
 	}
@@ -115,8 +115,8 @@ final class LogicalRowIdManager {
 //		PhysicalRowId physid = xlatPage.get(rowid.getOffset());
 //		physid.setBlock(loc.getBlock());
 //		physid.setOffset(loc.getOffset());
-		xlatPage.PhysicalRowId_setBlock(Location.getOffset(rowid), Location.getBlock(loc));
-		xlatPage.PhysicalRowId_setOffset(Location.getOffset(rowid), Location.getOffset(loc));
+		xlatPage.setLocationBlock(Location.getOffset(rowid), Location.getBlock(loc));
+		xlatPage.setLocationOffset(Location.getOffset(rowid), Location.getOffset(loc));
 		file.release(Location.getBlock(rowid), true);
 	}
 
@@ -139,8 +139,8 @@ final class LogicalRowIdManager {
 		TranslationPage xlatPage = TranslationPage.getTranslationPageView(bio,blockSize);		
 		try {
 			long retval = Location.toLong(
-					xlatPage.PhysicalRowId_getBlock(offset),
-					xlatPage.PhysicalRowId_getOffset(offset));
+					xlatPage.getLocationBlock(offset),
+					xlatPage.getLocationOffset(offset));
 			return retval;
 		} finally {
 			file.release(block, false);

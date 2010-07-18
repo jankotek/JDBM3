@@ -202,7 +202,7 @@ final class FreePhysicalRowIdPage extends PageHeader {
 
 	public long slotToLocation(int slot) {
 		short pos = slotToOffset(slot);
-		return Location.toLong(PhysicalRowId_getBlock(pos),PhysicalRowId_getOffset(pos));
+		return Location.toLong(getLocationBlock(pos),getLocationOffset(pos));
 	}
 	
 	/** Returns the size */
