@@ -190,11 +190,15 @@ final class RecordFile {
          node = getNewNode(blockid);
          long offset = blockid * BLOCK_SIZE;
          FileChannel file = getChannel(offset);
-         if (file.size() > 0 && offset%MAX_FILE_SIZE <= file.size()) {
-             read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);
-         } else {
-             System.arraycopy(cleanData, 0, node.getData(), 0, BLOCK_SIZE);
-         }
+//         long fileSize = file.size();
+//         if (fileSize > 0 && offset%MAX_FILE_SIZE <= fileSize) {
+//             read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);
+//         } else {
+//             System.arraycopy(cleanData, 0, node.getData(), 0, BLOCK_SIZE);
+//         }
+         
+         read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);   
+         
          inUse.put(blockid, node);
          node.setClean();
          return node;

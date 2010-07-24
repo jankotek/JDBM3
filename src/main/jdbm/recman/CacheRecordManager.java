@@ -203,15 +203,22 @@ public class CacheRecordManager
         	SoftCacheEntry e = _softHash.get(recid);
         	if(e!=null){
         		Object a = e.get();
-        		if(a!=null) 
+        		if(a!=null){
         			return (A) a;
+        		}
         	}
         }
 
         CacheEntry entry = (CacheEntry) cacheGet( recid );
         if ( entry == null ) {
         	A value = _recman.fetch( recid, serializer );
-        	cachePut(recid,value, serializer,false);
+        	if(!_softCache)
+        		cachePut(recid,value, serializer,false);
+        	else{ //put record into soft cache
+        		synchronized(_softHash){
+        			_softHash.put(recid,new SoftCacheEntry(recid, value, serializer, _refQueue));
+        		}
+        	}
         	return value;
         }else{
         	return (A) entry._obj;

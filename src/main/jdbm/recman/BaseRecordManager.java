@@ -73,6 +73,12 @@ public final class BaseRecordManager
 	static final int TRANS_BLOCK_SIZE = 1024 * 2;
 	static final int FREE_BLOCK_SIZE = 1024;
 	
+	/**
+	 * Version of storage. It should be safe to open lower versions, but engine should throw exception
+	 * while opening new versions (as it contains unsupported features or serialization)
+	 */
+	static final long STORE_FORMAT_VERSION = 1L;
+	
     /**
      * Underlying file for store records.
      */
@@ -147,6 +153,20 @@ public final class BaseRecordManager
      */
     private Map<String,Long> _nameDirectory;
 
+    /**
+     * Reserved slot for name directory.
+     */
+    public static final int NAME_DIRECTORY_ROOT = 0;
+    
+    
+    /**
+     * Reserved slot for version number
+     */
+    public static final int STORE_VERSION_NUMBER_ROOT = 1;
+	
+	
+
+    
     /** is Inflate compression on */
 	private boolean compress = false;
 
@@ -189,7 +209,7 @@ public final class BaseRecordManager
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree));
-        
+                
         _logicFileFree= new RecordFile( _filename +IDF,FREE_BLOCK_SIZE );
         _logicPagemanFree = new PageManager( _logicFileFree );
         if(TRANS_BLOCK_SIZE>256*8)
@@ -198,6 +218,11 @@ public final class BaseRecordManager
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_logicFileFree, _logicPagemanFree));
+
+        long versionNumber = getRoot(STORE_VERSION_NUMBER_ROOT);
+        if(versionNumber>STORE_FORMAT_VERSION)
+        	throw new IOException("Unsupported version of store. Please update JDBM. Minimal supported ver:"+STORE_FORMAT_VERSION+", store ver:"+versionNumber);
+        setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
 	}
 
 
@@ -657,7 +682,7 @@ public final class BaseRecordManager
 			recman2.commit();
 			
 		}
-		recman2.setRoot(RecordManager.NAME_DIRECTORY_ROOT,getRoot(RecordManager.NAME_DIRECTORY_ROOT));
+		recman2.setRoot(NAME_DIRECTORY_ROOT,getRoot(NAME_DIRECTORY_ROOT));
 		recman2.commit();
 		
 		recman2.close();

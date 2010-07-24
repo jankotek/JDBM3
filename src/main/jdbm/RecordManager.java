@@ -42,16 +42,12 @@ import java.util.Comparator;
 public interface  RecordManager
 {
 
-    /**
-     * Reserved slot for name directory.
-     */
-    public static final int NAME_DIRECTORY_ROOT = 0;
-	
 
     /**
      * Recid indicating no record (e.g. null)
      */
     public static final long NULL_RECID = 0;
+
 
 
     /**

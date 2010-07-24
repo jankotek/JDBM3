@@ -164,11 +164,14 @@ public class TestStress extends TestCaseWithTestFile {
                     updates++;
                 }
                 else if (op == 51) {
+                	
                     // SET ROOT
                     int root = rnd.nextInt(FileHeader.NROOTS);
-                    roots[root] = rnd.nextLong();
-                    recman.setRoot(root, roots[root]);
-                    rootsets++;
+                    if(root>10){ //DONT do this for reserved roots
+                    	roots[root] = rnd.nextLong();
+                    	recman.setRoot(root, roots[root]);
+                    	rootsets++;
+                    }
                 }
                 else if (op == 52) {
                     // GET ROOT
@@ -178,8 +181,10 @@ public class TestStress extends TestCaseWithTestFile {
                     }
 
                     int root = getRandomAllocatedRoot();
-                    assertEquals("root", roots[root], recman.getRoot(root));
-                    rootgets++;
+                    if(root>10){ //DONT do this for reserved roots
+                    	assertEquals("root", roots[root], recman.getRoot(root));
+                    	rootgets++;
+                    }
                 }
                 else {
                     // FETCH RECORD

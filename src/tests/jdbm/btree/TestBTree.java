@@ -416,7 +416,7 @@ public class TestBTree
                 recman.commit();
         }
         List<Long> out = new ArrayList<Long>();
-        tree.dumpChildPageRecIDs(out);
+        tree.dumpChildPageRecIDs(out);        
         assertTrue(out.size() > 0);
     }
 
