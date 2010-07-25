@@ -195,7 +195,7 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 		if(containsKey(key)){
 			V oldVal = get(key);
 			try {
-				getRecordManager().update(key, value);
+				getRecordManager().update(key, value,valueSerializer);
 			} catch (IOException e) {
 				throw new IOError(e);
 			}
