@@ -21,6 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 
 /**
  * Default java serializer. Constructor is privite, use  DefaultSerializer.INSTANCE
@@ -51,10 +53,10 @@ public class DefaultSerializer
      * @param obj Object to serialize
      * @return a byte array representing the object's state
      */
-     public void serialize(DataOutputStream out,Object obj)
+     public void serialize(SerializerOutput out,Object obj)
         throws IOException
      {    
-    	 Serialization.writeObject(out, obj);        
+    	 out.writeObject(obj);        
      }
         
         
@@ -64,11 +66,11 @@ public class DefaultSerializer
      * @param serialized Byte array representation of the object
      * @return deserialized object
      */
-     public Object deserialize(DataInputStream in )
+     public Object deserialize(SerializerInput in )
         throws IOException
      {
          try {
-            return Serialization.readObject(in);
+            return in.readObject();
          } catch ( ClassNotFoundException except ) {
             throw new IOException( except );
          }

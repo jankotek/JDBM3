@@ -27,6 +27,8 @@ import java.util.List;
 
 import jdbm.RecordManager;
 import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 import jdbm.helper.ComparableComparator;
 import jdbm.helper.DefaultSerializer;
 import jdbm.helper.LongPacker;
@@ -918,7 +920,7 @@ public final class BPage<K,V>
     }
 
 
-    static void writeByteArray( DataOutputStream out, byte[] buf )
+    static void writeByteArray( SerializerOutput out, byte[] buf )
         throws IOException
     {
         if ( buf == null ) {
@@ -1022,7 +1024,7 @@ public final class BPage<K,V>
      *
      */
     @SuppressWarnings("unchecked")
-	public BPage<K,V> deserialize( DataInputStream ois ) 
+	public BPage<K,V> deserialize( SerializerInput ois ) 
         throws IOException
     {
     	
@@ -1077,7 +1079,7 @@ public final class BPage<K,V>
      * @return a byte array representing the object's state
      *
      */
-    public void serialize(DataOutputStream oos, BPage<K,V> obj ) 
+    public void serialize(SerializerOutput oos, BPage<K,V> obj ) 
         throws IOException
     {
 
@@ -1121,14 +1123,14 @@ public final class BPage<K,V>
 			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                  
 		          byte[] serialized = readByteArray( ois );
 		          if ( serialized != null ) {
-		              bpage._values[ i ] = _btree.valueSerializer.deserialize( new DataInputStream( new ByteArrayInputStream(serialized)) );
+		              bpage._values[ i ] = _btree.valueSerializer.deserialize( new SerializerInput( new ByteArrayInputStream(serialized)) );
 		          }
 		      }
 		  }
 	}
 
 
-	private void writeValues(DataOutputStream oos, BPage<K, V> bpage) throws IOException {
+	private void writeValues(SerializerOutput oos, BPage<K, V> bpage) throws IOException {
 		if ( _btree.valueSerializer == null ) {
 			Object[] vals2 = Arrays.copyOfRange(bpage._values, bpage._first, bpage._values.length);
 			Serialization.writeObject(oos, vals2);
@@ -1136,7 +1138,7 @@ public final class BPage<K,V>
 			for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                                
 		        if ( bpage._values[ i ] != null ) {
 		        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		            _btree.valueSerializer.serialize(new DataOutputStream(baos), bpage._values[ i ] );
+		            _btree.valueSerializer.serialize(new SerializerOutput(baos), bpage._values[ i ] );
 		            writeByteArray( oos, baos.toByteArray() );
 		        } else {
 		            writeByteArray( oos, null );
@@ -1155,7 +1157,7 @@ public final class BPage<K,V>
 	private static final int ALL_OTHER = 6 <<5;
 
 	
-	private K[] readKeys(DataInputStream ois, final int firstUse) throws IOException, ClassNotFoundException {
+	private K[] readKeys(SerializerInput ois, final int firstUse) throws IOException, ClassNotFoundException {
 		Object[] ret = new Object[_btree._pageSize];
 		final int type = ois.read();
 		if(type == ALL_NULL){
@@ -1210,14 +1212,14 @@ public final class BPage<K,V>
 			
 			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : DefaultSerializer.INSTANCE;
 			OpenByteArrayInputStream in1 = null;
-			DataInputStream in2 = null;
+			SerializerInput in2 = null;
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
 				byte[] b = LeadingValueCompressionProvider.readByteArray(ois, previous, 0);
 				if(b == null ) continue;
 				if(in1 == null){
 					in1 = new OpenByteArrayInputStream(b);
-					in2 = new DataInputStream(in1);
+					in2 = new SerializerInput(in1);
 				}
 				in1.reset(b, b.length);
 				ret[i] = ser.deserialize(in2);
@@ -1234,7 +1236,7 @@ public final class BPage<K,V>
 	
 	
 	@SuppressWarnings("unchecked")
-	private void writeKeys(DataOutputStream oos, K[] keys, final int firstUse) throws IOException {		
+	private void writeKeys(SerializerOutput oos, K[] keys, final int firstUse) throws IOException {		
 		if(keys.length!=_btree._pageSize)
 			throw new IllegalArgumentException("wrong keys size");
 				
@@ -1368,7 +1370,7 @@ public final class BPage<K,V>
 		byte[] previous = null;
 		byte[] buffer = new byte[1024];
 		OpenByteArrayOutputStream out2 = new OpenByteArrayOutputStream(buffer);
-		DataOutputStream out3 = new DataOutputStream(out2);
+		SerializerOutput out3 = new SerializerOutput(out2);
 		for (int i = firstUse ; i < _btree._pageSize; i++) {
 			if(keys[i] == null){
 				LeadingValueCompressionProvider.writeByteArray(oos, null, previous, 0);

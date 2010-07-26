@@ -21,6 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 import jdbm.helper.Serialization;
 
 /**
@@ -36,7 +38,7 @@ class HashNode<K,V> //implements Serializable, Serializer<HashNode>
 //	static final Serializer SERIALIZER = DefaultSerializer.INSTANCE;
 	static final Serializer<HashNode> SERIALIZER = new Serializer<HashNode>(){
 	
-	public HashNode deserialize(DataInputStream ds) throws IOException {
+	public HashNode deserialize(SerializerInput ds) throws IOException {
 		try{
 			int i = ds.read();
 			if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
@@ -59,7 +61,7 @@ class HashNode<K,V> //implements Serializable, Serializer<HashNode>
 		}
 		
 	}
-	public void serialize(DataOutputStream out, HashNode obj) throws IOException {
+	public void serialize(SerializerOutput out, HashNode obj) throws IOException {
 		if(obj.getClass() ==  HashBucket.class){
 			out.write(Serialization.HTREE_BUCKET);
 			HashBucket b = (HashBucket) obj;

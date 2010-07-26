@@ -17,8 +17,6 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
@@ -26,7 +24,6 @@ import java.io.IOException;
  * serialization.
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: Serializer.java,v 1.1 2003/03/21 02:48:42 boisvert Exp $
  */
 public interface Serializer<A>   
 {
@@ -38,7 +35,7 @@ public interface Serializer<A>
      * @param obj Object to serialize
      * 
      */
-     public void serialize(DataOutputStream out,A obj )
+     public void serialize(SerializerOutput out,A obj )
         throws IOException;
         
         
@@ -50,7 +47,7 @@ public interface Serializer<A>
      * @throws IOException
      * @throws ClassNotFoundException 
      */
-     public A deserialize( DataInputStream in )
+     public A deserialize( SerializerInput in )
         throws IOException, ClassNotFoundException;
 
 }

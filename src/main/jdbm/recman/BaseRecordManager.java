@@ -33,6 +33,8 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
 import jdbm.helper.RecordManagerImpl;
@@ -178,9 +180,9 @@ public final class BaseRecordManager
 	
 	private final byte[] _insertBuffer = new byte[BUFFER_SIZE];
 	private final OpenByteArrayOutputStream _insertBAO = new OpenByteArrayOutputStream(_insertBuffer);
-	private final DataOutputStream _insertOut = new DataOutputStream(_insertBAO);
+	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
-	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
+	private final SerializerInput _insertIn = new SerializerInput(_insertBAI);
 	
 	volatile private boolean bufferInUse = false;
 
@@ -314,7 +316,7 @@ public final class BaseRecordManager
     		//current reusable buffer is in use, have to fallback into creating new instances
     		byte[] buffer = new byte[1024];
     		OpenByteArrayOutputStream bao = new OpenByteArrayOutputStream(buffer);
-    		DataOutputStream out = new DataOutputStream(bao);
+    		SerializerOutput out = new SerializerOutput(bao);
     		return insert2(obj,serializer,buffer,bao,out);
     	}
 
@@ -328,7 +330,7 @@ public final class BaseRecordManager
     }
 
 
-	private <A> long insert2(A obj, Serializer<A> serializer, byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut)
+	private <A> long insert2(A obj, Serializer<A> serializer, byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut)
 			throws IOException {
 		insertBAO.reset(insertBuffer);
       
@@ -362,7 +364,7 @@ public final class BaseRecordManager
 		return b.toByteArray();
 	}
 
-    private synchronized  DataInputStream decompress(DataInputStream data) throws IOException {
+    private synchronized  SerializerInput decompress(SerializerInput data) throws IOException {
     	if(!compress)
     		return data;
     	
@@ -372,7 +374,7 @@ public final class BaseRecordManager
     		inflater.reset();
     	}
     	
-    	return new DataInputStream(new InflaterInputStream(data,inflater));    	
+    	return new SerializerInput(new InflaterInputStream(data,inflater));    	
 	}
 
     public synchronized void delete( long logRowId )
@@ -410,7 +412,7 @@ public final class BaseRecordManager
     		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		OpenByteArrayOutputStream bao = new OpenByteArrayOutputStream(buffer);
-    		DataOutputStream out = new DataOutputStream(bao);
+    		SerializerOutput out = new SerializerOutput(bao);
     		update2(recid,obj,serializer,buffer,bao,out);
     		return;
     	}
@@ -425,7 +427,7 @@ public final class BaseRecordManager
     }
 
 
-	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut)
+	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut)
 			throws IOException {
 		logRecid = decompressRecid(logRecid);
 		long physRecid = _logicMgr.fetch( logRecid );
@@ -467,9 +469,9 @@ public final class BaseRecordManager
     		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		OpenByteArrayOutputStream bao = new OpenByteArrayOutputStream(buffer);
-    		DataOutputStream out = new DataOutputStream(bao);
+    		SerializerOutput out = new SerializerOutput(bao);
     		OpenByteArrayInputStream bai = new OpenByteArrayInputStream(buffer);
-    		DataInputStream in = new DataInputStream(bai);
+    		SerializerInput in = new SerializerInput(bai);
     		return fetch2(recid,serializer,buffer,bao,out, bai,in);
     	}
         try{
@@ -483,8 +485,8 @@ public final class BaseRecordManager
 
 
 	private <A> A fetch2(long recid, Serializer<A> serializer,byte[] insertBuffer, 
-				OpenByteArrayOutputStream insertBAO, DataOutputStream insertOut,
-				OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
+				OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut,
+				OpenByteArrayInputStream insertBAI, SerializerInput insertIn)
 			throws IOException {
 		
 		recid = decompressRecid(recid);

@@ -13,6 +13,8 @@ import jdbm.RecordManagerFactory;
 import jdbm.SecondaryKeyExtractor;
 import jdbm.SecondaryTreeMap;
 import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 import jdbm.helper.Serialization;
 
 
@@ -163,20 +165,20 @@ public class Persons2 {
 				persons.put(recid, person);
 		}
 
-		public Person deserialize(DataInputStream in) throws IOException, ClassNotFoundException {
-			String name = (String) Serialization.readObject(in);
-			Address address = (Address) Serialization.readObject(in);
-			Person father = persons.get((Long) Serialization.readObject(in));
+		public Person deserialize(SerializerInput in) throws IOException, ClassNotFoundException {
+			String name = in.readObject();
+			Address address = in.readObject();
+			Person father = persons.get(in.readObject());
 			Person p = new Person(name,address,father);			
 			
 			return p;
 		}
 
-		public void serialize(DataOutputStream out, Person obj)
+		public void serialize(SerializerOutput out, Person obj)
 				throws IOException {
-			Serialization.writeObject(out, obj.name);
-			Serialization.writeObject(out, obj.adress);
-			Serialization.writeObject(out, findOrPersistPerson(obj.father));
+			out.writeObject(obj.name);
+			out.writeObject(obj.adress);
+			out.writeObject(findOrPersistPerson(obj.father));
 		}
 		
 		protected Long findOrPersistPerson(Person person){
