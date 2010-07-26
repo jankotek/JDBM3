@@ -47,7 +47,6 @@
 
 package jdbm.recman;
 
-import java.awt.HeadlessException;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -331,7 +330,7 @@ final class PhysicalRowIdManager {
 		file.release(Location.getBlock(id), true);
 
 		// write the rowid to the free list
-		freeman.put(id, RecordHeader.getAvailableSize(curBlock, Location.getOffset(id)));
+		freeman.put(id, RecordHeader.getAvailableSize(curBlock, Location.getOffset(id)));	
 	}
 
 	/**
@@ -371,5 +370,9 @@ final class PhysicalRowIdManager {
 				dataOffset = DataPage.O_DATA;
 			}
 		}
+	}
+
+	void commit() throws IOException {
+		freeman.commit();		
 	}
 }

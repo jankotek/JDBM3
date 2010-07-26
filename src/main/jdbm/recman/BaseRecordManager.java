@@ -32,7 +32,6 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
@@ -182,6 +181,7 @@ public final class BaseRecordManager
 	private final DataOutputStream _insertOut = new DataOutputStream(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
 	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
+	
 	volatile private boolean bufferInUse = false;
 
 
@@ -568,7 +568,11 @@ public final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        /** flush free phys rows into pages*/
+        _physMgr.commit();
+        _logicMgr.commit();
 
+        /**commit pages */
         _physPageman.commit();
         _physPagemanFree.commit();
         _logicPageman.commit();
@@ -580,6 +584,9 @@ public final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        _physMgr.commit();
+        _logicMgr.commit();
+
 
         _physPageman.rollback();
         _physPagemanFree.rollback();
@@ -772,8 +779,4 @@ public final class BaseRecordManager
 		long block = recid >>8;
         short offset = (short) (((recid & 0xff) ) * 8+TranslationPage.O_TRANS);
 		return Location.toLong(block, offset);
-	}
-
-
-
-}
+	}}

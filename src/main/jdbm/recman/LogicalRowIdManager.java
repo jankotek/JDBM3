@@ -55,6 +55,7 @@ final class LogicalRowIdManager {
 				freeman.put(Location.toLong(firstPage, curOffset));
 				curOffset += PageHeader.PhysicalRowId_SIZE;
 			}
+			
 			retval = freeman.get();
 			if (retval == 0) {
 				throw new Error("couldn't obtain free translation");
@@ -147,5 +148,8 @@ final class LogicalRowIdManager {
 		}
 	}
 
+	void commit() throws IOException{
+		freeman.commit();
+	}
 
 }
