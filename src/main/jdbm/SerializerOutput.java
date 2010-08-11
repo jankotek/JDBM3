@@ -20,6 +20,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 
 
@@ -39,6 +40,14 @@ public class SerializerOutput extends DataOutputStream{
 
 	public void writeObject(Object obj) throws IOException{
 		Serialization.writeObject(this, obj);
+	}
+	
+	public void writePackedLong(long i) throws IOException{
+		LongPacker.packLong(this, i);
+	}
+
+	public void writePackedInt(int i) throws IOException{
+		LongPacker.packInt(this, i);
 	}
 
 }

@@ -64,6 +64,6 @@ public interface PrimaryMap<K,V> extends JdbmBase<K,V>, Map<K,V>{
 	<A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName, 
 			SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor);
 
-	InverseHashView<K,V> inverseHashView(String string);
+	InverseHashView<K,V> inverseHashView(String name);
 
 }

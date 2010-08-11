@@ -18,6 +18,7 @@ package jdbm.helper;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.Map;
 
 import jdbm.InverseHashView;
 import jdbm.PrimaryHashMap;
@@ -68,6 +69,8 @@ public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implemen
 	public InverseHashView<K, V> inverseHashView(String objectName) {
 		return SecondaryKeyHelper.inverseHashView(this,objectName);
 	}
+	
+
 
 	public V find(K k) throws IOException {
 		return get(k);

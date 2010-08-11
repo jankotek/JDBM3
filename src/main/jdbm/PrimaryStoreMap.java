@@ -15,6 +15,8 @@
  ******************************************************************************/
 package jdbm;
 
+import java.util.Map;
+
 /**
  * Primary map which stores references to storage entries.
  * PrimaryHashMap or PrimaryTreeMap stores keys and values as part of index.    
@@ -30,5 +32,6 @@ package jdbm;
 public interface PrimaryStoreMap<K extends Long,V> extends PrimaryMap<Long,V> {
 	
 	Long putValue(V v);
+	
 
 }

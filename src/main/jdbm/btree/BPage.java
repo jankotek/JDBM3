@@ -911,10 +911,10 @@ public final class BPage<K,V>
         throws IOException
     {
         int len = LongPacker.unpackInt(in);
-        if ( len < 0 ) {
+        if ( len == 0 ) {
             return null;
         }
-        byte[] buf = new byte[ len ];
+        byte[] buf = new byte[ len-1 ];
         in.readFully( buf );
         return buf;
     }
@@ -924,9 +924,9 @@ public final class BPage<K,V>
         throws IOException
     {
         if ( buf == null ) {
-            out.write( -1 );
+            out.write( 0 );
         } else {
-        	LongPacker.packInt( out, buf.length);
+        	LongPacker.packInt( out, buf.length+1);
             out.write( buf );
         }
     }
@@ -1131,7 +1131,7 @@ public final class BPage<K,V>
 
 
 	private void writeValues(SerializerOutput oos, BPage<K, V> bpage) throws IOException {
-		if ( _btree.valueSerializer == null ) {
+		if ( _btree.valueSerializer == null || _btree.valueSerializer == DefaultSerializer.INSTANCE ) {
 			Object[] vals2 = Arrays.copyOfRange(bpage._values, bpage._first, bpage._values.length);
 			Serialization.writeObject(oos, vals2);
 		}else{

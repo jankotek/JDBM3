@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import jdbm.helper.Serialization;
+import jdbm.helper.LongPacker;
 
 /**
  * 
@@ -36,7 +37,16 @@ public class SerializerInput extends DataInputStream{
 		super(in);
 	}
 
+	@SuppressWarnings("unchecked")
 	public <V> V readObject() throws ClassNotFoundException, IOException{
 		return (V) Serialization.readObject(this);
+	}
+	
+	public long readPackedLong() throws IOException{
+		return LongPacker.unpackLong(this);
+	}
+	
+	public int readPackedInt() throws IOException{
+		return LongPacker.unpackInt(this);
 	}
 }

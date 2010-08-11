@@ -358,5 +358,4 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		return new Long(((Long)k).longValue()+1);
 	}
 
-
 }

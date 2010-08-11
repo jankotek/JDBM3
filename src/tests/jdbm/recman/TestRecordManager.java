@@ -19,10 +19,15 @@ package jdbm.recman;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import jdbm.PrimaryTreeMap;
 import jdbm.RecordManager;
 import jdbm.RecordManagerFactory;
 import jdbm.RecordManagerOptions;
+import jdbm.Serializer;
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
 
 /**
  *  This class contains all Unit tests for {@link RecordManager}.
@@ -226,5 +231,28 @@ public class TestRecordManager extends TestCaseWithTestFile {
     	}catch(IOException expected){
 
     	}
+    }
+    
+    public void testTreeMapValueSerializer() throws Exception{
+    	final AtomicInteger i = new AtomicInteger(0);
+    	Serializer<String> ser = new Serializer<String>(){
+
+			public String deserialize(SerializerInput in) throws IOException, ClassNotFoundException {
+				i.incrementAndGet();
+				return in.readUTF();
+			}
+
+			public void serialize(SerializerOutput out, String obj) throws IOException {
+				i.incrementAndGet();
+				out.writeUTF(obj);
+			}};
+			
+		RecordManager recman = newRecordManager();
+		PrimaryTreeMap<Long,String> t =  recman.treeMap("test",ser);
+		t.put(1l, "hopsa hejsa1");
+		t.put(2l, "hopsa hejsa2");
+		recman.commit();
+		assertEquals(t.get(2l),"hopsa hejsa2");
+		assertTrue(i.intValue()>0);
     }
 }
