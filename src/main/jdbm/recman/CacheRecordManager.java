@@ -147,6 +147,11 @@ public class CacheRecordManager
 //        }
         return recid;
     }
+    
+    public synchronized <A> A fetch( long recid, Serializer<A> serializer, boolean disableCache ) throws IOException{
+    	return _recman.fetch(recid, serializer,disableCache);
+    }
+
 
 
     public synchronized void delete( long recid )

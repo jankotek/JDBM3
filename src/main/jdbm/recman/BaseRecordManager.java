@@ -480,6 +480,12 @@ public final class BaseRecordManager
         	bufferInUse = false;
         }
     }
+    
+    public synchronized <A> A fetch( long recid, Serializer<A> serializer, boolean disableCache ) throws IOException{
+    	//we dont have any cache, so can ignore disableCache parameter
+    	return fetch(recid, serializer);
+    }
+
 
 
 	private <A> A fetch2(long recid, Serializer<A> serializer,byte[] insertBuffer, 

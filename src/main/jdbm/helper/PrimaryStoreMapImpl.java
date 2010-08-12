@@ -32,9 +32,9 @@ import jdbm.Serializer;
 public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<Long, V>
 	implements PrimaryStoreMap<K, V>{
 	
-	PrimaryMap<Long,String> map;	
-	Serializer<V> valueSerializer;
-	List<RecordListener<Long,V>> listeners = new CopyOnWriteArrayList<RecordListener<Long,V>>();
+	final protected PrimaryMap<Long,String> map;	
+	final protected Serializer<V> valueSerializer;
+	final protected List<RecordListener<Long,V>> listeners = new CopyOnWriteArrayList<RecordListener<Long,V>>();
 
 	public PrimaryStoreMapImpl(PrimaryMap<Long, String> map,Serializer<V> valueSerializer2) {
 		this.map = map;
@@ -192,14 +192,18 @@ public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<L
 	}
 
 	public V put(Long key, V value) {
-		if(containsKey(key)){
-			V oldVal = get(key);
+		if(containsKey(key)){			
 			try {
+				V oldVal= getRecordManager().fetch(key,valueSerializer,true);
 				getRecordManager().update(key, value,valueSerializer);
+				//fire listeners, recid tree map did not change, so they would not be notified
+				for(RecordListener<Long, V> listener: listeners)
+					listener.recordUpdated(key, oldVal, value);
+				return oldVal;
 			} catch (IOException e) {
 				throw new IOError(e);
 			}
-			return oldVal;
+			
 		}else{			
 			throw new UnsupportedOperationException("Can not update, key not found, use putValue(val) instead.");
 		}

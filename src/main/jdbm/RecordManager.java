@@ -131,6 +131,17 @@ public interface  RecordManager
     public abstract <A> A fetch( long recid, Serializer<A> serializer )
         throws IOException;
 
+    /**
+     *  Fetches a record using a custom serializer and optionaly disabled cache
+     *
+     *  @param recid the recid for the record that must be fetched.
+     *  @param serializer a custom serializer
+     *  @param disableCache true to disable any caching mechanism
+     *  @return the object contained in the record, null if given recid does not exist  
+     *  @throws IOException when one of the underlying I/O operations fails.
+     */
+    public abstract <A> A fetch( long recid, Serializer<A> serializer, boolean disableCache )
+        throws IOException;
 
     /**
      *  Closes the record manager and release resources. 
@@ -276,6 +287,9 @@ public interface  RecordManager
      * @return map
      */
 	public <V> PrimaryStoreMap<Long, V> storeMap(String name);
+
+
+	
 
 }
 
