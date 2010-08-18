@@ -64,23 +64,26 @@ public abstract class RecordManagerImpl implements RecordManager{
 	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer) {
 		return treeMap(name, ComparableComparator.INSTANCE, valueSerializer);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer, Serializer<K> keySerializer) {	
+		return treeMap(name, ComparableComparator.INSTANCE, valueSerializer,keySerializer);
+	}
 
-    /**
-     * Creates or load existing TreeMap which persists data into DB.
-     * 
-     * 
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keyComparator Comparator used to sort keys
-     * @return
-     */
+
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator) {
 		return treeMap(name, keyComparator, null);
 	}
+	
+
 
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-			Comparator<K> keyComparator, Serializer<V> valueSerializer) {
+		Comparator<K> keyComparator, Serializer<V> valueSerializer) {
+		return treeMap(name,keyComparator,valueSerializer,null);
+	}
+
+	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
+			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) {
 		try{
 			BTree<K,V> tree = null;
         
@@ -92,6 +95,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 				tree = BTree.createInstance(this,keyComparator);
 				setNamedObject( name, tree.getRecid() );
 			}
+			tree.setKeySerializer(keySerializer);
 			tree.setValueSerializer(valueSerializer);
 			
 			return tree.asMap();

@@ -1,3 +1,7 @@
+Future
+  - if record was updated from serializer, Cache may caused infinite loop and StackTraceException  
+  - added key serializer for PrimaryTreeMap
+
 JDBM 2.0 beta 3
   - RecordManager.treeMap(String name, Serializer valueSerializer) method did not work correctly, fixed
   - Added packedLong and packedInt to Serializer

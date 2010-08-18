@@ -188,14 +188,21 @@ public class CacheRecordManager
         		e._serializer = null;
         	}
         }
-        CacheEntry entry = cacheGet(recid);
-        if ( entry != null ) {
-            // reuse existing cache entry
-            entry._obj = obj;
-            entry._serializer = serializer;
-            entry._isDirty = true;
-        } else {
-            cachePut( recid, obj, serializer, true );
+        if(disableUpdateCache){
+        	//this code was triggered from 'purgeEntry' method, 
+        	//so dont put anything into cache
+        	_recman.update(recid,obj,serializer);        		 
+        	
+        }else{
+        	CacheEntry entry = cacheGet(recid);
+        	if ( entry != null ) {
+        		// reuse existing cache entry
+        		entry._obj = obj;
+        		entry._serializer = serializer;
+        		entry._isDirty = true;
+        	} else {        	
+        		cachePut( recid, obj, serializer, true );
+        	}
         }
     }
 
@@ -316,13 +323,21 @@ public class CacheRecordManager
     protected void updateCacheEntries()
         throws IOException
     {
-    	Iterator<CacheEntry> iter = _hash.valuesIterator();
-    	while(iter.hasNext()){
-    		CacheEntry entry = iter.next();
-            if ( entry._isDirty ) {
-                _recman.update( entry._recid, entry._obj, entry._serializer );
-                entry._isDirty = false;
-            }
+    	try{
+    		if(disableUpdateCache)
+    			throw new InternalError("already inside purging entry");
+    		disableUpdateCache = true;
+
+    		Iterator<CacheEntry> iter = _hash.valuesIterator();
+    		while(iter.hasNext()){
+    			CacheEntry entry = iter.next();
+    			if ( entry._isDirty ) {
+    				_recman.update( entry._recid, entry._obj, entry._serializer );
+    				entry._isDirty = false;
+    			}
+    		}
+    	}finally{
+    		disableUpdateCache = false;
     	}
     }
     
@@ -414,25 +429,38 @@ public class CacheRecordManager
     }
 
     /**
+     * This variable protects from java.lang.StackOverflowError
+     * If purging entry triggers purging of other and so on 
+     */
+    private boolean disableUpdateCache = false;
+    
+    /**
      * Purge least recently used object from the cache
      *
      * @return recyclable CacheEntry
      */
     protected CacheEntry purgeEntry() throws IOException {
-        CacheEntry entry = _first;
-        if(entry == null)
-        	return new CacheEntry(-1,null,null,false);
+    	try{
+    		if(disableUpdateCache)
+    			throw new InternalError("already inside purging entry");
+    		disableUpdateCache = true;
+    		CacheEntry entry = _first;
+    		if(entry == null)
+    			return new CacheEntry(-1,null,null,false);
 
-        if(entry._isDirty)
-        	_recman.update( entry._recid, entry._obj, entry._serializer );
-        removeEntry(entry);
-        _hash.remove(entry._recid);
+    		if(entry._isDirty)
+    			_recman.update( entry._recid, entry._obj, entry._serializer );
+    		removeEntry(entry);
+    		_hash.remove(entry._recid);
 
 
-        entry._obj = null;
-        entry._serializer = null;
-        entry._isDirty = false;
-        return entry;
+    		entry._obj = null;
+    		entry._serializer = null;
+    		entry._isDirty = false;
+    		return entry;
+    	}finally{
+    		disableUpdateCache = false;
+    	}
     }
 
 

@@ -234,7 +234,6 @@ public interface  RecordManager
     /**
      * Creates or load existing TreeMap which persists data into DB.
      * 
-     * 
      * @param <K> Key type
      * @param <V> Value type
      * @param name record name
@@ -243,6 +242,21 @@ public interface  RecordManager
      */
 	@SuppressWarnings("unchecked")
 	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer);
+	
+    /**
+     * Creates or load existing TreeMap which persists data into DB.
+     * 
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param name record name
+     * @param valueSerializer Serializer used for values. This may reduce disk space usage.
+     * @param keySerializer Serializer used for keys. This may reduce disk space usage.
+     * @return
+     */
+	@SuppressWarnings("unchecked")
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, 
+			Serializer<V> valueSerializer, Serializer<K> keySerializer);
+	
     /**
      * Creates or load existing TreeMap which persists data into DB.
      * 
@@ -255,7 +269,7 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator);
 
-	   /**
+    /**
      * Creates or load existing TreeMap which persists data into DB.
      * 
      * 
@@ -268,6 +282,21 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
 			Comparator<K> keyComparator, Serializer<V> valueSerializer) ;
+	
+    /**
+     * Creates or load existing TreeMap which persists data into DB. 
+     * 
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param name record name
+     * @param keyComparator Comparator used to sort keys
+     * @param valueSerializer Serializer used for values. This may reduce disk space usage
+     * @param keySerializer Serializer used for keys. This may reduce disk space usage     * 
+     * @return
+     */
+	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
+			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
+	
 	/**
      * Creates or load existing StoreMap which persists data into DB.
      *  
