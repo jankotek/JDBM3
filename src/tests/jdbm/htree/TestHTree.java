@@ -23,8 +23,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.AbstractMap.SimpleEntry;
 
+import jdbm.PrimaryStoreMap;
 import jdbm.RecordListener;
 import jdbm.RecordManager;
+import jdbm.SecondaryHashMap;
+import jdbm.SecondaryKeyExtractor;
+import jdbm.SecondaryTreeMap;
 import jdbm.recman.TestCaseWithTestFile;
 
 /**
@@ -134,6 +138,25 @@ public class TestHTree extends TestCaseWithTestFile {
             recman.setNamedObject( "htree", testTree.getRecid() );
         }
         return testTree;
+    }
+    
+    @SuppressWarnings("unchecked")
+	public void testStoreMapSecondaryTreeListeners() throws IOException{
+    	RecordManager recman = newRecordManager();
+    	PrimaryStoreMap<Long,String> st = recman.storeMap("storeMap");
+    	SecondaryKeyExtractor<String, Long, String> extractor = new SecondaryKeyExtractor<String, Long, String>() {
+			public String extractSecondaryKey(Long key, String value) {				
+				return ""+key+value;
+			}};
+    	SecondaryTreeMap t = st.secondaryTreeMap("map1",extractor); 
+    	SecondaryHashMap h = st.secondaryHashMap("map2",extractor);
+    	Long key = st.putValue("aaa");
+    	assertTrue(t.size() == 1);
+    	assertTrue(t.containsKey(""+key+"aaa"));
+    	assertTrue(h.size() == 1);
+    	assertTrue(h.containsKey(""+key+"aaa"));
+		
+
     }
 
 

@@ -1,6 +1,9 @@
 Future
+
+JDBM 3.0 beta 4
   - if record was updated from serializer, Cache may caused infinite loop and StackTraceException  
   - added key serializer for PrimaryTreeMap
+  - Fixed crash if hash map was saved and reloaded empty  
 
 JDBM 2.0 beta 3
   - RecordManager.treeMap(String name, Serializer valueSerializer) method did not work correctly, fixed

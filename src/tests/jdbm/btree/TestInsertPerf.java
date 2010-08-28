@@ -20,11 +20,12 @@ import java.util.Properties;
 
 import jdbm.RecordManager;
 import jdbm.RecordManagerFactory;
+import jdbm.recman.TestCaseWithTestFile;
 
 /**
  * Test BTree insert performance.
  */
-public class TestInsertPerf 
+public class TestInsertPerf extends TestCaseWithTestFile
 {
 
     int _numberOfObjects;

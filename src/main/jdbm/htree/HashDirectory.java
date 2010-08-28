@@ -375,7 +375,7 @@ final class HashDirectory <K,V>
         if(zeroStart== MAX_CHILDREN)
         	return;
 
-        int zeroEnd = -1;
+        int zeroEnd = 0;
         for(int i = MAX_CHILDREN-1; i>=0;i--){	
         	if(_children[i]!=0){
         		zeroEnd = i;

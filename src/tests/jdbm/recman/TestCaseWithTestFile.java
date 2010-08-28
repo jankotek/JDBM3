@@ -99,5 +99,9 @@ public abstract class TestCaseWithTestFile extends TestCase {
 	static public RecordManager newRecordManager() throws IOException{
 		return RecordManagerFactory.createRecordManager(newTestFile());
 	}
+	
+	public void testDummy(){
+		//empty test case, so runner does not complain
+	}
 
 }
