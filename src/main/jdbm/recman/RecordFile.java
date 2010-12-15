@@ -107,10 +107,12 @@ final class RecordFile {
         FileChannel f0 = getChannel(0);
         //lock it
         try{
-        	f0.lock();
+        	f0.tryLock();
+        }catch(IOException e){
+        	throw new IOException("Could not lock DB file: "+fileName,e);
         }catch(OverlappingFileLockException e){
-        	throw new IOException("File already open by another instance: "+fileName);
-        }        
+            throw new IOException("Could not lock DB file: "+fileName,e);
+        }
         txnMgr = new TransactionManager(this);
     }
 
