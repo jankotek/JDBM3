@@ -18,9 +18,6 @@ package jdbm.recman;
 
 import java.util.Random;
 
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
-
 /**
  *  This class contains stress tests for this package.
  */
@@ -130,8 +127,8 @@ public class TestStress extends TestCaseWithTestFile {
                     d[slot] = new RecordData(0, rnd.nextInt(MAXSIZE),
                     (byte) rnd.nextInt());
                     d[slot].rowid =
-                        recman.insert(TestUtil.makeRecord(d[slot].size,
-                    d[slot].b));
+                        recman.insert(UtilTT.makeRecord(d[slot].size,
+                                d[slot].b));
                     recordCount++;
                     inserts++;
                 }
@@ -159,8 +156,8 @@ public class TestStress extends TestCaseWithTestFile {
                     d[slot].size = rnd.nextInt(MAXSIZE);
                     d[slot].b = (byte) rnd.nextInt();
                     recman.update(d[slot].rowid,
-                    TestUtil.makeRecord(d[slot].size,
-                    d[slot].b));
+                    UtilTT.makeRecord(d[slot].size,
+                            d[slot].b));
                     updates++;
                 }
                 else if (op == 51) {
@@ -197,7 +194,7 @@ public class TestStress extends TestCaseWithTestFile {
                     byte[] data = (byte[]) recman.fetch(d[slot].rowid);
                     assertTrue("fetch round=" + i + ", slot=" + slot
                     + ", " + d[slot],
-                    TestUtil.checkRecord(data, d[slot].size, d[slot].b));
+                    UtilTT.checkRecord(data, d[slot].size, d[slot].b));
                     fetches++;
                 }
             }

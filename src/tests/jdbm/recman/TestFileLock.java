@@ -26,8 +26,7 @@ public class TestFileLock extends TestCaseWithTestFile {
 	public void testLock() throws IOException{
 		String file = newTestFile();
 		
-		RecordManager recman1 = RecordManagerFactory.createRecordManager(file);
-		
+		RecordManager recman1 = RecordManagerFactory.createRecordManager(file);		
 		//now open same file second time, exception should be thrown
 		try{
 			RecordManager recman2 = RecordManagerFactory.createRecordManager(file);

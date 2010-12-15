@@ -29,7 +29,7 @@ import junit.framework.TestCase;
  * @author cdegroot <cg@cdegroot.com>
  *
  */
-public abstract class TestCaseWithTestFile extends TestCase {
+public class TestCaseWithTestFile extends TestCase {
 
 	public static final String testFolder = System.getProperty("java.io.tmpdir",".") + "/_testdb";
 //	public static final String testFileName = "test";

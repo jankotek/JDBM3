@@ -294,7 +294,7 @@ public class TestBTree
         tree.insert("test2","value2",false);
         tree.insert("one", new Integer(1),false);
         tree.insert("two",new Long(2),false);
-        tree.insert("myownobject",new TestObject(new Integer(234)),false);
+        tree.insert("myownobject",new ObjectTT(new Integer(234)),false);
 
         assertEquals("value2",(String)tree.find("test2"));
         assertEquals("value1",(String)tree.find("test1"));
@@ -308,8 +308,8 @@ public class TestBTree
         assertEquals("value1",tree.insert("test1","value11",true));
         assertEquals("value11",tree.find("test1")); // now the new value!
 
-        TestObject expected_obj = new TestObject(new Integer(234));
-        TestObject btree_obj = (TestObject)tree.find("myownobject");
+        ObjectTT expected_obj = new ObjectTT(new Integer(234));
+        ObjectTT btree_obj = (ObjectTT)tree.find("myownobject");
         assertEquals(expected_obj, btree_obj);
 
         recman.close();
@@ -806,19 +806,19 @@ public class TestBTree
  * implemented as inner class, as this prevents Serialization if
  * outer class is not Serializable.
  */
-class TestObject
+class ObjectTT
     implements Serializable
 {
 
     Object _content;
 
-    private TestObject()
+    private ObjectTT()
     {
         // empty
     }
 
 
-    public TestObject( Object content )
+    public ObjectTT(Object content)
     {
         _content = content;
     }
@@ -832,16 +832,16 @@ class TestObject
 
     public boolean equals( Object obj )
     {
-        if ( ! ( obj instanceof TestObject ) ) {
+        if ( ! ( obj instanceof ObjectTT) ) {
             return false;
         }
-        return _content.equals( ( (TestObject) obj ).getContent() );
+        return _content.equals( ( (ObjectTT) obj ).getContent() );
     }
 
     public String toString()
     {
-        return( "TestObject {content='" + _content + "'}" );
+        return( "ObjectTT {content='" + _content + "'}" );
     }
 
-} // TestObject
+} // ObjectTT
 

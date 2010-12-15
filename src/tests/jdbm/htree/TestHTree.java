@@ -155,6 +155,16 @@ public class TestHTree extends TestCaseWithTestFile {
     	assertTrue(t.containsKey(""+key+"aaa"));
     	assertTrue(h.size() == 1);
     	assertTrue(h.containsKey(""+key+"aaa"));
+    	
+    	//defrag will force reopening
+    	recman.defrag();
+    	recman.clearCache();
+    	
+    	assertTrue(t.size() == 1);
+    	assertTrue(t.containsKey(""+key+"aaa"));
+    	assertTrue(h.size() == 1);
+    	assertTrue(h.containsKey(""+key+"aaa"));
+
 		
 
     }

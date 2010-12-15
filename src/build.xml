@@ -80,8 +80,8 @@
   <!-- Run the unit tests -->
   <target name="tests.run" depends="tests">
         <!-- showoutput 'yes' to allow outputting debug msgs... -->
-        <junit fork="no" printsummary="yes" haltonfailure="no"
-         showoutput="yes">
+        <junit fork="yes" printsummary="yes" haltonfailure="no"
+         showoutput="yes" failureproperty="unit.test.failure" >
             <batchtest fork="no" todir="${test}">
                 <fileset dir="${test-classes}">
                     <include name="**/Test*.class"/>
@@ -105,6 +105,7 @@
             </fileset>
             <report todir="${build}/test" />
         </junitreport>
+        <fail message="!!! At least one unit test has FAILED !!!" if="unit.test.failure"/>
    </target>
 
   <!-- Build the example packages -->

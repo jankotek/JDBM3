@@ -27,6 +27,8 @@ import jdbm.recman.TestCaseWithTestFile;
  */
 public class TestInsertPerf extends TestCaseWithTestFile
 {
+	
+	public TestInsertPerf() {}
 
     int _numberOfObjects;
 

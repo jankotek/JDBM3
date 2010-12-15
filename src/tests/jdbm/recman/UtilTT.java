@@ -19,7 +19,7 @@ package jdbm.recman;
 /**
  * This class contains some test utilities.
  */
-public class TestUtil {
+public class UtilTT {
 	/**
 	 * Creates a "record" containing "length" repetitions of the indicated byte.
 	 */

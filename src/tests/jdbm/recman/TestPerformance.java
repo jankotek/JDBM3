@@ -60,8 +60,8 @@ public class TestPerformance extends TestCase {
             long stop = 0;
             while (true) {
 
-                recman.insert(TestUtil.makeRecord(rnd.nextInt(MAXSIZE),
-                                               (byte) rnd.nextInt()));
+                recman.insert(UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
+                        (byte) rnd.nextInt()));
                 inserts++;
                 
                 if ((inserts % 1000) == 0) {
@@ -99,9 +99,9 @@ public class TestPerformance extends TestCase {
         long start = System.currentTimeMillis();
         try {
             for (int i = 0; i < RECORDS; i++) {
-                retval[i] = recman.insert(TestUtil
+                retval[i] = recman.insert(UtilTT
                                        .makeRecord(rnd.nextInt(MAXSIZE),
-                                                   (byte) rnd.nextInt()));
+                                               (byte) rnd.nextInt()));
                 if ((i % 100) == 0)
                     System.out.print(".");
             }
@@ -167,8 +167,8 @@ public class TestPerformance extends TestCase {
             while (true) {
 
                 recman.update(rowids[rnd.nextInt(RECORDS)],
-                           TestUtil.makeRecord(rnd.nextInt(MAXSIZE),
-                                               (byte) rnd.nextInt()));
+                           UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
+                                   (byte) rnd.nextInt()));
                 updates++;
                 if ((updates % 25) == 0) {
                     stop = System.currentTimeMillis();
