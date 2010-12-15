@@ -19,7 +19,7 @@
     <property name="build.compiler" value="modern" />
     <property name="deprecation" value="true" />
     <property file="VERSION" />
-    <property name="version" value="2.0_beta_3" />
+    <property name="version" value="2.0" />
     <property name="archive" value="${project}-${version}" />
   </target>
 
@@ -105,7 +105,7 @@
             </fileset>
             <report todir="${build}/test" />
         </junitreport>
-        <fail message="!!! At least one unit test has FAILED !!!" if="unit.test.failure"/>
+      <fail message="!!! At least one unit test has FAILED !!!" if="unit.test.failure"/>
    </target>
 
   <!-- Build the example packages -->
