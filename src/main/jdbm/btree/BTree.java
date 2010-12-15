@@ -242,18 +242,10 @@ public class BTree<K,V>
         if ( comparator == null ) {
             throw new IllegalArgumentException( "Argument 'comparator' is null" );
         }
-
         if ( ! ( comparator instanceof Serializable ) ) {
             throw new IllegalArgumentException( "Argument 'comparator' must be serializable" );
         }
 
-        if ( keySerializer != null && ! ( keySerializer instanceof Serializable ) ) {
-            throw new IllegalArgumentException( "Argument 'keySerializer' must be serializable" );
-        }
-
-        if ( valueSerializer != null && ! ( valueSerializer instanceof Serializable ) ) {
-            throw new IllegalArgumentException( "Argument 'valueSerializer' must be serializable" );
-        }
 
         // make sure there's an even number of entries per BPage
         if ( ( pageSize & 1 ) != 0 ) {
