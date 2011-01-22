@@ -907,7 +907,7 @@ public final class BPage<K,V>
         return _btree._comparator.compare( value1, value2 );
     }
 
-    static byte[] readByteArray( DataInputStream in )
+    public static byte[] readByteArray( DataInputStream in )
         throws IOException
     {
         int len = LongPacker.unpackInt(in);
@@ -920,7 +920,7 @@ public final class BPage<K,V>
     }
 
 
-    static void writeByteArray( SerializerOutput out, byte[] buf )
+    public static void writeByteArray(SerializerOutput out, byte[] buf)
         throws IOException
     {
         if ( buf == null ) {

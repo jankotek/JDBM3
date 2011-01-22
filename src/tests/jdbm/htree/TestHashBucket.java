@@ -18,10 +18,11 @@
 package jdbm.htree;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
+import jdbm.*;
+import jdbm.helper.LongHashMap;
 import jdbm.recman.TestCaseWithTestFile;
 import junit.framework.TestSuite;
 
@@ -43,7 +44,10 @@ public class TestHashBucket extends TestCaseWithTestFile {
 
         Properties props = new Properties();
         RecordManager recman = RecordManagerFactory.createRecordManager( newTestFile(), props );
-        HashBucket bucket = new HashBucket(0);
+
+        HTree tree = new HTree();
+
+        HashBucket bucket = new HashBucket(tree, 0);
 
         // add
         bucket.addElement("key", "value");
@@ -72,11 +76,29 @@ public class TestHashBucket extends TestCaseWithTestFile {
     }
 
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestHashBucket.class));
-    }
+    public void testCustomSerializer() throws IOException {
+        Serializer<Long> ser = new Serializer<Long>(){
 
+            public void serialize(SerializerOutput out, Long obj) throws IOException {
+                out.writeLong(obj);
+            }
+
+            public Long deserialize(SerializerInput in) throws IOException, ClassNotFoundException {
+                return in.readLong();
+            }
+        };
+
+        RecordManager recman = newRecordManager();
+        Map<Long,Long> s = recman.hashMap("test",ser,ser);
+
+        s.put(new Long(1),new Long(2));
+        s.put(new Long(4), new Long(5));
+        recman.commit();
+        recman.clearCache();
+        assertTrue(s.size()==2);
+        assertEquals(s.get(new Long(1)),new Long(2));
+        assertEquals(s.get(new Long(4)),new Long(5));
+
+
+    }
 }

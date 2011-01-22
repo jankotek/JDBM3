@@ -218,6 +218,36 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryHashMap<K, V> hashMap(String name);
 
+
+
+    /**
+     * Creates or load existing Primary Hash Map which persists data into DB.
+     * This method uses custom serializer for keys.
+     *
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param name record name
+     * @param keySerializer serializer to be used for Keys
+     * @return
+     */
+	public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer);
+
+
+
+    /**
+     * Creates or load existing Primary Hash Map which persists data into DB.
+     * Map will use custom serializers for Keys and Values.
+     * Leave keySerializer null to use default serializer for keys
+     *
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param name record name
+     * @param keySerializer serializer to be used for Keys, leave null to use default serializer
+     * @param valueSerializer serializer to be used for Values
+     * @return
+     */
+	public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
+
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
      * 

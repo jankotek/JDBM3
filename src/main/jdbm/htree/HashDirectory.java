@@ -93,8 +93,8 @@ final class HashDirectory <K,V>
     /**
      * Public constructor used by serialization
      */
-    public HashDirectory() {
-        // empty
+    public HashDirectory(HTree<K,V> tree) {
+        super(tree);
     }
 
     /**
@@ -102,7 +102,8 @@ final class HashDirectory <K,V>
      *
      * @param depth Depth of this directory page.
      */
-    HashDirectory(byte depth) {
+    HashDirectory(HTree<K,V> tree, byte depth) {
+        super(tree);
         _depth = depth;
         _children = new long[MAX_CHILDREN];
     }
@@ -158,7 +159,7 @@ final class HashDirectory <K,V>
             // not bucket/page --> not found
             return null;
         } else {
-            HashNode<K,V> node = (HashNode<K,V>) _recman.fetch( child_recid, HashNode.SERIALIZER );
+            HashNode<K,V> node = (HashNode<K,V>) _recman.fetch( child_recid, tree.SERIALIZER );
             // System.out.println("HashDirectory.get() child is : "+node);
 
             if ( node instanceof HashDirectory ) {
@@ -192,20 +193,20 @@ final class HashDirectory <K,V>
         long child_recid = _children[hash];
         if (child_recid == 0) {
             // no bucket/page here yet, let's create a bucket
-            HashBucket bucket = new HashBucket(_depth+1);
+            HashBucket bucket = new HashBucket(tree, _depth+1);
 
             // insert (key,value) pair in bucket
             Object existing = bucket.addElement(key, value);
 
-            long b_recid = _recman.insert(bucket,HashNode.SERIALIZER );
+            long b_recid = _recman.insert(bucket,tree.SERIALIZER );
             _children[hash] = b_recid;
 
-            _recman.update(_recid, this,HashNode.SERIALIZER );
+            _recman.update(_recid, this,tree.SERIALIZER );
 
             // System.out.println("Added: "+bucket);
             return existing;
         } else {
-            HashNode node = (HashNode) _recman.fetch( child_recid,HashNode.SERIALIZER  );
+            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
 
             if ( node instanceof HashDirectory ) {
                 // recursive insert in next directory level
@@ -217,7 +218,7 @@ final class HashDirectory <K,V>
                 HashBucket bucket = (HashBucket)node;
                 if (bucket.hasRoom()) {
                     Object existing = bucket.addElement(key, value);
-                    _recman.update(child_recid, bucket,HashNode.SERIALIZER );
+                    _recman.update(child_recid, bucket,tree.SERIALIZER );
                     // System.out.println("Added: "+bucket);
                     return existing;
                 } else {
@@ -226,12 +227,12 @@ final class HashDirectory <K,V>
                         throw new RuntimeException( "Cannot create deeper directory. "
                                                     + "Depth=" + _depth );
                     }
-                    HashDirectory dir = new HashDirectory( (byte) (_depth+1) );
-                    long dir_recid = _recman.insert( dir ,HashNode.SERIALIZER );
+                    HashDirectory dir = new HashDirectory(tree, (byte) (_depth+1) );
+                    long dir_recid = _recman.insert( dir ,tree.SERIALIZER );
                     dir.setPersistenceContext( _recman, dir_recid );
 
                     _children[hash] = dir_recid;
-                    _recman.update( _recid, this,HashNode.SERIALIZER  );
+                    _recman.update( _recid, this,tree.SERIALIZER  );
 
                     // discard overflown bucket
                     _recman.delete( child_recid );
@@ -267,7 +268,7 @@ final class HashDirectory <K,V>
             // not bucket/page --> not found
             return null;
         } else {
-            HashNode node = (HashNode) _recman.fetch( child_recid,HashNode.SERIALIZER  );
+            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
             // System.out.println("HashDirectory.remove() child is : "+node);
 
             if (node instanceof HashDirectory) {
@@ -280,7 +281,7 @@ final class HashDirectory <K,V>
                         // delete empty directory
                         _recman.delete(child_recid);
                         _children[hash] = 0;
-                        _recman.update(_recid, this,HashNode.SERIALIZER );
+                        _recman.update(_recid, this,tree.SERIALIZER );
                     }
                 }
                 return existing;
@@ -290,12 +291,12 @@ final class HashDirectory <K,V>
                 Object existing = bucket.removeElement(key);
                 if (existing != null) {
                     if (bucket.getElementCount() >= 1) {
-                        _recman.update(child_recid, bucket,HashNode.SERIALIZER );
+                        _recman.update(child_recid, bucket,tree.SERIALIZER );
                     } else {
                         // delete bucket, it's empty
                         _recman.delete(child_recid);
                         _children[hash] = 0;
-                        _recman.update(_recid, this,HashNode.SERIALIZER );
+                        _recman.update(_recid, this,tree.SERIALIZER );
                     }
                 }
                 return existing;
@@ -524,7 +525,7 @@ final class HashDirectory <K,V>
                 throw new Error("child_recid cannot be 0");
             }
 
-            HashNode node = (HashNode) _recman.fetch( child_recid,HashNode.SERIALIZER  );
+            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
             // System.out.println("HDEnumeration.get() child is : "+node);
  
             if ( node instanceof HashDirectory ) {

@@ -16,11 +16,13 @@
 
 package jdbm.htree;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.awt.image.Kernel;
+import java.io.*;
 import java.util.ArrayList;
 
+import jdbm.SerializerInput;
+import jdbm.SerializerOutput;
+import jdbm.btree.BPage;
 import jdbm.helper.LongPacker;
 import jdbm.helper.Serialization;
 
@@ -82,8 +84,8 @@ final class HashBucket<K,V>
     /**
      * Public constructor for serialization.
      */
-    public HashBucket() {
-        // empty
+    public HashBucket(HTree<K,V> tree) {
+        super(tree);
     }
 
 
@@ -91,8 +93,9 @@ final class HashBucket<K,V>
      * Construct a bucket with a given depth level.  Depth level is the
      * number of <code>HashDirectory</code> above this bucket.
      */
-    public HashBucket( int level )
+    public HashBucket(HTree<K,V> tree, int level )
     {
+        super(tree);
         if ( level > HashDirectory.MAX_DEPTH+1 ) {
             throw new IllegalArgumentException(
                             "Cannot create bucket with depth > MAX_DEPTH+1. "
@@ -227,16 +230,38 @@ final class HashBucket<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void writeExternal( DataOutputStream out )
+    public void writeExternal( SerializerOutput out )
         throws IOException
     {
-    	LongPacker.packInt(out,_depth); 
 
-        Serialization.writeObject(out, _keys);
+    	LongPacker.packInt(out, _depth);
+
+        ArrayList keys = _keys;
+        //write keys
+        if(tree.keySerializer!=null){
+            for(int i = 0;i<_keys.size();i++){
+                if(keys.get(i)==null)  continue;
+                //transform to byte array
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                tree.keySerializer.serialize(new SerializerOutput(baos), (K) keys.get(i));
+                keys.set(i, baos.toByteArray());
+
+            }
+
+        }
+        Serialization.writeObject(out, keys);
+
+        //write values
         for(int i = 0;i<_keys.size();i++){
         	if(_keys.get(i) == null)
         		continue;
-        	Serialization.writeObject(out, _values.get(i));	
+            if(tree.valueSerializer==null)
+        	    Serialization.writeObject(out, _values.get(i));
+            else{
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		        tree.valueSerializer.serialize(new SerializerOutput(baos), _values.get(i));
+		        BPage.writeByteArray(out, baos.toByteArray());
+            }
         }
         
     }
@@ -245,17 +270,35 @@ final class HashBucket<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void readExternal(DataInputStream in)
+    public void readExternal(SerializerInput in)
     throws IOException, ClassNotFoundException {
         _depth = LongPacker.unpackInt(in);
 
-        _keys = (ArrayList<K>) Serialization.readObject(in);
+        //read keys
+        ArrayList keys = (ArrayList) Serialization.readObject(in);
+        if(tree.keySerializer!=null){
+            //deserialize from byte array
+            for(int i =0; i<keys.size(); i++){
+                byte[] serialized = (byte[]) keys.get(i);
+                if(serialized == null)  continue;
+                K key = tree.keySerializer.deserialize(new SerializerInput(new ByteArrayInputStream(serialized)));
+                keys.set(i, key);
+            }
+        }
+        _keys = keys;
+
+         //read values
         _values = new ArrayList<V>(_keys.size());
         for(int i = 0;i<_keys.size();i++){
         	if(_keys.get(i) == null)
         		_values.add(null);
-        	else
+        	else if(tree.valueSerializer==null)
         		_values.add((V) Serialization.readObject(in));
+            else{
+  		          byte[] serialized = BPage.readByteArray( in );
+                  V val = tree.valueSerializer.deserialize(new SerializerInput(new ByteArrayInputStream(serialized)));
+		          _values.add(val);
+            }
         }
 
     }

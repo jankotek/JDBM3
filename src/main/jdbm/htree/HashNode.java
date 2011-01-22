@@ -34,45 +34,10 @@ import jdbm.helper.Serialization;
 @SuppressWarnings("unchecked")
 class HashNode<K,V> //implements Serializable, Serializer<HashNode>
 {
-	
-//	static final Serializer SERIALIZER = DefaultSerializer.INSTANCE;
-	static final Serializer<HashNode> SERIALIZER = new Serializer<HashNode>(){
-	
-	public HashNode deserialize(SerializerInput ds) throws IOException {
-		try{
-			int i = ds.read();
-			if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
-				HashBucket ret = new HashBucket();
-				ret.readExternal(ds);
-				if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
-					throw new InternalError("bytes left: "+ds.available()+1);
-				return ret;
-			}else if( i == Serialization.HTREE_DIRECTORY){
-				HashDirectory ret = new HashDirectory();
-				ret.readExternal(ds);
-				if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
-					throw new InternalError("bytes left: "+ds.available()+1);
-				return ret;
-			}else {
-				throw new InternalError("Wrong HTree header: "+i);
-			}
-		}catch(ClassNotFoundException e){
-			throw new IOException(e);
-		}
-		
-	}
-	public void serialize(SerializerOutput out, HashNode obj) throws IOException {
-		if(obj.getClass() ==  HashBucket.class){
-			out.write(Serialization.HTREE_BUCKET);
-			HashBucket b = (HashBucket) obj;
-			b.writeExternal(out);
-		}else{
-			out.write(Serialization.HTREE_DIRECTORY);
-			HashDirectory n = (HashDirectory) obj;
-			n.writeExternal(out);
-		}
-	}
+    protected final HTree<K, V> tree;
 
-	};
+    public HashNode(HTree<K,V> tree) {
+        this.tree = tree;
+    }
 
 }

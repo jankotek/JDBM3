@@ -35,19 +35,25 @@ import jdbm.htree.HTree;
  */
 public abstract class RecordManagerImpl implements RecordManager{
 	
-	
-
 	public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
+        return hashMap(name,null,null);
+    }
+
+    public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer) {
+        return hashMap(name,keySerializer,null);
+    }
+
+	public synchronized <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer,  Serializer<V> valueSerializer) {
 		try{
 			HTree<K, V> tree = null;
         
 			long recid = getNamedObject( name);
 			if ( recid != 0 ) {
-				tree = HTree.load( this, recid );
+				tree = HTree.load( this, recid, keySerializer, valueSerializer);
 			} else {
-				tree = HTree.createInstance(this);
+				tree = HTree.createInstance(this, keySerializer, valueSerializer);
 				setNamedObject( name, tree.getRecid() );
-			}			
+			}
 			return tree.asMap();
 		}catch(IOException  e){
 			throw new IOError(e);
@@ -82,7 +88,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 		return treeMap(name,keyComparator,valueSerializer,null);
 	}
 
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
+	public synchronized <K, V> PrimaryTreeMap<K, V> treeMap(String name,
 			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) {
 		try{
 			BTree<K,V> tree = null;
@@ -104,7 +110,7 @@ public abstract class RecordManagerImpl implements RecordManager{
 		}	
 	}
 
-	public <V> PrimaryStoreMap<Long, V> storeMap(String name,
+	public synchronized <V> PrimaryStoreMap<Long, V> storeMap(String name,
 				Serializer<V> valueSerializer) {
 		try{
 			BTree<Long,String> tree = null;

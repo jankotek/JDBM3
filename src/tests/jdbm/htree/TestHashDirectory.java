@@ -42,8 +42,9 @@ public class TestHashDirectory extends TestCaseWithTestFile {
 
         RecordManager recman = newRecordManager();
 
-        HashDirectory dir = new HashDirectory((byte)0);
-        long recid = recman.insert(dir,HashNode.SERIALIZER);
+        HTree tree = new HTree();
+        HashDirectory dir = new HashDirectory(tree, (byte)0);
+        long recid = recman.insert(dir,tree.SERIALIZER);
         dir.setPersistenceContext(recman, recid);
 
         dir.put("key", "value");
@@ -60,8 +61,9 @@ public class TestHashDirectory extends TestCaseWithTestFile {
         System.out.println("testMixed");
 
         RecordManager recman = newRecordManager();
-        HashDirectory dir = new HashDirectory((byte)0);
-        long recid = recman.insert(dir,HashNode.SERIALIZER);
+        HTree tree = new HTree();
+        HashDirectory dir = new HashDirectory(tree, (byte)0);
+        long recid = recman.insert(dir,tree.SERIALIZER);
         dir.setPersistenceContext(recman, recid);
 
         Hashtable hash = new Hashtable(); // use to compare results

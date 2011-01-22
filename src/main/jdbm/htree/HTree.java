@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import jdbm.RecordListener;
-import jdbm.RecordManager;
+import jdbm.*;
 import jdbm.helper.JdbmBase;
+import jdbm.helper.Serialization;
 
 /**
  *  Persistent hashtable implementation for PageManager.
@@ -38,6 +38,45 @@ import jdbm.helper.JdbmBase;
 public class HTree<K,V> implements JdbmBase<K,V>
 {
 
+    final Serializer SERIALIZER = new Serializer<HashNode>() {
+
+        public HashNode deserialize(SerializerInput ds) throws IOException {
+            try{
+                int i = ds.read();
+                if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
+                    HashBucket ret = new HashBucket(HTree.this);
+                    ret.readExternal(ds);
+                    if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
+                        throw new InternalError("bytes left: "+ds.available()+1);
+                    return ret;
+                }else if( i == Serialization.HTREE_DIRECTORY){
+                    HashDirectory ret = new HashDirectory(HTree.this);
+                    ret.readExternal(ds);
+                    if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
+                        throw new InternalError("bytes left: "+ds.available()+1);
+                    return ret;
+                }else {
+                    throw new InternalError("Wrong HTree header: "+i);
+                }
+            }catch(ClassNotFoundException e){
+                throw new IOException(e);
+            }
+
+        }
+        public void serialize(SerializerOutput out, HashNode obj) throws IOException {
+            if(obj.getClass() ==  HashBucket.class){
+                out.write(Serialization.HTREE_BUCKET);
+                HashBucket b = (HashBucket) obj;
+                b.writeExternal(out);
+            }else{
+                out.write(Serialization.HTREE_DIRECTORY);
+                HashDirectory n = (HashDirectory) obj;
+                n.writeExternal(out);
+            }
+        }
+    };
+
+
     /**
      * Root hash directory.
      */
@@ -49,14 +88,28 @@ public class HTree<K,V> implements JdbmBase<K,V>
      */
     protected List<RecordListener<K,V>> recordListeners = new ArrayList<RecordListener<K,V>>();
 
-    
-    /**
-     * Private constructor
-     *
-     * @param root Root hash directory.
+ /**
+     * Serializer used to serialize index keys (optional)
      */
-    private HTree( HashDirectory<K,V> root ) {
-        _root = root;
+    protected Serializer<K> keySerializer;
+
+
+    /**
+     * Serializer used to serialize index values (optional)
+     */
+    protected Serializer<V> valueSerializer;
+
+
+    public Serializer<K> getKeySerializer() {
+		return keySerializer;
+	}
+
+	public Serializer<V> getValueSerializer() {
+		return valueSerializer;
+	}
+
+
+    HTree() {
     }
 
 
@@ -68,14 +121,31 @@ public class HTree<K,V> implements JdbmBase<K,V>
     public static <K,V> HTree<K,V> createInstance( RecordManager recman )
         throws IOException
     {
+        return createInstance(recman, null, null);
+    }
+
+    /**
+     * Create a persistent hashtable.
+     *
+     * @param recman Record manager used for persistence.
+     */
+    public static <K,V> HTree<K,V> createInstance( RecordManager recman,
+                                                   Serializer<K> keySerializer,
+                                                   Serializer<V> valueSerializer )
+        throws IOException
+    {
         HashDirectory<K,V>  root;
         long           recid;
 
-        root = new HashDirectory<K,V>( (byte) 0 );
-        recid = recman.insert( root,HashNode.SERIALIZER  );
-        root.setPersistenceContext( recman, recid );
+        HTree<K,V> tree = new HTree<K,V>();
+        tree.keySerializer = keySerializer;
+        tree.valueSerializer = valueSerializer;
 
-        return new HTree<K,V>( root );
+        tree._root = new HashDirectory<K,V>( tree, (byte) 0 );
+        recid = recman.insert( tree._root, tree.SERIALIZER );
+        tree._root.setPersistenceContext(recman, recid);
+
+        return tree;
     }
 
 
@@ -85,15 +155,33 @@ public class HTree<K,V> implements JdbmBase<K,V>
      * @param recman RecordManager used to store the persistent hashtable
      * @param root_recid Record id of the root directory of the HTree
      */
-    public static <K,V>  HTree<K,V> load( RecordManager recman, long root_recid )
+    public static <K,V>  HTree<K,V> load( RecordManager recman,
+                                          long root_recid)
+    throws IOException
+    {
+        return load(recman, root_recid, null, null);
+    }
+    /**
+     * Load a persistent hashtable
+     *
+     * @param recman RecordManager used to store the persistent hashtable
+     * @param root_recid Record id of the root directory of the HTree
+     */
+    public static <K,V>  HTree<K,V> load( RecordManager recman,
+                                          long root_recid,
+                                          Serializer<K> keySerializer,
+                                          Serializer<V> valueSerializer )
         throws IOException
     {
-        HTree<K,V> tree;
         HashDirectory<K,V> root;
 
-        root = (HashDirectory<K,V>) recman.fetch( root_recid,HashNode.SERIALIZER  );
-        root.setPersistenceContext( recman, root_recid );
-        tree = new HTree<K,V>( root );
+        HTree<K,V> tree = new HTree<K,V>();
+        tree.keySerializer = keySerializer;
+        tree.valueSerializer = valueSerializer;
+
+        tree._root = (HashDirectory<K,V>) recman.fetch( root_recid, tree.SERIALIZER  );
+        tree._root.setPersistenceContext( recman, root_recid );
+
         return tree;
     }
 
