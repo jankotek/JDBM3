@@ -358,4 +358,10 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		return new Long(((Long)k).longValue()+1);
 	}
 
+    public void clear(){
+        Iterator<K> keyIter = keySet().iterator();
+        while(keyIter.hasNext())
+            remove(keyIter.next());
+    }
+
 }

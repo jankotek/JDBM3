@@ -543,7 +543,8 @@ final class HashDirectory <K,V>
                 // node is a bucket
                 HashBucket bucket = (HashBucket)node;
                 if ( _iterateKeys ) {
-                    _iter = bucket.getKeys().iterator();
+                     ArrayList keys2 = (ArrayList) bucket.getKeys().clone();
+                    _iter = keys2.iterator();
                 } else {
                     _iter = bucket.getValues().iterator();
                 }

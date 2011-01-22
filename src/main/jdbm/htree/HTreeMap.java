@@ -265,5 +265,15 @@ public class HTreeMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryHas
 	}
 
 
+    public void clear(){
+        try{
+            Iterator<K> keyIter = tree.keys();
+            while(keyIter.hasNext())
+                tree.remove(keyIter.next());
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+    }
+
 
 }
