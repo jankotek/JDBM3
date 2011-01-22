@@ -653,6 +653,10 @@ public class BTree<K,V>
 	}
 	
 
+    public Comparator<K> getComparator() {
+        return _comparator;
+    }
+
     /** 
      * Deletes all BPages in this BTree, then deletes the tree from the record manager
      */
