@@ -545,8 +545,10 @@ public class BTree<K,V>
             return null;
         }
         BPage<K,V> root = (BPage<K,V>) _recman.fetch( _root, _bpageSerializer );
-        root._recid = _root;
-        root._btree = this;
+        if (root != null) {
+            root._recid = _root;
+            root._btree = this;
+        }
         return root;
     }
 
