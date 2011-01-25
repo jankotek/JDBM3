@@ -20,50 +20,90 @@ import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
 
-import jdbm.InverseHashView;
-import jdbm.PrimaryHashMap;
-import jdbm.SecondaryHashMap;
-import jdbm.SecondaryKeyExtractor;
-import jdbm.SecondaryTreeMap;
+import jdbm.*;
 
 public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implements PrimaryHashMap<K, V>{
 
 	
 	public <A> SecondaryHashMap<A, K,V> secondaryHashMap(String objectName,
 			SecondaryKeyExtractor<A, K,V> secondaryKeyExtractor) {
-		return SecondaryKeyHelper.secondaryHashMap(objectName,secondaryKeyExtractor,this);
+		return SecondaryKeyHelper.secondaryHashMap(objectName,secondaryKeyExtractor,this,null);
 	}
 
 	public <A> SecondaryTreeMap<A, K, V> secondaryTreeMap(String objectName,
 			SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor,
 			Comparator<A> secondaryKeyComparator) {
-		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,secondaryKeyComparator,this);	
+		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,secondaryKeyComparator,this,null);
 	}
 
 	@SuppressWarnings("unchecked")
 	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMap(
 			String objectName, SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor) {
 		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this);
+				ComparableComparator.INSTANCE,this,null);
 	}
 
-	
+
 	public <A> SecondaryHashMap<A, K,V> secondaryHashMapManyToOne(String objectName,
 			SecondaryKeyExtractor<Iterable<A>, K,V> secondaryKeyExtractor) {
-		return SecondaryKeyHelper.secondaryHashMapManyToOne(objectName,secondaryKeyExtractor,this);
+		return SecondaryKeyHelper.secondaryHashMapManyToOne(objectName,secondaryKeyExtractor,this,null);
 	}
 
 	public <A> SecondaryTreeMap<A, K, V> secondaryTreeMapManyToOne(String objectName,
 			SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor,
 			Comparator<A> secondaryKeyComparator) {
-		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,secondaryKeyComparator,this);	
+		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,secondaryKeyComparator,this,null);
 	}
- 
+
 	@SuppressWarnings("unchecked")
 	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMapManyToOne(
 			String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor) {
 		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this);
+				ComparableComparator.INSTANCE,this,null);
+	}
+
+
+	public <A> SecondaryHashMap<A, K,V> secondaryHashMap(String objectName,
+			SecondaryKeyExtractor<A, K,V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondaryHashMap(objectName,secondaryKeyExtractor,this,secondaryKeySerializer);
+	}
+
+	public <A> SecondaryTreeMap<A, K, V> secondaryTreeMap(String objectName,
+			SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor,
+			Comparator<A> secondaryKeyComparator,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,secondaryKeyComparator,this,secondaryKeySerializer);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMap(
+			String objectName, SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,
+				ComparableComparator.INSTANCE,this,secondaryKeySerializer);
+	}
+
+
+	public <A> SecondaryHashMap<A, K,V> secondaryHashMapManyToOne(String objectName,
+			SecondaryKeyExtractor<Iterable<A>, K,V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondaryHashMapManyToOne(objectName,secondaryKeyExtractor,this,secondaryKeySerializer);
+	}
+
+	public <A> SecondaryTreeMap<A, K, V> secondaryTreeMapManyToOne(String objectName,
+			SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor,
+			Comparator<A> secondaryKeyComparator,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,secondaryKeyComparator,this,secondaryKeySerializer);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMapManyToOne(
+			String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer) {
+		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,
+				ComparableComparator.INSTANCE,this,secondaryKeySerializer);
 	}
 	
 	public InverseHashView<K, V> inverseHashView(String objectName) {

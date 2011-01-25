@@ -64,6 +64,32 @@ public interface PrimaryMap<K,V> extends JdbmBase<K,V>, Map<K,V>{
 	<A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName, 
 			SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor);
 
+    <A> SecondaryHashMap<A,K,V> secondaryHashMap(String objectName,
+            SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor, Serializer<A> secondaryKeySerializer);
+
+    <A> SecondaryHashMap<A,K,V> secondaryHashMapManyToOne(String objectName,
+            SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor, Serializer<A> secondaryKeySerializer);
+
+
+    <A> SecondaryTreeMap<A,K,V> secondaryTreeMap(String objectName,
+            SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor,Comparator<A> secondaryKeyComparator,
+            Serializer<A> secondaryKeySerializer);
+
+    @SuppressWarnings("unchecked")
+    <A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMap(String objectName,
+            SecondaryKeyExtractor<A,K,V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer);
+
+    <A> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName,
+            SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor,Comparator<A> secondaryKeyComparator,
+            Serializer<A> secondaryKeySerializer);
+
+    @SuppressWarnings("unchecked")
+    <A extends Comparable> SecondaryTreeMap<A,K,V> secondaryTreeMapManyToOne(String objectName,
+            SecondaryKeyExtractor<Iterable<A>,K,V> secondaryKeyExtractor,
+            Serializer<A> secondaryKeySerializer);
+
+
 	InverseHashView<K,V> inverseHashView(String name);
 
 }

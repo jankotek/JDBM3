@@ -22,11 +22,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import jdbm.InverseHashView;
-import jdbm.RecordListener;
-import jdbm.SecondaryHashMap;
-import jdbm.SecondaryKeyExtractor;
-import jdbm.SecondaryTreeMap;
+import jdbm.*;
 import jdbm.btree.BTree;
 import jdbm.btree.BTreeSecondarySortedMap;
 import jdbm.htree.HTree;
@@ -113,14 +109,14 @@ final public class SecondaryKeyHelper {
     }
 
     static public <A,K,V> HTree<A,Iterable<K>>  secondaryHTree(String objectName, 
-    		final SecondaryKeyExtractor<A,K,V> keyExtractor, JdbmBase<K,V> b) 
+    		final SecondaryKeyExtractor<A,K,V> keyExtractor, JdbmBase<K,V> b,Serializer<A> secondaryKeySerializer)
     		throws IOException{
     	HTree<A,Iterable<K>> secIndex = null;
         long recid = b.getRecordManager().getNamedObject( objectName );
         if ( recid != 0 ) {
-            secIndex = HTree.load(b.getRecordManager(), recid );
+            secIndex = HTree.load(b.getRecordManager(), recid,secondaryKeySerializer,null );
         } else {
-            secIndex = HTree.createInstance( b.getRecordManager());
+            secIndex = HTree.createInstance( b.getRecordManager(),secondaryKeySerializer,null);
             b.getRecordManager().setNamedObject( objectName, secIndex.getRecid() );
         }
         
@@ -256,14 +252,14 @@ final public class SecondaryKeyHelper {
     }
 
     static public <A,K,V> HTree<A,Iterable<K>>  secondaryHTreeManyToOne(String objectName, 
-    		final SecondaryKeyExtractor<Iterable<A>,K,V> keyExtractor, JdbmBase<K,V> b) 
+    		final SecondaryKeyExtractor<Iterable<A>,K,V> keyExtractor, JdbmBase<K,V> b,Serializer<A> secondaryKeySerializer)
     		throws IOException{
     	HTree<A,Iterable<K>> secIndex = null;
         long recid = b.getRecordManager().getNamedObject( objectName );
         if ( recid != 0 ) {
-            secIndex = HTree.load(b.getRecordManager(), recid );
+            secIndex = HTree.load(b.getRecordManager(), recid,secondaryKeySerializer,null );
         } else {
-            secIndex = HTree.createInstance( b.getRecordManager());
+            secIndex = HTree.createInstance( b.getRecordManager(),secondaryKeySerializer,null);
             b.getRecordManager().setNamedObject( objectName, secIndex.getRecid() );
         }
         
@@ -329,9 +325,10 @@ final public class SecondaryKeyHelper {
 
 
     public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMap( 
-    		String objectName, SecondaryKeyExtractor<A, K, V> secKeyExtractor, JdbmBase<K,V> b){
+    		String objectName, SecondaryKeyExtractor<A, K, V> secKeyExtractor, JdbmBase<K,V> b,
+            Serializer<A> secondaryKeySerializer){
     	try{
-    		HTree<A,Iterable<K>> secTree = secondaryHTree(objectName, secKeyExtractor, b);
+    		HTree<A,Iterable<K>> secTree = secondaryHTree(objectName, secKeyExtractor, b,secondaryKeySerializer);
     		HTreeSecondaryMap<A, K, V> ret = new HTreeSecondaryMap<A, K, V>(secTree, b);
     		return ret;
     	}catch (IOException e){
@@ -341,9 +338,12 @@ final public class SecondaryKeyHelper {
 
     public static <A,K,V> SecondaryTreeMap<A,K,V> secondaryTreeMap( 
     		String objectName, SecondaryKeyExtractor<A, K, V> secKeyExtractor, 
-    		Comparator<A> comparator, JdbmBase<K,V> b){
+    		Comparator<A> comparator, JdbmBase<K,V> b,
+            Serializer<A> secondaryKeySerializer){
     	try{
     		BTree<A,Iterable<K>> secTree = secondaryBTree(objectName, secKeyExtractor, comparator,b);
+            if(secondaryKeySerializer!=null)
+                secTree.setKeySerializer(secondaryKeySerializer);
     		BTreeSecondarySortedMap<A, K, V> ret = new BTreeSecondarySortedMap<A, K, V>(secTree, b);
     		return ret;
     	}catch (IOException e){
@@ -353,9 +353,10 @@ final public class SecondaryKeyHelper {
     
 
     public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMapManyToOne( 
-    		String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, JdbmBase<K,V> b){
+    		String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, JdbmBase<K,V> b,
+            Serializer<A> secondaryKeySerializer){
     	try{
-    		HTree<A,Iterable<K>> secTree = secondaryHTreeManyToOne(objectName, secKeyExtractor, b);
+    		HTree<A,Iterable<K>> secTree = secondaryHTreeManyToOne(objectName, secKeyExtractor, b,secondaryKeySerializer);
     		HTreeSecondaryMap<A, K, V> ret = new HTreeSecondaryMap<A, K, V>(secTree, b);
     		return ret;
     	}catch (IOException e){
@@ -365,9 +366,11 @@ final public class SecondaryKeyHelper {
 
     public static <A,K,V> SecondaryTreeMap<A,K,V> secondarySortedMapManyToOne( 
     		String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, 
-    		Comparator<A> comparator, JdbmBase<K,V> b){
+    		Comparator<A> comparator, JdbmBase<K,V> b,Serializer<A> secondaryKeySerializer){
     	try{
     		BTree<A,Iterable<K>> secTree = secondaryBTreeManyToOne(objectName, secKeyExtractor, comparator,b);
+            if(secondaryKeySerializer!=null)
+                secTree.setKeySerializer(secondaryKeySerializer);
     		BTreeSecondarySortedMap<A, K, V> ret = new BTreeSecondarySortedMap<A, K, V>(secTree, b);
     		return ret;
     	}catch (IOException e){
@@ -394,7 +397,7 @@ final public class SecondaryKeyHelper {
 				return new Integer(hashCode);
 			}
 		};
-		final SecondaryTreeMap<Integer, K, V> inverseMap = secondaryTreeMap(recordName,hashExtractor,ComparableComparator.INSTANCE,base); 
+		final SecondaryTreeMap<Integer, K, V> inverseMap = secondaryTreeMap(recordName,hashExtractor,ComparableComparator.INSTANCE,base,null);
 		
 		return new InverseHashView<K, V>() {
 			public K findKeyForValue(V val) {
