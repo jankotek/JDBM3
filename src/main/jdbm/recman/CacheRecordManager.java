@@ -169,7 +169,6 @@ public class CacheRecordManager
         	SoftCacheEntry e = _softHash.remove(recid);
         	if(e!=null){
         		e.clear();
-        		e._serializer = null;
         	}
         }
 
@@ -185,7 +184,6 @@ public class CacheRecordManager
         	SoftCacheEntry e = _softHash.remove(recid);
         	if(e != null){
         		e.clear();
-        		e._serializer = null;
         	}
         }
         if(disableUpdateCache){
@@ -228,7 +226,7 @@ public class CacheRecordManager
         		cachePut(recid,value, serializer,false);
         	else{ //put record into soft cache
         		synchronized(_softHash){
-        			_softHash.put(recid,new SoftCacheEntry(recid, value, serializer, _refQueue));
+        			_softHash.put(recid,new SoftCacheEntry(recid, value, _refQueue));
         		}
         	}
         	return value;
@@ -277,7 +275,6 @@ public class CacheRecordManager
         	while(iter.hasNext()){
         		SoftCacheEntry e = iter.next();    		
     			e.clear();
-    			e._serializer = null;
     		}
     		_softHash.clear();
     	}
@@ -493,17 +490,13 @@ public class CacheRecordManager
     {
 
         protected long _recid;
-        protected Serializer _serializer;
 
-        
-        SoftCacheEntry( long recid, Object obj, Serializer serializer, ReferenceQueue queue)
+        SoftCacheEntry( long recid, Object obj, ReferenceQueue queue)
         {
         	super(obj,queue);
             _recid = recid;
-            _serializer = serializer;
-
         }
-        
+
     }
     
     
@@ -568,7 +561,6 @@ public class CacheRecordManager
         	while(iter.hasNext()){
         		SoftCacheEntry e = iter.next();    		
     			e.clear();
-    			e._serializer = null;
     		}
     		_softHash.clear();
     	}
