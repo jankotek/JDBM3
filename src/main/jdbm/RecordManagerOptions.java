@@ -27,10 +27,9 @@ public class RecordManagerOptions
 {
 
     /**
-     * Option to create a thread-safe record manager.
+     * Class name of the provider factory. Defaults to {@link jdbm.recman.Provider}.
      */
     public static final String PROVIDER_FACTORY = "jdbm.provider";
-
 
     /**
      * Option to create a thread-safe record manager.
@@ -47,12 +46,13 @@ public class RecordManagerOptions
     /**
      * Option to disable transaction (to increase performance at the cost of
      * potential data loss).
+     * <br>Possible values: <u>false</u>|true.
      */
     public static final String DISABLE_TRANSACTIONS = "jdbm.disableTransactions";
 
     /**
-     * Type of cache to use. Possible values: auto|none|mru|soft     * 
-     * Default auto.
+     * Type of cache to use. 
+     * <br>Possible values: <u>auto</u>|none|mru|soft.
      * <p> 
      * With auto soft cache is used if VM have more then 1000 MB available.
      * Bellow that mru cache is used.
@@ -62,7 +62,8 @@ public class RecordManagerOptions
 
     
     /**
-     * Cache size (when applicable)
+     * Size of the MRU cache. This affects cache type "mru" and cache type "soft".
+     * <br>Default value: <u>1000</u>.
      */
     public static final String CACHE_SIZE = "jdbm.cache.size";
 
@@ -70,7 +71,7 @@ public class RecordManagerOptions
     /**
      * Compress pages in RecordManager with ZLIB. 
      * This may result in better space usage, but lower performance.
-     * Possible values: true|false (default false) 
+     * <br>Possible values: <u>false</u>|true.
      */
 	public static final String COMPRESS = "jdbm.compress";
 

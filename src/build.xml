@@ -153,7 +153,7 @@
               doctitle="JDBM JavaDoc" windowtitle="JDBM JavaDoc" bottom="${copyright}"
               package="true" author="true" version="true" noindex="true"
               packagenames="jdbm.*">
-        <link href="http://java.sun.com/products/jdk/1.2/docs/api"/>
+        <link href="http://download.oracle.com/javase/6/docs/api/"/>
         <link href="http://www.junit.org/junit/javadoc/3.8"/>
     </javadoc>
   </target>

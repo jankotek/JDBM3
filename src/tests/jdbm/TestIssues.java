@@ -33,7 +33,7 @@ public class TestIssues extends TestCaseWithTestFile{
     }
 
 
-    public void tesBHTreeClear() throws IOException {
+    public void testBTreeClear() throws IOException {
         final RecordManager recman = newRecordManager();
         final PrimaryTreeMap<String,String> treeMap = recman.treeMap("test");
 

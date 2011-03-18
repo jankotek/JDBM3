@@ -35,6 +35,14 @@ public final class Provider
 
     /**
      * Create a default implementation record manager.
+     * <p>
+     * This provider recognises the following options:
+     * <ul>
+     * <li>{@link RecordManagerOptions#DISABLE_TRANSACTIONS}</li>
+     * <li>{@link RecordManagerOptions#COMPRESS}</li>
+     * <li>{@link RecordManagerOptions#CACHE_TYPE}</li>
+     * <li>{@link RecordManagerOptions#CACHE_SIZE}</li>
+     * </ul>
      *
      * @param name Name of the record file.
      * @param options Record manager options.
@@ -83,7 +91,9 @@ public final class Provider
         		recman = new CacheRecordManager( recman,cacheSize,false);
         	}
         }else if ("soft".equals(cacheType)) {
-        	recman = new CacheRecordManager(recman, cacheSize, true); 
+        	// cachesize is the size of the internal MRU, not the soft cache
+        	recman = new CacheRecordManager3(recman, cacheSize);
+        	
         }else if ("none".equals(cacheType)) {
         	//do nothing
         }else{
