@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.SerializerInput;
 import jdbm.SerializerOutput;
+import jdbm.helper.LockFile;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
 import jdbm.helper.RecordManagerImpl;
@@ -96,6 +98,8 @@ public final class BaseRecordManager
      */
     private PhysicalRowIdManager _physMgr;
 
+
+    private final LockFile lock;
 
     /**
      * Underlying file for store records.
@@ -201,11 +205,13 @@ public final class BaseRecordManager
         throws IOException
     {
     	_filename = filename;
+        lock = new LockFile(new File(filename+".lock"));
     	reopen();
     }
 
 
 	private void reopen() throws IOException {
+            lock.lock();
 		_physFileFree = new RecordFile( _filename +  DBF, FREE_BLOCK_SIZE);
     	_physPagemanFree = new PageManager(_physFileFree);    	
         _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
@@ -295,7 +301,7 @@ public final class BaseRecordManager
         
         _logicFileFree.close();
         _logicFileFree = null;
-
+        lock.unlock();
     }
 
 
