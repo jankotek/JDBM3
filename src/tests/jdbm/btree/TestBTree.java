@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.concurrent.locks.Lock;
 
 import jdbm.RecordListener;
 import jdbm.RecordManager;
@@ -675,14 +676,18 @@ public class TestBTree
         throws IOException
   {
     // we must synchronize on the BTree while browsing
-    synchronized ( btree ) {
-        TupleBrowser browser = btree.browse();
-        Tuple tuple = new Tuple();
-        while(browser.getNext(tuple)) {
-          if(tuple.getValue().equals(value))
-            return(true);
-        }
-    }
+    	Lock readLock = btree.getLock().readLock();
+    	try {
+    		readLock.lock();
+	        TupleBrowser browser = btree.browse();
+	        Tuple tuple = new Tuple();
+	        while(browser.getNext(tuple)) {
+	          if(tuple.getValue().equals(value))
+	            return(true);
+	        }
+    	} finally {
+    		readLock.unlock();
+    	}
     //    System.out.println("Comparation of '"+value+"' with '"+ tuple.getValue()+"' FAILED");
     return(false);
   }

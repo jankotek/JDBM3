@@ -3,7 +3,7 @@ package jdbm.helper;
 /**
  * <p>
  * An thread-synchronisation strategy based around the idea of exclusive and non-exclusive locks. Threads may acquire
- * and release exclusive locks and non-exclusive locks.
+ * and release exclusive locks and non-exclusive locks.
  * <ul>
  * <ol>
  * <li>When any thread is attempting to acquire an exclusive lock, all other threads attempting to acquire nonexclusive

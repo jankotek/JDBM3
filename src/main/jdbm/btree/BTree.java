@@ -24,6 +24,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import jdbm.RecordListener;
 import jdbm.RecordManager;
@@ -147,7 +151,7 @@ public class BTree<K,V>
     /**
      * Total number of entries in the BTree
      */
-    protected int _entries;
+    protected volatile int _entries;
 
     
     /**
@@ -159,8 +163,9 @@ public class BTree<K,V>
     /**
      * Listeners which are notified about changes in records
      */
-    protected List<RecordListener<K,V>> recordListeners = new ArrayList<RecordListener<K,V>>();
+    protected List<RecordListener<K,V>> recordListeners = new CopyOnWriteArrayList<RecordListener<K, V>>();
     
+    protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * No-argument constructor used by serialization.
@@ -284,7 +289,16 @@ public class BTree<K,V>
         btree._bpageSerializer._btree = btree;
         return btree;
     }
-
+    
+    /**
+     * Get the {@link ReadWriteLock} associated with this BTree.
+     * This should be used with browsing operations to ensure
+     * consistency.
+     * @return
+     */
+    public ReadWriteLock getLock() {
+		return lock;
+	}
 
     /**
      * Insert an entry in the BTree.
@@ -298,7 +312,7 @@ public class BTree<K,V>
      * @param replace Set to true to replace an existing key-value pair.
      * @return Existing value, if any.
      */
-    public synchronized V insert(final K key, final V value,
+    public V insert(final K key, final V value,
                                        final boolean replace )
         throws IOException
     {
@@ -308,26 +322,27 @@ public class BTree<K,V>
         if ( value == null ) {
             throw new IllegalArgumentException( "Argument 'value' is null" );
         }
-
-        BPage<K,V> rootPage = getRoot();
-
-        if ( rootPage == null ) {
-            // BTree is currently empty, create a new root BPage
-            if (DEBUG) {
-                System.out.println( "BTree.insert() new root BPage" );
-            }
-            rootPage = new BPage<K,V>( this, key, value );
-            _root = rootPage._recid;
-            _height = 1;
-            _entries = 1;
-            _recman.update( _recid, this );
-            //notifi listeners
-            for(RecordListener<K,V> l : recordListeners){
-            	l.recordInserted(key, value);
-            }
-            return null;
-        } else {
-            BPage.InsertResult<K,V> insert = rootPage.insert( _height, key, value, replace );
+        try {
+        	lock.writeLock().lock();
+	        BPage<K,V> rootPage = getRoot();
+	
+	        if ( rootPage == null ) {
+	            // BTree is currently empty, create a new root BPage
+	            if (DEBUG) {
+	                System.out.println( "BTree.insert() new root BPage" );
+	            }
+	            rootPage = new BPage<K,V>( this, key, value );
+	            _root = rootPage._recid;
+	            _height = 1;
+	            _entries = 1;
+	            _recman.update( _recid, this );
+	            //notifi listeners
+	            for(RecordListener<K,V> l : recordListeners){
+	            	l.recordInserted(key, value);
+	            }
+	            return null;
+            } else {
+	        BPage.InsertResult<K,V> insert = rootPage.insert( _height, key, value, replace );
             boolean dirty = false;
             if ( insert._overflow != null ) {
                 // current root page overflowed, we replace with a new root page
@@ -356,6 +371,9 @@ public class BTree<K,V>
 
             // insert might have returned an existing value
             return insert._existing;
+           }
+        } finally {
+        	lock.writeLock().unlock();
         }
     }
 
@@ -367,41 +385,45 @@ public class BTree<K,V>
      * @return Value associated with the key, or null if no entry with given
      *         key existed in the BTree.
      */
-    public synchronized V remove( K key )
+    public V remove( K key )
         throws IOException
     {
         if ( key == null ) {
             throw new IllegalArgumentException( "Argument 'key' is null" );
         }
-
-        BPage<K,V> rootPage = getRoot();
-        if ( rootPage == null ) {
-            return null;
+        try {
+        	lock.writeLock().lock();
+	        BPage<K,V> rootPage = getRoot();
+	        if ( rootPage == null ) {
+	            return null;
+	        }
+	        boolean dirty = false;
+	        BPage.RemoveResult<K,V> remove = rootPage.remove( _height, key );
+	        if ( remove._underflow && rootPage.isEmpty() ) {
+	            _height -= 1;
+	            dirty = true;
+	
+	            // TODO:  check contract for BPages to be removed from recman.
+	            if ( _height == 0 ) {
+	                _root = 0;
+	            } else {
+	                _root = rootPage.childBPage( _pageSize-1 )._recid;
+	            }
+	        }
+	        if ( remove._value != null ) {
+	            _entries--;
+	            dirty = true;
+	        }
+	        if ( dirty ) {
+	            _recman.update( _recid, this );
+	        }
+	        if(remove._value!=null)
+	        	for(RecordListener<K,V> l : recordListeners)
+	        		l.recordRemoved(key,remove._value);
+	        return remove._value;
+        } finally {
+        	lock.writeLock().unlock();
         }
-        boolean dirty = false;
-        BPage.RemoveResult<K,V> remove = rootPage.remove( _height, key );
-        if ( remove._underflow && rootPage.isEmpty() ) {
-            _height -= 1;
-            dirty = true;
-
-            // TODO:  check contract for BPages to be removed from recman.
-            if ( _height == 0 ) {
-                _root = 0;
-            } else {
-                _root = rootPage.childBPage( _pageSize-1 )._recid;
-            }
-        }
-        if ( remove._value != null ) {
-            _entries--;
-            dirty = true;
-        }
-        if ( dirty ) {
-            _recman.update( _recid, this );
-        }
-        if(remove._value!=null)
-        	for(RecordListener<K,V> l : recordListeners)
-        		l.recordRemoved(key,remove._value);
-        return remove._value;
     }
 
 
@@ -411,18 +433,23 @@ public class BTree<K,V>
      * @param key Lookup key.
      * @return Value associated with the key, or null if not found.
      */
-    public synchronized V find( K key )
+    public V find( K key )
         throws IOException
     {
         if ( key == null ) {
             throw new IllegalArgumentException( "Argument 'key' is null" );
         }
-        BPage<K,V> rootPage = getRoot();
-        if ( rootPage == null ) {
-            return null;
+        try {
+        	lock.readLock().lock();
+	        BPage<K,V> rootPage = getRoot();
+	        if ( rootPage == null ) {
+	            return null;
+	        }
+	
+	        return rootPage.findValue( _height, key );
+        } finally {
+        	lock.readLock().unlock();
         }
-
-        return rootPage.findValue( _height, key );
 //        Tuple<K,V> tuple = new Tuple<K,V>( null, null );
 //        TupleBrowser<K,V> browser = rootPage.find( _height, key );
 //
@@ -448,7 +475,7 @@ public class BTree<K,V>
      * @return Value associated with the key, or a greater entry, or null if no
      *         greater entry was found.
      */
-    public synchronized Tuple<K,V> findGreaterOrEqual( K key )
+    public Tuple<K,V> findGreaterOrEqual( K key )
         throws IOException
     {
         Tuple<K,V>         tuple;
@@ -480,15 +507,20 @@ public class BTree<K,V>
      * @return Browser positionned at the beginning of the BTree.
      */
     @SuppressWarnings("unchecked")
-	public synchronized TupleBrowser<K,V> browse()
+	public TupleBrowser<K,V> browse()
         throws IOException
     {
-        BPage<K,V> rootPage = getRoot();
-        if ( rootPage == null ) {
-            return EmptyBrowser.INSTANCE;
-        }
-        TupleBrowser<K,V> browser = rootPage.findFirst();
-        return browser;
+    	try {
+        	lock.readLock().lock();
+	        BPage<K,V> rootPage = getRoot();
+	        if ( rootPage == null ) {
+	            return EmptyBrowser.INSTANCE;
+	        }
+	        TupleBrowser<K,V> browser = rootPage.findFirst();
+	        return browser;
+    	} finally {
+    		lock.readLock().unlock();
+    	}
     }
 
 
@@ -505,22 +537,27 @@ public class BTree<K,V>
      * @return Browser positionned just before the given key.
      */
     @SuppressWarnings("unchecked")
-	public synchronized TupleBrowser<K,V> browse( K key )
+	public TupleBrowser<K,V> browse( K key )
         throws IOException
     {
-        BPage<K,V> rootPage = getRoot();
-        if ( rootPage == null ) {
-            return EmptyBrowser.INSTANCE;
-        }
-        TupleBrowser<K,V> browser = rootPage.find( _height, key );
-        return browser;
+    	try {
+        	lock.readLock().lock();
+	    	BPage<K,V> rootPage = getRoot();
+	        if ( rootPage == null ) {
+	            return EmptyBrowser.INSTANCE;
+	        }
+	        TupleBrowser<K,V> browser = rootPage.find( _height, key );
+	        return browser;
+    	} finally {
+    		lock.readLock().unlock();
+    	}
     }
 
 
     /**
      * Return the number of entries (size) of the BTree.
      */
-    public synchronized int size()
+    public int size()
     {
         return _entries;
     }
@@ -662,13 +699,18 @@ public class BTree<K,V>
     /** 
      * Deletes all BPages in this BTree, then deletes the tree from the record manager
      */
-    public synchronized void delete()
+    public void delete()
         throws IOException
     {
-        BPage<K,V> rootPage = getRoot();
-        if (rootPage != null)
-            rootPage.delete();
-        _recman.delete(_recid);
+    	try {
+        	lock.writeLock().lock();
+	        BPage<K,V> rootPage = getRoot();
+	        if (rootPage != null)
+	            rootPage.delete();
+	        _recman.delete(_recid);
+    	} finally {
+    		lock.writeLock().unlock();
+    	}
     }
     
     /**

@@ -17,6 +17,8 @@
 package jdbm.recman;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.SerializerInput;
 import jdbm.SerializerOutput;
@@ -72,12 +75,12 @@ public final class BaseRecordManager
 	static final int TRANS_BLOCK_SIZE = 1024 * 2;
 	static final int FREE_BLOCK_SIZE = 1024;
 	
-	/**
+    /**
 	 * Version of storage. It should be safe to open lower versions, but engine should throw exception
 	 * while opening new versions (as it contains unsupported features or serialization)
 	 */
 	static final long STORE_FORMAT_VERSION = 1L;
-	
+
     /**
      * Underlying file for store records.
      */
@@ -156,16 +159,16 @@ public final class BaseRecordManager
      * Reserved slot for name directory.
      */
     public static final int NAME_DIRECTORY_ROOT = 0;
-    
-    
+
+
     /**
      * Reserved slot for version number
      */
     public static final int STORE_VERSION_NUMBER_ROOT = 1;
-	
-	
 
-    
+
+
+
     /** is Inflate compression on */
 	private boolean compress = false;
 
@@ -181,7 +184,7 @@ public final class BaseRecordManager
 	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
 	private final SerializerInput _insertIn = new SerializerInput(_insertBAI);
-	
+
 	volatile private boolean bufferInUse = false;
 
 
@@ -209,7 +212,7 @@ public final class BaseRecordManager
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree));
-                
+        
         _logicFileFree= new RecordFile( _filename +IDF,FREE_BLOCK_SIZE );
         _logicPagemanFree = new PageManager( _logicFileFree );
         if(TRANS_BLOCK_SIZE>256*8)
@@ -372,7 +375,7 @@ public final class BaseRecordManager
     		inflater.reset();
     	}
     	
-    	return new SerializerInput(new InflaterInputStream(data,inflater));    	
+    	return new SerializerInput(new InflaterInputStream(data,inflater));
 	}
 
     public synchronized void delete( long logRowId )
@@ -391,7 +394,7 @@ public final class BaseRecordManager
 
         logRowId = decompressRecid(logRowId);
         
-        long physRowId = _logicMgr.fetch( logRowId );
+        long physRowId = _logicMgr.fetch(logRowId);
         _physMgr.delete( physRowId );
         _logicMgr.delete( logRowId );
     }
@@ -480,7 +483,7 @@ public final class BaseRecordManager
         	bufferInUse = false;
         }
     }
-    
+
     public synchronized <A> A fetch( long recid, Serializer<A> serializer, boolean disableCache ) throws IOException{
     	//we dont have any cache, so can ignore disableCache parameter
     	return fetch(recid, serializer);
@@ -624,11 +627,11 @@ public final class BaseRecordManager
     private void saveNameDirectory( Map<String,Long> directory )
         throws IOException
     {
-        long recid = getRoot( NAME_DIRECTORY_ROOT );
+        long recid = getRoot(NAME_DIRECTORY_ROOT);
         if ( recid == 0 ) {
             throw new IOException( "Name directory must exist" );
         }
-        update( recid, _nameDirectory );
+        update(recid, _nameDirectory);
     }
 
 
@@ -785,4 +788,8 @@ public final class BaseRecordManager
 		long block = recid >>8;
         short offset = (short) (((recid & 0xff) ) * 8+TranslationPage.O_TRANS);
 		return Location.toLong(block, offset);
-	}}
+	}
+
+
+
+}
