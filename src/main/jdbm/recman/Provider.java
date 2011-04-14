@@ -92,8 +92,10 @@ public final class Provider
         	}
         }else if ("soft".equals(cacheType)) {
         	// cachesize is the size of the internal MRU, not the soft cache
-        	recman = new CacheRecordManager3(recman, cacheSize);
-        	
+        	recman = new CacheRecordManager(recman, cacheSize,true);
+        }else if ("soft3".equals(cacheType)) {
+            recman = new CacheRecordManager3(recman, cacheSize);
+            
         }else if ("none".equals(cacheType)) {
         	//do nothing
         }else{
