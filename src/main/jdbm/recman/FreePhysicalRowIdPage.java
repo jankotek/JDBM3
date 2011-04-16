@@ -141,12 +141,15 @@ final class FreePhysicalRowIdPage extends PageHeader {
 	}
 
 	/**
-	 * Returns first slot with available size >= indicated size, or -1 if no slots are available.
+	 * Returns first slot with available size >= indicated size, or minus maximal size available on this page
 	 * 
 	 * @param size
 	 *            The requested allocation size.
+         *
 	 **/
 	int getFirstLargerThan(int size) {
+
+                int maxSize = 0;
 		/*
 		 * Tracks slot of the smallest available physical row on the page.
 		 */
@@ -167,8 +170,9 @@ final class FreePhysicalRowIdPage extends PageHeader {
 			// Note: isAllocated(i) is equiv to get(i).getSize() != 0
 			//long theSize = get(i).getSize(); // capacity of this free record.
 			short pos = slotToOffset(i);
-			long theSize = FreePhysicalRowId_getSize(pos); // capacity of this free record.
-			long waste = theSize - size; // when non-negative, record has suf. capacity.
+			int theSize = FreePhysicalRowId_getSize(pos); // capacity of this free record.
+                        if(theSize>maxSize) maxSize = theSize;
+			int waste = theSize - size; // when non-negative, record has suf. capacity.
 			if (waste >= 0) {
 				if (waste < wasteMargin) {
 					return i; // record has suf. capacity and not too much waste.
@@ -197,7 +201,8 @@ final class FreePhysicalRowIdPage extends PageHeader {
 			 * Will scan next page on the free physical row page list.
 			 */
 		}
-		return -1;
+
+		return -maxSize;
 	}
 
 	public long slotToLocation(int slot) {

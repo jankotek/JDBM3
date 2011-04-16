@@ -46,6 +46,8 @@ final class FreePhysicalRowIdPageManager {
 
 	}
 
+        private int lastMaxSize = -1;
+
 	/**
 	 * Returns a free physical rowid of the indicated size, or null if nothing was found. This scans the free physical
 	 * row table, which is modeled as a linked list of pages. Each page on that list has slots that are either free
@@ -54,15 +56,19 @@ final class FreePhysicalRowIdPageManager {
 	 * record in bytes.
 	 */
 	long get(int size) throws IOException {
+                if(lastMaxSize!=-1 && size>lastMaxSize)
+                    return 0; //requested record is bigger than any
 		// Loop through the free physical rowid list until we find
 		// a rowid that's large enough.
 		long retval = 0;
 		PageCursor curs = new PageCursor(_pageman, Magic.FREEPHYSIDS_PAGE);
-
+                int maxSize = -1;
 		while (curs.next() != 0) {
 			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(curs.getCurrent()), blockSize);
 			int slot = fp.getFirstLargerThan(size);
-			if (slot != -1) {
+			if (slot > 0) {
+                                //reset maximal size, as record has changed
+                                lastMaxSize = -1;
 				// got one!
 				retval = fp.slotToLocation(slot);
 
@@ -77,11 +83,16 @@ final class FreePhysicalRowIdPageManager {
 
 				return retval;
 			} else {
+                                if(maxSize<-slot)
+                                    maxSize=-slot;
 				// no luck, go to next page
 				_file.release(curs.getCurrent(), false);
 			}
 
 		}
+                //update maximal size available
+                lastMaxSize = maxSize;
+
 		return 0;
 	}
 

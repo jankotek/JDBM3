@@ -228,7 +228,7 @@ final class RecordFile {
      *  @param block The block to release.
      */
     void release(BlockIo block) {
-        long key =block.getBlockId();
+        final long key =block.getBlockId();
         inUse.remove(key);
         if (block.isDirty()) {
             // System.out.println( "Dirty: " + key + block );
@@ -237,7 +237,7 @@ final class RecordFile {
             if (!transactionsDisabled && block.isInTransaction()) {
                 inTxn.put(key, block);
             } else {
-                free.put(block.getBlockId(),block);
+                free.put(key,block);
             }
         }
     }
