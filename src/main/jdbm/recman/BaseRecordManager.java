@@ -101,6 +101,33 @@ public final class BaseRecordManager
 
     private final LockFile lock;
 
+    /** if true, new records alwayes saved to end of file
+     * and free space is not reclaimed.
+     * This may speed up some operations which involves lot of
+     * updates and inserts (batch creation);
+     * You need to reopen store to apply effect
+     */
+    public boolean isAppendToEnd() {
+        return appendToEnd;
+    }
+    /** if true, new records alwayes saved to end of file
+     * and free space is not reclaimed.
+     * This may speed up some operations which involves lot of
+     * updates and inserts (batch creation);
+     *
+     * You need to reopen store to apply effect
+     */
+    public void setAppendToEnd(boolean appendToEnd) {
+        this.appendToEnd = appendToEnd;
+    }
+
+    /** if true, new records alwayes saved to end of file
+     * and free space is not reclaimed.
+     * This may speed up some operations which involves lot of
+     * updates and inserts (batch creation);
+      */
+    private boolean appendToEnd = false;
+
     /**
      * Underlying file for store records.
      * Traces free records
@@ -217,7 +244,7 @@ public final class BaseRecordManager
         _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
-        		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree));
+        		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree,appendToEnd));
         
         _logicFileFree= new RecordFile( _filename +IDF,FREE_BLOCK_SIZE );
         _logicPagemanFree = new PageManager( _logicFileFree );

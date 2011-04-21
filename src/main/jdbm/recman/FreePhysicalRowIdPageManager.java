@@ -32,6 +32,9 @@ final class FreePhysicalRowIdPageManager {
 	protected PageManager _pageman;
 
 	private int blockSize;
+
+        /** if true, new records are always placed to end of file, new space is not reclaimed */
+        private boolean appendToEnd = false;
 	
 	final ArrayList<Long> freeBlocksInTransactionRowid = new ArrayList<Long>();
 	final ArrayList<Integer> freeBlocksInTransactionSize = new ArrayList<Integer>();
@@ -39,10 +42,11 @@ final class FreePhysicalRowIdPageManager {
 	/**
 	 * Creates a new instance using the indicated record file and page manager.
 	 */
-	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman) throws IOException {
+	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman, boolean append) throws IOException {
 		_file = file;
 		_pageman = pageman;
 		this.blockSize = file.BLOCK_SIZE;
+                this.appendToEnd = append;
 
 	}
 
@@ -56,8 +60,13 @@ final class FreePhysicalRowIdPageManager {
 	 * record in bytes.
 	 */
 	long get(int size) throws IOException {
+                //never reclaim used space
+                if(appendToEnd) return 0;
+
+                //requested record is bigger than any previously found
                 if(lastMaxSize!=-1 && size>lastMaxSize)
-                    return 0; //requested record is bigger than any
+                    return 0;
+
 		// Loop through the free physical rowid list until we find
 		// a rowid that's large enough.
 		long retval = 0;

@@ -68,6 +68,12 @@ public final class Provider
         boolean compress = value.equalsIgnoreCase("TRUE"); 
         if(compress)
         	( (BaseRecordManager) recman ).setCompress(true);
+
+        value = options.getProperty(RecordManagerOptions.APPEND_TO_END,"false");
+        boolean append = value.equalsIgnoreCase("TRUE");
+        if(append)
+        	( (BaseRecordManager) recman ).setAppendToEnd(true);
+
         
         String cacheType = options.getProperty( RecordManagerOptions.CACHE_TYPE, "auto" );
 

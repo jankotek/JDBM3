@@ -50,6 +50,16 @@ public class RecordManagerOptions
      */
     public static final String DISABLE_TRANSACTIONS = "jdbm.disableTransactions";
 
+
+    /**
+     * Option to disable free space reclaim. New records are always
+     * inserted to end of file. Usefull mainly on batch imports.
+     * You will need to defrag() store after you are done
+     *
+     * <br>Possible values: <u>false</u>|true.
+     */
+    public static final String APPEND_TO_END = "jdbm.appendToEnd";
+
     /**
      * Type of cache to use. 
      * <br>Possible values: <u>auto</u>|none|mru|soft.
