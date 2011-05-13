@@ -47,13 +47,13 @@ public class HTree<K,V> implements JdbmBase<K,V>
                     HashBucket ret = new HashBucket(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
-                        throw new InternalError("bytes left: "+ds.available()+1);
+                        throw new InternalError("bytes left: "+ds.available());
                     return ret;
                 }else if( i == Serialization.HTREE_DIRECTORY){
                     HashDirectory ret = new HashDirectory(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
-                        throw new InternalError("bytes left: "+ds.available()+1);
+                        throw new InternalError("bytes left: "+ds.available());
                     return ret;
                 }else {
                     throw new InternalError("Wrong HTree header: "+i);

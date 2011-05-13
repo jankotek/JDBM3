@@ -357,6 +357,7 @@ public final class BaseRecordManager
         try{
         		
         	bufferInUse = true;
+                _insertOut.__resetWrittenCounter();
         	return insert2(obj, serializer,_insertBuffer,_insertBAO,_insertOut);
         }finally{
         	bufferInUse = false;
@@ -453,7 +454,7 @@ public final class BaseRecordManager
 
         try{        
         	bufferInUse = true;
-        	
+        	_insertOut.__resetWrittenCounter();
         	update2(recid, obj, serializer,_insertBuffer, _insertBAO, _insertOut);
         }finally{
         	bufferInUse = false;
@@ -479,7 +480,7 @@ public final class BaseRecordManager
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.update() recid " + logRecid + " length " + insertBAO.size() ) ;
 		}
-      
+
 		long newRecid = _physMgr.update( physRecid, insertBAO.getBuf(), 0, insertBAO.size() );
 		
 		_logicMgr.update( logRecid, newRecid );
@@ -510,7 +511,7 @@ public final class BaseRecordManager
     	}
         try{
         	bufferInUse = true;
-
+                _insertOut.__resetWrittenCounter();
         	return fetch2(recid, serializer,_insertBuffer,_insertBAO,_insertOut,_insertBAI, _insertIn);
         }finally{
         	bufferInUse = false;
@@ -528,7 +529,7 @@ public final class BaseRecordManager
 				OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut,
 				OpenByteArrayInputStream insertBAI, SerializerInput insertIn)
 			throws IOException {
-		
+
 		recid = decompressRecid(recid);
 		
 		insertBAO.reset(insertBuffer);		

@@ -399,9 +399,6 @@ final class HashDirectory <K,V>
         _depth = in.readByte();
         _children = new long[MAX_CHILDREN];
         int zeroStart = in.read();
-        if(zeroStart == 255)
-        	return;
-        
         int zeroEnd = in.read();
 
         for(int i = zeroStart; i<=zeroEnd;i++){        	
