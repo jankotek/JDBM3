@@ -37,7 +37,6 @@ import jdbm.RecordManager;
 import jdbm.Serializer;
 import jdbm.SerializerInput;
 import jdbm.SerializerOutput;
-import jdbm.helper.LockFile;
 import jdbm.helper.OpenByteArrayInputStream;
 import jdbm.helper.OpenByteArrayOutputStream;
 import jdbm.helper.RecordManagerImpl;
@@ -98,8 +97,6 @@ public final class BaseRecordManager
      */
     private PhysicalRowIdManager _physMgr;
 
-
-    private final LockFile lock;
 
     /** if true, new records alwayes saved to end of file
      * and free space is not reclaimed.
@@ -232,13 +229,11 @@ public final class BaseRecordManager
         throws IOException
     {
     	_filename = filename;
-        lock = new LockFile(new File(filename+".lock"));
     	reopen();
     }
 
 
 	private void reopen() throws IOException {
-            lock.lock();
 		_physFileFree = new RecordFile( _filename +  DBF, FREE_BLOCK_SIZE);
     	_physPagemanFree = new PageManager(_physFileFree);    	
         _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
@@ -328,7 +323,6 @@ public final class BaseRecordManager
         
         _logicFileFree.close();
         _logicFileFree = null;
-        lock.unlock();
     }
 
 
@@ -790,7 +784,7 @@ public final class BaseRecordManager
 	/**
 	 * Insert data at forced logicalRowId, use only for defragmentation !! 
 	 * @param logicalRowId 
-	 * @param bb data
+	 * @param data
 	 * @throws IOException 
 	 */
 	private void forceInsert(long logicalRowId, byte[] data) throws IOException {

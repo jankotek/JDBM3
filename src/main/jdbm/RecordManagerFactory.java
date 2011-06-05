@@ -17,6 +17,9 @@
 
 package jdbm;
 
+import jdbm.recman.BaseRecordManager;
+import jdbm.recman.CacheRecordManager;
+
 import java.io.IOException;
 import java.util.Properties;
 
@@ -68,23 +71,56 @@ public final class RecordManagerFactory {
 	public static RecordManager createRecordManager(String name,
 			Properties options) throws IOException {
 
-		String provider = options.getProperty(
-				RecordManagerOptions.PROVIDER_FACTORY, "jdbm.recman.Provider");
-		Throwable e = null;
-		try {
-			Class clazz = Class.forName(provider);
-			RecordManagerProvider factory = (RecordManagerProvider) clazz.newInstance();
-			return factory.createRecordManager(name, options);
-		} catch (InstantiationException except) {
-			e = except;
-		} catch (IllegalAccessException except) {
-			e = except;
-		} catch (ClassNotFoundException except) {
-			e = except;
-		}
-				
-		throw new IllegalArgumentException(
-			"Invalid record manager provider: " + provider,e);
+            RecordManager recman = new BaseRecordManager( name );
+
+            String value = options.getProperty( RecordManagerOptions.DISABLE_TRANSACTIONS, "false" );
+            if ( value.equalsIgnoreCase( "TRUE" ) ) {
+                ( (BaseRecordManager) recman ).disableTransactions();
+            }
+
+            value = options.getProperty(RecordManagerOptions.COMPRESS,"false");
+            boolean compress = value.equalsIgnoreCase("TRUE");
+            if(compress)
+                    ( (BaseRecordManager) recman ).setCompress(true);
+
+            value = options.getProperty(RecordManagerOptions.APPEND_TO_END,"false");
+            boolean append = value.equalsIgnoreCase("TRUE");
+            if(append)
+                    ( (BaseRecordManager) recman ).setAppendToEnd(true);
+
+
+            String cacheType = options.getProperty( RecordManagerOptions.CACHE_TYPE, "auto" );
+
+            value = options.getProperty( RecordManagerOptions.CACHE_SIZE, "1000" );
+            int cacheSize = Integer.parseInt( value );
+
+            if("auto".equals(cacheType)){
+                    try{
+                            //disable SOFT if available memory is bellow 50 MB
+                            if(Runtime.getRuntime().maxMemory()<=50000000)
+                                    cacheType = "mru";
+                            else
+                                    cacheType = "soft";
+                    }catch(Exception e){
+                            cacheType = "mru";
+                    }
+            }
+
+            if ("mru".equals(cacheType)) {
+                    if(cacheSize>0){
+                            recman = new CacheRecordManager( recman,cacheSize,false);
+                    }
+            }else if ("soft".equals(cacheType)) {
+                    // cachesize is the size of the internal MRU, not the soft cache
+                    recman = new CacheRecordManager(recman, cacheSize,true);
+
+            }else if ("none".equals(cacheType)) {
+                    //do nothing
+            }else{
+                    throw new IllegalArgumentException("Unknown cache type: "+cacheType);
+            }
+
+            return recman;
 
 	}
 
