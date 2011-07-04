@@ -19,8 +19,6 @@ package jdbm.recman;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -79,7 +77,6 @@ final class RecordFile {
     /** A block of clean data to wipe clean pages. */
     final byte[] cleanData;
 
-    private ArrayList<FileChannel> fileChannels = new ArrayList<FileChannel>();
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
     private final String fileName;
     
@@ -101,37 +98,32 @@ final class RecordFile {
     	MAX_FILE_SIZE =  _FILESIZE - _FILESIZE%BLOCK_SIZE;
     	cleanData = new byte[BLOCK_SIZE];
         this.fileName = fileName;
-//        file0 = new RandomAccessFile(fileName + extension, "rw"); 
-//        file = file0.getChannel();
         //make sure first file can be opened
-        FileChannel f0 = getChannel(0);
         //lock it
         try{
-        	f0.tryLock();
+        	getRaf(0).getChannel().tryLock();
         }catch(IOException e){
         	throw new IOException("Could not lock DB file: "+fileName,e);
         }catch(OverlappingFileLockException e){
             throw new IOException("Could not lock DB file: "+fileName,e);
         }
+
         txnMgr = new TransactionManager(this);
     }
 
-    FileChannel getChannel(long offset) throws IOException {
+    RandomAccessFile getRaf(long offset) throws IOException {
     	int fileNumber = (int) (offset/MAX_FILE_SIZE);
     
    		//increase capacity of array lists if needed
-   		for(int i = fileChannels.size();i<=fileNumber;i++){
-   			fileChannels.add(null);
+   		for(int i = rafs.size();i<=fileNumber;i++){
    			rafs.add(null);
     	}
     		
-		FileChannel ret = fileChannels.get(fileNumber);
+		RandomAccessFile ret = rafs.get(fileNumber);
 		if(ret == null){
 			String name = fileName+"."+fileNumber;
-			RandomAccessFile f = new RandomAccessFile(name, "rw");
-			rafs.set(fileNumber, f);
-			ret = f.getChannel();			
-			fileChannels.set(fileNumber, ret);		
+			ret = new RandomAccessFile(name, "rw");
+			rafs.set(fileNumber, ret);
 		}
 		return ret;
 	}
@@ -191,14 +183,8 @@ final class RecordFile {
          // get a new node and read it from the file
          node = getNewNode(blockid);
          long offset = blockid * BLOCK_SIZE;
-         FileChannel file = getChannel(offset);
-//         long fileSize = file.size();
-//         if (fileSize > 0 && offset%MAX_FILE_SIZE <= fileSize) {
-//             read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);
-//         } else {
-//             System.arraycopy(cleanData, 0, node.getData(), 0, BLOCK_SIZE);
-//         }
-         
+         RandomAccessFile file = getRaf(offset);
+
          read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);   
          
          inUse.put(blockid, node);
@@ -284,9 +270,9 @@ final class RecordFile {
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
                 long offset = node.getBlockId() * BLOCK_SIZE;
-                FileChannel file = getChannel(offset);
-                file.position(offset % MAX_FILE_SIZE);
-                file.write(ByteBuffer.wrap(node.getData()));
+                RandomAccessFile file = getRaf(offset);
+                file.seek(offset % MAX_FILE_SIZE);
+                file.write(node.getData());
                 node.setClean();
                 free.put(node.getBlockId(),node);
             }
@@ -348,14 +334,6 @@ final class RecordFile {
             throw new Error("inUse blocks at close time");
         }
 
-        // debugging stuff to keep an eye on the free list
-        // System.out.println("Free list size:" + free.size());
-        for(FileChannel buf : fileChannels){
-        	if(buf!=null){
-        		buf.close();
-        	}
-        }
-        fileChannels = null;
         for(RandomAccessFile f :rafs){
         	if(f!=null)
         		f.close();
@@ -371,11 +349,6 @@ final class RecordFile {
      */
     void forceClose() throws IOException {
       txnMgr.forceClose();
-      for(FileChannel buf : fileChannels){
-      	if(buf!=null)
-      		buf.close();
-      }
-      fileChannels = null;
       for(RandomAccessFile f :rafs){
       	if(f!=null)
       		f.close();
@@ -424,9 +397,9 @@ final class RecordFile {
         byte[] data = node.getData();
         if (data != null) {
             long offset = node.getBlockId() * BLOCK_SIZE;
-            FileChannel file = getChannel(offset);
-            file.position(offset % MAX_FILE_SIZE);
-            file.write(ByteBuffer.wrap(data));
+            RandomAccessFile file = getRaf(offset);
+            file.seek(offset % MAX_FILE_SIZE);
+            file.write(data);
         }
     }
 
@@ -448,33 +421,29 @@ final class RecordFile {
      *  Synchronizes the file.
      */
     void sync() throws IOException {
-    	for(FileChannel file:fileChannels)
+    	for(RandomAccessFile file:rafs)
     		if(file!=null)
-    			file.force(true);
+    			file.getFD().sync();
     }
 
 
-    /**
-     * Utility method: Read a block from a RandomAccessFile
-     */
-    private void read(FileChannel file, long offset,
-                             byte[] buffer, int nBytes) throws IOException {
-        file.position(offset);
-        int remaining = nBytes;
-        int pos = 0;
-        while (remaining > 0) {
-        	ByteBuffer b = ByteBuffer.wrap(buffer, pos, remaining);
-        	int read = file.read(b);
-        	while(read!=-1 && b.hasRemaining() )
-        		read = file.read(b);
-            
-            if (read == -1) {
-                System.arraycopy(cleanData, 0, buffer, pos, remaining);
-                break;
+           /**
+            * Utility method: Read a block from a RandomAccessFile
+            */
+            private void read(RandomAccessFile file, long offset,
+                    byte[] buffer, int nBytes) throws IOException {
+                file.seek(offset);
+                int remaining = nBytes;
+                int pos = 0;
+                while (remaining > 0) {
+                    int read = file.read(buffer, pos, remaining);
+                    if (read == -1) {
+                        System.arraycopy(cleanData, 0, buffer, pos, remaining);
+                        break;
+                    }
+                    remaining -= read;
+                    pos += read;
+                }
             }
-            remaining -= read;
-            pos += read;
-        }
-    }
 
 }
