@@ -23,6 +23,10 @@ package jdbm.recman;
  *  can be bigger than the former, which allows the record to grow without
  *  needing to be moved and which allows the system to put small records
  *  in larger free spots.
+ *  <p/>
+ *  In JDBM 1.0 both values were stored as four-byte integers. This was very wastefull.
+ *  Now available size is stored in two bytes, it is compressed, so maximal value is up to 120 MB (not sure with exact number)
+ *  Current size is stored as two-byte-unsigned-short difference from Available Size.
  */
 final class RecordHeader {
     // offsets
@@ -60,7 +64,7 @@ final class RecordHeader {
     /** Returns the available size */
     static int getAvailableSize(final BlockIo block, final short pos) {
         int val  = block.readUnsignedshort(pos + O_AVAILABLESIZE);
-        return deconvert(val);
+        return deconvertAvailSize(val);
     }
     
     /** Sets the available size */
@@ -68,51 +72,52 @@ final class RecordHeader {
 //    	if(value != roundAvailableSize(value))
 //    		throw new IllegalArgumentException("value is not rounded");
     	int oldCurrSize = getCurrentSize(block,pos);
-        	
-        block.writeUnsignedShort(pos + O_AVAILABLESIZE, convert(value));
+
+        block.writeUnsignedShort(pos + O_AVAILABLESIZE, convertAvailSize(value));
         setCurrentSize(block,pos,oldCurrSize);
     }
-    
-    private static int convert(final int value){
+
+
+    private static int convertAvailSize(final int recordSize){
     	int multiplyer = 0;
     	int counter = 0;
-    	if(value<=base1){
+    	if(recordSize<=base1){
     		multiplyer = 0;
-    		counter = value / multi0;
-    	}else if(value<base2){
+    		counter = recordSize / multi0;
+    	}else if(recordSize<base2){
     		multiplyer = 1 <<14;
-    		int val2 = value -base1;
+    		int val2 = recordSize -base1;
     		counter = val2/multi1;
     		if(val2 %multi1 != 0)
     			counter++;
-    	}else if(value<base3){
+    	}else if(recordSize<base3){
     		multiplyer = 2 <<14;
-    		int val2 = value -base2;
+    		int val2 = recordSize -base2;
     		counter = val2/multi2;
     		if(val2 %multi2 != 0)
     			counter++;
     	}else{
     		multiplyer = 3 <<14;
-    		int val2 = value -base3;
+    		int val2 = recordSize -base3;
     		counter = val2/multi3;
     		if(val2 %multi3 != 0)
     			counter++;    	
     	}
     	if(counter>=(1<<14))
-    		throw new InternalError(""+value);
+    		throw new InternalError(""+recordSize);
     	
     	return  multiplyer + counter;
     }
     
-    private static int deconvert(int val){
-        int multiplier = (val & sizeMask) >>14;
-        int counter = val - (val &sizeMask);
+    private static int deconvertAvailSize(int recordSize){
+        int multiplier = (recordSize & sizeMask) >>14;
+        int counter = recordSize - (recordSize &sizeMask);
         switch (multiplier){
         	case 0: return counter * multi0;
         	case 1: return base1 + counter * multi1;
         	case 2: return base2 + counter * multi2;
         	case 3: return base3 + counter * multi3;
-        	default: throw new InternalError("error deconverting: "+val);
+        	default: throw new InternalError("error deconverting: "+recordSize);
         }
     }
     
@@ -136,7 +141,7 @@ final class RecordHeader {
     static int roundAvailableSize(int value){
     	if(value>MAX_RECORD_SIZE && MAX_RECORD_SIZE!=0)    		
     		new InternalError("Maximal record size ("+MAX_RECORD_SIZE+") exceeded: "+value);
-    	return deconvert(convert(value));
+    	return deconvertAvailSize(convertAvailSize(value));
     }
     
 
