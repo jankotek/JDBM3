@@ -236,7 +236,7 @@ final class HashBucket<K,V>
 
     	LongPacker.packInt(out, _depth);
 
-        ArrayList keys = _keys;
+        ArrayList keys = (ArrayList) _keys.clone();
         //write keys
         if(tree.keySerializer!=null){
             for(int i = 0;i<_keys.size();i++){
