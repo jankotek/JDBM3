@@ -18,7 +18,7 @@
     <property name="classpath" value="${classpath}:${classes}" />
     <property name="build.compiler" value="modern" />
     <property name="deprecation" value="true" />
-    <property name="version" value="2.1" />
+    <property name="version" value="2.2" />
     <property name="archive" value="${project}-${version}" />
   </target>
 
