@@ -26,7 +26,6 @@ import java.util.SortedMap;
  * They are deserialized on each index lookup. 
  * This may lead to performance degradation and OutOfMemoryExceptions.  
  * If your values are big (>500 bytes) you may consider using <code>PrimaryStoreMap</code>
- * or <code<StoreReference</code> to minimalize size of index.
  *  
  * @author Jan Kotek
  *
