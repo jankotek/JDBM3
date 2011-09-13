@@ -17,10 +17,7 @@
 
 package jdbm;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -1180,7 +1177,7 @@ final class BPage<K,V>
 		}else if(type == ALL_STRINGS){			
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
-				byte[] b = LeadingValueCompressionProvider.readByteArray(ois, previous, 0);
+				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				ret[i] = new String(b);
 				previous = b;
@@ -1201,7 +1198,7 @@ final class BPage<K,V>
 			SerializerInput in2 = null;
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
-				byte[] b = LeadingValueCompressionProvider.readByteArray(ois, previous, 0);
+				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				if(in1 == null){
 					in1 = new OpenByteArrayInputStream(b);
@@ -1327,10 +1324,10 @@ final class BPage<K,V>
 					byte[] previous = null;
 					for (int i = firstUse ; i < _btree._pageSize; i++) {
 						if(keys[i] == null){
-							LeadingValueCompressionProvider.writeByteArray(oos, null, previous, 0);
+							leadingValuePackWrite(oos, null, previous, 0);
 						}else{
 							byte[] b = ((String)keys[i]).getBytes();
-							LeadingValueCompressionProvider.writeByteArray(oos, b, previous, 0);
+							leadingValuePackWrite(oos, b, previous, 0);
 							previous = b;
 						}
 					}
@@ -1359,12 +1356,12 @@ final class BPage<K,V>
 		SerializerOutput out3 = new SerializerOutput(out2);
 		for (int i = firstUse ; i < _btree._pageSize; i++) {
 			if(keys[i] == null){
-				LeadingValueCompressionProvider.writeByteArray(oos, null, previous, 0);
+				leadingValuePackWrite(oos, null, previous, 0);
 			}else{
 				out2.reset();
 				ser.serialize(out3,keys[i]);
 				byte[] b = out2.toByteArray();
-				LeadingValueCompressionProvider.writeByteArray(oos, b, previous, 0);
+				leadingValuePackWrite(oos, b, previous, 0);
 				previous = b;
 			}			
 		}
@@ -1503,5 +1500,75 @@ final class BPage<K,V>
             }
         }
     }
+
+
+    /**
+     * Read previously written data
+     *
+     * @author Kevin Day
+     */
+    static byte[] leadingValuePackRead(DataInputStream in, byte[] previous, int ignoreLeadingCount) throws IOException
+    {
+        int len = LongPacker.unpackInt(in) -1;
+        if (len == -1)
+                return null;
+
+        int actualCommon = 0;
+
+        actualCommon = LongPacker.unpackInt(in);
+
+
+        byte[] buf = new byte[ len ];
+
+        if (previous == null){
+                actualCommon = 0;
+        }
+
+
+        if (actualCommon > 0){
+                in.readFully( buf, 0, ignoreLeadingCount);
+                System.arraycopy(previous, ignoreLeadingCount, buf, ignoreLeadingCount, actualCommon - ignoreLeadingCount);
+        }
+        in.readFully( buf, actualCommon, len - actualCommon );
+        return buf;
+    }
+
+/**
+ * This method is used for delta compression for keys.
+ * Writes the contents of buf to the DataOutput out, with special encoding if
+ * there are common leading bytes in the previous group stored by this compressor.
+ * @author Kevin Day
+ */
+    static void leadingValuePackWrite(DataOutputStream out, byte[] buf, byte[] previous, int ignoreLeadingCount) throws IOException
+    {
+        if ( buf == null ) {
+            LongPacker.packInt(out, 0);
+            return;
+        }
+
+        int actualCommon = ignoreLeadingCount;
+
+        if (previous != null){
+                int maxCommon = buf.length > previous.length ? previous.length : buf.length;
+
+                if (maxCommon > Short.MAX_VALUE) maxCommon = Short.MAX_VALUE;
+
+                for (; actualCommon < maxCommon; actualCommon++) {
+                            if (buf[actualCommon] != previous[actualCommon])
+                                    break;
+                    }
+        }
+
+
+           // there are enough common bytes to justify compression
+           LongPacker.packInt(out,buf.length+1 );// store as +1, 0 indicates null
+           LongPacker.packInt(out,actualCommon );
+           out.write( buf, 0, ignoreLeadingCount);
+           out.write( buf, actualCommon, buf.length - actualCommon );
+
+    }
+
+
+
     
 }

@@ -8,10 +8,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-import jdbm.LeadingValueCompressionProvider;
 import junit.framework.TestCase;
 
-public class LeadingValueCompressionProviderTest extends TestCase {
+public class BTreeLeadingValuePackTest extends TestCase {
 
 	public static class ByteArraySource{
 		byte[] last = new byte[0];
@@ -44,7 +43,7 @@ public class LeadingValueCompressionProviderTest extends TestCase {
 
 		//compress
 		for (int i = 0; i < groups.length; i++) {
-			LeadingValueCompressionProvider.writeByteArray(dos, groups[i], i>0?groups[i-1]:null, 0);			
+			BPage.leadingValuePackWrite(dos, groups[i], i > 0 ? groups[i - 1] : null, 0);
 		}
 		
 		byte[] results = baos.toByteArray();
@@ -54,7 +53,7 @@ public class LeadingValueCompressionProviderTest extends TestCase {
 		
 		byte[] previous = null;
 		for(int i = 0;i < groups.length; i++){
-			previous = LeadingValueCompressionProvider.readByteArray(dis, previous, 0);
+			previous = BPage.leadingValuePackRead(dis, previous, 0);
 			assertTrue(Arrays.equals(groups[i],previous));
 		}
 		
