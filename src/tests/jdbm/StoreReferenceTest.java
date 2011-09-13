@@ -15,23 +15,29 @@
  ******************************************************************************/
 package jdbm;
 
-/**
- * Primary HashMap which persist data in storage.  
- * Behavior is very similar to  <code>java.util.HashMap/code>, this map also uses hash index to lookup keys
- * But it adds some methods to create secondary views
- * <p>
- * Performance note: keys and values are stored as part of index nodes. 
- * They are deserialized on each index lookup. 
- * This may lead to performance degradation and OutOfMemoryExceptions.  
- * If your values are big (>500 bytes) you may consider using <code>PrimaryStoreMap</code>
- * or <code<StoreReference</code> to minimalize size of index.
- *  
- * @author Jan Kotek
- *
- * @param <K> key type
- * @param <V> value type
- */
-public interface PrimaryHashMap<K,V> extends PrimaryMap<K,V>{
-	
+import java.io.IOException;
 
+public class StoreReferenceTest extends TestCaseWithTestFile{
+	
+	public void test() throws IOException{
+		String file = newTestFile();
+		RecordManager r = RecordManagerFactory.createRecordManager(file);
+		PrimaryTreeMap<Long,StoreReference<String>> t = r.treeMap("aaa");
+		
+		t.put(1l, new StoreReference(r,"1"));
+		t.put(2l, new StoreReference(r,"2"));
+		r.commit();
+		
+		assertEquals("1",t.get(1l).get(r));
+		assertEquals("2",t.get(2l).get(r));
+		
+		//reopen store
+		r.close();
+		r = RecordManagerFactory.createRecordManager(file);
+		t = r.treeMap("aaa");
+		assertEquals("1",t.get(1l).get(r));
+		assertEquals("2",t.get(2l).get(r));
+		r.close();
+		
+	}
 }
