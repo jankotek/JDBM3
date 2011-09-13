@@ -49,8 +49,8 @@ public class TestBPage extends TestCaseWithTestFile {
 
         BPage page = new BPage( tree, test, test );
 
-        TupleBrowser browser;
-        Tuple tuple = new Tuple();
+        BTreeTupleBrowser browser;
+        BTreeTuple tuple = new BTreeTuple();
 
         // test insertion
         page.insert( 1, test2, test2, false );
@@ -62,10 +62,10 @@ public class TestBPage extends TestCaseWithTestFile {
         if ( browser.getNext( tuple ) == false ) {
             throw new IllegalStateException( "Browser didn't have 'test2'" );
         }
-        if ( ! tuple.getKey().equals( test2 ) ) {
+        if ( ! tuple.key.equals( test2 ) ) {
             throw new IllegalStateException( "Tuple key is not 'test2'" );
         }
-        if ( ! tuple.getValue().equals( test2 ) ) {
+        if ( ! tuple.value.equals( test2 ) ) {
             throw new IllegalStateException( "Tuple value is not 'test2'" );
         }
 

@@ -42,7 +42,7 @@ import java.util.List;
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @version $Id: BPage.java,v 1.6 2003/09/21 15:46:59 boisvert Exp $
  */
-public final class BPage<K,V>
+final class BPage<K,V>
     implements Serializer<BPage<K,V>>
 {
 
@@ -233,7 +233,7 @@ public final class BPage<K,V>
      * @return TupleBrowser positionned just before the given key, or before
      *                      next greater key if key isn't found.
      */
-    TupleBrowser<K,V> find( int height, K key )
+    BTreeTupleBrowser<K,V> find( int height, K key )
         throws IOException
     {
         int index = findChildren( key );
@@ -305,7 +305,7 @@ public final class BPage<K,V>
      *
      * @return TupleBrowser positionned just before the first entry.
      */
-    TupleBrowser<K,V> findFirst()
+    BTreeTupleBrowser<K,V> findFirst()
         throws IOException
     {
         if ( _isLeaf ) {
@@ -1414,7 +1414,7 @@ public final class BPage<K,V>
      * Browser to traverse leaf BPages.
      */
     static class Browser<K,V>
-        implements TupleBrowser<K,V>
+        implements BTreeTupleBrowser<K,V>
     {
 
         /**
@@ -1442,7 +1442,7 @@ public final class BPage<K,V>
             _index = index;
         }
 
-        public boolean getNext( Tuple<K,V> tuple )
+        public boolean getNext( BTreeTuple<K,V> tuple )
             throws IOException
         {
             if ( _index < _page._btree._pageSize ) {
@@ -1455,13 +1455,13 @@ public final class BPage<K,V>
                 _page = _page.loadBPage( _page._next );
                 _index = _page._first;
             }
-            tuple.setKey( _page._keys[ _index ] );
-            tuple.setValue(  _page._values[ _index ] );
+            tuple.key =  _page._keys[ _index ] ;
+            tuple.value =   _page._values[ _index ] ;
             _index++;
             return true;
         }
 
-        public boolean getPrevious( Tuple<K,V> tuple )
+        public boolean getPrevious( BTreeTuple<K,V> tuple )
             throws IOException
         {
             if ( _index == _page._first ) {
@@ -1475,8 +1475,8 @@ public final class BPage<K,V>
                 }
             }
             _index--;
-            tuple.setKey( _page._keys[ _index ] );
-            tuple.setValue(  _page._values[ _index ] );
+            tuple.key =  _page._keys[ _index ] ;
+            tuple.value =  _page._values[ _index ] ;
             return true;
 
         }

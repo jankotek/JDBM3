@@ -54,7 +54,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @version $Id: BTree.java,v 1.6 2005/06/25 23:12:31 doomdark Exp $
  */
-public class BTree<K,V> 
+class BTree<K,V>
     implements Externalizable, JdbmBase<K,V>
 {
 
@@ -465,11 +465,11 @@ public class BTree<K,V>
      * @return Value associated with the key, or a greater entry, or null if no
      *         greater entry was found.
      */
-    public Tuple<K,V> findGreaterOrEqual( K key )
+    public BTreeTuple<K,V> findGreaterOrEqual( K key )
         throws IOException
     {
-        Tuple<K,V>         tuple;
-        TupleBrowser<K,V>  browser;
+        BTreeTuple<K,V> tuple;
+        BTreeTupleBrowser<K,V> browser;
 
         if ( key == null ) {
             // there can't be a key greater than or equal to "null"
@@ -477,7 +477,7 @@ public class BTree<K,V>
             return null;
         }
 
-        tuple = new Tuple<K,V>( null, null );
+        tuple = new BTreeTuple<K,V>( null, null );
         browser = browse( key );
         if ( browser.getNext( tuple ) ) {
             return tuple;
@@ -497,7 +497,7 @@ public class BTree<K,V>
      * @return Browser positionned at the beginning of the BTree.
      */
     @SuppressWarnings("unchecked")
-	public TupleBrowser<K,V> browse()
+	public BTreeTupleBrowser<K,V> browse()
         throws IOException
     {
     	try {
@@ -506,7 +506,7 @@ public class BTree<K,V>
 	        if ( rootPage == null ) {
 	            return EmptyBrowser.INSTANCE;
 	        }
-	        TupleBrowser<K,V> browser = rootPage.findFirst();
+	        BTreeTupleBrowser<K,V> browser = rootPage.findFirst();
 	        return browser;
     	} finally {
     		lock.readLock().unlock();
@@ -527,7 +527,7 @@ public class BTree<K,V>
      * @return Browser positionned just before the given key.
      */
     @SuppressWarnings("unchecked")
-	public TupleBrowser<K,V> browse( K key )
+	public BTreeTupleBrowser<K,V> browse( K key )
         throws IOException
     {
     	try {
@@ -536,7 +536,7 @@ public class BTree<K,V>
 	        if ( rootPage == null ) {
 	            return EmptyBrowser.INSTANCE;
 	        }
-	        TupleBrowser<K,V> browser = rootPage.find( _height, key );
+	        BTreeTupleBrowser<K,V> browser = rootPage.find( _height, key );
 	        return browser;
     	} finally {
     		lock.readLock().unlock();
@@ -638,19 +638,19 @@ public class BTree<K,V>
      *  Browser returning no element.
      */
     static class EmptyBrowser<K,V>
-    	implements TupleBrowser<K,V>    {
+    	implements BTreeTupleBrowser<K,V> {
 
         @SuppressWarnings("unchecked")
-		static TupleBrowser INSTANCE = new EmptyBrowser();
+		static BTreeTupleBrowser INSTANCE = new EmptyBrowser();
         
         private EmptyBrowser(){}
 
-        public boolean getNext( Tuple<K,V> tuple )
+        public boolean getNext( BTreeTuple<K,V> tuple )
         {
             return false;
         }
 
-        public boolean getPrevious( Tuple<K,V> tuple )
+        public boolean getPrevious( BTreeTuple<K,V> tuple )
         {
             return false;
         }
@@ -718,3 +718,77 @@ public class BTree<K,V>
     }
  }
 
+/**
+ * Browser to traverse a collection of tuples.  The browser allows for
+ * forward and reverse order traversal.
+ *
+ * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @version $Id: TupleBrowser.java,v 1.2 2001/05/19 14:02:00 boisvert Exp $
+ */
+interface BTreeTupleBrowser<K,V> {
+
+    /**
+     * Get the next tuple.
+     *
+     * @param tuple Tuple into which values are copied.
+     * @return True if values have been copied in tuple, or false if there is
+     *         no next tuple.
+     */
+    public abstract boolean getNext( BTreeTuple<K,V> tuple )
+        throws IOException;
+
+
+    /**
+     * Get the previous tuple.
+     *
+     * @param tuple Tuple into which values are copied.
+     * @return True if values have been copied in tuple, or false if there is
+     *         no previous tuple.
+     */
+    public abstract boolean getPrevious( BTreeTuple<K,V> tuple )
+        throws IOException;
+
+}
+
+/**
+ * Tuple consisting of a key-value pair.
+ *
+ * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @version $Id: Tuple.java,v 1.2 2001/05/19 14:02:00 boisvert Exp $
+ */
+final class BTreeTuple<K,V> {
+
+    /**
+     * Key
+     */
+    K key;
+
+
+    /**
+     * Value
+     */
+    V value;
+
+
+    /**
+     * Construct an empty Tuple.
+     */
+    BTreeTuple() {
+        // empty
+    }
+
+
+    /**
+     * Construct a Tuple.
+     *
+     * @param key The key.
+     * @param value The value.
+     */
+    BTreeTuple(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+
+
+
+}

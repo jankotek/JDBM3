@@ -671,10 +671,10 @@ public class TestBTree
     	Lock readLock = btree.getLock().readLock();
     	try {
     		readLock.lock();
-	        TupleBrowser browser = btree.browse();
-	        Tuple tuple = new Tuple();
+	        BTreeTupleBrowser browser = btree.browse();
+	        BTreeTuple tuple = new BTreeTuple();
 	        while(browser.getNext(tuple)) {
-	          if(tuple.getValue().equals(value))
+	          if(tuple.value.equals(value))
 	            return(true);
 	        }
     	} finally {
