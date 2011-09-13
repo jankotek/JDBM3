@@ -180,8 +180,7 @@ final class Serialization
 	final static int PROPERTIES			= 125;
 	
 	final static int CLASS				= 126;	
-	
-	final static int STOREREFERENCE		= 160;
+
 	final static int BLOCKIO				= 161;
 
 	static final int BPAGE_LEAF 			= 162;
@@ -297,9 +296,6 @@ final class Serialization
 		}else if (clazz ==  BlockIo.class){
 			out.write(BLOCKIO);
 			((BlockIo)obj).writeExternal(out);
-		}else if (clazz ==  StoreReference.class){
-			out.write(STOREREFERENCE);
-			((StoreReference)obj).writeExternal(out);			
 		}else if(clazz == String.class){
 			byte[] s = ((String)obj).getBytes();
 			if(s.length==0){
@@ -831,7 +827,7 @@ final class Serialization
 			case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
 			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;			
 			case BLOCKIO:ret= deserializeBlockIo(is);break;
-			case STOREREFERENCE:ret= deserializeStoreReference(is);break;
+
 			case STRING_255:ret= deserializeString256Smaller(is);break;
 			case STRING:ret= deserializeString(is);break;
 			case STRING_EMPTY:ret= "";break;
@@ -903,15 +899,6 @@ final class Serialization
 		Class cls = Class.forName(className);
 		return cls;
 	}
-
-
-
-	private static StoreReference deserializeStoreReference(DataInputStream is) throws IOException {
-		StoreReference r = new StoreReference();
-		r.readExternal(is);
-		return r;
-	}
-
 
 
 	private static byte[] deserializeArrayByteInt(DataInputStream is) throws IOException {
