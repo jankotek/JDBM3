@@ -16,34 +16,26 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
-/**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
- */
-public class SerializerInput extends DataInputStream{
+public class TestFileLock extends TestCaseWithTestFile {
 
-	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
+	public void testLock() throws IOException{
+		String file = newTestFile();
+		
+		RecordManager recman1 = RecordManagerFactory.createRecordManager(file);		
+		//now open same file second time, exception should be thrown
+		try{
+			RecordManager recman2 = RecordManagerFactory.createRecordManager(file);
+			fail("Exception should be thrown if file was locked");
+		}catch(IOException e){
+			//expected
+		}
+				
+		recman1.close();
+		
+		//after close lock should be released, reopen
+		RecordManager recman3 = RecordManagerFactory.createRecordManager(file);
+		recman3.close();
 	}
 }

@@ -1,5 +1,3 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,7 +13,6 @@ import jdbm.SecondaryTreeMap;
 import jdbm.Serializer;
 import jdbm.SerializerInput;
 import jdbm.SerializerOutput;
-import jdbm.helper.Serialization;
 
 
 /**

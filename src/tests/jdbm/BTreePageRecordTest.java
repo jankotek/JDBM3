@@ -13,37 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-/**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
- */
-public class SerializerInput extends DataInputStream{
+public class BTreePageRecordTest {
 
 	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
 }

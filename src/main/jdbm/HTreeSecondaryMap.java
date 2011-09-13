@@ -13,37 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package jdbm;
 
-import java.io.DataInputStream;
+import java.io.IOError;
 import java.io.IOException;
-import java.io.InputStream;
 
-/**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
- */
-public class SerializerInput extends DataInputStream{
+public class HTreeSecondaryMap<A,K,V> extends HTreeMap<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
 
-	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
+	protected final JdbmBase<K,V > b;
+	public HTreeSecondaryMap(HTree<A, Iterable<K>> tree, JdbmBase<K,V> b) {
+		super(tree, true);
+		this.b = b;
 	}
 	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
+	public V getPrimaryValue(K k) {		
+		try {
+			return b.find(k);
+		} catch (IOException e) {
+			throw new IOError(e);
+		}
 	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
+
+	public Iterable<V> getPrimaryValues(A a) {
+		return SecondaryKeyHelper.translateIterable(b, get(a));
 	}
+
 }

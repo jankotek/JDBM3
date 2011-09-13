@@ -16,34 +16,36 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
+ *  This class contains all Unit tests for {@link PageHeader}.
  */
-public class SerializerInput extends DataInputStream{
+public class TestPageHeader extends TestCase {
 
-	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
+    public TestPageHeader(String name) {
+  super(name);
+    }
 
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
+    /**
+     *  Test set, write, read
+     */
+    public void testSetWriteRead() throws Exception {
+  BlockIo data = new BlockIo(0, new byte[RecordFile.DEFAULT_BLOCK_SIZE]);
+  PageHeader p = new PageHeader(data, Magic.FREE_PAGE);
+  p.setNext(10);
+  p.setPrev(33);
+  
+  p = new PageHeader(data);
+  assertEquals("next", 10, p.getNext());
+  assertEquals("prev", 33, p.getPrev());
+    }
+
+    /**
+     *  Runs all tests in this class
+     */
+    public static void main(String[] args) {
+  junit.textui.TestRunner.run(new TestSuite(TestPageHeader.class));
+    }
 }

@@ -16,34 +16,19 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
+ *  Abstract class for Hashtable directory nodes
  *
+ *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ *  @version $Id: HashNode.java,v 1.2 2003/03/21 02:54:58 boisvert Exp $
  */
-public class SerializerInput extends DataInputStream{
+@SuppressWarnings("unchecked")
+class HashNode<K,V> //implements Serializable, Serializer<HashNode>
+{
+    protected final HTree<K, V> tree;
 
-	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
+    public HashNode(HTree<K,V> tree) {
+        this.tree = tree;
+    }
 
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
 }

@@ -14,36 +14,27 @@
  * limitations under the License.
  ******************************************************************************/
 
+
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
+ * This class represents a location within a file. Both physical and
+ * logical rowids are based on locations internally - this version is
+ * used when there is no file block to back the location's data.
  */
-public class SerializerInput extends DataInputStream{
+final class Location {
+	
+	static long getBlock(long blockOffset){
+		return blockOffset >> 16;
+	}
+	
+	static short getOffset(long blockOffset){
+		return (short) (blockOffset & 0xffff);
+	}
+	
+	static long toLong(long block, short offset){
+		return (block << 16) + (long) offset;
+	}
 
 	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
 }

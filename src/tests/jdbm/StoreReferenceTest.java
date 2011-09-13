@@ -13,37 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package jdbm;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
-/**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
- */
-public class SerializerInput extends DataInputStream{
-
+public class StoreReferenceTest extends TestCaseWithTestFile{
 	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
+	public void test() throws IOException{
+		String file = newTestFile();
+		RecordManager r = RecordManagerFactory.createRecordManager(file);
+		PrimaryTreeMap<Long,StoreReference<String>> t = r.treeMap("aaa");
+		
+		t.put(1l, new StoreReference(r,"1"));
+		t.put(2l, new StoreReference(r,"2"));
+		r.commit();
+		
+		assertEquals("1",t.get(1l).get(r));
+		assertEquals("2",t.get(2l).get(r));
+		
+		//reopen store
+		r.close();
+		r = RecordManagerFactory.createRecordManager(file);
+		t = r.treeMap("aaa");
+		assertEquals("1",t.get(1l).get(r));
+		assertEquals("2",t.get(2l).get(r));
+		r.close();
+		
 	}
 }

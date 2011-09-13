@@ -16,34 +16,34 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
- *
+ * This class contains all Unit tests for {@link Location}.
  */
-public class SerializerInput extends DataInputStream{
+public class TestLocation extends TestCase {
 
-	
-	public SerializerInput(InputStream in) {
-		super(in);
+	public TestLocation(String name) {
+		super(name);
 	}
 
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
+	/**
+	 * Basic tests
+	 */
+	public void testBasics() {
+
+		long loc = Location.toLong(10, (short) 20);
+
+		assertEquals("block2", 10, Location.getBlock(loc));
+		assertEquals("offset2", 20, Location.getOffset(loc));
+
 	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
+
+	/**
+	 * Runs all tests in this class
+	 */
+	public static void main(String[] args) {
+		junit.textui.TestRunner.run(new TestSuite(TestLocation.class));
 	}
 }

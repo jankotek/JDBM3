@@ -17,8 +17,6 @@ package jdbm;
 
 import java.io.IOException;
 
-import jdbm.htree.HTree;
-
 /**
  * Sample JDBM application to demonstrate the use of basic JDBM operations
  *

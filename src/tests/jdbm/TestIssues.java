@@ -1,10 +1,6 @@
 package jdbm;
 
 
-import jdbm.htree.HTree;
-import jdbm.htree.HTreeMap;
-import jdbm.recman.TestCaseWithTestFile;
-
 import java.io.IOException;
 
 public class TestIssues extends TestCaseWithTestFile{

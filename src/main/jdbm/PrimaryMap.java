@@ -18,8 +18,6 @@ package jdbm;
 import java.util.Comparator;
 import java.util.Map;
 
-import jdbm.helper.JdbmBase;
-
 /**
  * Primary Map which persist data in storage. 
  * Behavior is very similar to  <code>java.util.HashMap/code>.

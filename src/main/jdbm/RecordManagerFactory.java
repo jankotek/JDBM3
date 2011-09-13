@@ -17,9 +17,6 @@
 
 package jdbm;
 
-import jdbm.recman.BaseRecordManager;
-import jdbm.recman.CacheRecordManager;
-
 import java.io.IOException;
 import java.util.Properties;
 

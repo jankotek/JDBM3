@@ -13,37 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * 
- * Input for Serializer
+ * Compares comparables. Default comparator for most of java types
  * 
  * @author Jan Kotek
  *
+ * @param <A>
  */
-public class SerializerInput extends DataInputStream{
+@SuppressWarnings("unchecked") 
+public class ComparableComparator<A extends Comparable>
+	implements Comparator<A>,Serializable {	
+	
+	/** use this instance, dont allocate new*/
+	public final static Comparator INSTANCE =  new ComparableComparator();
 
+	private static final long serialVersionUID = 1678377822276476166L;
 	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
+	/** everyone should use INSTANCE*/
+	private ComparableComparator(){};
 
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
+	public int compare(Comparable o1, Comparable o2) {
+        return o1.compareTo(o2);
+    }
 }

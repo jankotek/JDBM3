@@ -16,34 +16,11 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
- * 
- * Input for Serializer
- * 
- * @author Jan Kotek
+ *  This is a marker interface that is implemented by classes that
+ *  interpret blocks of data by pretending to be an overlay.
  *
+ *  @see BlockIo#setView
  */
-public class SerializerInput extends DataInputStream{
-
-	
-	public SerializerInput(InputStream in) {
-		super(in);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
-	}
-	
-	public long readPackedLong() throws IOException{
-		return LongPacker.unpackLong(this);
-	}
-	
-	public int readPackedInt() throws IOException{
-		return LongPacker.unpackInt(this);
-	}
+interface BlockView {
 }

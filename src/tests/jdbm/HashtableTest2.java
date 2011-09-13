@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+/*
+ * Copyright (C) 2008 Google Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ */
+
 package jdbm;
 
 import java.io.IOException;
@@ -26,11 +27,10 @@ import java.util.Iterator;
  *
  * @version $Id: HashtableTest.java,v 1.6 2005/06/25 23:12:32 doomdark Exp $
  */
-//@Ignore
-public class HashtableTest {
+public class HashtableTest2 {
 
     private RecordManager recman;
-    private HTree<String, String> hashtable;
+    private HTree hashtable;
 
     private boolean enumerate = false;
     private boolean populate = false;
@@ -54,7 +54,7 @@ public class HashtableTest {
             hashtable = HTree.createInstance( recman );
             recman.setNamedObject( name, hashtable.getRecid() );
         } else {
-            hashtable = HTree.load( recman, recid );
+            hashtable = HTree.load(recman, recid);
         }
 
     }
@@ -85,13 +85,13 @@ public class HashtableTest {
     /**
      * Retrieve a given object based on key
      */
-    protected Object retrieve( String key )
+    protected Object retrieve( Object key )
         throws IOException
     {
         init();
 
         try {
-            String val = hashtable.find( key );
+            Object val = hashtable.find( key );
             System.out.println( "retrieve key=" + key + " val=" + val );
             return val;
         } finally {
@@ -109,11 +109,10 @@ public class HashtableTest {
         init();
 
         try {
-            Iterator<String> iter = hashtable.keys();
-            
-            while (iter.hasNext() ) {
-            	String key = iter.next();
-                String val = hashtable.find( key );
+            Iterator iter = hashtable.keys();
+            while ( iter.hasNext() ) {
+                Object key = iter.next();
+                Object val = hashtable.find( key );
                 System.out.println( "enum key=" + key + " val=" + val );
             }
         } finally {
@@ -185,7 +184,7 @@ public class HashtableTest {
      */
     public static void main( String[] args )
     {
-        HashtableTest instance = new HashtableTest();
+        HashtableTest2 instance = new HashtableTest2();
         instance.parseArgs( args );
         try {
             instance.doCommands();
