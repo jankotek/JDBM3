@@ -27,7 +27,6 @@ import java.util.Iterator;
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
- * @version $Id: CacheRecordManager.java,v 1.9 2005/06/25 23:12:32 doomdark Exp $
  */
 class CacheRecordManager
     extends RecordManagerImpl

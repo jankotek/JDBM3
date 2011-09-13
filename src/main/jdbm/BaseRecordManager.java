@@ -51,7 +51,6 @@ import java.util.zip.InflaterInputStream;
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
- * @version $Id: BaseRecordManager.java,v 1.8 2005/06/25 23:12:32 doomdark Exp $
  */
 final class BaseRecordManager
     extends RecordManagerImpl

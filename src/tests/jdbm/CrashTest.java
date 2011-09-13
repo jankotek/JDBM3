@@ -21,7 +21,6 @@ import java.io.IOException;
  * Sample JDBM application to demonstrate the use of basic JDBM operations
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: CrashTest.java,v 1.7 2002/05/31 06:34:29 boisvert Exp $
  */
 public class CrashTest
 {

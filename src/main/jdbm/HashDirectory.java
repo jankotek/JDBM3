@@ -28,7 +28,6 @@ import java.util.NoSuchElementException;
  *  Hashtable directory page.
  *
  *  @author <a href="mailto:boisvert@exoffice.com">Alex Boisvert</a>
- *  @version $Id: HashDirectory.java,v 1.5 2005/06/25 23:12:32 doomdark Exp $
  */
 final class HashDirectory <K,V>
     extends HashNode<K,V>

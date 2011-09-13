@@ -32,7 +32,6 @@ import java.io.IOException;
  * got permission to relicense under Apache2 license 
  * 
  * @author <a href="mailto:thompsonbry@users.sourceforge.net">Bryan Thompson</a>
- * @version $Id: LongPacker.java,v 1.4 2006/05/02 16:20:07 thompsonbry Exp $
  */
 
 public final class LongPacker

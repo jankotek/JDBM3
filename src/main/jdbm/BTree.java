@@ -52,7 +52,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * the key size, which impacts all non-leaf <code>BPage</code> objects.
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: BTree.java,v 1.6 2005/06/25 23:12:31 doomdark Exp $
  */
 class BTree<K,V>
     implements Externalizable, JdbmBase<K,V>
@@ -723,7 +722,6 @@ class BTree<K,V>
  * forward and reverse order traversal.
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: TupleBrowser.java,v 1.2 2001/05/19 14:02:00 boisvert Exp $
  */
 interface BTreeTupleBrowser<K,V> {
 
@@ -754,7 +752,6 @@ interface BTreeTupleBrowser<K,V> {
  * Tuple consisting of a key-value pair.
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: Tuple.java,v 1.2 2001/05/19 14:02:00 boisvert Exp $
  */
 final class BTreeTuple<K,V> {
 

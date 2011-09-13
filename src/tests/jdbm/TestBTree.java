@@ -37,7 +37,6 @@ import junit.framework.TestSuite;
  *  This class contains all Unit tests for {@link BTree}.
  *
  *  @author <a href="mailto:boisvert@exoffice.com">Alex Boisvert</a>
- *  @version $Id: TestBTree.java,v 1.8 2003/09/21 15:49:02 boisvert Exp $
  */
 public class TestBTree
     extends TestCaseWithTestFile

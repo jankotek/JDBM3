@@ -26,8 +26,6 @@ import java.util.Properties;
  * 
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
- * @version $Id: RecordManagerFactory.java,v 1.2 2005/06/25 23:12:31 doomdark
- *          Exp $
  */
 public final class RecordManagerFactory {
 

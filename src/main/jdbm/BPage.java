@@ -37,7 +37,6 @@ import java.util.List;
  * pseudo-key
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @version $Id: BPage.java,v 1.6 2003/09/21 15:46:59 boisvert Exp $
  */
 final class BPage<K,V>
     implements Serializer<BPage<K,V>>

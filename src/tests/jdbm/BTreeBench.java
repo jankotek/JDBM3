@@ -25,7 +25,6 @@ import java.util.Hashtable;
  *  Random insertion/removal test for B+Tree data structure.
  *
  *  @author <a href="mailto:boisvert@exoffice.com">Alex Boisvert</a>
- *  @version $Id: BTreeBench.java,v 1.7 2005/11/08 20:58:26 thompsonbry Exp $
  */
 public class BTreeBench extends TestCaseWithTestFile {
 

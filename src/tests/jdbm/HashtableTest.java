@@ -24,9 +24,7 @@ import java.util.Iterator;
  * HashDirectory.  The returned Enumeration got into an infinite loop
  * on the same key/val pair.
  *
- * @version $Id: HashtableTest.java,v 1.6 2005/06/25 23:12:32 doomdark Exp $
  */
-//@Ignore
 public class HashtableTest {
 
     private RecordManager recman;

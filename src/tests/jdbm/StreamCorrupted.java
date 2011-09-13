@@ -51,7 +51,6 @@ import java.io.IOException;
  * </pre>
  *
  *  @author <a href="mailto:cdaller iicm.edu">Christof Dallermassl</a>
- *  @version $Id: StreamCorrupted.java,v 1.4 2003/09/21 15:49:02 boisvert Exp $
  */
 public class StreamCorrupted
     extends TestCaseWithTestFile

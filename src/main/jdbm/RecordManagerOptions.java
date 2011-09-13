@@ -21,7 +21,6 @@ package jdbm;
  *
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
- * @version $Id: RecordManagerOptions.java,v 1.1 2002/05/31 06:33:20 boisvert Exp $
  */
 public class RecordManagerOptions
 {

@@ -25,7 +25,6 @@ import java.util.Properties;
  *  This class contains all Unit tests for {@link HashBucket}.
  *
  *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- *  @version $Id: TestHashBucket.java,v 1.1 2002/05/31 06:50:14 boisvert Exp $
  */
 public class TestHashBucket extends TestCaseWithTestFile {
 

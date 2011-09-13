@@ -26,7 +26,6 @@ import junit.framework.TestSuite;
  *  This class contains all Unit tests for {@link HashDirectory}.
  *
  *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- *  @version $Id: TestHashDirectory.java,v 1.2 2003/09/21 15:49:02 boisvert Exp $
  */
 public class TestHashDirectory extends TestCaseWithTestFile {
 

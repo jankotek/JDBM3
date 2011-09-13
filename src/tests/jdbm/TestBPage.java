@@ -23,7 +23,6 @@ import java.io.IOException;
  *  This class contains all Unit tests for {@link Bpage}.
  *
  *  @author <a href="mailto:boisvert@exoffice.com">Alex Boisvert</a>
- *  @version $Id: TestBPage.java,v 1.5 2003/09/21 15:49:02 boisvert Exp $
  */
 public class TestBPage extends TestCaseWithTestFile {
 

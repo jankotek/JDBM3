@@ -29,7 +29,6 @@ import java.util.List;
  *            *must* be discarded after a rollback.
  *
  *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- *  @version $Id: HTree.java,v 1.3 2005/06/25 23:12:32 doomdark Exp $
  */
 class HTree<K,V> implements JdbmBase<K,V>
 {
