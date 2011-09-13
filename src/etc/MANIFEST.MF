@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: JDBM
-Specification-Vendor: JDBM at SourceForge Project
-Specification-Version: 0.09
-Implementation-Title: JDBM
-Implementation-Vendor: JDBM at SourceForge Project
-Implementation-Version: $VERSION$
-
