@@ -34,7 +34,7 @@ import java.util.NoSuchElementException;
  * <p>
  * Note: This map have weakened hash function, this works well for JDBM, but may be wrong for many other applications.  
  */
-public class LongHashMap<V> implements  Serializable {
+class LongHashMap<V> implements  Serializable {
     private static final long serialVersionUID = 362499999763181265L;
 
     protected int elementCount;

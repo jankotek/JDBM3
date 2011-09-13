@@ -30,7 +30,7 @@ import java.io.IOException;
  *  @see java.io.DataInput
  *  @see java.io.DataOutput
  */
-public final class BlockIo {
+final class BlockIo {
 
     private long blockId;
 

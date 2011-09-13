@@ -29,7 +29,7 @@ import java.util.Iterator;
  * @author <a href="cg@cdegroot.com">Cees de Groot</a>
  * @version $Id: CacheRecordManager.java,v 1.9 2005/06/25 23:12:32 doomdark Exp $
  */
-public class CacheRecordManager
+class CacheRecordManager
     extends RecordManagerImpl
 {
 

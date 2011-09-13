@@ -43,7 +43,7 @@ import java.util.TreeSet;
 // TODO: Handle the case where we are recovering lg9 and lg0, were we
 // should start with lg9 instead of lg0!
 
-public final class TransactionManager {
+final class TransactionManager {
     private RecordFile owner;
 
     // streams for transaction log.

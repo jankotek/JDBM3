@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<Long, V>
+class PrimaryStoreMapImpl<K extends Long, V> extends AbstractPrimaryMap<Long, V>
 	implements PrimaryStoreMap<K, V>{
 	
 	final protected PrimaryMap<Long,String> map;	

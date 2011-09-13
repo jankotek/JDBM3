@@ -25,7 +25,7 @@ import java.util.Comparator;
  * @author Jan Kotek
  *
  */
-public abstract class RecordManagerImpl implements RecordManager{
+abstract class RecordManagerImpl implements RecordManager{
 	
 	public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
         return hashMap(name,null,null);

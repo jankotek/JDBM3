@@ -17,7 +17,7 @@ package jdbm;
 
 import java.io.ByteArrayOutputStream;
 
-public class OpenByteArrayOutputStream extends ByteArrayOutputStream{
+class OpenByteArrayOutputStream extends ByteArrayOutputStream{
 	
 	
 	public OpenByteArrayOutputStream(byte[] buf) {

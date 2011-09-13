@@ -52,149 +52,149 @@ import java.util.Vector;
  * @author Jan Kotek
  */
 @SuppressWarnings("unchecked")
-public final class Serialization
+final class Serialization
 {
 	
-	public static final byte END_OF_NORMAL_SERIALIZATION = 111; 
+	static final byte END_OF_NORMAL_SERIALIZATION = 111; 
 	
 	/** print statistics to STDOUT */
-	public static final boolean DEBUG = false;
+	static final boolean DEBUG = false;
 	
 	/** if set to true, debug informations will be saved to store to make it more robust */
-	public static final boolean DEBUGSTORE = false;
+	static final boolean DEBUGSTORE = false;
 	
 	private static final int DEBUGSTORE_DUMMY_START = 456456567;
 	private static final int DEBUGSTORE_DUMMY_END = 1234456;
 	
-	public final static int NULL 			=   0;
-	public final static int NORMAL 			=   1;
-	public final static int BOOLEAN_TRUE 	=   2;
-	public final static int BOOLEAN_FALSE 	=   3;
-	public final static int INTEGER_MINUS_1 =   4;
-	public final static int INTEGER_0 		=   5;
-	public final static int INTEGER_1 		=   6;
-	public final static int INTEGER_2 		=   7;
-	public final static int INTEGER_3 		=   8;
-	public final static int INTEGER_4 		=   9;
-	public final static int INTEGER_5 		=  10;
-	public final static int INTEGER_6 		=  11;
-	public final static int INTEGER_7 		=  12;
-	public final static int INTEGER_8 		=  13;
-	public final static int INTEGER_255		=  14;	
-	public final static int INTEGER_PACK_NEG=  15;
-	public final static int INTEGER_PACK 	=  16;
-	public final static int LONG_MINUS_1 	=  17;
-	public final static int LONG_0 			=  18;
-	public final static int LONG_1 			=  19;
-	public final static int LONG_2 			=  20;
-	public final static int LONG_3 			=  21;
-	public final static int LONG_4 			=  22;
-	public final static int LONG_5 			=  23;
-	public final static int LONG_6 			=  24;
-	public final static int LONG_7 			=  25;
-	public final static int LONG_8 			=  26;
-	public final static int LONG_PACK_NEG	=  27;
-	public final static int LONG_PACK 		=  28;
-	public final static int LONG_255 		=  29;
-	public final static int LONG_MINUS_MAX	=  30;
-	public final static int SHORT_MINUS_1 	=  31;
-	public final static int SHORT_0 		=  32;
-	public final static int SHORT_1 		=  33;
-	public final static int SHORT_255 		=  34;
-	public final static int SHORT_FULL		=  35;	
-	public final static int BYTE_MINUS_1 	=  36;
-	public final static int BYTE_0 			=  37;
-	public final static int BYTE_1 			=  38;
-	public final static int BYTE_FULL		=  39;	
-	public final static int CHAR			=  40;
-	public final static int FLOAT_MINUS_1 	=  41;
-	public final static int FLOAT_0 		=  42;
-	public final static int FLOAT_1 		=  43;
-	public final static int FLOAT_255		=  44;
-	public final static int FLOAT_SHORT		=  45;		
-	public final static int FLOAT_FULL		=  46;	
-	public final static int DOUBLE_MINUS_1 	=  47;
-	public final static int DOUBLE_0 		=  48;
-	public final static int DOUBLE_1 		=  49;
-	public final static int DOUBLE_255		=  50;
-	public final static int DOUBLE_SHORT	=  51;	
-	public final static int DOUBLE_FULL		=  52;
+	final static int NULL 			=   0;
+	final static int NORMAL 			=   1;
+	final static int BOOLEAN_TRUE 	=   2;
+	final static int BOOLEAN_FALSE 	=   3;
+	final static int INTEGER_MINUS_1 =   4;
+	final static int INTEGER_0 		=   5;
+	final static int INTEGER_1 		=   6;
+	final static int INTEGER_2 		=   7;
+	final static int INTEGER_3 		=   8;
+	final static int INTEGER_4 		=   9;
+	final static int INTEGER_5 		=  10;
+	final static int INTEGER_6 		=  11;
+	final static int INTEGER_7 		=  12;
+	final static int INTEGER_8 		=  13;
+	final static int INTEGER_255		=  14;	
+	final static int INTEGER_PACK_NEG=  15;
+	final static int INTEGER_PACK 	=  16;
+	final static int LONG_MINUS_1 	=  17;
+	final static int LONG_0 			=  18;
+	final static int LONG_1 			=  19;
+	final static int LONG_2 			=  20;
+	final static int LONG_3 			=  21;
+	final static int LONG_4 			=  22;
+	final static int LONG_5 			=  23;
+	final static int LONG_6 			=  24;
+	final static int LONG_7 			=  25;
+	final static int LONG_8 			=  26;
+	final static int LONG_PACK_NEG	=  27;
+	final static int LONG_PACK 		=  28;
+	final static int LONG_255 		=  29;
+	final static int LONG_MINUS_MAX	=  30;
+	final static int SHORT_MINUS_1 	=  31;
+	final static int SHORT_0 		=  32;
+	final static int SHORT_1 		=  33;
+	final static int SHORT_255 		=  34;
+	final static int SHORT_FULL		=  35;	
+	final static int BYTE_MINUS_1 	=  36;
+	final static int BYTE_0 			=  37;
+	final static int BYTE_1 			=  38;
+	final static int BYTE_FULL		=  39;	
+	final static int CHAR			=  40;
+	final static int FLOAT_MINUS_1 	=  41;
+	final static int FLOAT_0 		=  42;
+	final static int FLOAT_1 		=  43;
+	final static int FLOAT_255		=  44;
+	final static int FLOAT_SHORT		=  45;		
+	final static int FLOAT_FULL		=  46;	
+	final static int DOUBLE_MINUS_1 	=  47;
+	final static int DOUBLE_0 		=  48;
+	final static int DOUBLE_1 		=  49;
+	final static int DOUBLE_255		=  50;
+	final static int DOUBLE_SHORT	=  51;	
+	final static int DOUBLE_FULL		=  52;
 	//TODO serialization for bigdecimal and biginteger
-	public final static int BIGDECIMAL_255	=  53;
-	public final static int BIGDECIMAL		=  54;
-	public final static int BIGINTEGER_255	=  55;
-	public final static int BIGINTEGER		=  56;
-	public final static int INTEGER_MINUS_MAX=  57;	
+	final static int BIGDECIMAL_255	=  53;
+	final static int BIGDECIMAL		=  54;
+	final static int BIGINTEGER_255	=  55;
+	final static int BIGINTEGER		=  56;
+	final static int INTEGER_MINUS_MAX=  57;	
  	
 
 	
-	public final static int ARRAY_INT_B_255		=  60;
-	public final static int ARRAY_INT_B_INT		=  61;
-	public final static int ARRAY_INT_S			=  62;
-	public final static int ARRAY_INT_I			=  63;
-	public final static int ARRAY_INT_PACKED	=  64;
+	final static int ARRAY_INT_B_255		=  60;
+	final static int ARRAY_INT_B_INT		=  61;
+	final static int ARRAY_INT_S			=  62;
+	final static int ARRAY_INT_I			=  63;
+	final static int ARRAY_INT_PACKED	=  64;
 	
-	public final static int ARRAY_LONG_B		=  65;
-	public final static int ARRAY_LONG_S		=  66;
-	public final static int ARRAY_LONG_I		=  67;
-	public final static int ARRAY_LONG_L		=  68;
-	public final static int ARRAY_LONG_PACKED	=  69;
+	final static int ARRAY_LONG_B		=  65;
+	final static int ARRAY_LONG_S		=  66;
+	final static int ARRAY_LONG_I		=  67;
+	final static int ARRAY_LONG_L		=  68;
+	final static int ARRAY_LONG_PACKED	=  69;
 
-	public final static int ARRAY_BYTE_255		=  70;
-	public final static int ARRAY_BYTE_INT		=  71;
+	final static int ARRAY_BYTE_255		=  70;
+	final static int ARRAY_BYTE_INT		=  71;
 	
-	public final static int ARRAY_OBJECT_255	=  72;
-	public final static int ARRAY_OBJECT		=  73;
+	final static int ARRAY_OBJECT_255	=  72;
+	final static int ARRAY_OBJECT		=  73;
 	//special cases for BTree values which stores references
-	public final static int ARRAY_OBJECT_PACKED_LONG =  74;
-	public final static int ARRAYLIST_PACKED_LONG =  75;
+	final static int ARRAY_OBJECT_PACKED_LONG =  74;
+	final static int ARRAYLIST_PACKED_LONG =  75;
 	
-	public final static int STRING_EMPTY		= 101;
-	public final static int STRING_255			= 102;
-	public final static int STRING				= 103;
-	public final static int ARRAYLIST_255		= 104;
-	public final static int ARRAYLIST			= 105;
+	final static int STRING_EMPTY		= 101;
+	final static int STRING_255			= 102;
+	final static int STRING				= 103;
+	final static int ARRAYLIST_255		= 104;
+	final static int ARRAYLIST			= 105;
 	
-	public final static int TREEMAP_255			= 106;
-	public final static int TREEMAP				= 107;
-	public final static int HASHMAP_255			= 108;
-	public final static int HASHMAP				= 109;
-	public final static int LINKEDHASHMAP_255	= 110;
-	public final static int LINKEDHASHMAP		= 111;
+	final static int TREEMAP_255			= 106;
+	final static int TREEMAP				= 107;
+	final static int HASHMAP_255			= 108;
+	final static int HASHMAP				= 109;
+	final static int LINKEDHASHMAP_255	= 110;
+	final static int LINKEDHASHMAP		= 111;
 	
-	public final static int TREESET_255			= 112;
-	public final static int TREESET				= 113;
-	public final static int HASHSET_255			= 114;
-	public final static int HASHSET				= 115;
-	public final static int LINKEDHASHSET_255	= 116;
-	public final static int LINKEDHASHSET		= 117;
-	public final static int LINKEDLIST_255		= 118;
-	public final static int LINKEDLIST			= 119;
+	final static int TREESET_255			= 112;
+	final static int TREESET				= 113;
+	final static int HASHSET_255			= 114;
+	final static int HASHSET				= 115;
+	final static int LINKEDHASHSET_255	= 116;
+	final static int LINKEDHASHSET		= 117;
+	final static int LINKEDLIST_255		= 118;
+	final static int LINKEDLIST			= 119;
 	
 
-	public final static int VECTOR_255			= 120;
-	public final static int VECTOR				= 121;
-	public final static int HASHTABLE_255		= 122;
-	public final static int HASHTABLE			= 123;
-	public final static int PROPERTIES_255		= 124;
-	public final static int PROPERTIES			= 125;
+	final static int VECTOR_255			= 120;
+	final static int VECTOR				= 121;
+	final static int HASHTABLE_255		= 122;
+	final static int HASHTABLE			= 123;
+	final static int PROPERTIES_255		= 124;
+	final static int PROPERTIES			= 125;
 	
-	public final static int CLASS				= 126;	
+	final static int CLASS				= 126;	
 	
-	public final static int STOREREFERENCE		= 160;
-	public final static int BLOCKIO				= 161;
+	final static int STOREREFERENCE		= 160;
+	final static int BLOCKIO				= 161;
 
-	public static final int BPAGE_LEAF 			= 162;
-	public static final int BPAGE_NONLEAF 		= 163;
-	public static final int HTREE_BUCKET 		= 164;
-	public static final int HTREE_DIRECTORY 	= 165;
-	public static final int JAVA_SERIALIZATION 	= 172;
+	static final int BPAGE_LEAF 			= 162;
+	static final int BPAGE_NONLEAF 		= 163;
+	static final int HTREE_BUCKET 		= 164;
+	static final int HTREE_DIRECTORY 	= 165;
+	static final int JAVA_SERIALIZATION 	= 172;
 	
 	
     /**
      * Serialize the object into a byte array.
      */
-    public static byte[] serialize( Object obj )
+    static byte[] serialize( Object obj )
         throws IOException
     {
     	ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -207,7 +207,7 @@ public final class Serialization
     
     
     
-	public static void writeObject(final DataOutputStream out, final Object obj) throws IOException {
+	static void writeObject(final DataOutputStream out, final Object obj) throws IOException {
     	final int written = DEBUG?out.size():0;
 
     	final Class clazz = obj!=null?obj.getClass():null;
@@ -705,7 +705,7 @@ public final class Serialization
      * @throws IOException 
      * @throws ClassNotFoundException 
      */
-    public static Object deserialize( byte[] buf ) throws ClassNotFoundException, IOException{
+    static Object deserialize( byte[] buf ) throws ClassNotFoundException, IOException{
     	ByteArrayInputStream bs =  new ByteArrayInputStream(buf);
     	DataInputStream das = new DataInputStream(bs);
     	Object ret = readObject(das);
@@ -764,7 +764,7 @@ public final class Serialization
         return ret;
     }
 
-    public static Object readObject(DataInputStream is) throws IOException, ClassNotFoundException{
+    static Object readObject(DataInputStream is) throws IOException, ClassNotFoundException{
     	final int available = DEBUG?is.available():0;
 
     	Object ret = null;

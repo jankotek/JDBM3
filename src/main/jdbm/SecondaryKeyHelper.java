@@ -29,7 +29,7 @@ import java.util.List;
  * @author Jan Kotek
  *
  */
-final public class SecondaryKeyHelper {
+final class SecondaryKeyHelper {
 
 	   
     static public <A,K,V> BTree<A,Iterable<K>>  secondaryBTree(String objectName, 

@@ -17,7 +17,7 @@ package jdbm;
 
 import java.io.ByteArrayInputStream;
 
-public class OpenByteArrayInputStream extends ByteArrayInputStream{
+class OpenByteArrayInputStream extends ByteArrayInputStream{
 
 	public OpenByteArrayInputStream(byte[] buf) {
 		super(buf);
