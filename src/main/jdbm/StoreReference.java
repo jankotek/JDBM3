@@ -20,7 +20,7 @@ import java.io.DataOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 
-public class StoreReference<E> {
+class StoreReference<E> {
 
 	private long recid = -1;
 

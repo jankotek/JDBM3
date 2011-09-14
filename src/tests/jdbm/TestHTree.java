@@ -131,34 +131,6 @@ public class TestHTree extends TestCaseWithTestFile {
         return testTree;
     }
     
-    @SuppressWarnings("unchecked")
-	public void testStoreMapSecondaryTreeListeners() throws IOException{
-    	RecordManager recman = newRecordManager();
-    	PrimaryStoreMap<Long,String> st = recman.storeMap("storeMap");
-    	SecondaryKeyExtractor<String, Long, String> extractor = new SecondaryKeyExtractor<String, Long, String>() {
-			public String extractSecondaryKey(Long key, String value) {				
-				return ""+key+value;
-			}};
-    	SecondaryTreeMap t = st.secondaryTreeMap("map1",extractor); 
-    	SecondaryHashMap h = st.secondaryHashMap("map2",extractor);
-    	Long key = st.putValue("aaa");
-    	assertTrue(t.size() == 1);
-    	assertTrue(t.containsKey(""+key+"aaa"));
-    	assertTrue(h.size() == 1);
-    	assertTrue(h.containsKey(""+key+"aaa"));
-    	
-    	//defrag will force reopening
-    	recman.defrag();
-    	recman.clearCache();
-    	
-    	assertTrue(t.size() == 1);
-    	assertTrue(t.containsKey(""+key+"aaa"));
-    	assertTrue(h.size() == 1);
-    	assertTrue(h.containsKey(""+key+"aaa"));
-
-		
-
-    }
 
 
 }

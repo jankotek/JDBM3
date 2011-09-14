@@ -52,7 +52,7 @@
 	Number as an identifier is not very practical. So there is a table that translates Strings to recid. This is recommended 
 	approach for persisting singletons. 
 	<p/><b>Primary maps</b><br/>	
-	{@link jdbm.PrimaryStoreMap}, 	{@link jdbm.PrimaryTreeMap} and {@link jdbm.PrimaryHashMap} implements <code>java.util.map</code> interface
+	{@link jdbm.PrimaryTreeMap} and {@link jdbm.PrimaryHashMap} implements <code>java.util.map</code> interface
 	from Java Collections. But they use page store for persistence. So you can create HashMap with bilions of items and worry only about the commits.
 	<p/><b>Secondary maps</b><br/>	
 	Secondary maps (indexes) provide side information and associations for the primary map. For example, if there is a Person class persisted in the primary map, 
@@ -71,8 +71,7 @@
 		frequently.
 	<li>Keys and values are stored as part of the index nodes. They are instanciated each time the index is searched.
 		If you have larger values (>512 bytes), these may hurt performance and cause <code>OutOfMemoryException</code>
-		In this case use  {@link jdbm.helper.StoreReference} or {@link jdbm.PrimaryStoreMap} to store values outside of the index.
-	<li>If you run into performance problems, use the profiler rather then asking for it over the internet.	
+	<li>If you run into performance problems, use the profiler rather then asking for it over the internet.
 	<li>JDBM caches returned object instances. If you modify an object (like set new name on a person),
 		next time RecordManager may return the object with this modification. 
 	<li>Iteration over Maps is not guaranteed if there are changes 

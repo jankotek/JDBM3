@@ -1119,7 +1119,7 @@ final class BPage<K,V>
 		}else{
 			for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                                
 		        if ( bpage._values[ i ] != null ) {
-		        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		            _btree.valueSerializer.serialize(new SerializerOutput(baos), bpage._values[ i ] );
 		            writeByteArray( oos, baos.toByteArray() );
 		        } else {

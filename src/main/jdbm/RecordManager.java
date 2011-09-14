@@ -327,26 +327,6 @@ public interface  RecordManager
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
 			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
 	
-	/**
-     * Creates or load existing StoreMap which persists data into DB.
-     *  
-     * @param <V> Value type
-     * @param name record name
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage
-     * @return map
-     */
-	public <V> PrimaryStoreMap<Long, V> storeMap(String name,
-				Serializer<V> valueSerializer) ;
-	
-	/**
-     * Creates or load existing Primary StoreMap which persists data into DB.
-     *  
-     * @param <V> Value type
-     * @param name record name
-     * @return map
-     */
-	public <V> PrimaryStoreMap<Long, V> storeMap(String name);
-
 
 	
 

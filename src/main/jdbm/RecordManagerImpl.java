@@ -102,30 +102,7 @@ abstract class RecordManagerImpl implements RecordManager{
 		}	
 	}
 
-	public synchronized <V> PrimaryStoreMap<Long, V> storeMap(String name,
-				Serializer<V> valueSerializer) {
-		try{
-			BTree<Long,String> tree = null;
-        
-			// create or load
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = BTree.load( this, recid );
-			} else {
-				tree = BTree.createInstance(this);
-				setNamedObject( name, tree.getRecid() );
-			}
-			return new PrimaryStoreMapImpl<Long, V>(tree.asMap(),valueSerializer);
-		}catch(IOException  e){
-			throw new IOError(e);
-		}	
-	}
-	
 
-	@SuppressWarnings("unchecked")
-	public <V> PrimaryStoreMap<Long, V> storeMap(String name){
-		return storeMap(name,(Serializer<V>)DefaultSerializer.INSTANCE);
-	}
 
 
 
