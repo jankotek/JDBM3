@@ -85,14 +85,12 @@ public class TestRecordManager extends TestCaseWithTestFile {
      *  Test delete and immediate reuse. This attempts to reproduce
      *  a bug in the stress test involving 0 record lengths.
      */
-    public void testCompress() 
+
+    public void testCompress()
         throws Exception
     {
-    	Properties props = new Properties();
-    	props.put(RecordManagerOptions.COMPRESS, "TRUE");
-    	    
-        RecordManager recman = RecordManagerFactory. createRecordManager(
-        			newTestFile(), props);
+
+        RecordManager recman = new RecordManagerBuilder(newTestFile()).enableCompression().build();
         
         //create huge list to be compressed
         ArrayList l1 = new ArrayList();

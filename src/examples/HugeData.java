@@ -1,8 +1,6 @@
 import java.io.IOException;
 
-import jdbm.PrimaryTreeMap;
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
+import jdbm.*;
 
 
 /** 
@@ -17,7 +15,7 @@ public class HugeData {
 	public static void main(String[] args) throws IOException {
 
 		/** open db */
-        RecordManager recman = RecordManagerFactory.createRecordManager( "hugedata");        
+        RecordManager recman = new RecordManagerBuilder("hugedata").build();
         PrimaryTreeMap<Long, String> m = recman.treeMap("hugemap");
         
         /** insert 1e7 records */

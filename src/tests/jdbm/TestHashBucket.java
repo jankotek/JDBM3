@@ -36,8 +36,7 @@ public class TestHashBucket extends TestCaseWithTestFile {
      */
     public void testBasics() throws IOException {
 
-        Properties props = new Properties();
-        RecordManager recman = RecordManagerFactory.createRecordManager( newTestFile(), props );
+        RecordManager recman = newRecordManager();
 
         HTree tree = new HTree();
 

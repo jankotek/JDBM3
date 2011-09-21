@@ -1,11 +1,7 @@
 import java.io.IOException;
 import java.io.Serializable;
 
-import jdbm.PrimaryTreeMap;
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
-import jdbm.SecondaryKeyExtractor;
-import jdbm.SecondaryTreeMap;
+import jdbm.*;
 
 
 /**
@@ -77,7 +73,7 @@ public class Persons1 {
 		
 	public static void main(String[] args) throws IOException {
 		//init Record Manager and dao
-		RecordManager recman = RecordManagerFactory.createRecordManager("persons1");
+		RecordManager recman = new RecordManagerBuilder("persons1").build();
 
 		PrimaryTreeMap<String,Person> personsByName = recman.treeMap("personsByName");
 

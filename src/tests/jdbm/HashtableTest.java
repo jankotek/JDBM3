@@ -44,7 +44,7 @@ public class HashtableTest {
     protected void init()
         throws IOException
     {
-        recman = RecordManagerFactory.createRecordManager( jdbmName );
+        recman = new RecordManagerBuilder( jdbmName ).build();
 
         // create or reload HTree
         long recid = recman.getNamedObject( name );

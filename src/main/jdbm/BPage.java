@@ -1092,7 +1092,7 @@ final class BPage<K,V>
     }
     
 
-	private void readValues(DataInputStream ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
+	private void readValues(SerializerInput ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = (V[]) new Object[ _btree._pageSize ];
 	
 		  if ( _btree.valueSerializer == null||   _btree.valueSerializer == DefaultSerializer.INSTANCE) {
@@ -1102,11 +1102,15 @@ final class BPage<K,V>
 			  }
 		  }else{
 	          
-			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                  
-		          byte[] serialized = readByteArray( ois );
-		          if ( serialized != null ) {
-		              bpage._values[ i ] = _btree.valueSerializer.deserialize( new SerializerInput( new ByteArrayInputStream(serialized)) );
-		          }
+			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+                          long recid = ois.readPackedLong();
+                          if(recid!=0){
+                              byte[] serialized = (byte[])_btree._recman.fetch(recid);
+    //		              byte[] serialized = readByteArray( ois );
+		              if ( serialized != null ) {
+		                  bpage._values[ i ] = _btree.valueSerializer.deserialize( new SerializerInput( new ByteArrayInputStream(serialized)) );
+		            }
+                          }
 		      }
 		  }
 	}
@@ -1121,7 +1125,10 @@ final class BPage<K,V>
 		        if ( bpage._values[ i ] != null ) {
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		            _btree.valueSerializer.serialize(new SerializerOutput(baos), bpage._values[ i ] );
-		            writeByteArray( oos, baos.toByteArray() );
+
+                            long recid = _btree._recman.insert(baos.toByteArray());
+                            oos.writePackedLong(recid);
+		            //writeByteArray( oos, baos.toByteArray() );
 		        } else {
 		            writeByteArray( oos, null );
 		        }
@@ -1508,14 +1515,11 @@ final class BPage<K,V>
      */
     static byte[] leadingValuePackRead(DataInputStream in, byte[] previous, int ignoreLeadingCount) throws IOException
     {
-        int len = LongPacker.unpackInt(in) -1;
+        int len = LongPacker.unpackInt(in) -1;  // 0 indicates null
         if (len == -1)
                 return null;
 
-        int actualCommon = 0;
-
-        actualCommon = LongPacker.unpackInt(in);
-
+        int actualCommon = LongPacker.unpackInt(in);
 
         byte[] buf = new byte[ len ];
 

@@ -393,13 +393,10 @@ public class TestBTree
     public void testDelete()
         throws IOException
     {
-        RecordManager  recman;
-        BTree<String, Serializable>          tree;
         if ( DEBUG )
             System.out.println("TestBTree.testFind");
-        Properties props = new Properties();
-        recman = RecordManagerFactory.createRecordManager( newTestFile(), props );
-        tree = BTree.createInstance( recman);
+        RecordManager recman = newRecordManager();
+        BTree<String, Serializable> tree = BTree.createInstance( recman);
 
         // put enough data into the tree so we definitely have multiple pages
         for (int count = 1; count <= 1000; count++){
@@ -528,24 +525,21 @@ public class TestBTree
      * @throws Exception
      */
     public void testDeleteAllNodes() throws Exception {
-        RecordManager  recman;
-        BTree<String, Serializable>          tree;
+
         
         // we are going to run this test without object cache enabled.  If it is turned on,
         // we will have problems with using a different deserializer for BPages than the standard
         // serializer.
-        Properties props = new Properties();
-        props.setProperty(RecordManagerOptions.CACHE_TYPE, "none");
 
         String recordManagerBasename = newTestFile();
         String recordManagerDBname = recordManagerBasename+".dbr.0";
         
         long previousRecmanSize = 0;
         for (int i = 0; i < 5; i++){
-            recman = RecordManagerFactory.createRecordManager( recordManagerBasename, props );
+            RecordManager recman = new RecordManagerBuilder(recordManagerBasename).disableCache().build();
       
             try{
-                tree = BTree.createInstance( recman);
+                BTree<String, Serializable> tree = BTree.createInstance( recman);
                 String[] keys = new String[1000];
                 for (int count = 0; count < 1000; count++){
                     keys[count] = "num" + count;
@@ -794,15 +788,8 @@ public class TestBTree
             System.out.println("Thread "+_name+": stopped.");
         }
       } // end of class TestThread
-}
 
-
-/**
- * class for testing puroposes only (store as value in btree) not
- * implemented as inner class, as this prevents Serialization if
- * outer class is not Serializable.
- */
-class ObjectTT
+static class ObjectTT
     implements Serializable
 {
 
@@ -840,4 +827,8 @@ class ObjectTT
     }
 
 } // ObjectTT
+
+}
+
+
 

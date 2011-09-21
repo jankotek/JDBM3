@@ -48,7 +48,7 @@ public class TestPerformance extends TestCase {
     public void testInserts() throws Exception {
         RecordManager recman;
 
-        recman = RecordManagerFactory.createRecordManager(testfile);
+        recman = new RecordManagerBuilder(testfile).build();
 
         int inserts = 0;
         long start = System.currentTimeMillis();
@@ -82,15 +82,7 @@ public class TestPerformance extends TestCase {
      *  Create a database, return array of rowids.
      */
     private long[] makeRows() throws Exception {
-        RecordManager recman;
-        Properties    options;
-
-        options = new Properties();
-        options.setProperty( RecordManagerOptions.DISABLE_TRANSACTIONS, "true" );
-
-        recman = RecordManagerFactory.createRecordManager( testfile,
-                                                           options );
-
+        RecordManager recman = new RecordManagerBuilder( testfile).disableTransactions().build();
         long[] retval = new long[RECORDS];
         System.out.print("Creating test database");
         long start = System.currentTimeMillis();
@@ -117,11 +109,9 @@ public class TestPerformance extends TestCase {
      *  Test fetches
      */
     public void testFetches() throws Exception {
-        RecordManager recman;
-
         long[] rowids = makeRows();
 
-        recman = RecordManagerFactory.createRecordManager(testfile);;
+        RecordManager recman = new RecordManagerBuilder(testfile).build();
 
         int fetches = 0;
         long start = System.currentTimeMillis();
@@ -150,11 +140,9 @@ public class TestPerformance extends TestCase {
      *  Test updates.
      */
     public void testUpdates() throws Exception {
-        RecordManager recman;
-
         long[] rowids = makeRows();
 
-        recman = RecordManagerFactory.createRecordManager(testfile);
+        RecordManager recman =  new RecordManagerBuilder(testfile).build();
 
         int updates = 0;
         long start = System.currentTimeMillis();
@@ -186,11 +174,10 @@ public class TestPerformance extends TestCase {
      *  Test deletes.
      */
     public void testDeletes() throws Exception {
-        RecordManager recman;
 
         long[] rowids = makeRows();
 
-        recman = RecordManagerFactory.createRecordManager(testfile);
+        RecordManager recman =  new RecordManagerBuilder( testfile).build();
 
         int deletes = 0;
         long start = System.currentTimeMillis();

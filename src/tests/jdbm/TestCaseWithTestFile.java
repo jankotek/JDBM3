@@ -18,9 +18,6 @@ package jdbm;
 import java.io.File;
 import java.io.IOException;
 
-import jdbm.RecordFile;
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
 import junit.framework.TestCase;
 
 /**
@@ -98,7 +95,7 @@ public class TestCaseWithTestFile extends TestCase {
 	}
 
 	static public RecordManager newRecordManager() throws IOException{
-		return RecordManagerFactory.createRecordManager(newTestFile());
+		return new RecordManagerBuilder(newTestFile()).build();
 	}
 	
 	public void testDummy(){

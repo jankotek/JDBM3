@@ -1,8 +1,6 @@
 import java.io.IOException;
 
-import jdbm.PrimaryTreeMap;
-import jdbm.RecordManager;
-import jdbm.RecordManagerFactory;
+import jdbm.*;
 
 /**
  * This program demonstrates basic JDBM usage.
@@ -15,7 +13,7 @@ public class HelloWorld {
 
 		/** create (or open existing) database */
 		String fileName = "helloWorld";
-		RecordManager recMan = RecordManagerFactory.createRecordManager(fileName);
+		RecordManager recMan = new RecordManagerBuilder(fileName).build();
 		
 		/** Creates TreeMap which stores data in database.  
 		 *  Constructor method takes recordName (something like SQL table name)*/

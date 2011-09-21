@@ -32,19 +32,12 @@ public class TestInsertPerf extends TestCaseWithTestFile
         _numberOfObjects = numberOfObjects;
     }
 
-    public void insert()
-        throws IOException
-    {
+    public void insert() throws IOException {
 
-        BTree    btree;
-        RecordManager  recman;
+
         long           start, finish;
-        Properties     props;
-        
-        props = new Properties();
-        recman = RecordManagerFactory.createRecordManager( "TestInsertPref-" + System.currentTimeMillis(),
-                                                           props);
-        btree = BTree.createInstance(recman);
+        RecordManager recman = new RecordManagerBuilder( "TestInsertPref-" + System.currentTimeMillis()).build();
+        BTree btree = BTree.createInstance(recman);
         
         // Note:  One can use specialized serializers for better performance / database size
         // btree = BTree.createInstance( recman, new LongComparator(),

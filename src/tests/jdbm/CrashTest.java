@@ -30,7 +30,7 @@ public class CrashTest
     public CrashTest()
     {
         try {
-            _recman = RecordManagerFactory.createRecordManager( "crashtest" );
+            _recman = new RecordManagerBuilder( "crashtest" ).build();
 
             // create or reload HTree
             long recid = _recman.getNamedObject( "htree" );
