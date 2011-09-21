@@ -49,10 +49,10 @@ public class HashtableTest {
         // create or reload HTree
         long recid = recman.getNamedObject( name );
         if ( recid == 0 ) {
-            hashtable = HTree.createInstance( recman );
+            hashtable = new HTree( recman );
             recman.setNamedObject( name, hashtable.getRecid() );
         } else {
-            hashtable = HTree.load( recman, recid );
+            hashtable = new HTree( recman, recid );
         }
 
     }

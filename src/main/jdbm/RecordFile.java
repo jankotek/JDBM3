@@ -63,7 +63,7 @@ final class RecordFile {
     // transactions disabled?
     private boolean transactionsDisabled = false;
     
-    static final int DEFAULT_BLOCK_SIZE = 4096;
+    static final int DEFAULT_BLOCK_SIZE =2048;
 
 //    /** The length of a single block. */
     final int BLOCK_SIZE ;//= 8192;//4096;

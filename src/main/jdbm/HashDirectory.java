@@ -496,7 +496,7 @@ final class HashDirectory <K,V>
         private void prepareNext() throws IOException {
             long child_recid = 0;
 
-            // find next bucket/directory to enumerate
+            // get next bucket/directory to enumerate
             do {
                 _child++;
                 if (_child >= MAX_CHILDREN) {

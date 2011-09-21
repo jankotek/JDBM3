@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.concurrent.locks.Lock;
@@ -123,22 +122,22 @@ public class TestBTree
         tree.insert( test2, value2, false );
 
         byte[] result;
-        result = (byte[]) tree.find( test0 );
+        result = (byte[]) tree.get(test0);
         if ( result != null ) {
             throw new Error( "Test0 shouldn't be found" );
         }
 
-        result = (byte[]) tree.find( test1 );
+        result = (byte[]) tree.get(test1);
         if ( result == null || ByteArrayComparator.compareByteArray( result, value1 ) != 0 ) {
             throw new Error( "Invalid value for test1: " + result );
         }
 
-        result = (byte[]) tree.find( test2 );
+        result = (byte[]) tree.get(test2);
         if ( result == null || ByteArrayComparator.compareByteArray( result, value2 ) != 0 ) {
             throw new Error( "Invalid value for test2: " + result );
         }
 
-        result = (byte[]) tree.find( test3 );
+        result = (byte[]) tree.get(test3);
         if ( result != null ) {
             throw new Error( "Test3 shouldn't be found" );
         }
@@ -173,10 +172,10 @@ public class TestBTree
         tree.insert( test1, value1, false);
         tree.insert( test2, value2, false);
 
-        assertEquals( null, tree.find( test0 ) );
-        assertEquals( 0, ByteArrayComparator.compareByteArray( value1, (byte[]) tree.find( test1 ) ) );
-        assertEquals( 0, ByteArrayComparator.compareByteArray( value2, (byte[]) tree.find( test2 ) ) );
-        assertEquals( null, (byte[]) tree.find( test3 ) );
+        assertEquals( null, tree.get(test0) );
+        assertEquals( 0, ByteArrayComparator.compareByteArray( value1, (byte[]) tree.get(test1) ) );
+        assertEquals( 0, ByteArrayComparator.compareByteArray( value2, (byte[]) tree.get(test2) ) );
+        assertEquals( null, (byte[]) tree.get(test3) );
 
         recman.close();
      }
@@ -213,10 +212,10 @@ public class TestBTree
         tree.insert( test1, value1, false );
         tree.insert( test2, value2, false );
 
-        assertEquals( null, tree.find( test0 ) );
-        assertEquals( 0, ByteArrayComparator.compareByteArray( value1, (byte[]) tree.find( test1 ) ) );
-        assertEquals( 0, ByteArrayComparator.compareByteArray(value2, (byte[]) tree.find(test2)) );
-        assertEquals( null, (byte[]) tree.find( test3 ) );
+        assertEquals( null, tree.get(test0) );
+        assertEquals( 0, ByteArrayComparator.compareByteArray( value1, (byte[]) tree.get(test1) ) );
+        assertEquals( 0, ByteArrayComparator.compareByteArray(value2, (byte[]) tree.get(test2)) );
+        assertEquals( null, (byte[]) tree.get(test3) );
 
         recman.close();
 
@@ -228,7 +227,7 @@ public class TestBTree
         }
 
         try {
-            tree.find( test0 );
+            tree.get(test0);
             fail( "Should throw an IllegalStateException on access on not opened btree" );
         } catch( IllegalStateException except ) {
             // ignore
@@ -288,20 +287,20 @@ public class TestBTree
         tree.insert("two",new Long(2),false);
         tree.insert("myownobject",new ObjectTT(new Integer(234)),false);
 
-        assertEquals("value2",(String)tree.find("test2"));
-        assertEquals("value1",(String)tree.find("test1"));
-        assertEquals(new Integer(1),(Integer)tree.find("one"));
-        assertEquals(new Long(2),(Long)tree.find("two"));
+        assertEquals("value2",(String)tree.get("test2"));
+        assertEquals("value1",(String)tree.get("test1"));
+        assertEquals(new Integer(1),(Integer)tree.get("one"));
+        assertEquals(new Long(2),(Long)tree.get("two"));
 
         // what happens here? must not be replaced, does it return anything?
         // probably yes!
         assertEquals("value1",tree.insert("test1","value11",false));
-        assertEquals("value1",tree.find("test1")); // still the old value?
+        assertEquals("value1",tree.get("test1")); // still the old value?
         assertEquals("value1",tree.insert("test1","value11",true));
-        assertEquals("value11",tree.find("test1")); // now the new value!
+        assertEquals("value11",tree.get("test1")); // now the new value!
 
         ObjectTT expected_obj = new ObjectTT(new Integer(234));
-        ObjectTT btree_obj = (ObjectTT)tree.find("myownobject");
+        ObjectTT btree_obj = (ObjectTT)tree.get("myownobject");
         assertEquals(expected_obj, btree_obj);
 
         recman.close();
@@ -326,13 +325,13 @@ public class TestBTree
 
         tree.insert("test1", "value1",false);
         tree.insert("test2","value2",false);
-        assertEquals("value1",(String)tree.find("test1"));
-        assertEquals("value2",(String)tree.find("test2"));
+        assertEquals("value1",(String)tree.get("test1"));
+        assertEquals("value2",(String)tree.get("test2"));
         tree.remove("test1");
-        assertEquals(null,(String)tree.find("test1"));
-        assertEquals("value2",(String)tree.find("test2"));
+        assertEquals(null,(String)tree.get("test1"));
+        assertEquals("value2",(String)tree.get("test2"));
         tree.remove("test2");
-        assertEquals(null,(String)tree.find("test2"));
+        assertEquals(null,(String)tree.get("test2"));
 
         int iterations = 1000;
 
@@ -343,7 +342,7 @@ public class TestBTree
         assertEquals( iterations, tree.size() );
 
         for ( int count = 0; count < iterations; count++ ) {
-            assertEquals( new Integer( count ), tree.find( "num" + count ) );
+            assertEquals( new Integer( count ), tree.get("num" + count) );
         }
 
         for ( int count = 0; count < iterations; count++ ) {
@@ -356,7 +355,7 @@ public class TestBTree
     }
 
     /**
-     *  Test to find differents objects in the btree. (cdaller)
+     *  Test to get differents objects in the btree. (cdaller)
      */
     public void testFind()
         throws IOException
@@ -373,14 +372,14 @@ public class TestBTree
         tree.insert("test1", "value1",false);
         tree.insert("test2","value2",false);
 
-        Object value = tree.find("test1");
+        Object value = tree.get("test1");
         assertTrue(value instanceof String);
         assertEquals("value1",value);
 
         tree.insert("","Empty String as key",false);
-        assertEquals("Empty String as key",(String)tree.find(""));
+        assertEquals("Empty String as key",(String)tree.get(""));
 
-        assertEquals(null,(String)tree.find("someoneelse"));
+        assertEquals(null,(String)tree.get("someoneelse"));
 
         recman.close();
     }
@@ -441,10 +440,10 @@ public class TestBTree
            }
         }
 
-           // find data
+           // get data
          for(int count = 0; count < iterations; count++)
          {
-           assertEquals(new Integer(count), tree.find("num"+count));
+           assertEquals(new Integer(count), tree.get("num" + count));
          }
 
              // delete data
@@ -650,7 +649,7 @@ public class TestBTree
     protected static boolean containsKey( Object key, BTree btree )
         throws IOException
     {
-        return ( btree.find( key ) != null );
+        return ( btree.get(key) != null );
     }
 
 
@@ -683,7 +682,7 @@ public class TestBTree
     protected static boolean contains( Map.Entry entry, BTree btree )
         throws IOException
     {
-        Object tree_obj = btree.find(entry.getKey());
+        Object tree_obj = btree.get(entry.getKey());
         if ( tree_obj == null ) {
             // can't distuingish, if value is null or not found!!!!!!
             return ( entry.getValue() == null );
@@ -746,7 +745,7 @@ public class TestBTree
             }
             while( iterator.hasNext() ) {
                 entry = (Map.Entry) iterator.next();
-                assertEquals( entry.getValue(), _btree.find( entry.getKey() ) );
+                assertEquals( entry.getValue(), _btree.get(entry.getKey()) );
                 assertTrue( contains( entry, _btree ) );
                 assertTrue( containsKey( entry.getKey(), _btree ) );
                 assertTrue( containsValue( entry.getValue(), _btree ) );

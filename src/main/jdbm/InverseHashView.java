@@ -17,7 +17,7 @@ package jdbm;
 
 /**
  * Provides inverse view on persisted map.
- * It uses hash index to find Key which belongs to Value. Value must correctly implement hashCode .
+ * It uses hash index to get Key which belongs to Value. Value must correctly implement hashCode .
  * Internally is backed by SecondaryTreeMap which uses value hashCode as Secondary key.  
  * 
  * @author Jan Kotek

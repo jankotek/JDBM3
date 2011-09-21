@@ -67,7 +67,7 @@ final class FreePhysicalRowIdPageManager {
                 if(lastMaxSize!=-1 && size>lastMaxSize)
                     return 0;
 
-		// Loop through the free physical rowid list until we find
+		// Loop through the free physical rowid list until we get
 		// a rowid that's large enough.
 		long retval = 0;
 		PageCursor curs = new PageCursor(_pageman, Magic.FREEPHYSIDS_PAGE);

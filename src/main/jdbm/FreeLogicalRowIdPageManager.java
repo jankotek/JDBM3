@@ -58,7 +58,7 @@ final class FreeLogicalRowIdPageManager {
     		return first;
     	}
   
-        // Loop through the free Logical rowid list until we find
+        // Loop through the free Logical rowid list until we get
         // the first rowid.
         long retval = 0;
         PageCursor curs = new PageCursor(pageman, Magic.FREELOGIDS_PAGE);

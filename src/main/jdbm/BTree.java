@@ -422,7 +422,7 @@ class BTree<K,V>
      * @param key Lookup key.
      * @return Value associated with the key, or null if not found.
      */
-    public V find( K key )
+    public V get(K key)
         throws IOException
     {
         if ( key == null ) {
@@ -440,10 +440,10 @@ class BTree<K,V>
         	lock.readLock().unlock();
         }
 //        Tuple<K,V> tuple = new Tuple<K,V>( null, null );
-//        TupleBrowser<K,V> browser = rootPage.find( _height, key );
+//        TupleBrowser<K,V> browser = rootPage.get( _height, key );
 //
 //        if ( browser.getNext( tuple ) ) {
-//            // find returns the matching key or the next ordered key, so we must
+//            // get returns the matching key or the next ordered key, so we must
 //            // check if we have an exact match
 //            if ( _comparator.compare( key, tuple.getKey() ) != 0 ) {
 //                return null;

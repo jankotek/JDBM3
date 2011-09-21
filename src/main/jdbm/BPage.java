@@ -236,7 +236,7 @@ final class BPage<K,V>
 
         /*
         if ( DEBUG ) {
-            System.out.println( "BPage.find() current: " + this
+            System.out.println( "BPage.get() current: " + this
                                 + " height: " + height);
         }
         */
@@ -269,7 +269,7 @@ final class BPage<K,V>
 
         /*
         if ( DEBUG ) {
-            System.out.println( "BPage.find() current: " + this
+            System.out.println( "BPage.get() current: " + this
                                 + " height: " + height);
         }
         */
@@ -279,7 +279,7 @@ final class BPage<K,V>
         if ( height == 0 ) {
 
             K key2 =   _keys[ index ];
-//          // find returns the matching key or the next ordered key, so we must
+//          // get returns the matching key or the next ordered key, so we must
 //          // check if we have an exact match
           if ( key2==null || _btree._comparator.compare( key, key2 ) != 0 ) 
               return null;

@@ -42,12 +42,12 @@ public class TestRollback
         HTree<String,String> tree = null;
         if ( root == 0 ) {
             // create a new one
-            tree = HTree.createInstance( recman );
+            tree = new HTree( recman );
             root = tree.getRecid();
             recman.setNamedObject( "xyz", root );
             recman.commit();
         } else {
-            tree = HTree.load( recman, root );
+            tree = new HTree( recman, root );
         }
 
         tree.put( "Foo", "Bar" );
@@ -59,7 +59,7 @@ public class TestRollback
 
         recman.rollback();
 
-        tree = HTree.load( recman, root );
+        tree = new HTree( recman, root );
         assertTrue( tree.find( "Foo" ).equals( "Bar" ) );
         assertTrue( tree.find( "Fo" ).equals( "Fum" ) );
         assertTrue( tree.find( "Hello" ) == null );
@@ -83,12 +83,12 @@ public class TestRollback
         HTree tree = null;
         if ( root == 0 ) {
             // create a new one
-            tree = HTree.createInstance( recman );
+            tree = new HTree( recman );
             root = tree.getRecid();
             recman.setNamedObject( "xyz", root );
             recman.commit();
         } else {
-            tree = HTree.load( recman, root );
+            tree = new HTree( recman, root );
         }
 
         tree.put( "hello", "world" );
@@ -137,9 +137,9 @@ public class TestRollback
         recman.rollback();
 
         tree = BTree.load( recman, root );
-        assertTrue( tree.find( "Foo" ).equals( "Bar" ) );
-        assertTrue( tree.find( "Fo" ).equals( "Fum" ) );
-        assertTrue( tree.find( "Hello" ) == null );
+        assertTrue( tree.get("Foo").equals( "Bar" ) );
+        assertTrue( tree.get("Fo").equals( "Fum" ) );
+        assertTrue( tree.get("Hello") == null );
     }		
 
     
@@ -175,9 +175,9 @@ public class TestRollback
         tree.insert( "derek", "dick",true );
         recman.rollback();
 
-        assertTrue( tree.find( "derek" ) == null );
-        assertTrue( tree.find( "goodnight" ).equals( "gracie" ) );
-        assertTrue( tree.find( "hello" ).equals( "world" ) );
+        assertTrue( tree.get("derek") == null );
+        assertTrue( tree.get("goodnight").equals( "gracie" ) );
+        assertTrue( tree.get("hello").equals( "world" ) );
     }
 	    
     

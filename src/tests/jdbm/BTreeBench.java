@@ -96,7 +96,7 @@ public class BTreeBench extends TestCaseWithTestFile {
         while ( enumeration.hasMoreElements() ) {
             Long key = enumeration.nextElement();
             Long hashValue = hash.get( key );
-            Long treeValue = tree.find( key );
+            Long treeValue = tree.get(key);
             if ( ! hashValue.equals( treeValue ) ) {
                 System.out.println( "Compare expected " + hashValue + " got " + treeValue );
                 failed = true;

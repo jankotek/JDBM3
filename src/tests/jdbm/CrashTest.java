@@ -35,10 +35,10 @@ public class CrashTest
             // create or reload HTree
             long recid = _recman.getNamedObject( "htree" );
             if ( recid == 0 ) {
-                _htree = HTree.createInstance( _recman );
+                _htree = new  HTree( _recman );
                 _recman.setNamedObject( "htree", _htree.getRecid() );
             } else {
-                _htree = HTree.load( _recman, recid );
+                _htree = new HTree( _recman, recid );
             }
 
             checkConsistency();

@@ -53,6 +53,6 @@ public interface JdbmBase<K,V> {
      * @return value or null if not found
      * @throws IOException
      */
-    V find(K k) throws IOException;
+    V get(K k) throws IOException;
     
 }

@@ -12,20 +12,20 @@ public class TestIssues extends TestCaseWithTestFile{
      */
     public void testHTreeClear() throws IOException {
         final RecordManager recman = newRecordManager();
-        final HTree tree = HTree.createInstance(recman);
+        final HTree<String,String> tree = new  HTree(recman);
         recman.setNamedObject("test", tree.getRecid());
-        final HTreeMap<String,String> treeMap = tree.asMap();
+
 
         for (int i = 0; i < 1001; i++) {
-            treeMap.put(String.valueOf(i),String.valueOf(i));
+            tree.put(String.valueOf(i),String.valueOf(i));
         }
         recman.commit();
         System.out.println("finished adding");
 
-        treeMap.clear();
+        tree.clear();
         recman.commit();
         System.out.println("finished clearing");
-        assertTrue(treeMap.isEmpty());
+        assertTrue(tree.isEmpty());
     }
 
 

@@ -60,9 +60,6 @@ final class BaseRecordManager
 
 	private static final String DBR = ".dbr";
 
-	static final int DATA_BLOCK_SIZE = 1024 * 8 ;
-	static final int TRANS_BLOCK_SIZE = 1024 * 2;
-	static final int FREE_BLOCK_SIZE = 1024;
 	
     /**
 	 * Version of storage. It should be safe to open lower versions, but engine should throw exception
@@ -168,10 +165,9 @@ final class BaseRecordManager
 	private Deflater deflater;
 	/** inflater used to decompress data if needed*/
 	private Inflater inflater;
+
 	
-	private static final int BUFFER_SIZE = 4096 * 2;
-	
-	private final byte[] _insertBuffer = new byte[BUFFER_SIZE];
+	private final byte[] _insertBuffer = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
 	private final OpenByteArrayOutputStream _insertBAO = new OpenByteArrayOutputStream(_insertBuffer);
 	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
@@ -198,14 +194,14 @@ final class BaseRecordManager
 
 
 	private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
+        _physFile = new RecordFile( _filename + DBR, RecordFile.DEFAULT_BLOCK_SIZE);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
-        if(TRANS_BLOCK_SIZE>256*8)
+        if(RecordFile.DEFAULT_BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
-        _logicFile = new RecordFile( _filename +IDR,TRANS_BLOCK_SIZE );
+        _logicFile = new RecordFile( _filename +IDR, RecordFile.DEFAULT_BLOCK_SIZE);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -638,7 +634,7 @@ final class BaseRecordManager
 		}
 		for(long pageid:logicalPages){			
 			BlockIo io = _logicFile.get(pageid); 
-			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io,TRANS_BLOCK_SIZE);
+			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io, RecordFile.DEFAULT_BLOCK_SIZE);
 		
 			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
 				int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
@@ -647,7 +643,7 @@ final class BaseRecordManager
 				long logicalRowId = Location.toLong(pageid,(short)pos);
 
 
-				//find physical location
+				//get physical location
 				long physRowId = Location.toLong(
 						xlatPage.getLocationBlock((short)pos),
 						xlatPage.getLocationOffset((short)pos));

@@ -29,7 +29,7 @@ public class BTreeSecondarySortedMap<A,K,V> extends BTreeSortedMap<A,Iterable<K>
 	
 	public V getPrimaryValue(K k) {		
 		try {
-			return b.find(k);
+			return b.get(k);
 		} catch (IOException e) {
 			throw new IOError(e);
 		}

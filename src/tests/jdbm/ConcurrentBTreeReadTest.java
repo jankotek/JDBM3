@@ -103,7 +103,7 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
     
     private Object fetch(Long id) throws IOException {
         try {
-	        return btree.find(id);
+	        return btree.get(id);
         } catch (IOException e) {
             System.out.println("ERR " + id);
             e.printStackTrace();

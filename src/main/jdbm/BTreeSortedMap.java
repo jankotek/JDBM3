@@ -85,7 +85,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 					try {
 						if(!inBounds(e.getKey()))
 							return false;
-						if(e.getKey()!=null && tree.find(e.getKey())!=null)
+						if(e.getKey()!=null && tree.get(e.getKey())!=null)
 							return true;
 					} catch (IOException e1) {
 						throw new IOError(e1);
@@ -164,7 +164,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 							return false;
 						if(!inBounds(e.getKey()))
 							throw new IllegalArgumentException("out of bounds");
-						//find old value, must be same as item in entry
+						//get old value, must be same as item in entry
 						V v = get(e.getKey());
 						if(v == null || !e.getValue().equals(v))
 							return false;
@@ -214,7 +214,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 				return null;
 			if(!inBounds((K)key))
 				return null;
-			return tree.find((K) key);
+			return tree.get((K) key);
 		}catch (ClassCastException e){
 			return null;
 		}catch (IOException e){
@@ -229,7 +229,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 			throw new UnsupportedOperationException("readonly");
 		
 		try{
-			if(key == null || tree.find((K) key)== null)
+			if(key == null || tree.get((K) key)== null)
 				return null;
 			if(!inBounds((K) key))
 				throw new IllegalArgumentException("out of bounds");
@@ -264,7 +264,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		try {
 			if(!inBounds((K) key))
 				return false;
-			V v = tree.find((K) key);
+			V v = tree.get((K) key);
 			return v!=null;
 		} catch (IOException e) {
 			throw new IOError(e);

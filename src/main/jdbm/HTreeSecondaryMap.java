@@ -18,17 +18,31 @@ package jdbm;
 import java.io.IOError;
 import java.io.IOException;
 
-public class HTreeSecondaryMap<A,K,V> extends HTreeMap<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
+public class HTreeSecondaryMap<A,K,V> extends HTree<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
 
 	protected final JdbmBase<K,V > b;
-	public HTreeSecondaryMap(HTree<A, Iterable<K>> tree, JdbmBase<K,V> b) {
-		super(tree, true);
+
+	public HTreeSecondaryMap(JdbmBase<K,V> b) {
+		super();
+                readonly = true;
 		this.b = b;
 	}
-	
-	public V getPrimaryValue(K k) {		
+
+    public HTreeSecondaryMap(JdbmBase<K,V > b, long recid, Serializer<A> secondaryKeySerializer) throws IOException {
+        //load existing instance
+        super(b.getRecordManager(),recid,secondaryKeySerializer,null);
+        this.b = b;
+    }
+
+    public HTreeSecondaryMap(JdbmBase<K,V > b,Serializer<A> secondaryKeySerializer) throws IOException {
+        //create new instance
+        super(b.getRecordManager(),secondaryKeySerializer,(Serializer<Iterable<K>>) null);
+        this.b =b;
+    }
+
+    public V getPrimaryValue(K k) {		
 		try {
-			return b.find(k);
+			return b.get(k);
 		} catch (IOException e) {
 			throw new IOError(e);
 		}

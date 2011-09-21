@@ -41,12 +41,12 @@ abstract class RecordManagerImpl implements RecordManager{
         
 			long recid = getNamedObject( name);
 			if ( recid != 0 ) {
-				tree = HTree.load( this, recid, keySerializer, valueSerializer);
+				tree = new HTree( this, recid, keySerializer, valueSerializer);
 			} else {
-				tree = HTree.createInstance(this, keySerializer, valueSerializer);
+				tree = new HTree(this, keySerializer, valueSerializer);
 				setNamedObject( name, tree.getRecid() );
 			}
-			return tree.asMap();
+			return tree;
 		}catch(IOException  e){
 			throw new IOError(e);
 		}

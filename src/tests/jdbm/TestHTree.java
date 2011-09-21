@@ -47,7 +47,7 @@ public class TestHTree extends TestCaseWithTestFile {
         }
         recman.commit();
     
-        Iterator fi = testTree.values();
+        Iterator fi = testTree.values().iterator();
         Object item;
         int count = 0;
         while(fi.hasNext()) {
@@ -61,7 +61,7 @@ public class TestHTree extends TestCaseWithTestFile {
 
     public void testRecordListener() throws IOException{
         RecordManager recman = newRecordManager();
-        HTree<Integer,String> tree = HTree.createInstance( recman);
+        HTree<Integer,String> tree = new HTree( recman);
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
         final List<SimpleEntry<Integer,String>> updNew = new ArrayList();
@@ -123,9 +123,9 @@ public class TestHTree extends TestCaseWithTestFile {
         long recId = recman.getNamedObject("htree");  
         HTree testTree;
         if ( recId != 0 ) {
-            testTree = HTree.load( recman, recId );
+            testTree = new HTree( recman, recId );
         } else {
-            testTree = HTree.createInstance( recman );
+            testTree = new HTree( recman );
             recman.setNamedObject( "htree", testTree.getRecid() );
         }
         return testTree;

@@ -53,7 +53,7 @@ final class SecondaryKeyHelper {
 				A secKey = keyExtractor.extractSecondaryKey(key,value);
 				if(secKey == null)
 					return;
-				List<K> kk = (List<K>) secIndex2.find(secKey);
+				List<K> kk = (List<K>) secIndex2.get(secKey);
 				if(kk == null) kk = new ArrayList<K>();
 				kk.add(key);
 				secIndex2.insert(secKey, kk, true);
@@ -61,7 +61,7 @@ final class SecondaryKeyHelper {
 
 			public void recordRemoved(K key, V value) throws IOException {
 				A secKey = keyExtractor.extractSecondaryKey(key,value);
-				List<K> kk = (List<K>) secIndex2.find(secKey);
+				List<K> kk = (List<K>) secIndex2.get(secKey);
 				if(kk == null) return;
 				kk.remove(key);
 				if(kk.isEmpty())
@@ -102,15 +102,16 @@ final class SecondaryKeyHelper {
         return secIndex;
     }
 
-    static public <A,K,V> HTree<A,Iterable<K>>  secondaryHTree(String objectName, 
-    		final SecondaryKeyExtractor<A,K,V> keyExtractor, JdbmBase<K,V> b,Serializer<A> secondaryKeySerializer)
-    		throws IOException{
-    	HTree<A,Iterable<K>> secIndex = null;
+      public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMap(
+    		String objectName, final SecondaryKeyExtractor<A, K, V> secKeyExtractor, JdbmBase<K,V> b,
+            Serializer<A> secondaryKeySerializer){
+          try{
+    	HTreeSecondaryMap<A,K,V> secIndex = null;
         long recid = b.getRecordManager().getNamedObject( objectName );
         if ( recid != 0 ) {
-            secIndex = HTree.load(b.getRecordManager(), recid,secondaryKeySerializer,null );
+            secIndex = new HTreeSecondaryMap(b, recid,secondaryKeySerializer );
         } else {
-            secIndex = HTree.createInstance( b.getRecordManager(),secondaryKeySerializer,null);
+            secIndex =new  HTreeSecondaryMap(b,secondaryKeySerializer);
             b.getRecordManager().setNamedObject( objectName, secIndex.getRecid() );
         }
         
@@ -120,7 +121,7 @@ final class SecondaryKeyHelper {
         b.addRecordListener(new RecordListener<K, V>() {
 
 			public void recordInserted(K key, V value) throws IOException {
-				A secKey = keyExtractor.extractSecondaryKey(key,value);
+				A secKey = secKeyExtractor.extractSecondaryKey(key,value);
 				if(secKey == null)
 					return;
 				List<K> kk = (List<K>) secIndex2.find(secKey);
@@ -130,7 +131,7 @@ final class SecondaryKeyHelper {
 			}
 
 			public void recordRemoved(K key, V value) throws IOException {
-				A secKey = keyExtractor.extractSecondaryKey(key,value);
+				A secKey = secKeyExtractor.extractSecondaryKey(key,value);
 				List<K> kk = (List<K>) secIndex2.find(secKey);
 				if(kk == null) return;
 				kk.remove(key);
@@ -142,8 +143,8 @@ final class SecondaryKeyHelper {
 
 			public void recordUpdated(K key, V oldValue, V newValue)
 					throws IOException {
-				A oldSecKey = keyExtractor.extractSecondaryKey(key,oldValue);
-				A newSecKey = keyExtractor.extractSecondaryKey(key,newValue);
+				A oldSecKey = secKeyExtractor.extractSecondaryKey(key,oldValue);
+				A newSecKey = secKeyExtractor.extractSecondaryKey(key,newValue);
 				if(oldSecKey==null && newSecKey == null)
 					return;
 				
@@ -170,6 +171,10 @@ final class SecondaryKeyHelper {
 		});
 
         return secIndex;
+
+          }catch(IOException e){
+              throw new IOError(e);
+          }
     }
     
     
@@ -194,7 +199,7 @@ final class SecondaryKeyHelper {
 				for(A secKey : keyExtractor.extractSecondaryKey(key,value)){
 				if(secKey == null)
 					return;
-				List<K> kk = (List<K>) secIndex2.find(secKey);
+				List<K> kk = (List<K>) secIndex2.get(secKey);
 				if(kk == null) kk = new ArrayList<K>();
 				kk.add(key);
 				secIndex2.insert(secKey, kk, true);
@@ -203,7 +208,7 @@ final class SecondaryKeyHelper {
 
 			public void recordRemoved(K key, V value) throws IOException {
 				for(A secKey : keyExtractor.extractSecondaryKey(key,value)){
-				List<K> kk = (List<K>) secIndex2.find(secKey);
+				List<K> kk = (List<K>) secIndex2.get(secKey);
 				if(kk == null) return;
 				kk.remove(key);
 				if(kk.isEmpty())
@@ -245,15 +250,16 @@ final class SecondaryKeyHelper {
         return secIndex;
     }
 
-    static public <A,K,V> HTree<A,Iterable<K>>  secondaryHTreeManyToOne(String objectName, 
-    		final SecondaryKeyExtractor<Iterable<A>,K,V> keyExtractor, JdbmBase<K,V> b,Serializer<A> secondaryKeySerializer)
-    		throws IOException{
-    	HTree<A,Iterable<K>> secIndex = null;
+    public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMapManyToOne(
+    		String objectName, final SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, JdbmBase<K,V> b,
+                Serializer<A> secondaryKeySerializer){
+        try{
+    	HTreeSecondaryMap<A,K,V> secIndex = null;
         long recid = b.getRecordManager().getNamedObject( objectName );
         if ( recid != 0 ) {
-            secIndex = HTree.load(b.getRecordManager(), recid,secondaryKeySerializer,null );
+            secIndex = new HTreeSecondaryMap(b, recid,secondaryKeySerializer);
         } else {
-            secIndex = HTree.createInstance( b.getRecordManager(),secondaryKeySerializer,null);
+            secIndex = new HTreeSecondaryMap(b,secondaryKeySerializer);
             b.getRecordManager().setNamedObject( objectName, secIndex.getRecid() );
         }
         
@@ -263,7 +269,7 @@ final class SecondaryKeyHelper {
         b.addRecordListener(new RecordListener<K, V>() {
 
 			public void recordInserted(K key, V value) throws IOException {
-				for(A secKey : keyExtractor.extractSecondaryKey(key,value)){
+				for(A secKey : secKeyExtractor.extractSecondaryKey(key,value)){
 				if(secKey == null)
 					return;
 				List<K> kk = (List<K>) secIndex2.find(secKey);
@@ -274,7 +280,7 @@ final class SecondaryKeyHelper {
 			}
 
 			public void recordRemoved(K key, V value) throws IOException {
-				for(A secKey : keyExtractor.extractSecondaryKey(key,value)){
+				for(A secKey : secKeyExtractor.extractSecondaryKey(key,value)){
 				List<K> kk = (List<K>) secIndex2.find(secKey);
 				if(kk == null) return;
 				kk.remove(key);
@@ -287,8 +293,8 @@ final class SecondaryKeyHelper {
 
 			public void recordUpdated(K key, V oldValue, V newValue)
 					throws IOException {
-				Iterable<A> oldSecKey = keyExtractor.extractSecondaryKey(key,oldValue);
-				Iterable<A> newSecKey = keyExtractor.extractSecondaryKey(key,newValue);
+				Iterable<A> oldSecKey = secKeyExtractor.extractSecondaryKey(key,oldValue);
+				Iterable<A> newSecKey = secKeyExtractor.extractSecondaryKey(key,newValue);
 				if(oldSecKey==null && newSecKey == null)
 					return;
 				
@@ -315,19 +321,9 @@ final class SecondaryKeyHelper {
 		});
 
         return secIndex;
-    }
-
-
-    public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMap( 
-    		String objectName, SecondaryKeyExtractor<A, K, V> secKeyExtractor, JdbmBase<K,V> b,
-            Serializer<A> secondaryKeySerializer){
-    	try{
-    		HTree<A,Iterable<K>> secTree = secondaryHTree(objectName, secKeyExtractor, b,secondaryKeySerializer);
-    		HTreeSecondaryMap<A, K, V> ret = new HTreeSecondaryMap<A, K, V>(secTree, b);
-    		return ret;
-    	}catch (IOException e){
-    		throw new IOError(e);
-    	}
+        }catch(IOException e){
+            throw new IOError(e);
+        }
     }
 
     public static <A,K,V> SecondaryTreeMap<A,K,V> secondaryTreeMap( 
@@ -344,19 +340,7 @@ final class SecondaryKeyHelper {
     		throw new IOError(e);
     	}
     }
-    
 
-    public static <A,K,V> SecondaryHashMap<A,K,V> secondaryHashMapManyToOne( 
-    		String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, JdbmBase<K,V> b,
-            Serializer<A> secondaryKeySerializer){
-    	try{
-    		HTree<A,Iterable<K>> secTree = secondaryHTreeManyToOne(objectName, secKeyExtractor, b,secondaryKeySerializer);
-    		HTreeSecondaryMap<A, K, V> ret = new HTreeSecondaryMap<A, K, V>(secTree, b);
-    		return ret;
-    	}catch (IOException e){
-    		throw new IOError(e);
-    	}
-    }
 
     public static <A,K,V> SecondaryTreeMap<A,K,V> secondarySortedMapManyToOne( 
     		String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secKeyExtractor, 
@@ -433,7 +417,7 @@ final class SecondaryKeyHelper {
 
 					public V next() {
 						try {
-							return b.find(iter.next());
+							return b.get(iter.next());
 						} catch (IOException e) {
 							throw new IOError(e);
 						}
