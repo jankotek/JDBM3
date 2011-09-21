@@ -26,9 +26,9 @@ import java.io.IOException;
 class PageHeader implements BlockView {
     // offsets
     private static final short O_MAGIC = 0; // short magic
-    private static final short O_NEXT = Magic.SZ_SHORT;  // long next
-    private static final short O_PREV = O_NEXT + Magic.SZ_LONG; // long prev
-    protected static final short SIZE = O_PREV + Magic.SZ_LONG;
+    private static final short O_NEXT = Magic.SZ_SHORT;
+    private static final short O_PREV = O_NEXT + Magic.SZ_SIX_BYTE_LONG;
+    protected static final short SIZE = O_PREV + Magic.SZ_SIX_BYTE_LONG;
 
     static final short PhysicalRowId_O_BLOCK = 0; // long block
     static final short PhysicalRowId_O_OFFSET = Magic.SZ_SIX_BYTE_LONG; // short offset
@@ -105,25 +105,25 @@ class PageHeader implements BlockView {
     /** Returns the next block. */
     long getNext() {
         paranoiaMagicOk();
-        return block.readLong(O_NEXT);
+        return block.readSixByteLong(O_NEXT);
     }
     
     /** Sets the next block. */
     void setNext(long next) {
         paranoiaMagicOk();
-        block.writeLong(O_NEXT, next);
+        block.writeSixByteLong(O_NEXT, next);
     }
     
     /** Returns the previous block. */
     long getPrev() {
         paranoiaMagicOk();
-        return block.readLong(O_PREV);
+        return block.readSixByteLong(O_PREV);
     }
     
     /** Sets the previous block. */
     void setPrev(long prev) {
         paranoiaMagicOk();
-        block.writeLong(O_PREV, prev);
+        block.writeSixByteLong(O_PREV, prev);
     }
     
     /** Sets the type of the page header */
