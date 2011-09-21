@@ -223,7 +223,10 @@ class CacheRecordManager
         	cachePut(recid,value, serializer,false);
         	else{ //put record into soft cache
         		synchronized(_softHash){
+                            if(_useSoftReference)
         			_softHash.put(recid,new SoftCacheEntry(recid, value, _refQueue));
+                            else
+                                _softHash.put(recid,new WeakCacheEntry(recid, value, _refQueue));
         		}
         	}
         	return value;
