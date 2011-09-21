@@ -200,16 +200,17 @@ public class RecordManagerBuilder {
         }
 
         if("mru".equals(cacheType2)){
-            recman = new CacheRecordManager( recman,mruCacheSize,false);
+            recman = new CacheRecordManager( recman,mruCacheSize,false,true);
         }else if("soft".equals(cacheType2)){
-             recman = new CacheRecordManager(recman, 0,true);
+             recman = new CacheRecordManager(recman, 0,true,true);
+        }else if("weak".equals(cacheType2)){
+             recman = new CacheRecordManager(recman, 0,true,false);
+
         }else if("none".equals(cacheType2)){
             //do nothing
         }else{
             throw new IllegalArgumentException("Unknown cache type: "+cacheType2);
         }
-        //TODO handle weak cache
-
 
 
          return recman;

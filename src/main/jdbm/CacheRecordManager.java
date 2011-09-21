@@ -46,12 +46,12 @@ class CacheRecordManager
      * This map is accessed from SoftCache Disposer thread, so all access must be 
      * synchronized  
      */
-	protected LongHashMap<SoftCacheEntry> _softHash;
+	protected LongHashMap<ReferenceCacheEntry> _softHash;
 
 	/**
 	 * Reference queue used to collect Soft Cache entries 
 	 */
-	protected ReferenceQueue<SoftCacheEntry> _refQueue;
+	protected ReferenceQueue<ReferenceCacheEntry> _refQueue;
 	
 
     /**
@@ -62,8 +62,11 @@ class CacheRecordManager
     /**
      * True if enable second level soft cache
      */
-	protected boolean _softCache;
-	
+	protected boolean _enableReferenceCache;
+
+    /** True if SoftReference should be used, otherwise use WeakReference */
+        protected boolean _useSoftReference;
+
 	/**
 	 * Thread in which Soft Cache references are disposed
 	 */
@@ -82,15 +85,18 @@ class CacheRecordManager
      * which has been used most recently.
      */
 	protected CacheEntry _last;
-	
+
+
     /**
      * Construct a CacheRecordManager wrapping another RecordManager and
      * using a given cache policy.
      *
      * @param recman Wrapped RecordManager
-     * @param cache Cache policy
+     * @param maxRecords maximal number of records in MRU cache
+     * @param enableReferenceCache if cache using WeakReference or SoftReference should be enabled
+     * @param useSoftReference if reference cache is enabled, decides beetween Soft or Weak reference
      */
-    public CacheRecordManager( RecordManager recman, int maxRecords, boolean softCache)
+    public CacheRecordManager( RecordManager recman, int maxRecords, boolean enableReferenceCache, boolean useSoftReference)
     {
         if ( recman == null ) {
             throw new IllegalArgumentException( "Argument 'recman' is null" );
@@ -98,11 +104,12 @@ class CacheRecordManager
         _hash = new LongHashMap<CacheEntry>(maxRecords);
         _recman = recman;
         _max = maxRecords;
-        _softCache = softCache;
+        _enableReferenceCache = enableReferenceCache;
+        _useSoftReference = useSoftReference;
         
-        if(softCache){
-        	_softHash = new LongHashMap<SoftCacheEntry>();
-        	_refQueue = new ReferenceQueue<SoftCacheEntry>();
+        if(enableReferenceCache){
+        	_softHash = new LongHashMap<ReferenceCacheEntry>();
+        	_refQueue = new ReferenceQueue<ReferenceCacheEntry>();
         	_softRefThread = new Thread(
         			new SoftRunnable(this, _refQueue),
         			"JDBM Soft Cache Disposer "+(threadCounter++));
@@ -162,8 +169,8 @@ class CacheRecordManager
             removeEntry(entry);
             _hash.remove(entry._recid);
         }
-        if(_softCache) synchronized(_softHash) {
-        	SoftCacheEntry e = _softHash.remove(recid);
+        if(_enableReferenceCache) synchronized(_softHash) {
+        	ReferenceCacheEntry e = _softHash.remove(recid);
         	if(e!=null){
         		e.clear();
         	}
@@ -176,9 +183,9 @@ class CacheRecordManager
         throws IOException
     {       
         checkIfClosed();
-        if(_softCache) synchronized(_softHash) {
+        if(_enableReferenceCache) synchronized(_softHash) {
         	//soft cache can not contain dirty objects
-        	SoftCacheEntry e = _softHash.remove(recid);
+        	ReferenceCacheEntry e = _softHash.remove(recid);
         	if(e != null){
         		e.clear();
         	}
@@ -199,8 +206,8 @@ class CacheRecordManager
         throws IOException
     {
         checkIfClosed();
-        if(_softCache) synchronized(_softHash){
-        	SoftCacheEntry e = _softHash.get(recid);
+        if(_enableReferenceCache) synchronized(_softHash){
+        	ReferenceCacheEntry e = _softHash.get(recid);
         	if(e!=null){
         		Object a = e.get();
         		if(a!=null){
@@ -212,7 +219,7 @@ class CacheRecordManager
         CacheEntry entry = (CacheEntry) cacheGet( recid );
         if ( entry == null ) {
         	A value = _recman.fetch( recid, serializer );
-        	if(!_softCache)
+        	if(!_enableReferenceCache)
         	cachePut(recid,value, serializer,false);
         	else{ //put record into soft cache
         		synchronized(_softHash){
@@ -236,7 +243,7 @@ class CacheRecordManager
         _recman = null;
         _hash = null;
         _softHash = null;
-        if(_softCache)
+        if(_enableReferenceCache)
         	_softRefThread.interrupt();
     }
 
@@ -260,10 +267,10 @@ class CacheRecordManager
         // discard all cache entries since we don't know which entries
         // where part of the transaction
     	_hash.clear();
-    	if(_softCache) synchronized(_softHash) {
-        	Iterator<SoftCacheEntry> iter = _softHash.valuesIterator();
+    	if(_enableReferenceCache) synchronized(_softHash) {
+        	Iterator<ReferenceCacheEntry> iter = _softHash.valuesIterator();
         	while(iter.hasNext()){
-        		SoftCacheEntry e = iter.next();    		
+        		ReferenceCacheEntry e = iter.next();
     			e.clear();
     		}
     		_softHash.clear();
@@ -452,21 +459,46 @@ class CacheRecordManager
             _isDirty = isDirty;
         }
         
-    } 
+    }
+
+    protected interface ReferenceCacheEntry {
+        long getRecid();
+        void clear();
+        Object get();
+    }
 
     @SuppressWarnings("unchecked")
-	protected static final class SoftCacheEntry extends SoftReference
+    protected static final class SoftCacheEntry extends SoftReference implements ReferenceCacheEntry
     {
+        protected final long _recid;
 
-        protected long _recid;
+        public long getRecid(){
+            return _recid;
+        }
 
         SoftCacheEntry( long recid, Object obj,  ReferenceQueue queue)
         {
-        	super(obj,queue);
-            _recid = recid;
+           super(obj,queue);
+           _recid = recid;
         }
-        
     }
+
+    @SuppressWarnings("unchecked")
+    protected static final class WeakCacheEntry extends WeakReference implements ReferenceCacheEntry
+    {
+        protected final long _recid;
+
+        public long getRecid(){
+            return _recid;
+        }
+
+        WeakCacheEntry( long recid, Object obj,  ReferenceQueue queue)
+        {
+           super(obj,queue);
+           _recid = recid;
+        }
+    }
+
     
     
     /**
@@ -478,11 +510,11 @@ class CacheRecordManager
      */
     protected static final class SoftRunnable  implements Runnable{
 
-		private ReferenceQueue<SoftCacheEntry> entryQueue;
+		private ReferenceQueue<ReferenceCacheEntry> entryQueue;
 		private WeakReference<CacheRecordManager> recman2;
 		
 		public SoftRunnable(CacheRecordManager recman, 
-				ReferenceQueue<SoftCacheEntry> entryQueue) {
+				ReferenceQueue<ReferenceCacheEntry> entryQueue) {
 			this.recman2 = new WeakReference<CacheRecordManager>(recman);
 			this.entryQueue = entryQueue;
 		}
@@ -525,10 +557,10 @@ class CacheRecordManager
 		while(_hash.size()>0)
 			purgeEntry();
 
-    	if(_softCache) synchronized(_softHash) {
-        	Iterator<SoftCacheEntry> iter = _softHash.valuesIterator();
+    	if(_enableReferenceCache) synchronized(_softHash) {
+        	Iterator<ReferenceCacheEntry> iter = _softHash.valuesIterator();
         	while(iter.hasNext()){
-        		SoftCacheEntry e = iter.next();    		
+        		ReferenceCacheEntry e = iter.next();
     			e.clear();
     		}
     		_softHash.clear();
