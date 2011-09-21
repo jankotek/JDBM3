@@ -57,9 +57,9 @@ final class BaseRecordManager
 {
 
 	private static final String IDR = ".idr";
-	private static final String IDF = ".idf";
+
 	private static final String DBR = ".dbr";
-	private static final String DBF = ".dbf";
+
 	static final int DATA_BLOCK_SIZE = 1024 * 8 ;
 	static final int TRANS_BLOCK_SIZE = 1024 * 2;
 	static final int FREE_BLOCK_SIZE = 1024;
@@ -113,17 +113,7 @@ final class BaseRecordManager
       */
     private boolean appendToEnd = false;
 
-    /**
-     * Underlying file for store records.
-     * Traces free records
-     */
-    private RecordFile _physFileFree;
 
-    /**
-     * Page manager for physical manager.
-     * Traces free records
-     */
-    private PageManager _physPagemanFree;
 
     /**
      * Underlying file for logical records.
@@ -140,20 +130,6 @@ final class BaseRecordManager
      * Logigal to Physical row identifier manager.
      */
     private LogicalRowIdManager _logicMgr;
-
-    /**
-     * Underlying file for logical records.
-     * Traces free records
-     */
-    private RecordFile _logicFileFree;
-
-
-
-    /**
-     * Page manager for logical manager.
-     * Traces free records
-     */
-    private PageManager _logicPagemanFree;
 
 
 
@@ -222,21 +198,17 @@ final class BaseRecordManager
 
 
 	private void reopen() throws IOException {
-		_physFileFree = new RecordFile( _filename +  DBF, FREE_BLOCK_SIZE);
-    	_physPagemanFree = new PageManager(_physFileFree);    	
         _physFile = new RecordFile( _filename + DBR, DATA_BLOCK_SIZE);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
-        		new FreePhysicalRowIdPageManager(_physFileFree, _physPagemanFree,appendToEnd));
+        		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
-        _logicFileFree= new RecordFile( _filename +IDF,FREE_BLOCK_SIZE );
-        _logicPagemanFree = new PageManager( _logicFileFree );
         if(TRANS_BLOCK_SIZE>256*8)
-        	throw new InternalError(); //to big page, slot number would not fit into page
+        	throw new InternalError(); //too big page, slot number would not fit into page
         _logicFile = new RecordFile( _filename +IDR,TRANS_BLOCK_SIZE );
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
-        		new FreeLogicalRowIdPageManager(_logicFileFree, _logicPagemanFree));
+        		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
 
         long versionNumber = getRoot(STORE_VERSION_NUMBER_ROOT);
         if(versionNumber>STORE_FORMAT_VERSION)
@@ -260,9 +232,6 @@ final class BaseRecordManager
 
         _physFile.disableTransactions();
         _logicFile.disableTransactions();
-        _physFileFree.disableTransactions();
-        _logicFileFree.disableTransactions();
-
     }
     
     /**
@@ -299,18 +268,6 @@ final class BaseRecordManager
         
         _logicFile.close();
         _logicFile = null;
-        
-        _physPagemanFree.close();
-        _physPagemanFree = null;
-
-        _physFileFree.close();
-        _physFileFree = null;
-        
-        _logicPagemanFree.close();
-        _logicPagemanFree = null;
-        
-        _logicFileFree.close();
-        _logicFileFree = null;
     }
 
 
@@ -599,9 +556,7 @@ final class BaseRecordManager
 
         /**commit pages */
         _physPageman.commit();
-        _physPagemanFree.commit();
         _logicPageman.commit();
-        _logicPagemanFree.commit();
     }
 
 
@@ -612,11 +567,8 @@ final class BaseRecordManager
         _physMgr.commit();
         _logicMgr.commit();
 
-
         _physPageman.rollback();
-        _physPagemanFree.rollback();
         _logicPageman.rollback();
-        _logicPagemanFree.rollback();
     }
 
 
@@ -721,7 +673,7 @@ final class BaseRecordManager
 		close();
 		List<File> filesToDelete = new ArrayList<File>();
 		//now rename old files 
-		String[] exts = {IDF, IDR, DBF, DBR};
+		String[] exts = {IDR, DBR};
 		for(String ext:exts){
 			String f1 = filename1+ext;			
 			String f2 = filename2+"_OLD"+ext;

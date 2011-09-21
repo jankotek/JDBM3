@@ -119,20 +119,7 @@ class CacheRecordManager
 
     }
 
-    
-    /**
-     * Get the underlying Record Manager.
-     *
-     * @return underlying RecordManager or null if CacheRecordManager has
-     *         been closed. 
-     */
-    public RecordManager getRecordManager()
-    {
-        return _recman;
-    }
 
-    
-    
     public synchronized <A> long insert( A obj, Serializer<A> serializer )
         throws IOException
     {
