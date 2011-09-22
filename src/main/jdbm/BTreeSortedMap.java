@@ -48,7 +48,10 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 
 	@Override
 	public Set<java.util.Map.Entry<K, V>> entrySet() {
-		return new AbstractSet<Entry<K,V>>(){
+            return _entrySet;
+        }
+
+        private final Set<java.util.Map.Entry<K, V>> _entrySet = new AbstractSet<Entry<K,V>>(){
 			
 			protected Entry<K,V> newEntry(K k,V v){
 				return new SimpleEntry<K,V>(k,v){
@@ -57,7 +60,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 					public V setValue(V arg0) {
 						BTreeSortedMap.this.put(getKey(), arg0);
 						return super.setValue(arg0);
-					};
+					}
 					
 				};
 			}
@@ -183,7 +186,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
                     }
 
 		};
-	}
+
 	
 	public boolean inBounds(K e) {
 		if(fromKey!=null && comparator().compare(e,fromKey)<0)
@@ -326,21 +329,22 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 
 	public Integer newIntegerKey() {
 		if(isEmpty())
-			return  new Integer(0);
+			return  Integer.valueOf(0);
 		K k = lastKey();
-		return  new Integer(((Integer)k).intValue()+1);
+		return  Integer.valueOf((Integer)k).intValue()+1);
 	}
 
 	public Long newLongKey() {
 		if(isEmpty())
-			return  new Long(0);
+			return  Long.valueOf(0);
 		K k = lastKey();
-		return new Long(((Long)k).longValue()+1);
+		return Long.valueOf(((Long)k).longValue()+1L);
 	}
 
     public int size(){
         return tree.size();
     }
+
 
 
 }
