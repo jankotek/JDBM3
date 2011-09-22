@@ -37,19 +37,19 @@ import java.util.NoSuchElementException;
 class LongHashMap<V> implements  Serializable {
     private static final long serialVersionUID = 362499999763181265L;
 
-    protected int elementCount;
+    private int elementCount;
 
-    protected Entry<V>[] elementData;
+    private  Entry<V>[] elementData;
 
     private final float loadFactor;
 
-    protected int threshold;
+    private  int threshold;
 
-    transient int modCount = 0;	
+    private transient int modCount = 0;
 
     private static final int DEFAULT_SIZE = 16;
     
-    transient Entry<V> reuseAfterDelete = null;
+    private transient Entry<V> reuseAfterDelete = null;
 
     static final class Entry<V> {
 
