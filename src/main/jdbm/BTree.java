@@ -489,7 +489,7 @@ class BTree<K,V>
     /**
      * Get a browser initially positioned at the beginning of the BTree.
      * <p><b>
-     * WARNING: �If you make structural modifications to the BTree during
+     * WARNING: If you make structural modifications to the BTree during
      * browsing, you will get inconsistent browing results.
      * </b>
      *

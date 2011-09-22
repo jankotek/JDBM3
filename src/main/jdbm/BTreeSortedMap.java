@@ -178,22 +178,9 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 
 			}
 
-
-
-			@SuppressWarnings("unchecked")
-			public int size() {
-				if(fromKey == null && toKey == null)
-					return tree.size();
-				else{
-					int counter = 0;
-					Iterator i = iterator();
-					while(i.hasNext()){
-						i.next();
-						counter++;
-					}
-					return counter;									
-				}
-			}
+                    public int size(){
+                        return tree.size();
+                    }
 
 		};
 	}
@@ -351,10 +338,9 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		return new Long(((Long)k).longValue()+1);
 	}
 
-    public void clear(){
-        Iterator<K> keyIter = keySet().iterator();
-        while(keyIter.hasNext())
-            remove(keyIter.next());
+    public int size(){
+        return tree.size();
     }
+
 
 }
