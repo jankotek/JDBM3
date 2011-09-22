@@ -248,29 +248,6 @@ class LongHashMap<V> implements  Serializable {
         }
     }
 
-    /**
-     * Constructs a new {@code HashMap} instance with the specified capacity and
-     * load factor.
-     * 
-     * @param capacity
-     *            the initial capacity of this hash map.
-     * @param loadFactor
-     *            the initial load factor.
-     * @throws IllegalArgumentException
-     *                when the capacity is less than zero or the load factor is
-     *                less or equal to zero.
-     * @since Android 1.0
-     */
-    public LongHashMap(int capacity, float loadFactor) {
-        if (capacity >= 0 && loadFactor > 0) {
-            elementCount = 0;
-            elementData = newElementArray(capacity == 0 ? 1 : capacity);
-            this.loadFactor = loadFactor;
-            computeMaxSize();
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
 
 
 
@@ -304,57 +281,7 @@ class LongHashMap<V> implements  Serializable {
         threshold = (int) (elementData.length * loadFactor);
     }
 
-    /**
-     * Returns whether this map contains the specified key.
-     * 
-     * @param key
-     *            the key to search for.
-     * @return {@code true} if this map contains the specified key,
-     *         {@code false} otherwise.
-     * @since Android 1.0
-     */
-    
-    public boolean containsKey(long key) {
-            int hash = (int)(key);
-            int index = (hash & 0x7FFFFFFF) % elementData.length;
-            Entry<V> m = findNonNullKeyEntry(key, index, hash);
-        return m != null;
-    }
 
-    /**
-     * Returns whether this map contains the specified value.
-     * 
-     * @param value
-     *            the value to search for.
-     * @return {@code true} if this map contains the specified value,
-     *         {@code false} otherwise.
-     * @since Android 1.0
-     */
-    
-    public boolean containsValue(Object value) {
-        if (value != null) {
-            for (int i = elementData.length; --i >= 0;) {
-                Entry<V> entry = elementData[i];
-                while (entry != null) {
-                    if (value.equals(entry.value)) {
-                        return true;
-                    }
-                    entry = entry.next;
-                }
-            }
-        } else {
-            for (int i = elementData.length; --i >= 0;) {
-                Entry<V> entry = elementData[i];
-                while (entry != null) {
-                    if (entry.value == null) {
-                        return true;
-                    }
-                    entry = entry.next;
-                }
-            }
-        }
-        return false;
-    }
 
 
     /**
