@@ -331,7 +331,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		if(isEmpty())
 			return  Integer.valueOf(0);
 		K k = lastKey();
-		return  Integer.valueOf((Integer)k).intValue()+1);
+		return  Integer.valueOf(((Integer)k).intValue()+1);
 	}
 
 	public Long newLongKey() {

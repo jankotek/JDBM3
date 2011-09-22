@@ -381,20 +381,6 @@ class LongHashMap<V> implements  Serializable {
         return result;
     }
 
-    Entry<V> createEntry(long key, int index, V value) {
-        Entry<V> entry = reuseAfterDelete; 
-        if(entry == null){ 
-        	entry = new Entry<V>(key, value);
-        }else{
-        	reuseAfterDelete = null;
-        	entry.key = key;
-        	entry.value = value;
-        }
-        
-        entry.next = elementData[index];
-        elementData[index] = entry;
-        return entry;
-    }
 
     Entry<V> createHashedEntry(long key, int index) {
         Entry<V> entry = reuseAfterDelete; 
