@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
  * Hash Map which uses primitive long as key. 
  * Main advantage is new instanceof of Long does not have to be created for each lookup.
  * <p>
- * This code comes from Android, which in turns comes to Apache Harmony. 
+ * This code comes from Android, which in turns comes from Apache Harmony.
  * This class was modified to use primitive longs and stripped down to consume less space. 
  * <p>
  * Author of JDBM modifications: Jan Kotek
