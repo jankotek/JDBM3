@@ -62,10 +62,10 @@ class CacheRecordManager
     /**
      * True if enable second level soft cache
      */
-	protected boolean _enableReferenceCache;
+	final protected boolean _enableReferenceCache;
 
     /** True if SoftReference should be used, otherwise use WeakReference */
-        protected boolean _useSoftReference;
+        final protected boolean _useSoftReference;
 
 	/**
 	 * Thread in which Soft Cache references are disposed
@@ -207,7 +207,7 @@ class CacheRecordManager
         if ( entry == null ) {
         	A value = _recman.fetch( recid, serializer );
         	if(!_enableReferenceCache)
-        	cachePut(recid,value, serializer,false);
+        	    cachePut(recid,value, serializer,false);
         	else{ //put record into soft cache
         		synchronized(_softHash){
                             if(_useSoftReference)

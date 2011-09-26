@@ -663,8 +663,8 @@ public class TestBTree
     	Lock readLock = btree.getLock().readLock();
     	try {
     		readLock.lock();
-	        BTreeTupleBrowser browser = btree.browse();
-	        BTreeTuple tuple = new BTreeTuple();
+	        BTree.BTreeTupleBrowser browser = btree.browse();
+	        BTree.BTreeTuple tuple = new BTree.BTreeTuple();
 	        while(browser.getNext(tuple)) {
 	          if(tuple.value.equals(value))
 	            return(true);

@@ -100,7 +100,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 
 			public Iterator<java.util.Map.Entry<K, V>> iterator() {
 				try {
-					final BTreeTupleBrowser<K,V> br = fromKey==null ?
+					final BTree.BTreeTupleBrowser<K,V> br = fromKey==null ?
 							tree.browse() : tree.browse(fromKey);				
 				return new Iterator<Entry<K,V>>(){
 					
@@ -108,7 +108,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 					private K lastKey;
 					void ensureNext(){
 						try{
-							BTreeTuple<K,V> t = new BTreeTuple<K,V>();
+							BTree.BTreeTuple<K,V> t = new BTree.BTreeTuple<K,V>();
 							if(br.getNext(t) && inBounds(t.key))
 								next = newEntry(t.key,t.value);
 							else
@@ -271,8 +271,8 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		if(size() == 0)
 			throw new NoSuchElementException();
 		try{
-			BTreeTupleBrowser<K,V> b = fromKey==null?tree.browse():tree.browse(fromKey);
-			BTreeTuple<K,V> t = new BTreeTuple<K,V>();
+			BTree.BTreeTupleBrowser<K,V> b = fromKey==null?tree.browse():tree.browse(fromKey);
+			BTree.BTreeTuple<K,V> t = new BTree.BTreeTuple<K,V>();
 			b.getNext(t);
 			return t.key;
 		}catch(IOException e){
@@ -284,8 +284,8 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		if(size() == 0)
 			throw new NoSuchElementException();
 		try{
-			BTreeTupleBrowser<K,V> b = toKey==null?tree.browse(null):tree.browse(toKey);
-			BTreeTuple<K,V> t = new BTreeTuple<K,V>();
+			BTree.BTreeTupleBrowser<K,V> b = toKey==null?tree.browse(null):tree.browse(toKey);
+			BTree.BTreeTuple<K,V> t = new BTree.BTreeTuple<K,V>();
 			b.getPrevious(t);
 			return t.key;
 		}catch(IOException e){

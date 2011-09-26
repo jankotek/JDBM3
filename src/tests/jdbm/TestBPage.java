@@ -48,8 +48,8 @@ public class TestBPage extends TestCaseWithTestFile {
 
         BPage page = new BPage( tree, test, test );
 
-        BTreeTupleBrowser browser;
-        BTreeTuple tuple = new BTreeTuple();
+        BTree.BTreeTupleBrowser browser;
+        BTree.BTreeTuple tuple = new BTree.BTreeTuple();
 
         // test insertion
         page.insert( 1, test2, test2, false );

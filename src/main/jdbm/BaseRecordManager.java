@@ -637,10 +637,10 @@ final class BaseRecordManager
 			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io, RecordFile.DEFAULT_BLOCK_SIZE);
 		
 			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
-				int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
+				final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
 				if(pos>Short.MAX_VALUE)
 					throw new Error();
-				long logicalRowId = Location.toLong(pageid,(short)pos);
+
 
 
 				//get physical location
@@ -655,6 +655,7 @@ final class BaseRecordManager
 				_physMgr.fetch(b, physRowId);
 				byte[] bb = b.toByteArray();
 				//write to new file
+                                final long logicalRowId = Location.toLong(pageid,(short)pos);
 				recman2.forceInsert(logicalRowId, bb);
 				
 			}
@@ -754,6 +755,34 @@ final class BaseRecordManager
 		return Location.toLong(block, offset);
 	}
 
+    /**
+     * Returns number of records stored in database.
+     * Is used for unit tests*
+     */
+     long countRecords() throws IOException {
+         long counter = 0;
+         PageCursor cursor = new PageCursor(_logicPageman, Magic.TRANSLATION_PAGE);
+         long page = cursor.next();
+         while(page!=0){
+             BlockIo io = _logicFile.get(page);
+             TranslationPage xlatPage = TranslationPage.getTranslationPageView(io, RecordFile.DEFAULT_BLOCK_SIZE);
+             for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
+                     int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
+                     if(pos>Short.MAX_VALUE)
+                             throw new Error();
+
+                     //get physical location
+                     long physRowId = Location.toLong(
+                                     xlatPage.getLocationBlock((short)pos),
+                                     xlatPage.getLocationOffset((short)pos));
+                     if(physRowId != 0)
+                             counter+=1;
+             }
+             _logicFile.release(io);
+             page = cursor.next();
+         }
+         return counter;
+     }
 
 
 }

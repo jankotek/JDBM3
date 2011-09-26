@@ -97,6 +97,11 @@ public class TestCaseWithTestFile extends TestCase {
 	static public RecordManager newRecordManager() throws IOException{
 		return new RecordManagerBuilder(newTestFile()).build();
 	}
+
+        static public BaseRecordManager newBaseRecordManager() throws IOException{
+            return (BaseRecordManager) new RecordManagerBuilder(newTestFile()).disableCache().build();
+        }
+
 	
 	public void testDummy(){
 		//empty test case, so runner does not complain

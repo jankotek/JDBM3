@@ -245,4 +245,18 @@ public class TestRecordManager extends TestCaseWithTestFile {
 		assertEquals(t.get(2l),"hopsa hejsa2");
 		assertTrue(i.intValue()>0);
     }
+
+    public void testCountRecid() throws Exception{
+        BaseRecordManager recman = newBaseRecordManager();
+        for(int i = 1;i<3000;i++){
+            Object val = "qjiodjqwoidjqwiodoi";
+
+            recman.insert(val);
+            if(i%1000==0) recman.commit();
+
+            assertEquals(recman.countRecords(),i);
+        }
+
+    }
+
 }

@@ -17,6 +17,8 @@
 
 package jdbm;
 
+import sun.java2d.pipe.BufferedTextPipe;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +75,7 @@ final class BPage<K,V>
     /**
      * Values associated with keys.  (Only valid if leaf BPage)
      */
-    protected V[] _values;
+    protected Object[] _values;
 
 
     /**
@@ -229,7 +231,7 @@ final class BPage<K,V>
      * @return TupleBrowser positionned just before the given key, or before
      *                      next greater key if key isn't found.
      */
-    BTreeTupleBrowser<K,V> find( int height, K key )
+    BTree.BTreeTupleBrowser<K,V> find( int height, K key )
         throws IOException
     {
         int index = findChildren( key );
@@ -284,7 +286,10 @@ final class BPage<K,V>
           if ( key2==null || _btree._comparator.compare( key, key2 ) != 0 ) 
               return null;
             
-            return _values[ index ];
+            if(_values[index] instanceof BTreeLazyRecord)
+                return ((BTreeLazyRecord<V>)_values[index]).get();
+            else
+                return (V) _values[index];
 
             // leaf BPage
             //return new Browser<K,V>( this, index );
@@ -295,13 +300,12 @@ final class BPage<K,V>
         }
     }
 
-
     /**
      * Find first entry and return a browser positioned before it.
      *
      * @return TupleBrowser positionned just before the first entry.
      */
-    BTreeTupleBrowser<K,V> findFirst()
+    BTree.BTreeTupleBrowser<K,V> findFirst()
         throws IOException
     {
         if ( _isLeaf ) {
@@ -387,8 +391,14 @@ final class BPage<K,V>
                 if ( DEBUG ) {
                     System.out.println( "Bpage.insert() Key already exists." ) ;
                 }
-                result._existing =  _values[ index ];
+                if( _values[ index ] instanceof BTreeLazyRecord)
+                    result._existing =  ((BTreeLazyRecord<V>)_values[ index ]).get();
+                else
+                    result._existing =  (V)_values[ index ];
                 if ( replace ) {
+                    //remove old lazy record if necesarry
+                    if(_values [ index ] instanceof BTreeLazyRecord)
+                        ((BTreeLazyRecord)_values [ index ]).delete();
                     _values [ index ] = value;
                     _btree._recman.update( _recid, this, this );
                 }
@@ -526,7 +536,14 @@ final class BPage<K,V>
                 throw new IllegalArgumentException( "Key not found: " + key );
             }
             result = new RemoveResult<K,V>();
-            result._value =  _values[ index ];
+
+            if(_values[ index ] instanceof BTreeLazyRecord){
+                BTreeLazyRecord<V> r = (BTreeLazyRecord<V>) _values[ index ];
+                result._value = r.get();
+                r.delete();
+            }else{
+                result._value = (V) _values[ index ];
+            }
             removeEntry( this, index );
 
             // update this BPage
@@ -744,7 +761,7 @@ final class BPage<K,V>
                                      K key, V value )
     {
         K[] keys = page._keys;
-        V[] values = page._values;
+        Object[] values = page._values;
         int start = page._first;
         int count = index-page._first+1;
 
@@ -782,7 +799,7 @@ final class BPage<K,V>
     private static <K,V> void removeEntry( BPage<K,V> page, int index )
     {
         K[] keys = page._keys;
-        V[] values = page._values;
+        Object[] values = page._values;
         int start = page._first;
         int count = index-page._first;
 
@@ -871,7 +888,7 @@ final class BPage<K,V>
 	private BPage<K,V> loadBPage( long recid )
         throws IOException
     {
-        BPage<K,V> child = (BPage<K,V>) _btree._recman.fetch( recid, this );
+        BPage<K,V> child =  _btree._recman.fetch( recid, this );
         child._recid = recid;
         child._btree = _btree;
         return child;
@@ -889,29 +906,6 @@ final class BPage<K,V>
         return _btree._comparator.compare( value1, value2 );
     }
 
-    public static byte[] readByteArray( DataInputStream in )
-        throws IOException
-    {
-        int len = LongPacker.unpackInt(in);
-        if ( len == 0 ) {
-            return null;
-        }
-        byte[] buf = new byte[ len-1 ];
-        in.readFully( buf );
-        return buf;
-    }
-
-
-    public static void writeByteArray(SerializerOutput out, byte[] buf)
-        throws IOException
-    {
-        if ( buf == null ) {
-            out.write( 0 );
-        } else {
-        	LongPacker.packInt( out, buf.length+1);
-            out.write( buf );
-        }
-    }
 
     /**
      * Dump the structure of the tree on the screen.  This is used for debugging
@@ -1000,9 +994,6 @@ final class BPage<K,V>
     
     /**
      * Deserialize the content of an object from a byte array.
-     *
-     * @param serialized Byte array representation of the object
-     * @return deserialized object
      *
      */
     @SuppressWarnings("unchecked")
@@ -1093,46 +1084,63 @@ final class BPage<K,V>
     
 
 	private void readValues(SerializerInput ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
-		  bpage._values = (V[]) new Object[ _btree._pageSize ];
-	
-		  if ( _btree.valueSerializer == null||   _btree.valueSerializer == DefaultSerializer.INSTANCE) {
-			  V[] vals= (V[]) Serialization.readObject(ois);
-			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
-				  bpage._values[i] = vals[i - bpage._first];	  
-			  }
-		  }else{
-	          
-			  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
-                          long recid = ois.readPackedLong();
-                          if(recid!=0){
-                              byte[] serialized = (byte[])_btree._recman.fetch(recid);
-    //		              byte[] serialized = readByteArray( ois );
-		              if ( serialized != null ) {
-		                  bpage._values[ i ] = _btree.valueSerializer.deserialize( new SerializerInput( new ByteArrayInputStream(serialized)) );
-		            }
-                          }
-		      }
-		  }
+		  bpage._values = new Object[ _btree._pageSize ];
+                  Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) DefaultSerializer.INSTANCE;
+        	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+                       int header = ois.read();
+                       if(header == BTreeLazyRecord.NULL){
+                           bpage._values[ i ] = null;
+                       }else if(header == BTreeLazyRecord.LAZY_RECORD){
+                           long recid = ois.readPackedLong();
+                           bpage._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
+                       }else{
+                           //we should propably copy data for deserialization into separate buffer and pass it to Serializer
+                           //but to make it faster, Serializer will operate directly on top of buffer.
+                           //and we check that it readed correct number of bytes.
+                           int origAvail = ois.available();
+                           if(origAvail==0) throw new InternalError(); //is backed up by byte[] buffer, so there should be always avail bytes
+                           bpage._values[ i ] = serializer.deserialize(ois);
+                           //check than valueSerializer did not read more bytes, if yes it readed bytes from next record
+                           int readed = origAvail - ois.available();
+                           if(readed > header)
+                               throw new IOException("Value serializer readed more bytes than is record size.");
+                           else if(readed != header){
+                            //deserializer did not readed all bytes, unussual but valid.
+                            //Skip some to get into correct position
+                            for(int ii = 0; ii<header-readed;ii++)
+                                ois.read();
+                           }
+                       }
+
+                  }
 	}
 
 
 	private void writeValues(SerializerOutput oos, BPage<K, V> bpage) throws IOException {
-		if ( _btree.valueSerializer == null || _btree.valueSerializer == DefaultSerializer.INSTANCE ) {
-			Object[] vals2 = Arrays.copyOfRange(bpage._values, bpage._first, bpage._values.length);
-			Serialization.writeObject(oos, vals2);
-		}else{
-			for ( int i=bpage._first; i<_btree._pageSize; i++ ) {                                                
-		        if ( bpage._values[ i ] != null ) {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		            _btree.valueSerializer.serialize(new SerializerOutput(baos), bpage._values[ i ] );
 
-                            long recid = _btree._recman.insert(baos.toByteArray());
-                            oos.writePackedLong(recid);
-		            //writeByteArray( oos, baos.toByteArray() );
+                Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : DefaultSerializer.INSTANCE;
+		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+                        if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
+                             oos.write(BTreeLazyRecord.LAZY_RECORD);
+                             oos.writePackedLong(((BTreeLazyRecord)bpage._values[ i ]).recid);
+                        }else if ( bpage._values[ i ] != null ) {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		            serializer.serialize(new SerializerOutput(baos), (V)bpage._values[ i ] );
+
+                            byte[] buf = baos.toByteArray();
+                            if(buf.length>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
+                                //write as separate record
+                                long recid = _btree._recman.insert(buf,BTreeLazyRecord.FAKE_SERIALIZER);
+                                oos.write(BTreeLazyRecord.LAZY_RECORD);
+                                oos.writePackedLong(recid);
+                            }else{
+                                //write as part of btree
+                                oos.write(buf.length);
+                                oos.write(buf);
+                            }
 		        } else {
-		            writeByteArray( oos, null );
+                            oos.write(BTreeLazyRecord.NULL);
 		        }
-		    }
 		}
 	}
 
@@ -1417,7 +1425,7 @@ final class BPage<K,V>
      * Browser to traverse leaf BPages.
      */
     static class Browser<K,V>
-        implements BTreeTupleBrowser<K,V>
+        implements BTree.BTreeTupleBrowser<K,V>
     {
 
         /**
@@ -1445,7 +1453,7 @@ final class BPage<K,V>
             _index = index;
         }
 
-        public boolean getNext( BTreeTuple<K,V> tuple )
+        public boolean getNext( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
             if ( _index < _page._btree._pageSize ) {
@@ -1459,12 +1467,15 @@ final class BPage<K,V>
                 _index = _page._first;
             }
             tuple.key =  _page._keys[ _index ] ;
-            tuple.value =   _page._values[ _index ] ;
+            if(_page._values[ _index ] instanceof BTreeLazyRecord)
+                tuple.value =  ((BTreeLazyRecord<V>) _page._values[ _index ]).get() ;
+            else
+                tuple.value = (V) _page._values[ _index ];
             _index++;
             return true;
         }
 
-        public boolean getPrevious( BTreeTuple<K,V> tuple )
+        public boolean getPrevious( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
             if ( _index == _page._first ) {
@@ -1479,7 +1490,11 @@ final class BPage<K,V>
             }
             _index--;
             tuple.key =  _page._keys[ _index ] ;
-            tuple.value =  _page._values[ _index ] ;
+            if(_page._values[ _index ] instanceof BTreeLazyRecord)
+                tuple.value =  ((BTreeLazyRecord<V>) _page._values[ _index ]).get() ;
+            else
+                tuple.value = (V) _page._values[ _index ];
+
             return true;
 
         }

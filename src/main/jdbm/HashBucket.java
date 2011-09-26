@@ -252,7 +252,7 @@ final class HashBucket<K,V>
             else{
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		        tree.valueSerializer.serialize(new SerializerOutput(baos), _values.get(i));
-		        BPage.writeByteArray(out, baos.toByteArray());
+		        BTreeLazyRecord.writeByteArray(out, baos.toByteArray());
             }
         }
         
@@ -287,7 +287,7 @@ final class HashBucket<K,V>
         	else if(tree.valueSerializer==null)
         		_values.add((V) Serialization.readObject(in));
             else{
-  		          byte[] serialized = BPage.readByteArray( in );
+  		          byte[] serialized = BTreeLazyRecord.readByteArray(in);
                   V val = tree.valueSerializer.deserialize(new SerializerInput(new ByteArrayInputStream(serialized)));
 		          _values.add(val);
             }

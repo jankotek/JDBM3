@@ -715,77 +715,53 @@ class BTree<K,V>
             root.dumpChildPageRecIDs( out, _height);
         }
     }
- }
-
-/**
- * Browser to traverse a collection of tuples.  The browser allows for
- * forward and reverse order traversal.
- *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- */
-interface BTreeTupleBrowser<K,V> {
 
     /**
-     * Get the next tuple.
+     * Tuple consisting of a key-value pair.
      *
-     * @param tuple Tuple into which values are copied.
-     * @return True if values have been copied in tuple, or false if there is
-     *         no next tuple.
+     * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
      */
-    public abstract boolean getNext( BTreeTuple<K,V> tuple )
-        throws IOException;
+    static final class BTreeTuple<K,V> {
 
+        K key;
 
-    /**
-     * Get the previous tuple.
-     *
-     * @param tuple Tuple into which values are copied.
-     * @return True if values have been copied in tuple, or false if there is
-     *         no previous tuple.
-     */
-    public abstract boolean getPrevious( BTreeTuple<K,V> tuple )
-        throws IOException;
+        V value;
 
-}
+        BTreeTuple() {
+            // empty
+        }
 
-/**
- * Tuple consisting of a key-value pair.
- *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- */
-final class BTreeTuple<K,V> {
+        BTreeTuple(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
 
-    /**
-     * Key
-     */
-    K key;
-
-
-    /**
-     * Value
-     */
-    V value;
-
-
-    /**
-     * Construct an empty Tuple.
-     */
-    BTreeTuple() {
-        // empty
     }
 
-
     /**
-     * Construct a Tuple.
+     * Browser to traverse a collection of tuples.  The browser allows for
+     * forward and reverse order traversal.
      *
-     * @param key The key.
-     * @param value The value.
+     * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
      */
-    BTreeTuple(K key, V value) {
-        this.key = key;
-        this.value = value;
+    static interface BTreeTupleBrowser<K,V> {
+
+        /**
+         * Get the next tuple.
+         *
+         * @param tuple Tuple into which values are copied.
+         * @return True if values have been copied in tuple, or false if there is no next tuple.
+         */
+        public abstract boolean getNext(BTreeTuple<K, V> tuple)throws IOException;
+
+        /**
+         * Get the previous tuple.
+         *
+         * @param tuple Tuple into which values are copied.
+         * @return True if values have been copied in tuple, or false if there is no previous tuple.
+         */
+        public abstract boolean getPrevious(BTreeTuple<K, V> tuple) throws IOException;
+
     }
-
-
-
 }
+
