@@ -59,27 +59,25 @@ class BTreeLazyRecord<E> {
     };
 
 
-    static byte[] readByteArray( DataInputStream in )
-        throws IOException
-    {
-        int len = LongPacker.unpackInt(in);
-        if ( len == 0 ) {
-            return null;
-        }
-        byte[] buf = new byte[ len-1 ];
-        in.readFully( buf );
-        return buf;
-    }
 
-    static void writeByteArray(SerializerOutput out, byte[] buf)
-        throws IOException
-    {
-        if ( buf == null ) {
-            out.write( 0 );
-        } else {
-        	LongPacker.packInt( out, buf.length+1);
-            out.write( buf );
+    static Object fastDeser(SerializerInput in,Serializer serializer,int expectedSize ) throws IOException, ClassNotFoundException {
+        //we should propably copy data for deserialization into separate buffer and pass it to Serializer
+        //but to make it faster, Serializer will operate directly on top of buffer.
+        //and we check that it readed correct number of bytes.
+        int origAvail = in.available();
+        if(origAvail==0) throw new InternalError(); //is backed up by byte[] buffer, so there should be always avail bytes
+        Object ret = serializer.deserialize(in);
+        //check than valueSerializer did not read more bytes, if yes it readed bytes from next record
+        int readed = origAvail - in.available();
+        if(readed > expectedSize)
+            throw new IOException("Serializer readed more bytes than is record size.");
+        else if(readed != expectedSize){
+            //deserializer did not readed all bytes, unussual but valid.
+            //Skip some to get into correct position
+            for(int ii = 0; ii<expectedSize-readed;ii++)
+                in.read();
         }
+        return ret;
     }
 
 

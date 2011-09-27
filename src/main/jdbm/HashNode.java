@@ -22,7 +22,7 @@ package jdbm;
  *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  */
 @SuppressWarnings("unchecked")
-class HashNode<K,V> //implements Serializable, Serializer<HashNode>
+class HashNode<K,V>
 {
     protected final HTree<K, V> tree;
 

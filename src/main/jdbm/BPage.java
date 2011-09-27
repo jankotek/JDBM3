@@ -1094,24 +1094,8 @@ final class BPage<K,V>
                            long recid = ois.readPackedLong();
                            bpage._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
                        }else{
-                           //we should propably copy data for deserialization into separate buffer and pass it to Serializer
-                           //but to make it faster, Serializer will operate directly on top of buffer.
-                           //and we check that it readed correct number of bytes.
-                           int origAvail = ois.available();
-                           if(origAvail==0) throw new InternalError(); //is backed up by byte[] buffer, so there should be always avail bytes
-                           bpage._values[ i ] = serializer.deserialize(ois);
-                           //check than valueSerializer did not read more bytes, if yes it readed bytes from next record
-                           int readed = origAvail - ois.available();
-                           if(readed > header)
-                               throw new IOException("Value serializer readed more bytes than is record size.");
-                           else if(readed != header){
-                            //deserializer did not readed all bytes, unussual but valid.
-                            //Skip some to get into correct position
-                            for(int ii = 0; ii<header-readed;ii++)
-                                ois.read();
-                           }
+                           bpage._values[ i ] = BTreeLazyRecord.fastDeser(ois,serializer,header);
                        }
-
                   }
 	}
 

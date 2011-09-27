@@ -49,4 +49,11 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile{
         Map<Integer,String> m = r.treeMap("test");
         doIt(r,m);
     }
+
+    public void testHTree() throws IOException {
+        BaseRecordManager r = newBaseRecordManager();
+        Map<Integer,String> m = r.hashMap("test");
+        doIt(r,m);
+    }
+
 }
