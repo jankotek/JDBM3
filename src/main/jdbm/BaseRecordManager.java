@@ -158,15 +158,6 @@ final class BaseRecordManager
 
 
 
-    /** is Inflate compression on */
-	private boolean compress = false;
-
-	/** deflater used to compress data if needed*/
-	private Deflater deflater;
-	/** inflater used to decompress data if needed*/
-	private Inflater inflater;
-
-	
 	private final byte[] _insertBuffer = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
 	private final OpenByteArrayOutputStream _insertBAO = new OpenByteArrayOutputStream(_insertBuffer);
 	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
@@ -230,16 +221,6 @@ final class BaseRecordManager
         _logicFile.disableTransactions();
     }
     
-    /**
-     * Enable or disable compression of blocks with Deflate algorithm
-     * @param b
-     */
-	public synchronized void setCompress(boolean b) {
-		checkIfClosed();
-		if(DEBUG)
-			System.out.println("Setting compression to: "+b);
-		compress = b;		
-	}
 
 
     
@@ -305,11 +286,6 @@ final class BaseRecordManager
 		insertBAO.reset(insertBuffer);
       
 		serializer.serialize(insertOut, obj);
-		if(compress){
-			byte[] data = compress(insertBAO.getBuf(),insertBAO.size());
-			insertBAO.reset(insertBuffer);
-			insertBAO.write(data);
-		}
 		long physRowId = _physMgr.insert( insertBAO.getBuf(), 0, insertBAO.size() );
 		long recid = _logicMgr.insert( physRowId );
 		if ( DEBUG ) {
@@ -318,34 +294,6 @@ final class BaseRecordManager
 		return compressRecid(recid);
 	}
 
-    private synchronized byte[] compress(byte[] data, int length) throws IOException {
-    	if(!compress )
-    		return data;
-    	if(deflater == null){
-    		deflater = new Deflater();    		
-    	}else{
-    		deflater.reset();
-    	}
-    	ByteArrayOutputStream b = new ByteArrayOutputStream(0);
-    	OutputStream d = new DeflaterOutputStream(b,deflater);
-    	
-    	d.write(data,0,length);
-    	d.close();
-		return b.toByteArray();
-	}
-
-    private synchronized  SerializerInput decompress(SerializerInput data) throws IOException {
-    	if(!compress)
-    		return data;
-    	
-    	if(inflater == null){
-    		inflater = new Inflater();       	
-    	}else{
-    		inflater.reset();
-    	}
-    	
-    	return new SerializerInput(new InflaterInputStream(data,inflater));
-	}
 
     public synchronized void delete( long logRowId )
         throws IOException
@@ -406,12 +354,7 @@ final class BaseRecordManager
 		insertBAO.reset(insertBuffer);
 		serializer.serialize(insertOut, obj );
 
-		if(compress){
-			byte[] data = compress(insertBAO.getBuf(),insertBAO.size());
-			insertBAO.reset(insertBuffer);
-			insertBAO.write(data);
-		}
-		
+
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.update() recid " + logRecid + " length " + insertBAO.size() ) ;
 		}
@@ -480,20 +423,13 @@ final class BaseRecordManager
 		}
 		insertBAI.reset(insertBAO.getBuf(), insertBAO.size());
 		try{
-			if(compress)
-				return serializer.deserialize(decompress( insertIn ));
-			else
-				return serializer.deserialize( insertIn );
+        		return serializer.deserialize( insertIn );
 		}catch(ClassNotFoundException e){
 			throw new IOError(e);
 		}
 	}
 
 
-    public int getRootCount()
-    {
-        return FileHeader.NROOTS;
-    }
 
     public synchronized long getRoot( int id )
         throws IOException

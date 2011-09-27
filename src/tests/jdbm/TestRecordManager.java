@@ -81,33 +81,6 @@ public class TestRecordManager extends TestCaseWithTestFile {
         recman.close();
     }
     
-    /**
-     *  Test delete and immediate reuse. This attempts to reproduce
-     *  a bug in the stress test involving 0 record lengths.
-     */
-
-    public void testCompress()
-        throws Exception
-    {
-
-        RecordManager recman = new RecordManagerBuilder(newTestFile()).enableCompression().build();
-        
-        //create huge list to be compressed
-        ArrayList l1 = new ArrayList();
-        for(int i = 0;i<100000;i++) l1.add(i);
-        
-        long id = recman.insert(l1);
-        recman.commit();
-        ArrayList l2 = (ArrayList) recman.fetch(id);
-        assertEquals(l1,l2);
-
-        
-        recman.update(id, l2);
-        recman.commit();
-        ArrayList l3 = (ArrayList) recman.fetch(id);
-        assertEquals(l1,l3);
-
-    }
 
 
     /**

@@ -31,7 +31,6 @@ public class RecordManagerBuilder {
 
     private boolean batchInsert = false;
     private boolean disableTransactions = false;
-    private  boolean compress = false;
 
 
     /**
@@ -110,14 +109,6 @@ public class RecordManagerBuilder {
         return this;
     }
 
-    /**
-     * Turns on compression in the RecordStore. Newly inserted records will be compressed.
-     * @return this builder
-     */
-    public RecordManagerBuilder enableCompression() {
-        compress = true;
-        return this;
-    }
 
 
     /**
@@ -182,8 +173,6 @@ public class RecordManagerBuilder {
 
         if(batchInsert)
             ( (BaseRecordManager) recman ).setAppendToEnd(true);
-        if(compress)
-            ( (BaseRecordManager) recman ).setCompress(true);
 
 
         String cacheType2 = cacheType;
