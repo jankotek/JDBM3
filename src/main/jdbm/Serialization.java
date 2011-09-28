@@ -15,14 +15,7 @@
  ******************************************************************************/
 package jdbm;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -188,7 +181,10 @@ final class Serialization
 	static final int HTREE_BUCKET 		= 164;
 	static final int HTREE_DIRECTORY 	= 165;
 	static final int JAVA_SERIALIZATION 	= 172;
-	
+
+
+        private static final String EMPTY_STRING = "";
+        private static final String UTF8 = "UTF-8";
 	
     /**
      * Serialize the object into a byte array.
@@ -297,7 +293,7 @@ final class Serialization
 			out.write(BLOCKIO);
 			((BlockIo)obj).writeExternal(out);
 		}else if(clazz == String.class){
-			byte[] s = ((String)obj).getBytes();
+			byte[] s = ((String)obj).getBytes(UTF8);
 			if(s.length==0){
 				out.write(STRING_EMPTY);
 			}else if(s.length<255){
@@ -716,7 +712,7 @@ final class Serialization
     	int len  = LongPacker.unpackInt(buf);
     	byte[] b=  new byte[len];
     	buf.readFully(b);
-    	return new String(b);
+    	return new String(b,UTF8);
 	}
 
 	private static String deserializeString256Smaller(DataInputStream buf) throws IOException {
@@ -726,7 +722,7 @@ final class Serialization
 
     	byte[] b=  new byte[len];
     	buf.readFully(b);
-    	return new String(b);    	
+    	return new String(b,UTF8);
 }
 	/**
      * Serialize the object into a byte array.
@@ -830,7 +826,7 @@ final class Serialization
 
 			case STRING_255:ret= deserializeString256Smaller(is);break;
 			case STRING:ret= deserializeString(is);break;
-			case STRING_EMPTY:ret= "";break;
+			case STRING_EMPTY:ret= EMPTY_STRING;break;
 			case ARRAYLIST_255:ret= deserializeArrayList256Smaller(is);break;
 			case ARRAYLIST:ret= deserializeArrayList(is);break;
 			case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
@@ -1315,5 +1311,5 @@ final class Serialization
 		for(int i = 0; i<size;i++)
 			s.put(readObject(is),readObject(is));
 		return s;
-	}	
+	}
 }
