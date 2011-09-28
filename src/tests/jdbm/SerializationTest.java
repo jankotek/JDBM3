@@ -19,19 +19,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 
 import jdbm.Serialization;
@@ -329,4 +319,24 @@ public class SerializationTest extends TestCase{
 		assertEquals(l1,Serialization.deserialize(Serialization.serialize(l1)));
 
 	}
+
+        public void testDate() throws IOException, ClassNotFoundException {
+            Date d = new Date(2001,1,2,3,4,5);
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            d = new Date(System.currentTimeMillis());
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+        }
+
+        public void testBigDecimal() throws IOException, ClassNotFoundException {
+            BigDecimal d = new BigDecimal("445656.7889889895165654423236");
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            d = new BigDecimal("-53534534534534445656.7889889895165654423236");
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+        }
+        public void testBigInteger() throws IOException, ClassNotFoundException {
+            BigInteger d = new BigInteger("4456567889889895165654423236");
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            d = new BigInteger("-535345345345344456567889889895165654423236");
+            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+        }
 }

@@ -15,19 +15,11 @@
  ******************************************************************************/
 package jdbm;
 
+import java.awt.geom.PathIterator;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
 
 /**
  * Serialization util. It reduces serialized data size for most common java types. 
@@ -112,10 +104,9 @@ final class Serialization
 	final static int DOUBLE_255		=  50;
 	final static int DOUBLE_SHORT	=  51;	
 	final static int DOUBLE_FULL		=  52;
-	//TODO serialization for bigdecimal and biginteger
-	final static int BIGDECIMAL_255	=  53;
+	final static int FREEEE222	=  53; //TODO  free slot
 	final static int BIGDECIMAL		=  54;
-	final static int BIGINTEGER_255	=  55;
+	final static int FREEEE222222	=  55; //TODO free slot
 	final static int BIGINTEGER		=  56;
 	final static int INTEGER_MINUS_MAX=  57;	
  	
@@ -172,7 +163,9 @@ final class Serialization
 	final static int PROPERTIES_255		= 124;
 	final static int PROPERTIES			= 125;
 	
-	final static int CLASS				= 126;	
+	final static int CLASS				= 126;
+
+        final static int DATE				= 127;
 
 	final static int BLOCKIO				= 161;
 
@@ -255,7 +248,17 @@ final class Serialization
 			}else{
 				out.write(FLOAT_FULL);
 				out.writeFloat(v);
-			}		
+			}
+                }else if (clazz ==  BigInteger.class){
+                    out.write(BIGINTEGER);
+                    byte[] buf = ((BigInteger)obj).toByteArray();
+                    serializeByteArrayInt(out, buf);
+
+                }else if (clazz ==  BigDecimal.class){
+                    out.write(BIGDECIMAL);
+                    BigDecimal d = (BigDecimal)obj;
+                    serializeByteArrayInt(out,d.unscaledValue().toByteArray());
+                    LongPacker.packInt(out,d.scale());
 		}else if (clazz ==  Long.class){
 			final long val = (Long) obj;
     		writeLong(out, val);
@@ -288,7 +291,7 @@ final class Serialization
 			}
     	}else if (clazz ==  Character.class){
     		out.write(CHAR);
-    		out.writeChar((Character)obj);
+    		out.writeChar((Character) obj);
 		}else if (clazz ==  BlockIo.class){
 			out.write(BLOCKIO);
 			((BlockIo)obj).writeExternal(out);
@@ -306,9 +309,9 @@ final class Serialization
 			out.write(s);
 		}else if(obj instanceof Class){
 			out.write(CLASS);
-			writeObject(out, ((Class)obj).getName());
+			writeObject(out, ((Class) obj).getName());
 		}else if(obj instanceof int[]){
-			writeIntArray(out,(int[])obj);
+			writeIntArray(out, (int[]) obj);
 		}else if(obj instanceof long[]){
 			writeLongArray(out,(long[])obj);		
 		}else if(obj instanceof byte[]){
@@ -316,11 +319,11 @@ final class Serialization
 			if(b.length<=255){
 				out.write(ARRAY_BYTE_255);
 				out.write(b.length);
+                                out.write(b);
 			}else{
 				out.write(ARRAY_BYTE_INT);
-				LongPacker.packInt(out,b.length);
+                            serializeByteArrayInt(out, b);
 			}
-			out.write(b);
 
 		}else if(obj instanceof Object[]){
 			Object[] b = (Object[]) obj;
@@ -524,8 +527,10 @@ final class Serialization
 			for(Object o:l.keySet()){
 				writeObject(out, o);
 				writeObject(out, l.get(o));
-			}					
-			
+			}
+                }else if(clazz ==  Date.class){
+		    out.write(DATE);
+                    out.writeLong(((Date)obj).getTime());
 		}else{
 			out.write(serializeNormal(obj));
 			out.writeByte(END_OF_NORMAL_SERIALIZATION);
@@ -540,8 +545,13 @@ final class Serialization
     	}
 	}
 
+    private static void serializeByteArrayInt(DataOutputStream out, byte[] b) throws IOException {
+        LongPacker.packInt(out, b.length);
+        out.write(b);
+    }
 
-	private static void writeLongArray(DataOutputStream da, long[] obj) throws IOException {
+
+    private static void writeLongArray(DataOutputStream da, long[] obj) throws IOException {
 		long max = Long.MIN_VALUE;
 		long min = Long.MAX_VALUE;
 		for(long i:obj){
@@ -821,7 +831,9 @@ final class Serialization
 			case DOUBLE_1:ret= Double.valueOf(1);break;
 			case DOUBLE_255:ret= Double.valueOf(is.read());break;
 			case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
-			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;			
+			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;
+                        case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));
+                        case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));
 			case BLOCKIO:ret= deserializeBlockIo(is);break;
 
 			case STRING_255:ret= deserializeString256Smaller(is);break;
@@ -853,7 +865,8 @@ final class Serialization
 			case HASHTABLE:ret= deserializeHashtable(is);break;
 			case PROPERTIES_255:ret= deserializeProperties256Smaller(is);break;
 			case PROPERTIES:ret= deserializeProperties(is);break;
-			case CLASS:ret= deserializeClass(is);break;
+			case CLASS:ret = deserializeClass(is);break;
+                        case DATE:ret = new Date(is.readLong());break;
 			
 			
 			case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
