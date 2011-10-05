@@ -15,7 +15,6 @@
  ******************************************************************************/
 package jdbm;
 
-import java.awt.geom.PathIterator;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -832,8 +831,8 @@ final class Serialization
 			case DOUBLE_255:ret= Double.valueOf(is.read());break;
 			case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
 			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;
-                        case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));
-                        case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));
+                        case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));break;
+                        case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
 			case BLOCKIO:ret= deserializeBlockIo(is);break;
 
 			case STRING_255:ret= deserializeString256Smaller(is);break;
