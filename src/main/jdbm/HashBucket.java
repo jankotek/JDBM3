@@ -41,7 +41,6 @@ import java.util.ArrayList;
  *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  */
 final class HashBucket<K,V>
-    extends HashNode<K,V>
 {
 
     /**
@@ -70,12 +69,14 @@ final class HashBucket<K,V>
      */
     private ArrayList _values;
 
+    private final HTree<K, V> tree;
+
 
     /**
      * Public constructor for serialization.
      */
     public HashBucket(HTree<K,V> tree) {
-        super(tree);
+        this.tree = tree;
     }
 
 
@@ -85,7 +86,7 @@ final class HashBucket<K,V>
      */
     public HashBucket(HTree<K,V> tree, int level )
     {
-        super(tree);
+        this.tree = tree;
         if ( level > HashDirectory.MAX_DEPTH+1 ) {
             throw new IllegalArgumentException(
                             "Cannot create bucket with depth > MAX_DEPTH+1. "

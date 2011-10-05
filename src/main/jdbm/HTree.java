@@ -34,9 +34,9 @@ import java.util.*;
 class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 {
 
-    final Serializer SERIALIZER = new Serializer<HashNode>() {
+    final Serializer SERIALIZER = new Serializer<Object>() {
 
-        public HashNode deserialize(ObjectInput ds2) throws IOException {
+        public Object deserialize(ObjectInput ds2) throws IOException {
             SerializerInput ds = (SerializerInput) ds2;
             try{
                 int i = ds.read();
@@ -60,8 +60,8 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
             }
 
         }
-        public void serialize(ObjectOutput out, HashNode obj) throws IOException {
-            if(obj.getClass() ==  HashBucket.class){
+        public void serialize(ObjectOutput out, Object obj) throws IOException {
+            if(obj instanceof HashBucket){
                 out.write(Serialization.HTREE_BUCKET);
                 HashBucket b = (HashBucket) obj;
                 b.writeExternal(out);

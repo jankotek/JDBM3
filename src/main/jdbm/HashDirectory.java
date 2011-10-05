@@ -27,7 +27,6 @@ import java.util.NoSuchElementException;
  *  @author <a href="mailto:boisvert@exoffice.com">Alex Boisvert</a>
  */
 final class HashDirectory <K,V>
-    extends HashNode<K,V>
 {
 
     static final long serialVersionUID = 1L;
@@ -82,12 +81,13 @@ final class HashDirectory <K,V>
      */
     private transient long _recid;
 
+    protected final HTree<K, V> tree;
 
     /**
      * Public constructor used by serialization
      */
     public HashDirectory(HTree<K,V> tree) {
-        super(tree);
+        this.tree = tree;
     }
 
     /**
@@ -96,7 +96,7 @@ final class HashDirectory <K,V>
      * @param depth Depth of this directory page.
      */
     HashDirectory(HTree<K,V> tree, byte depth) {
-        super(tree);
+        this.tree = tree;
         _depth = depth;
         _children = new long[MAX_CHILDREN];
     }
@@ -152,7 +152,7 @@ final class HashDirectory <K,V>
             // not bucket/page --> not found
             return null;
         } else {
-            HashNode<K,V> node = (HashNode<K,V>) _recman.fetch( child_recid, tree.SERIALIZER );
+            Object node =  _recman.fetch( child_recid, tree.SERIALIZER );
             // System.out.println("HashDirectory.get() child is : "+node);
 
             if ( node instanceof HashDirectory ) {
@@ -199,7 +199,7 @@ final class HashDirectory <K,V>
             // System.out.println("Added: "+bucket);
             return existing;
         } else {
-            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
+            Object node =  _recman.fetch( child_recid,tree.SERIALIZER  );
 
             if ( node instanceof HashDirectory ) {
                 // recursive insert in next directory level
@@ -261,7 +261,7 @@ final class HashDirectory <K,V>
             // not bucket/page --> not found
             return null;
         } else {
-            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
+            Object node =  _recman.fetch( child_recid,tree.SERIALIZER  );
             // System.out.println("HashDirectory.remove() child is : "+node);
 
             if (node instanceof HashDirectory) {
@@ -515,7 +515,7 @@ final class HashDirectory <K,V>
                 throw new Error("child_recid cannot be 0");
             }
 
-            HashNode node = (HashNode) _recman.fetch( child_recid,tree.SERIALIZER  );
+            Object node =  _recman.fetch( child_recid,tree.SERIALIZER  );
             // System.out.println("HDEnumeration.get() child is : "+node);
  
             if ( node instanceof HashDirectory ) {
