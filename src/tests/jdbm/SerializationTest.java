@@ -321,7 +321,7 @@ public class SerializationTest extends TestCase{
 	}
 
         public void testDate() throws IOException, ClassNotFoundException {
-            Date d = new Date(2001,1,2,3,4,5);
+            Date d = new Date(6546565565656L);
             assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
             d = new Date(System.currentTimeMillis());
             assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));

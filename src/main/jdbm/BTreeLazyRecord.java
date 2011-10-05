@@ -1,8 +1,6 @@
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.IOError;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * An record lazly loaded from store.
@@ -48,12 +46,12 @@ class BTreeLazyRecord<E> {
      */
     static final Serializer FAKE_SERIALIZER = new Serializer(){
 
-        public void serialize(SerializerOutput out, Object obj) throws IOException {
+        public void serialize(ObjectOutput out, Object obj) throws IOException {
             byte[] data = (byte[]) obj;
             out.write(data);
         }
 
-        public Object deserialize(SerializerInput in) throws IOException, ClassNotFoundException {
+        public Object deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
             throw new UnsupportedOperationException();
         }
     };

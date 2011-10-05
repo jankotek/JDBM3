@@ -18,6 +18,8 @@ package jdbm;
 
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * Default java serializer. Constructor is privite, use  DefaultSerializer.INSTANCE
@@ -41,27 +43,15 @@ public class DefaultSerializer
         // no op
     }
 
-    
-    /**
-     * Serialize the content of an object into a byte array.
-     *
-     * @param obj Object to serialize
-     * @return a byte array representing the object's state
-     */
-     public void serialize(SerializerOutput out,Object obj)
+
+     public void serialize(ObjectOutput out,Object obj)
         throws IOException
      {    
     	 out.writeObject(obj);        
      }
         
-        
-    /**
-     * Deserialize the content of an object from a byte array.
-     *
-     * @param serialized Byte array representation of the object
-     * @return deserialized object
-     */
-     public Object deserialize(SerializerInput in )
+
+     public Object deserialize(ObjectInput in )
         throws IOException
      {
          try {

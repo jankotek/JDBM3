@@ -16,10 +16,7 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOError;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -356,7 +353,7 @@ final class HashDirectory <K,V>
     /**
      * Implement Externalizable interface
      */
-    public void writeExternal(DataOutputStream out)
+    public void writeExternal(ObjectOutput out)
     throws IOException {
         out.writeByte(_depth);
 

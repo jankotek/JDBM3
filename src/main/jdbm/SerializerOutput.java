@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutput;
 import java.io.OutputStream;
 
 
@@ -28,7 +29,7 @@ import java.io.OutputStream;
  * @author Jan Kotek
  *
  */
-public class SerializerOutput extends DataOutputStream{
+public class SerializerOutput extends DataOutputStream implements ObjectOutput {
 	
 	
 	public SerializerOutput(OutputStream out) {

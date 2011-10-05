@@ -234,7 +234,7 @@ final class HashBucket<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void writeExternal( SerializerOutput out )
+    public void writeExternal( ObjectOutput out )
         throws IOException
     {
         LongPacker.packInt(out, _depth);
@@ -245,7 +245,7 @@ final class HashBucket<K,V>
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             keySerializer.serialize(new SerializerOutput(baos), _keys.get(i));
             byte[] buf = baos.toByteArray();
-            out.writePackedInt(buf.length);
+            LongPacker.packInt(out,buf.length);
             out.write(buf);
         }
 
@@ -258,7 +258,7 @@ final class HashBucket<K,V>
                 out.write(BTreeLazyRecord.NULL);
             }else if(value instanceof BTreeLazyRecord){
                 out.write(BTreeLazyRecord.LAZY_RECORD);
-                out.writePackedLong(((BTreeLazyRecord)value).recid);
+                LongPacker.packLong(out,((BTreeLazyRecord)value).recid);
             }else{
                 //transform to byte array
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -268,7 +268,7 @@ final class HashBucket<K,V>
                         //store as separate record
                         long recid = tree.getRecordManager().insert(buf,BTreeLazyRecord.FAKE_SERIALIZER);
                         out.write(BTreeLazyRecord.LAZY_RECORD);
-                        out.writePackedLong(recid);
+                        LongPacker.packLong(out,recid);
                 }else{
                         out.write(buf.length);
                         out.write(buf);

@@ -1,6 +1,8 @@
 package jdbm;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Map;
 
 import org.junit.Test;
@@ -15,11 +17,11 @@ public class TestInsertUpdate extends TestCaseWithTestFile {
         RecordManager recman = newRecordManager();
         Serializer<Long> serializer = new Serializer<Long>(){
 
-            public void serialize(SerializerOutput out, Long obj) throws IOException {
+            public void serialize(ObjectOutput out, Long obj) throws IOException {
                 out.writeLong(obj);
             }
 
-            public Long deserialize(SerializerInput in) throws IOException, ClassNotFoundException {
+            public Long deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
                 return in.readLong();
             }
         };

@@ -997,10 +997,11 @@ final class BPage<K,V>
      *
      */
     @SuppressWarnings("unchecked")
-	public BPage<K,V> deserialize( SerializerInput ois ) 
+    public BPage<K,V> deserialize( ObjectInput ois2 )
         throws IOException
     {
-    	
+       SerializerInput ois = (SerializerInput) ois2;
+
 
       BPage<K,V> bpage = new BPage<K,V>();
 
@@ -1009,25 +1010,25 @@ final class BPage<K,V>
   		case NOT_LEAF:bpage._isLeaf = false;break;
   		default: throw new InternalError("wrong BPage header");
   	  }
-            
+
       if ( bpage._isLeaf ) {
           bpage._previous = LongPacker.unpackLong(ois);
           bpage._next = LongPacker.unpackLong(ois);
       }
 
-      
+
       bpage._first = LongPacker.unpackInt(ois);
 
       try {
 
            bpage._keys = readKeys(ois,bpage._first);
-           
+
       } catch ( ClassNotFoundException except ) {
           throw new IOException( except.getMessage() );
       }
-      
+
       if ( bpage._isLeaf ) {
-          
+
           try {
               readValues(ois, bpage);
           } catch ( ClassNotFoundException except ) {
@@ -1039,38 +1040,38 @@ final class BPage<K,V>
               bpage._children[ i ] = LongPacker.unpackLong(ois);
           }
       }
-      
+
       return bpage;
 
     }
 
-    
-    /** 
+
+    /**
      * Serialize the content of an object into a byte array.
      *
      * @param obj Object to serialize
      * @return a byte array representing the object's state
      *
      */
-    public void serialize(SerializerOutput oos, BPage<K,V> obj ) 
+    public void serialize(ObjectOutput oos, BPage<K,V> obj )
         throws IOException
     {
 
-        
+
         // note:  It is assumed that BPage instance doing the serialization is the parent
         // of the BPage object being serialized.
-        
+
         BPage<K,V> bpage =  obj;
-        
+
         oos.writeByte( bpage._isLeaf?LEAF:NOT_LEAF );
         if ( bpage._isLeaf ) {
             LongPacker.packLong(oos, bpage._previous );
             LongPacker.packLong(oos, bpage._next );
         }
-                
+
         LongPacker.packInt(oos, bpage._first );
 
-       	writeKeys(oos, bpage._keys,bpage._first);        	
+       	writeKeys(oos, bpage._keys,bpage._first);
 
         if ( bpage._isLeaf ) {
         	writeValues(oos, bpage);
@@ -1079,9 +1080,9 @@ final class BPage<K,V>
             	LongPacker.packLong(oos,  bpage._children[ i ] );
             }
         }
-        
+
     }
-    
+
 
 	private void readValues(SerializerInput ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = new Object[ _btree._pageSize ];
@@ -1100,13 +1101,13 @@ final class BPage<K,V>
 	}
 
 
-	private void writeValues(SerializerOutput oos, BPage<K, V> bpage) throws IOException {
+	private void writeValues(ObjectOutput oos, BPage<K, V> bpage) throws IOException {
 
                 Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : DefaultSerializer.INSTANCE;
 		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
                         if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
-                             oos.writePackedLong(((BTreeLazyRecord)bpage._values[ i ]).recid);
+                             LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
                         }else if ( bpage._values[ i ] != null ) {
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		            serializer.serialize(new SerializerOutput(baos), (V)bpage._values[ i ] );
@@ -1116,7 +1117,7 @@ final class BPage<K,V>
                                 //write as separate record
                                 long recid = _btree._recman.insert(buf,BTreeLazyRecord.FAKE_SERIALIZER);
                                 oos.write(BTreeLazyRecord.LAZY_RECORD);
-                                oos.writePackedLong(recid);
+                                LongPacker.packLong(oos,recid);
                             }else{
                                 //write as part of btree
                                 oos.write(buf.length);
@@ -1137,7 +1138,7 @@ final class BPage<K,V>
 	private static final int ALL_STRINGS = 5 <<5;
 	private static final int ALL_OTHER = 6 <<5;
 
-	
+
 	private K[] readKeys(SerializerInput ois, final int firstUse) throws IOException, ClassNotFoundException {
 		Object[] ret = new Object[_btree._pageSize];
 		final int type = ois.read();
@@ -1172,7 +1173,7 @@ final class BPage<K,V>
 				first = v;
 			}
 			return (K[]) ret;
-		}else if(type == ALL_STRINGS){			
+		}else if(type == ALL_STRINGS){
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
@@ -1180,17 +1181,17 @@ final class BPage<K,V>
 				ret[i] = new String(b);
 				previous = b;
 			}
-			return (K[]) ret;			
-			
+			return (K[]) ret;
+
 		}else if(type == ALL_OTHER){
 			if(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE){
 				for (int i = firstUse ; i < _btree._pageSize; i++) {
 					ret[i] = DefaultSerializer.INSTANCE.deserialize(ois);
-				}			
+				}
 				return (K[]) ret;
 			}
 
-			
+
 			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : DefaultSerializer.INSTANCE;
 			OpenByteArrayInputStream in1 = null;
 			SerializerInput in2 = null;
@@ -1206,18 +1207,18 @@ final class BPage<K,V>
 				ret[i] = ser.deserialize(in2);
 				previous = b;
 			}
-			return (K[]) ret;			
+			return (K[]) ret;
 
-		}else{ 
+		}else{
 			throw new InternalError("unknown bpage header type: "+type);
 		}
-		
+
 	}
-    
-	
-	
+
+
+
 	@SuppressWarnings("unchecked")
-	private void writeKeys(SerializerOutput oos, K[] keys, final int firstUse) throws IOException {		
+	private void writeKeys(ObjectOutput oos, K[] keys, final int firstUse) throws IOException {
 		if(keys.length!=_btree._pageSize)
 			throw new IllegalArgumentException("wrong keys size");
 				
@@ -1512,7 +1513,7 @@ final class BPage<K,V>
      *
      * @author Kevin Day
      */
-    static byte[] leadingValuePackRead(DataInputStream in, byte[] previous, int ignoreLeadingCount) throws IOException
+    static byte[] leadingValuePackRead(DataInput in, byte[] previous, int ignoreLeadingCount) throws IOException
     {
         int len = LongPacker.unpackInt(in) -1;  // 0 indicates null
         if (len == -1)
@@ -1541,7 +1542,7 @@ final class BPage<K,V>
  * there are common leading bytes in the previous group stored by this compressor.
  * @author Kevin Day
  */
-    static void leadingValuePackWrite(DataOutputStream out, byte[] buf, byte[] previous, int ignoreLeadingCount) throws IOException
+    static void leadingValuePackWrite(DataOutput out, byte[] buf, byte[] previous, int ignoreLeadingCount) throws IOException
     {
         if ( buf == null ) {
             LongPacker.packInt(out, 0);

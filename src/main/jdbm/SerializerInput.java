@@ -19,6 +19,7 @@ package jdbm;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInput;
 
 /**
  * 
@@ -27,16 +28,15 @@ import java.io.InputStream;
  * @author Jan Kotek
  *
  */
-public class SerializerInput extends DataInputStream{
+class SerializerInput extends DataInputStream implements ObjectInput {
 
 	
 	public SerializerInput(InputStream in) {
 		super(in);
 	}
 
-	@SuppressWarnings("unchecked")
-	public <V> V readObject() throws ClassNotFoundException, IOException{
-		return (V) Serialization.readObject(this);
+	public Object readObject() throws ClassNotFoundException, IOException{
+		return Serialization.readObject(this);
 	}
 	
 	public long readPackedLong() throws IOException{

@@ -18,6 +18,8 @@
 package jdbm;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * Interface used to provide a serialization mechanism other than a class' normal
@@ -31,23 +33,23 @@ public interface Serializer<A>
     /**
      * Serialize the content of an object into a byte array.
      *
-     * @param out DataOutputStream to save object into
+     * @param out ObjectOutput to save object into
      * @param obj Object to serialize
      * 
      */
-     public void serialize(SerializerOutput out,A obj )
+     public void serialize(ObjectOutput out,A obj )
         throws IOException;
         
         
     /**
      * Deserialize the content of an object from a byte array.
      *
-     * @param serialized DataInputStream to read object from
+     * @param in to read serialized data from
      * @return deserialized object
      * @throws IOException
      * @throws ClassNotFoundException 
      */
-     public A deserialize( SerializerInput in )
+     public A deserialize( ObjectInput in )
         throws IOException, ClassNotFoundException;
 
 }
