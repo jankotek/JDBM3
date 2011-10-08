@@ -54,12 +54,26 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
  */
 class BTree<K,V>
-    implements Externalizable, JdbmBase<K,V>
+    implements  JdbmBase<K,V>
 {
 
     private static final long serialVersionUID = 8883213742777032628L;
 
     private static final boolean DEBUG = false;
+
+
+    static final Serializer<BTree> SERIALIZER = new Serializer<BTree>() {
+
+        public void serialize(ObjectOutput out, BTree obj) throws IOException {
+            obj.writeExternal(out);
+        }
+
+        public BTree deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
+            BTree tree = new BTree();
+            tree.readExternal(in);
+            return tree;
+        }
+    };
 
 
 
@@ -256,7 +270,7 @@ class BTree<K,V>
         btree._pageSize = pageSize;
         btree._bpageSerializer = new BPage<K,V>();
         btree._bpageSerializer._btree = btree;
-        btree._recid = recman.insert( btree );
+        btree._recid = recman.insert( btree,SERIALIZER );
         return btree;
     }
 
@@ -271,7 +285,7 @@ class BTree<K,V>
 	public static <K,V> BTree<K,V> load( RecordManager recman, long recid )
         throws IOException
     {
-        BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid );
+        BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid,SERIALIZER );
         btree._recid = recid;
         btree._recman = recman;
         btree._bpageSerializer = new BPage<K,V>();
@@ -324,7 +338,7 @@ class BTree<K,V>
 	            _root = rootPage._recid;
 	            _height = 1;
 	            _entries = 1;
-	            _recman.update( _recid, this );
+	            _recman.update( _recid, this, SERIALIZER );
 	            //notifi listeners
 	            for(RecordListener<K,V> l : recordListeners){
 	            	l.recordInserted(key, value);
@@ -348,7 +362,7 @@ class BTree<K,V>
                 dirty = true;
             }
             if ( dirty ) {
-                _recman.update( _recid, this );
+                _recman.update( _recid, this,SERIALIZER );
             }
             //notify listeners
             for(RecordListener<K,V> l : recordListeners){
@@ -404,7 +418,7 @@ class BTree<K,V>
 	            dirty = true;
 	        }
 	        if ( dirty ) {
-	            _recman.update( _recid, this );
+	            _recman.update( _recid, this,SERIALIZER );
 	        }
 	        if(remove._value!=null)
 	        	for(RecordListener<K,V> l : recordListeners)
@@ -586,6 +600,8 @@ class BTree<K,V>
         throws IOException, ClassNotFoundException
     {
         _comparator = (Comparator<K>) in.readObject();
+        if(_comparator == null)
+            _comparator = ComparableComparator.INSTANCE;
       //serializer is not persistent from 2.0        
 //        _keySerializer = (Serializer<K>) in.readObject();
 //        _valueSerializer = (Serializer<V>) in.readObject();
@@ -602,7 +618,7 @@ class BTree<K,V>
     public void writeExternal( ObjectOutput out )
         throws IOException
     {
-        out.writeObject( _comparator );
+        out.writeObject( _comparator==ComparableComparator.INSTANCE?null:_comparator );
         //serializer is not persistent from 2.0         
 //        out.writeObject( _keySerializer );
 //        out.writeObject( _valueSerializer );
