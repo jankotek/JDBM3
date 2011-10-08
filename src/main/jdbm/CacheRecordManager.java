@@ -287,6 +287,10 @@ class CacheRecordManager
         _recman.setNamedObject( name, recid );
     }
 
+    public Serializer defaultSerializer() {
+        return _recman.defaultSerializer();
+    }
+
 
     /**
      * Check if RecordManager has been closed.  If so, throw an

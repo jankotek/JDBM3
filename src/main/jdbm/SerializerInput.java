@@ -28,17 +28,14 @@ import java.io.ObjectInput;
  * @author Jan Kotek
  *
  */
-class SerializerInput extends DataInputStream implements ObjectInput {
+class SerializerInput extends DataInputStream{
 
 	
 	public SerializerInput(InputStream in) {
 		super(in);
 	}
 
-	public Object readObject() throws ClassNotFoundException, IOException{
-		return Serialization.readObject(this);
-	}
-	
+
 	public long readPackedLong() throws IOException{
 		return LongPacker.unpackLong(this);
 	}

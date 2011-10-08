@@ -353,7 +353,7 @@ final class HashDirectory <K,V>
     /**
      * Implement Externalizable interface
      */
-    public void writeExternal(ObjectOutput out)
+    public void writeExternal(DataOutput out)
     throws IOException {
         out.writeByte(_depth);
 

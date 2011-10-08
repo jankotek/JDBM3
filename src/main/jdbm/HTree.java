@@ -16,10 +16,7 @@
 
 package jdbm;
 
-import java.io.IOError;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -36,7 +33,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 
     final Serializer SERIALIZER = new Serializer<Object>() {
 
-        public Object deserialize(ObjectInput ds2) throws IOException {
+        public Object deserialize(DataInput ds2) throws IOException {
             SerializerInput ds = (SerializerInput) ds2;
             try{
                 int i = ds.read();
@@ -60,7 +57,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
             }
 
         }
-        public void serialize(ObjectOutput out, Object obj) throws IOException {
+        public void serialize(DataOutput out, Object obj) throws IOException {
             if(obj instanceof HashBucket){
                 out.write(Serialization.HTREE_BUCKET);
                 HashBucket b = (HashBucket) obj;

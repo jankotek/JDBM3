@@ -29,16 +29,14 @@ import java.io.OutputStream;
  * @author Jan Kotek
  *
  */
-public class SerializerOutput extends DataOutputStream implements ObjectOutput {
+public class SerializerOutput extends DataOutputStream {
 	
 	
 	public SerializerOutput(OutputStream out) {
 		super(out);
 	}
 
-	public void writeObject(Object obj) throws IOException{
-		Serialization.writeObject(this, obj);
-	}
+
 	
 	public void writePackedLong(long i) throws IOException{
 		LongPacker.packLong(this, i);

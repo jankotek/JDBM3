@@ -997,7 +997,7 @@ final class BPage<K,V>
      *
      */
     @SuppressWarnings("unchecked")
-    public BPage<K,V> deserialize( ObjectInput ois2 )
+    public BPage<K,V> deserialize( DataInput ois2 )
         throws IOException
     {
        SerializerInput ois = (SerializerInput) ois2;
@@ -1053,7 +1053,7 @@ final class BPage<K,V>
      * @return a byte array representing the object's state
      *
      */
-    public void serialize(ObjectOutput oos, BPage<K,V> obj )
+    public void serialize(DataOutput oos, BPage<K,V> obj )
         throws IOException
     {
 
@@ -1086,7 +1086,7 @@ final class BPage<K,V>
 
 	private void readValues(SerializerInput ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = new Object[ _btree._pageSize ];
-                  Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) DefaultSerializer.INSTANCE;
+                  Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
         	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
                        int header = ois.read();
                        if(header == BTreeLazyRecord.NULL){
@@ -1101,9 +1101,9 @@ final class BPage<K,V>
 	}
 
 
-	private void writeValues(ObjectOutput oos, BPage<K, V> bpage) throws IOException {
+	private void writeValues(DataOutput oos, BPage<K, V> bpage) throws IOException {
 
-                Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : DefaultSerializer.INSTANCE;
+                Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
 		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
                         if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
@@ -1184,15 +1184,17 @@ final class BPage<K,V>
 			return (K[]) ret;
 
 		}else if(type == ALL_OTHER){
-			if(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE){
+
+            //TODO why this block is here?
+			if(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer()){
 				for (int i = firstUse ; i < _btree._pageSize; i++) {
-					ret[i] = DefaultSerializer.INSTANCE.deserialize(ois);
+					ret[i] = _btree.getRecordManager().defaultSerializer().deserialize(ois);
 				}
 				return (K[]) ret;
 			}
 
 
-			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : DefaultSerializer.INSTANCE;
+			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : _btree.getRecordManager().defaultSerializer();
 			OpenByteArrayInputStream in1 = null;
 			SerializerInput in2 = null;
 			byte[] previous = null;
@@ -1218,7 +1220,7 @@ final class BPage<K,V>
 
 
 	@SuppressWarnings("unchecked")
-	private void writeKeys(ObjectOutput oos, K[] keys, final int firstUse) throws IOException {
+	private void writeKeys(DataOutput oos, K[] keys, final int firstUse) throws IOException {
 		if(keys.length!=_btree._pageSize)
 			throw new IllegalArgumentException("wrong keys size");
 				
@@ -1239,7 +1241,7 @@ final class BPage<K,V>
 		 * Special compression to compress Long and Integer
 		 */
 		if (_btree._comparator == ComparableComparator.INSTANCE && 
-				(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE)) {
+				(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer())) {
 			boolean allInteger = true;
 			for (int i = firstUse ; i <_btree._pageSize; i++) {
 				if (keys[i]!=null && keys[i].getClass() != Integer.class) {
@@ -1339,9 +1341,9 @@ final class BPage<K,V>
 		 * other case, serializer is provided or other stuff
 		 */
 		oos.write(ALL_OTHER );
-		if(_btree.keySerializer == null || _btree.keySerializer == DefaultSerializer.INSTANCE){
+		if(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer()){
 			for (int i = firstUse ; i < _btree._pageSize; i++) {
-				DefaultSerializer.INSTANCE.serialize(oos, keys[i]);
+				_btree.getRecordManager().defaultSerializer().serialize(oos, keys[i]);
 			}		
 			return;
 		}

@@ -235,13 +235,13 @@ final class HashBucket<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void writeExternal( ObjectOutput out )
+    public void writeExternal( DataOutput out )
         throws IOException
     {
         LongPacker.packInt(out, _depth);
         out.write(_keys.size());
 
-        Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : DefaultSerializer.INSTANCE;
+        Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         for(int i = 0;i<_keys.size();i++){
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             keySerializer.serialize(new SerializerOutput(baos), _keys.get(i));
@@ -251,7 +251,7 @@ final class HashBucket<K,V>
         }
 
         //write values
-        Serializer valSerializer = tree.valueSerializer!=null?tree.valueSerializer : DefaultSerializer.INSTANCE;
+        Serializer valSerializer = tree.valueSerializer!=null?tree.valueSerializer : tree.getRecordManager().defaultSerializer();
 
         for(int i = 0;i<_keys.size();i++){
             Object value = _values.get(i);
@@ -287,7 +287,7 @@ final class HashBucket<K,V>
         final int size = in.read();
 
         //read keys
-        Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : DefaultSerializer.INSTANCE;
+        Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         _keys = new ArrayList<K>(OVERFLOW_SIZE);
         for(int i =0; i<size; i++){
             int expectedSize = in.readPackedInt();
@@ -297,7 +297,7 @@ final class HashBucket<K,V>
 
          //read values
         _values = new ArrayList(OVERFLOW_SIZE);
-        Serializer<V> valSerializer =  tree.valueSerializer!=null ?  tree.valueSerializer : (Serializer<V>) DefaultSerializer.INSTANCE;
+        Serializer<V> valSerializer =  tree.valueSerializer!=null ?  tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
         for(int i = 0;i<size;i++){
             int header = in.read();
             if(header == BTreeLazyRecord.NULL){

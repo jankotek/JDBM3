@@ -16,9 +16,7 @@
 
 package jdbm;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -202,12 +200,12 @@ public class TestRecordManager extends TestCaseWithTestFile {
     	final AtomicInteger i = new AtomicInteger(0);
     	Serializer<String> ser = new Serializer<String>(){
 
-			public String deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
+			public String deserialize(DataInput in) throws IOException, ClassNotFoundException {
 				i.incrementAndGet();
 				return in.readUTF();
 			}
 
-			public void serialize(ObjectOutput out, String obj) throws IOException {
+			public void serialize(DataOutput out, String obj) throws IOException {
 				i.incrementAndGet();
 				out.writeUTF(obj);
 			}};

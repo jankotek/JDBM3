@@ -46,12 +46,12 @@ class BTreeLazyRecord<E> {
      */
     static final Serializer FAKE_SERIALIZER = new Serializer(){
 
-        public void serialize(ObjectOutput out, Object obj) throws IOException {
+        public void serialize(DataOutput out, Object obj) throws IOException {
             byte[] data = (byte[]) obj;
             out.write(data);
         }
 
-        public Object deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
+        public Object deserialize(DataInput in) throws IOException, ClassNotFoundException {
             throw new UnsupportedOperationException();
         }
     };

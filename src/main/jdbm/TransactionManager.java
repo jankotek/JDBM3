@@ -17,6 +17,8 @@
 
 package jdbm;
 
+import sun.org.mozilla.javascript.internal.ast.Block;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -201,9 +203,12 @@ final class TransactionManager {
         while (true) {
             ArrayList<BlockIo> blocks = null;
             try {
-                blocks = (ArrayList<BlockIo>) Serialization.readObject(ois);
-            } catch (ClassNotFoundException e) {
-                throw new Error("Unexcepted exception: " + e);
+                blocks = new ArrayList<BlockIo>(LongPacker.unpackInt(ois));
+                for(int i =0; i<blocks.size();i++){
+                    BlockIo b = new BlockIo();
+                    b.readExternal(ois);
+                    blocks.add(b);
+                }
             } catch (IOException e) {
                 // corrupted logfile, ignore rest of transactions
                 break;
@@ -285,7 +290,12 @@ final class TransactionManager {
      *  Commits the transaction to the log file.
      */
     void commit() throws IOException {
-    	Serialization.writeObject(oos, txns[curTxn]);
+        ArrayList<BlockIo> blocks = txns[curTxn];
+        LongPacker.packInt(oos,blocks.size());
+        for(BlockIo block:blocks){
+            block.writeExternal(oos);
+        }
+
         sync();
 
         // set clean flag to indicate blocks have been written to log

@@ -18,6 +18,7 @@
 package jdbm;
 
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -286,8 +287,7 @@ final class BlockIo {
     }
 
     // implement externalizable interface
-    public void readExternal(DataInputStream in)
-    throws IOException, ClassNotFoundException {
+    public void readExternal(DataInputStream in) throws IOException{
         blockId = LongPacker.unpackLong(in);
         int length = LongPacker.unpackInt(in);
         data = new byte[length];
@@ -295,7 +295,7 @@ final class BlockIo {
     }
 
     // implement externalizable interface
-    public void writeExternal(DataOutputStream out) throws IOException {
+    public void writeExternal(DataOutput out) throws IOException {
     	LongPacker.packLong(out, blockId);
     	LongPacker.packInt(out, data.length);
         out.write(data);

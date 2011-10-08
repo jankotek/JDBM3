@@ -326,9 +326,8 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
 			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
-	
 
-	
 
+    Serializer defaultSerializer();
 }
 

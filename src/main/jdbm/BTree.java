@@ -16,11 +16,7 @@
 
 package jdbm;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -64,11 +60,11 @@ class BTree<K,V>
 
     static final Serializer<BTree> SERIALIZER = new Serializer<BTree>() {
 
-        public void serialize(ObjectOutput out, BTree obj) throws IOException {
+        public void serialize(DataOutput out, BTree obj) throws IOException {
             obj.writeExternal(out);
         }
 
-        public BTree deserialize(ObjectInput in) throws IOException, ClassNotFoundException {
+        public BTree deserialize(DataInput in) throws IOException, ClassNotFoundException {
             BTree tree = new BTree();
             tree.readExternal(in);
             return tree;
@@ -596,10 +592,10 @@ class BTree<K,V>
      * Implement Externalizable interface.
      */
     @SuppressWarnings("unchecked")
-	public void readExternal( ObjectInput in )
+	public void readExternal( DataInput in )
         throws IOException, ClassNotFoundException
     {
-        _comparator = (Comparator<K>) in.readObject();
+        _comparator = (Comparator<K>) getRecordManager().defaultSerializer().deserialize(in);
         if(_comparator == null)
             _comparator = ComparableComparator.INSTANCE;
       //serializer is not persistent from 2.0        
@@ -615,10 +611,10 @@ class BTree<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void writeExternal( ObjectOutput out )
+    public void writeExternal( DataOutput out )
         throws IOException
     {
-        out.writeObject( _comparator==ComparableComparator.INSTANCE?null:_comparator );
+         getRecordManager().defaultSerializer().serialize(out,( _comparator==ComparableComparator.INSTANCE?null:_comparator ));
         //serializer is not persistent from 2.0         
 //        out.writeObject( _keySerializer );
 //        out.writeObject( _valueSerializer );

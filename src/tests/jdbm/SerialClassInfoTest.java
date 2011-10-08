@@ -2,9 +2,29 @@ package jdbm;
 
 import junit.framework.TestCase;
 
+import java.io.*;
+
 public class SerialClassInfoTest extends TestCase {
 
-    static class Bean1{
+    static class Bean1 implements Serializable {
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Bean1 bean1 = (Bean1) o;
+
+            if (Double.compare(bean1.doubleField, doubleField) != 0) return false;
+            if (Float.compare(bean1.floatField, floatField) != 0) return false;
+            if (intField != bean1.intField) return false;
+            if (longField != bean1.longField) return false;
+            if (field1 != null ? !field1.equals(bean1.field1) : bean1.field1 != null) return false;
+            if (field2 != null ? !field2.equals(bean1.field2) : bean1.field2 != null) return false;
+
+            return true;
+        }
+
+
         protected String field1 = null;
         protected String field2 = null;
 
@@ -30,14 +50,34 @@ public class SerialClassInfoTest extends TestCase {
             this.field1 = field1;
             this.field2 = field2;
         }
+        Bean1(){}
     }
 
     static class Bean2 extends Bean1{
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            Bean2 bean2 = (Bean2) o;
+
+            if (field3 != null ? !field3.equals(bean2.field3) : bean2.field3 != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return field3 != null ? field3.hashCode() : 0;
+        }
+
         private String field3 = null;
         Bean2(String field1, String field2, String field3){
             super(field1,field2);
             this.field3 = field3;
         }
+        Bean2(){}
     }
 
 
@@ -110,6 +150,17 @@ public class SerialClassInfoTest extends TestCase {
         assertEquals(-1D,s.getFieldValue("doubleField",b2));
         s.setFieldValue("floatField",b2,-1F);
         assertEquals(-1F,s.getFieldValue("floatField",b2));
+    }
+
+    public void testSerializable() throws Exception {
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        s.writeObject(new DataOutputStream(out),b);
+
+        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        Object bx = s.readObject(new DataInputStream(in));
+
+        assertEquals(bx,b);
     }
 
 

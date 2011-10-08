@@ -24,15 +24,12 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 
-import jdbm.Serialization;
 import junit.framework.TestCase;
 
 @SuppressWarnings("unchecked")
 public class SerializationTest extends TestCase{
 
-	public SerializationTest(String name) {
-		super(name);
-	}
+	Serialization ser = new Serialization();
 	
 	public void testInt() throws IOException, ClassNotFoundException{
 		int[] vals = {
@@ -45,8 +42,8 @@ public class SerializationTest extends TestCase{
 				Short.MAX_VALUE*2, Integer.MAX_VALUE				
 		};
 		for(int i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Integer.class);
 			assertEquals(l2,i);
 		}
@@ -61,8 +58,8 @@ public class SerializationTest extends TestCase{
 				Short.MAX_VALUE				
 		};
 		for(short i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Short.class);
 			assertEquals(l2,i);
 		}
@@ -73,8 +70,8 @@ public class SerializationTest extends TestCase{
 				1f,0f,-1f,  Math.PI, 255,256,Short.MAX_VALUE, Short.MAX_VALUE+1, -100
 		};
 		for(double i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Double.class);
 			assertEquals(l2,i);
 		}
@@ -86,8 +83,8 @@ public class SerializationTest extends TestCase{
 				1f,0f,-1f, (float) Math.PI, 255,256,Short.MAX_VALUE, Short.MAX_VALUE+1, -100
 		};
 		for(float i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Float.class);
 			assertEquals(l2,i);
 		}
@@ -98,8 +95,8 @@ public class SerializationTest extends TestCase{
 				'a',' '				
 		};
 		for(char i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Character.class);
 			assertEquals(l2,i);
 		}
@@ -118,29 +115,29 @@ public class SerializationTest extends TestCase{
 				Short.MAX_VALUE*2, Integer.MAX_VALUE, Integer.MAX_VALUE+1, Long.MAX_VALUE				
 		};
 		for(long i :vals){
-			byte[] buf = Serialization.serialize(i);
-			Object l2 = Serialization.deserialize(buf);
+			byte[] buf = ser.serialize(i);
+			Object l2 = ser.deserialize(buf);
 			assertTrue(l2.getClass() == Long.class);
 			assertEquals(l2,i);
 		}
 	}
 	
 	public void testBoolean1() throws IOException, ClassNotFoundException{		
-		byte[] buf = Serialization.serialize(true);
-		Object l2 =  Serialization.deserialize(buf);
+		byte[] buf = ser.serialize(true);
+		Object l2 =  ser.deserialize(buf);
 		assertTrue(l2.getClass() == Boolean.class);
 		assertEquals(l2,true);
 		
-		byte[] buf2 = Serialization.serialize(false);
-		Object l22 =  Serialization.deserialize(buf2);
+		byte[] buf2 = ser.serialize(false);
+		Object l22 =  ser.deserialize(buf2);
 		assertTrue(l22.getClass() == Boolean.class);
 		assertEquals(l22,false);		
 
 	}
 
 	public void testString() throws IOException, ClassNotFoundException{		
-		byte[] buf = Serialization.serialize("Abcd");
-		String l2 = (String) Serialization.deserialize(buf);
+		byte[] buf = ser.serialize("Abcd");
+		String l2 = (String) ser.deserialize(buf);
 		assertEquals(l2,"Abcd");
 	}
 	
@@ -148,16 +145,16 @@ public class SerializationTest extends TestCase{
 		String bigString = "";
 		for(int i = 0;i<1e4;i++)
 			bigString +=i%10;
-		byte[] buf = Serialization.serialize(bigString);
-		String l2 = (String) Serialization.deserialize(buf);
+		byte[] buf = ser.serialize(bigString);
+		String l2 = (String) ser.deserialize(buf);
 		assertEquals(l2,bigString);		
 	}
 	
 	
 	public void testObject() throws ClassNotFoundException, IOException{
 		SimpleEntry a = new SimpleEntry(1,"11");
-		byte[] buf = Serialization.serialize(a);
-		SimpleEntry l2 = (SimpleEntry) Serialization.deserialize(buf);
+		byte[] buf = ser.serialize(a);
+		SimpleEntry l2 = (SimpleEntry) ser.deserialize(buf);
 		assertEquals(l2,a);
 	}
 	
@@ -165,30 +162,30 @@ public class SerializationTest extends TestCase{
 		Collection c = new ArrayList();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	public void testLinkedList() throws ClassNotFoundException, IOException{
 		Collection c = new LinkedList();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	public void testVector() throws ClassNotFoundException, IOException{
 		Collection c = new Vector();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	
@@ -196,100 +193,100 @@ public class SerializationTest extends TestCase{
 		Collection c = new TreeSet();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 
 	public void testHashSet() throws ClassNotFoundException, IOException{
 		Collection c = new HashSet();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 
 	public void testLinkedHashSet() throws ClassNotFoundException, IOException{
 		Collection c = new LinkedHashSet();
 		for(int i = 0; i<200;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.add(i);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 
 	public void testHashMap() throws ClassNotFoundException, IOException{
 		Map c = new HashMap();
 		for(int i = 0; i<200;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	public void testTreeMap() throws ClassNotFoundException, IOException{
 		Map c = new TreeMap();
 		for(int i = 0; i<200;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	public void testLinkedHashMap() throws ClassNotFoundException, IOException{
 		Map c = new LinkedHashMap();
 		for(int i = 0; i<200;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	public void testHashtable() throws ClassNotFoundException, IOException{
 		Map c = new Hashtable();
 		for(int i = 0; i<200;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 	public void testProperties() throws ClassNotFoundException, IOException{
 		Properties c = new Properties();
 		for(int i = 0; i<200;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));		
+		assertEquals(c, ser.deserialize(ser.serialize(c)));		
 		for(int i = 0; i<2000;i++)
 			c.put(i,i+10000);
-		assertEquals(c, Serialization.deserialize(Serialization.serialize(c)));
+		assertEquals(c, ser.deserialize(ser.serialize(c)));
 	}
 	
 
 	public void testClass() throws IOException, ClassNotFoundException{		
-		byte[] buf = Serialization.serialize(String.class);
-		Class l2 = (Class) Serialization.deserialize(buf);
+		byte[] buf = ser.serialize(String.class);
+		Class l2 = (Class) ser.deserialize(buf);
 		assertEquals(l2,String.class);
 	}
 	
 	public void testClass2() throws IOException, ClassNotFoundException{		
-		byte[] buf = Serialization.serialize(long[].class);
-		Class l2 = (Class) Serialization.deserialize(buf);
+		byte[] buf = ser.serialize(long[].class);
+		Class l2 = (Class) ser.deserialize(buf);
 		assertEquals(l2,long[].class);
 	}	
 
 	
 	public void testUnicodeString() throws ClassNotFoundException, IOException{
 		String s = "Ciudad Bolíva";
-		byte[] buf = Serialization.serialize(s);
+		byte[] buf = ser.serialize(s);
 		assertTrue("text is not unicode",buf.length!=s.length());
-		Object l2 =  Serialization.deserialize(buf);
+		Object l2 =  ser.deserialize(buf);
 		assertEquals(l2,s);		
 	}
 	
@@ -305,7 +302,7 @@ public class SerializationTest extends TestCase{
 		final int header2 = i2.read();
 
 		assertEquals(header1, header2);
-		assertEquals(header1, Serialization.JAVA_SERIALIZATION);
+		assertEquals(header1, ser.JAVA_SERIALIZATION);
 		System.out.println("serialization header: "+header1);
 	}
 	
@@ -314,29 +311,29 @@ public class SerializationTest extends TestCase{
 		l1.add(0L);
 		l1.add(1L);
 		l1.add(0L);
-		assertEquals(l1,Serialization.deserialize(Serialization.serialize(l1)));
+		assertEquals(l1,ser.deserialize(ser.serialize(l1)));
 		l1.add(-1L);
-		assertEquals(l1,Serialization.deserialize(Serialization.serialize(l1)));
+		assertEquals(l1,ser.deserialize(ser.serialize(l1)));
 
 	}
 
         public void testDate() throws IOException, ClassNotFoundException {
             Date d = new Date(6546565565656L);
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
             d = new Date(System.currentTimeMillis());
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
         }
 
         public void testBigDecimal() throws IOException, ClassNotFoundException {
             BigDecimal d = new BigDecimal("445656.7889889895165654423236");
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
             d = new BigDecimal("-53534534534534445656.7889889895165654423236");
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
         }
         public void testBigInteger() throws IOException, ClassNotFoundException {
             BigInteger d = new BigInteger("4456567889889895165654423236");
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
             d = new BigInteger("-535345345345344456567889889895165654423236");
-            assertEquals(d,Serialization.deserialize(Serialization.serialize(d)));
+            assertEquals(d,ser.deserialize(ser.serialize(d)));
         }
 }

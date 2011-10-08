@@ -478,6 +478,12 @@ final class BaseRecordManager
     }
 
 
+    private final Serializer defualtSerializer = new Serialization();
+    public Serializer defaultSerializer() {
+        return defualtSerializer;
+    }
+
+
     public synchronized void commit()
         throws IOException
     {

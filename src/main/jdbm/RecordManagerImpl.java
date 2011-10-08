@@ -107,15 +107,15 @@ abstract class RecordManagerImpl implements RecordManager{
 
 
     public void update( long recid, Object obj ) throws IOException{
-    	update( recid, obj, DefaultSerializer.INSTANCE );
+    	update( recid, obj, defaultSerializer() );
     }
     
     public Object fetch( long recid ) throws IOException{
-    	return fetch( recid, DefaultSerializer.INSTANCE );
+    	return fetch( recid, defaultSerializer() );
     }
 
     public long insert( Object obj )throws IOException{
-    	return insert( obj, DefaultSerializer.INSTANCE );
+    	return insert( obj, defaultSerializer() );
     }
 
 

@@ -1,7 +1,7 @@
 package jdbm;
 
-import java.io.ObjectStreamClass;
-import java.io.ObjectStreamField;
+import java.awt.image.ImagingOpException;
+import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
@@ -18,25 +18,21 @@ public class SerialClassInfo {
     public static class ClassInfo{
 
         private final String name;
-        private final Class mappedClass;
-        private final FieldInfo[] fields;
+        private final List<FieldInfo> fields = new ArrayList<FieldInfo>();
 
-        ClassInfo(String name, FieldInfo[] fields) throws ClassNotFoundException {
+        ClassInfo(String name, FieldInfo[] fields){
             this.name = name;
-            this.mappedClass = getClass().getClassLoader().loadClass(name);
-            this.fields = fields;
+            for(FieldInfo f:fields){
+                this.fields.add(f);
+            }
         }
 
         public String getName(){
             return name;
         }
 
-        public Class getMappedClass(){
-            return mappedClass;
-        }
-
         public FieldInfo[] getFields(){
-            return Arrays.copyOf(fields,fields.length);
+            return (FieldInfo[]) fields.toArray();
         }
 
         public FieldInfo getField(String name){
@@ -47,8 +43,16 @@ public class SerialClassInfo {
             return null;
         }
 
+        public int getFieldId(String name){
+            for(int i=0;i<fields.size();i++){
+                if(fields.get(i).getName().equals(name))
+                    return i;
+            }
+            throw new Error("Field not found: "+name);
+        }
+
         public FieldInfo getField(int serialId){
-            return fields[serialId];
+            return fields.get(serialId);
         }
 
     }
@@ -84,14 +88,18 @@ public class SerialClassInfo {
     }
 
 
-    private Map<String,ClassInfo> registered = new LinkedHashMap<String,ClassInfo>();
+    private List<ClassInfo> registered = new ArrayList<ClassInfo>();
 
 
-    public void registerClass(Class clazz) throws ClassNotFoundException {
-        if(registered.containsKey(clazz.getCanonicalName()))
+
+    public void registerClass(Class clazz) throws NotSerializableException, InvalidClassException {
+        assertClassSerializable(clazz);
+
+        if(containsClass(clazz))
             return;
 
         ObjectStreamClass streamClass = ObjectStreamClass.lookup(clazz);
+
         ObjectStreamField[] streamFields = streamClass.getFields();
         FieldInfo[] fields = new FieldInfo[streamFields.length];
         for(int i=0;i<fields.length;i++){
@@ -99,9 +107,20 @@ public class SerialClassInfo {
             fields[i] = new FieldInfo(sf.getName(),sf.isPrimitive(),sf.getType());
         }
 
-        ClassInfo i = new ClassInfo(clazz.getCanonicalName(),fields);
-        registered.put(i.getName(),i);
+        ClassInfo i = new ClassInfo(clazz.getName(),fields);
+        registered.add(i);
     }
+
+    private void assertClassSerializable(Class clazz) throws NotSerializableException, InvalidClassException {
+        if(!Serializable.class.isAssignableFrom(clazz))
+            throw new NotSerializableException(clazz.getName());
+        try {
+            clazz.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            throw new InvalidClassException("There is no no-arg constructor at: "+clazz.getName());
+        }
+    }
+
 
     public Object getFieldValue(String fieldName, Object object){
         Class clazz = object.getClass();
@@ -162,7 +181,69 @@ public class SerialClassInfo {
     }
 
 
-    static String firstCharCap(String s){
+    private String firstCharCap(String s){
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
+
+    public boolean containsClass(Class clazz) {
+        for(ClassInfo c:registered){
+            if(c.getName().equals(clazz.getName()))
+                return true;
+        }
+        return false;
+    }
+
+    public int getClassId(Class clazz){
+        for(int i = 0;i<registered.size();i++){
+            if(registered.get(i).getName().equals(clazz.getName()))
+                return i;
+        }
+        throw new Error("Class is not registered: "+clazz);
+    }
+
+    public void writeObject(DataOutputStream out, Object obj) throws IOException {
+        registerClass(obj.getClass());
+
+        //write class header
+        int classId = getClassId(obj.getClass());
+        LongPacker.packInt(out,classId);
+        ClassInfo classInfo = registered.get(classId);
+
+        ObjectStreamClass streamClass = ObjectStreamClass.lookup(obj.getClass());
+        LongPacker.packInt(out,streamClass.getFields().length);
+
+        for(ObjectStreamField f:streamClass.getFields()){
+            //write field ID
+            int fieldId = classInfo.getFieldId(f.getName());
+            LongPacker.packInt(out,fieldId);
+            //and write value
+            Object fieldValue = getFieldValue(f.getName(),obj);
+            new Serialization().serialize(out,fieldValue);
+        }
+
+
+    }
+
+    public Object readObject(DataInputStream in) throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+        //read class header
+        int classId = LongPacker.unpackInt(in);
+        ClassInfo classInfo = registered.get(classId);
+        Class clazz = Class.forName(classInfo.getName());
+        assertClassSerializable(clazz);
+
+        Object o = Class.forName(classInfo.getName()).newInstance();
+
+        int fieldCount = LongPacker.unpackInt(in);
+        for(int i=0; i<fieldCount; i++){
+            int fieldId = LongPacker.unpackInt(in);
+            FieldInfo f = classInfo.getField(fieldId);
+            Object fieldValue = new Serialization().deserialize(in);
+            setFieldValue(f.getName(),o,fieldValue);
+        }
+        return o;
+    }
+
+
+
+
 }
