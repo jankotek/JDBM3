@@ -36,14 +36,9 @@ import java.util.*;
  * @author Jan Kotek
  */
 @SuppressWarnings("unchecked")
-class Serialization implements Serializer
+class Serialization extends SerialClassInfo implements Serializer
 {
 
-    private SerialClassInfo serialClassInfo;
-
-    void setClassInfo(SerialClassInfo serialClassInfo){
-        this.serialClassInfo = serialClassInfo;
-    }
 
 	static final byte END_OF_NORMAL_SERIALIZATION = 111;
 
@@ -424,7 +419,7 @@ class Serialization implements Serializer
             ((BTree)obj).writeExternal(out);
 		}else{
             out.write(NORMAL);
-            serialClassInfo.writeObject(out,obj);
+            writeObject(out,obj);
 		}
 
     	if(DEBUGSTORE){
@@ -645,7 +640,7 @@ class Serialization implements Serializer
 
     	switch(head){
     		case NULL:ret=  null;break;
-            case NORMAL: ret = serialClassInfo.readObject(is); break;
+            case NORMAL: ret = readObject(is); break;
 			case BOOLEAN_TRUE:ret= true;break;
 			case BOOLEAN_FALSE:ret= false;break;
 			case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
