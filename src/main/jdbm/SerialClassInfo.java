@@ -8,8 +8,13 @@ import java.lang.reflect.*;
 /**
  * This class stores information about serialized classes and fields.
  */
-public class SerialClassInfo {
+class SerialClassInfo {
 
+    private Serialization serial;
+
+    SerialClassInfo(Serialization serialization){
+        this.serial = serialization;
+    }
 
     /**
      * Stores info about single class stored in JDBM.
@@ -218,7 +223,7 @@ public class SerialClassInfo {
             LongPacker.packInt(out,fieldId);
             //and write value
             Object fieldValue = getFieldValue(f.getName(),obj);
-            new Serialization().serialize(out,fieldValue);
+            serial.serialize(out, fieldValue);
         }
 
 
@@ -237,7 +242,7 @@ public class SerialClassInfo {
         for(int i=0; i<fieldCount; i++){
             int fieldId = LongPacker.unpackInt(in);
             FieldInfo f = classInfo.getField(fieldId);
-            Object fieldValue = new Serialization().deserialize(in);
+            Object fieldValue = serial.deserialize(in);
             setFieldValue(f.getName(),o,fieldValue);
         }
         return o;

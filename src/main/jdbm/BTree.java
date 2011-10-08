@@ -58,20 +58,6 @@ class BTree<K,V>
     private static final boolean DEBUG = false;
 
 
-    static final Serializer<BTree> SERIALIZER = new Serializer<BTree>() {
-
-        public void serialize(DataOutput out, BTree obj) throws IOException {
-            obj.writeExternal(out);
-        }
-
-        public BTree deserialize(DataInput in) throws IOException, ClassNotFoundException {
-            BTree tree = new BTree();
-            tree.readExternal(in);
-            return tree;
-        }
-    };
-
-
 
     /**
      * Default page size (number of entries per node)
@@ -266,7 +252,7 @@ class BTree<K,V>
         btree._pageSize = pageSize;
         btree._bpageSerializer = new BPage<K,V>();
         btree._bpageSerializer._btree = btree;
-        btree._recid = recman.insert( btree,SERIALIZER );
+        btree._recid = recman.insert( btree, btree.getRecordManager().defaultSerializer() );
         return btree;
     }
 
@@ -281,7 +267,7 @@ class BTree<K,V>
 	public static <K,V> BTree<K,V> load( RecordManager recman, long recid )
         throws IOException
     {
-        BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid,SERIALIZER );
+        BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid);
         btree._recid = recid;
         btree._recman = recman;
         btree._bpageSerializer = new BPage<K,V>();
@@ -334,7 +320,7 @@ class BTree<K,V>
 	            _root = rootPage._recid;
 	            _height = 1;
 	            _entries = 1;
-	            _recman.update( _recid, this, SERIALIZER );
+	            _recman.update( _recid, this);
 	            //notifi listeners
 	            for(RecordListener<K,V> l : recordListeners){
 	            	l.recordInserted(key, value);
@@ -358,7 +344,7 @@ class BTree<K,V>
                 dirty = true;
             }
             if ( dirty ) {
-                _recman.update( _recid, this,SERIALIZER );
+                _recman.update( _recid, this);
             }
             //notify listeners
             for(RecordListener<K,V> l : recordListeners){
@@ -414,7 +400,7 @@ class BTree<K,V>
 	            dirty = true;
 	        }
 	        if ( dirty ) {
-	            _recman.update( _recid, this,SERIALIZER );
+	            _recman.update( _recid, this);
 	        }
 	        if(remove._value!=null)
 	        	for(RecordListener<K,V> l : recordListeners)
@@ -588,33 +574,29 @@ class BTree<K,V>
         return root;
     }
 
-    /**
-     * Implement Externalizable interface.
-     */
-    @SuppressWarnings("unchecked")
-	public void readExternal( DataInput in )
+
+	static BTree readExternal( DataInput in, Serializer ser )
         throws IOException, ClassNotFoundException
     {
-        _comparator = (Comparator<K>) getRecordManager().defaultSerializer().deserialize(in);
-        if(_comparator == null)
-            _comparator = ComparableComparator.INSTANCE;
+        BTree tree = new BTree();
+        tree._comparator = (Comparator) ser.deserialize(in);
+        if(tree._comparator == null)
+            tree._comparator = ComparableComparator.INSTANCE;
       //serializer is not persistent from 2.0        
 //        _keySerializer = (Serializer<K>) in.readObject();
 //        _valueSerializer = (Serializer<V>) in.readObject();
-        _height = in.readInt();
-        _root = in.readLong();
-        _pageSize = in.readInt();
-        _entries = in.readInt();
+        tree._height = in.readInt();
+        tree._root = in.readLong();
+        tree._pageSize = in.readInt();
+        tree._entries = in.readInt();
+        return tree;
     }
 
 
-    /**
-     * Implement Externalizable interface.
-     */
     public void writeExternal( DataOutput out )
         throws IOException
     {
-         getRecordManager().defaultSerializer().serialize(out,( _comparator==ComparableComparator.INSTANCE?null:_comparator ));
+         getRecordManager().defaultSerializer().serialize(out, (_comparator == ComparableComparator.INSTANCE ? null : _comparator));
         //serializer is not persistent from 2.0         
 //        out.writeObject( _keySerializer );
 //        out.writeObject( _valueSerializer );

@@ -166,7 +166,7 @@ class Serialization implements Serializer
 
         final static int DATE				= 127;
 
-	final static int UNUSEDASS				= 161;
+	final static int BTREE				= 161;
 
 	static final int BPAGE_LEAF 			= 162;
 	static final int BPAGE_NONLEAF 		= 163;
@@ -536,6 +536,9 @@ class Serialization implements Serializer
                 }else if(clazz ==  Date.class){
 		    out.write(DATE);
                     out.writeLong(((Date)obj).getTime());
+        }else if (clazz == BTree.class){
+            out.write(BTREE);
+            ((BTree)obj).writeExternal(out);
 		}else{
             throw new NotSerializableException("Dont know howto serialize: "+obj.getClass());
 		}
@@ -846,6 +849,7 @@ class Serialization implements Serializer
 			case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
 			case ARRAY_BYTE_255: ret= deserializeArrayByte255(is);break;
 			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+            case BTREE: ret = BTree.readExternal(is,this); break;
 			case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
 			case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
 			case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");

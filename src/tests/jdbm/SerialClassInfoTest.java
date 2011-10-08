@@ -81,7 +81,7 @@ public class SerialClassInfoTest extends TestCase {
     }
 
 
-    SerialClassInfo s = new SerialClassInfo();
+    SerialClassInfo s = new SerialClassInfo(new Serialization());
     Bean1 b = new Bean1("aa","bb");
     Bean2 b2 = new Bean2("aa","bb","cc");
 
