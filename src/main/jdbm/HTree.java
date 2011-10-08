@@ -138,6 +138,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
         this._root = new HashDirectory<K,V>( this, (byte) 0 );
         recid = recman.insert( this._root, this.SERIALIZER );
         this._root.setPersistenceContext(recman, recid);
+
     }
 
 

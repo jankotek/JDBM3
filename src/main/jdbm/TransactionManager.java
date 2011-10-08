@@ -203,8 +203,9 @@ final class TransactionManager {
         while (true) {
             ArrayList<BlockIo> blocks = null;
             try {
-                blocks = new ArrayList<BlockIo>(LongPacker.unpackInt(ois));
-                for(int i =0; i<blocks.size();i++){
+                int size = LongPacker.unpackInt(ois);
+                blocks = new ArrayList<BlockIo>(size);
+                for(int i =0; i<size;i++){
                     BlockIo b = new BlockIo();
                     b.readExternal(ois);
                     blocks.add(b);

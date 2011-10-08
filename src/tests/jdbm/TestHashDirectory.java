@@ -39,7 +39,7 @@ public class TestHashDirectory extends TestCaseWithTestFile {
 
         RecordManager recman = newRecordManager();
 
-        HTree tree = new HTree();
+        HTree tree = new HTree(recman);
         HashDirectory dir = new HashDirectory(tree, (byte)0);
         long recid = recman.insert(dir,tree.SERIALIZER);
         dir.setPersistenceContext(recman, recid);
@@ -58,7 +58,7 @@ public class TestHashDirectory extends TestCaseWithTestFile {
         System.out.println("testMixed");
 
         RecordManager recman = newRecordManager();
-        HTree tree = new HTree();
+        HTree tree = new HTree(recman);
         HashDirectory dir = new HashDirectory(tree, (byte)0);
         long recid = recman.insert(dir,tree.SERIALIZER);
         dir.setPersistenceContext(recman, recid);
