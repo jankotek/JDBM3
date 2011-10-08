@@ -1,5 +1,8 @@
 package jdbm;
 
+import sun.reflect.ReflectionFactory;
+
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.awt.image.ImagingOpException;
 import java.io.*;
 import java.util.*;
@@ -119,11 +122,6 @@ class SerialClassInfo {
     private void assertClassSerializable(Class clazz) throws NotSerializableException, InvalidClassException {
         if(!Serializable.class.isAssignableFrom(clazz))
             throw new NotSerializableException(clazz.getName());
-        try {
-            clazz.getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
-            throw new InvalidClassException("There is no no-arg constructor at: "+clazz.getName());
-        }
     }
 
 
@@ -237,7 +235,12 @@ class SerialClassInfo {
             Class clazz = Class.forName(classInfo.getName());
             assertClassSerializable(clazz);
 
-            Object o = Class.forName(classInfo.getName()).newInstance();
+            Object o;
+            try{
+                o = clazz.newInstance();
+            }catch (InstantiationException e){
+                o = createInstance(clazz, Object.class);
+            }
 
             int fieldCount = LongPacker.unpackInt(in);
             for(int i=0; i<fieldCount; i++){
@@ -253,6 +256,25 @@ class SerialClassInfo {
     }
 
 
+    /**
+     * Little trick to create new instance without using constructor.
+     * Taken from http://www.javaspecialists.eu/archive/Issue175.html
+     */
+    private static <T> T createInstance(Class<T> clazz, Class<? super T> parent) {
 
+        try {
+            ReflectionFactory rf =
+                  ReflectionFactory.getReflectionFactory();
+            Constructor objDef = parent.getDeclaredConstructor();
+            Constructor intConstr = rf.newConstructorForSerialization(
+                clazz, objDef
+            );
+            return clazz.cast(intConstr.newInstance());
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot create object", e);
+        }
+  }
 
 }

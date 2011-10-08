@@ -15,10 +15,7 @@
  ******************************************************************************/
 package jdbm;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -161,6 +158,16 @@ public class SerializationTest extends TestCase{
 		SimpleEntry l2 = (SimpleEntry) ser.deserialize(buf);
 		assertEquals(l2,a);
 	}
+
+    public void testNoArgumentConstructorInJavaSerialization() throws ClassNotFoundException, IOException{
+        SimpleEntry a = new SimpleEntry(1,"11");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new ObjectOutputStream(out).writeObject(a);
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
+        SimpleEntry a2 = (SimpleEntry) in.readObject();
+        assertEquals(a,a2);
+    }
+
 	
 	public void testArrayList() throws ClassNotFoundException, IOException{
 		Collection c = new ArrayList();
