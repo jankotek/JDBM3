@@ -129,43 +129,43 @@ class Serialization implements Serializer
 	final static int ARRAY_LONG_L		=  68;
 	final static int ARRAY_LONG_PACKED	=  69;
 
-	final static int ARRAY_BYTE_255		=  70;
+	final static int NOTUSED_ARRAY_BYTE_255		=  70;
 	final static int ARRAY_BYTE_INT		=  71;
 	
-	final static int ARRAY_OBJECT_255	=  72;
+	final static int NOTUSED_ARRAY_OBJECT_255	=  72;
 	final static int ARRAY_OBJECT		=  73;
 	//special cases for BTree values which stores references
 	final static int ARRAY_OBJECT_PACKED_LONG =  74;
 	final static int ARRAYLIST_PACKED_LONG =  75;
 	
 	final static int STRING_EMPTY		= 101;
-	final static int STRING_255			= 102;
+	final static int NOTUSED_STRING_255			= 102;
 	final static int STRING				= 103;
-	final static int ARRAYLIST_255		= 104;
+	final static int NOTUSED_ARRAYLIST_255		= 104;
 	final static int ARRAYLIST			= 105;
 
-	final static int TREEMAP_255			= 106;
+	final static int NOTUSED_TREEMAP_255			= 106;
 	final static int TREEMAP				= 107;
-	final static int HASHMAP_255			= 108;
+	final static int NOTUSED_HASHMAP_255			= 108;
 	final static int HASHMAP				= 109;
-	final static int LINKEDHASHMAP_255	= 110;
+	final static int NOTUSED_LINKEDHASHMAP_255	= 110;
 	final static int LINKEDHASHMAP		= 111;
 	
-	final static int TREESET_255			= 112;
+	final static int NOTUSED_TREESET_255			= 112;
 	final static int TREESET				= 113;
-	final static int HASHSET_255			= 114;
+	final static int NOTUSED_HASHSET_255			= 114;
 	final static int HASHSET				= 115;
-	final static int LINKEDHASHSET_255	= 116;
+	final static int NOTUSED_LINKEDHASHSET_255	= 116;
 	final static int LINKEDHASHSET		= 117;
-	final static int LINKEDLIST_255		= 118;
+	final static int NOTUSED_LINKEDLIST_255		= 118;
 	final static int LINKEDLIST			= 119;
 	
 
-	final static int VECTOR_255			= 120;
+	final static int NOTUSED_VECTOR_255			= 120;
 	final static int VECTOR				= 121;
-	final static int HASHTABLE_255		= 122;
+	final static int NOTUSED_HASHTABLE_255		= 122;
 	final static int HASHTABLE			= 123;
-	final static int PROPERTIES_255		= 124;
+	final static int NOTUSED_PROPERTIES_255		= 124;
 	final static int PROPERTIES			= 125;
 	
 	final static int CLASS				= 126;
@@ -310,14 +310,11 @@ class Serialization implements Serializer
 			byte[] s = ((String)obj).getBytes(UTF8);
 			if(s.length==0){
 				out.write(STRING_EMPTY);
-			}else if(s.length<255){
-				out.write(STRING_255);
-				out.write(s.length);
 			}else{
 				out.write(STRING);
 				LongPacker.packInt(out, s.length);
+                out.write(s);
 			}
-			out.write(s);
 		}else if(obj instanceof Class){
 			out.write(CLASS);
 			serialize(out, ((Class) obj).getName());
@@ -327,27 +324,24 @@ class Serialization implements Serializer
 			writeLongArray(out,(long[])obj);
 		}else if(obj instanceof byte[]){
 			byte[] b = (byte[]) obj;
-			if(b.length<=255){
-				out.write(ARRAY_BYTE_255);
-				out.write(b.length);
-                                out.write(b);
-			}else{
-				out.write(ARRAY_BYTE_INT);
-                            serializeByteArrayInt(out, b);
-			}
+			out.write(ARRAY_BYTE_INT);
+            serializeByteArrayInt(out, b);
 
 		}else if(obj instanceof Object[]){
 			Object[] b = (Object[]) obj;
-			if(b.length<=255){
+            boolean packableLongs = b.length<=255;
+			if(packableLongs){
 				//check if it contains packable longs
-				boolean packableLongs = true;
 				for(Object o:b){
 					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
 						packableLongs = false;
 						break;
 					}
 				}
-				if(packableLongs){
+            }
+
+            if(packableLongs){
+                    //packable Longs is special case,  it is often used in JDBM to reference fields
 					out.write(ARRAY_OBJECT_PACKED_LONG);
 					out.write(b.length);
 					for(Object o : b){
@@ -356,13 +350,6 @@ class Serialization implements Serializer
 						else
 							LongPacker.packLong(out,((Long)o).longValue()+1);
 					}
-
-				}else{
-					out.write(ARRAY_OBJECT_255);
-					out.write(b.length);
-					for(Object o : b)
-						serialize(out,o);
-				}
 
 			}else{
 				out.write(ARRAY_OBJECT);
@@ -374,31 +361,25 @@ class Serialization implements Serializer
 
 		}else if(clazz ==  ArrayList.class){
 			ArrayList l = (ArrayList) obj;
-			if(l.size()<255){
-				//check if it contains packable longs
-				boolean packableLongs = true;
+            boolean packableLongs = l.size()<255;
+			if(packableLongs){
+                  //packable Longs is special case,  it is often used in JDBM to reference fields
 				for(Object o:l){
 					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
 						packableLongs = false;
 						break;
 					}
 				}
-				if(packableLongs){
-					out.write(ARRAYLIST_PACKED_LONG);
-					out.write(l.size());
-					for(Object o : l){
-						if(o == null)
-							LongPacker.packLong(out,0);
-						else
-							LongPacker.packLong(out,((Long)o).longValue()+1);
-					}
-				}else{
-					out.write(ARRAYLIST_255);
-					out.write(l.size());
-					for(Object o:l)
-						serialize(out, o);
+            }
+            if(packableLongs){
+			    out.write(ARRAYLIST_PACKED_LONG);
+				out.write(l.size());
+				for(Object o : l){
+					if(o == null)
+						LongPacker.packLong(out,0);
+					else
+						LongPacker.packLong(out,((Long)o).longValue()+1);
 				}
-
 			}else{
 				out.write(ARRAYLIST);
 				LongPacker.packInt(out,l.size());
@@ -408,74 +389,44 @@ class Serialization implements Serializer
 
 		}else if(clazz ==  LinkedList.class){
 			LinkedList l = (LinkedList) obj;
-			if(l.size()<255){
-				out.write(LINKEDLIST_255);
-				out.write(l.size());
-			}else{
-				out.write(LINKEDLIST);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(LINKEDLIST);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l)
 				serialize(out, o);
 		}else if(clazz ==  Vector.class){
 			Vector l = (Vector) obj;
-			if(l.size()<255){
-				out.write(VECTOR_255);
-				out.write(l.size());
-			}else{
-				out.write(VECTOR);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(VECTOR);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l)
 				serialize(out, o);
 		}else if(clazz ==  TreeSet.class){
 			TreeSet l = (TreeSet) obj;
-			if(l.size()<255){
-				out.write(TREESET_255);
-				out.write(l.size());
-			}else{
-				out.write(TREESET);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(TREESET);
+			LongPacker.packInt(out,l.size());
 			serialize(out,l.comparator());
 
 			for(Object o:l)
 				serialize(out, o);
 		}else if(clazz ==  HashSet.class){
 			HashSet l = (HashSet) obj;
-			if(l.size()<255){
-				out.write(HASHSET_255);
-				out.write(l.size());
-			}else{
-				out.write(HASHSET);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(HASHSET);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l)
 				serialize(out, o);
 		}else if(clazz ==  LinkedHashSet.class){
 			LinkedHashSet l = (LinkedHashSet) obj;
-			if(l.size()<255){
-				out.write(LINKEDHASHSET_255);
-				out.write(l.size());
-			}else{
-				out.write(LINKEDHASHSET);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(LINKEDHASHSET);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l)
 				serialize(out, o);
 		}else if(clazz ==  TreeMap.class){
 			TreeMap l = (TreeMap) obj;
-			if(l.size()<255){
-				out.write(TREEMAP_255);
-				out.write(l.size());
-			}else{
-				out.write(TREEMAP);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(TREEMAP);
+			LongPacker.packInt(out,l.size());
 
 			serialize(out, l.comparator());
 			for(Object o:l.keySet()){
@@ -484,13 +435,8 @@ class Serialization implements Serializer
 			}
 		}else if(clazz ==  HashMap.class){
 			HashMap l = (HashMap) obj;
-			if(l.size()<255){
-				out.write(HASHMAP_255);
-				out.write(l.size());
-			}else{
-				out.write(HASHMAP);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(HASHMAP);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l.keySet()){
 				serialize(out, o);
@@ -498,13 +444,8 @@ class Serialization implements Serializer
 			}
 		}else if(clazz ==  LinkedHashMap.class){
 			LinkedHashMap l = (LinkedHashMap) obj;
-			if(l.size()<255){
-				out.write(LINKEDHASHMAP_255);
-				out.write(l.size());
-			}else{
-				out.write(LINKEDHASHMAP);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(LINKEDHASHMAP);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l.keySet()){
 				serialize(out, o);
@@ -512,13 +453,8 @@ class Serialization implements Serializer
 			}
 		}else if(clazz ==  Hashtable.class){
 			Hashtable l = (Hashtable) obj;
-			if(l.size()<255){
-				out.write(HASHTABLE_255);
-				out.write(l.size());
-			}else{
-				out.write(HASHTABLE);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(HASHTABLE);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l.keySet()){
 				serialize(out, o);
@@ -527,13 +463,8 @@ class Serialization implements Serializer
 
 		}else if(clazz ==  Properties.class){
 			Properties l = (Properties) obj;
-			if(l.size()<255){
-				out.write(PROPERTIES_255);
-				out.write(l.size());
-			}else{
-				out.write(PROPERTIES);
-				LongPacker.packInt(out,l.size());
-			}
+			out.write(PROPERTIES);
+			LongPacker.packInt(out,l.size());
 
 			for(Object o:l.keySet()){
 				serialize(out, o);
@@ -735,15 +666,6 @@ class Serialization implements Serializer
     	return new String(b,UTF8);
 	}
 
-	private String deserializeString256Smaller(DataInput buf) throws IOException {
-    	int len  = buf.readUnsignedByte();
-    	if (len < 0)
-    	    throw new EOFException();
-
-    	byte[] b=  new byte[len];
-    	buf.readFully(b);
-    	return new String(b,UTF8);
-}
 
     public Object deserialize(DataInput is) throws IOException, ClassNotFoundException{
 
@@ -812,34 +734,21 @@ class Serialization implements Serializer
 			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;
                         case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));break;
                         case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
-			case STRING_255:ret= deserializeString256Smaller(is);break;
 			case STRING:ret= deserializeString(is);break;
 			case STRING_EMPTY:ret= EMPTY_STRING;break;
-			case ARRAYLIST_255:ret= deserializeArrayList256Smaller(is);break;
 			case ARRAYLIST:ret= deserializeArrayList(is);break;
 			case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
-			case ARRAY_OBJECT_255:ret= deserializeArrayObject256Smaller(is);break;
 			case ARRAY_OBJECT:ret= deserializeArrayObject(is);break;
 			case ARRAY_OBJECT_PACKED_LONG:ret= deserializeArrayObjectPackedLong(is);break;
-			case LINKEDLIST_255:ret= deserializeLinkedList256Smaller(is);break;
 			case LINKEDLIST:ret= deserializeLinkedList(is);break;
-			case TREESET_255:ret= deserializeTreeSet256Smaller(is);break;
 			case TREESET:ret= deserializeTreeSet(is);break;
-			case HASHSET_255:ret= deserializeHashSet256Smaller(is);break;
 			case HASHSET:ret= deserializeHashSet(is);break;
-			case LINKEDHASHSET_255:ret= deserializeLinkedHashSet256Smaller(is);break;
 			case LINKEDHASHSET:ret= deserializeLinkedHashSet(is);break;
-			case VECTOR_255:ret= deserializeVector256Smaller(is);break;
 			case VECTOR:ret= deserializeVector(is);break;
-			case TREEMAP_255:ret= deserializeTreeMap256Smaller(is);break;
 			case TREEMAP:ret= deserializeTreeMap(is);break;
-			case HASHMAP_255:ret= deserializeHashMap256Smaller(is);break;
 			case HASHMAP:ret= deserializeHashMap(is);break;
-			case LINKEDHASHMAP_255:ret= deserializeLinkedHashMap256Smaller(is);break;
 			case LINKEDHASHMAP:ret= deserializeLinkedHashMap(is);break;
-			case HASHTABLE_255:ret= deserializeHashtable256Smaller(is);break;
 			case HASHTABLE:ret= deserializeHashtable(is);break;
-			case PROPERTIES_255:ret= deserializeProperties256Smaller(is);break;
 			case PROPERTIES:ret= deserializeProperties(is);break;
 			case CLASS:ret = deserializeClass(is);break;
                         case DATE:ret = new Date(is.readLong());break;
@@ -855,7 +764,6 @@ class Serialization implements Serializer
 			case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
 			case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
 			case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
-			case ARRAY_BYTE_255: ret= deserializeArrayByte255(is);break;
 			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
             case BTREE: ret = BTree.readExternal(is,this); break;
 			case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
@@ -891,16 +799,6 @@ class Serialization implements Serializer
 	}
 
 
-	private byte[] deserializeArrayByte255(DataInput is) throws IOException {
-		int size = is.readUnsignedByte();
-    	if (size < 0)
-    	    throw new EOFException();
-
-		byte[] b = new byte[size];
-		is.readFully(b);
-		return b;
-
-	}
 
 
 	private long[] deserializeArrayLongL(DataInput is) throws IOException {
@@ -1033,16 +931,6 @@ class Serialization implements Serializer
 	}
 
 
-	private Object[] deserializeArrayObject256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		Object[] s = new Object[size];
-		for(int i = 0; i<size;i++)
-			s[i] = deserialize(is);
-		return s;
-	}
 
 	private ArrayList<Object> deserializeArrayList(DataInput is) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
@@ -1068,16 +956,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private ArrayList<Object> deserializeArrayList256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		ArrayList<Object> s = new ArrayList<Object>(size);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 	private LinkedList<Object> deserializeLinkedList(DataInput is) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
@@ -1087,16 +965,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private LinkedList<Object> deserializeLinkedList256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		LinkedList<Object> s = new LinkedList<Object>();
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 	private Vector<Object> deserializeVector(DataInput is) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
@@ -1106,16 +974,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private Vector<Object> deserializeVector256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		Vector<Object> s = new Vector<Object>(size);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 	private HashSet<Object> deserializeHashSet(DataInput is) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
@@ -1125,16 +983,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private HashSet<Object> deserializeHashSet256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		HashSet<Object> s = new HashSet<Object>(size);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 	private LinkedHashSet<Object> deserializeLinkedHashSet(DataInput is) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
@@ -1144,16 +992,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private LinkedHashSet<Object> deserializeLinkedHashSet256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 
 	private TreeSet<Object> deserializeTreeSet(DataInput is) throws IOException, ClassNotFoundException {
@@ -1168,20 +1006,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private TreeSet<Object> deserializeTreeSet256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		TreeSet<Object> s = new TreeSet<Object>();
-		Object obj = deserialize(is);
-		Comparator comparator = (Comparator) obj;
-		if(comparator!=null)
-			s = new TreeSet<Object>(comparator);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
-		return s;
-	}
 
 
 	private TreeMap<Object,Object> deserializeTreeMap(DataInput is) throws IOException, ClassNotFoundException {
@@ -1196,19 +1020,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private TreeMap<Object,Object> deserializeTreeMap256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
-		Comparator comparator = (Comparator) deserialize(is);
-		if(comparator!=null)
-			s = new TreeMap<Object,Object>(comparator);
-		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
-		return s;
-	}
 
 
 	private HashMap<Object,Object> deserializeHashMap(DataInput is) throws IOException, ClassNotFoundException {
@@ -1220,16 +1031,7 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private HashMap<Object,Object> deserializeHashMap256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
 
-		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
-		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
-		return s;
-	}
 
 
 	private LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInput is) throws IOException, ClassNotFoundException {
@@ -1241,16 +1043,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private LinkedHashMap<Object,Object> deserializeLinkedHashMap256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
-		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
-		return s;
-	}
 
 
 	private  Hashtable<Object,Object> deserializeHashtable(DataInput is) throws IOException, ClassNotFoundException {
@@ -1262,16 +1054,6 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private  Hashtable<Object,Object> deserializeHashtable256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
-		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
-		return s;
-	}
 
 
 	private  Properties deserializeProperties(DataInput is) throws IOException, ClassNotFoundException {
@@ -1283,14 +1065,4 @@ class Serialization implements Serializer
 		return s;
 	}
 
-	private  Properties deserializeProperties256Smaller(DataInput is) throws IOException, ClassNotFoundException {
-		int size = is.readUnsignedByte();
-		if(size <0)
-    	    throw new EOFException();
-
-		Properties s = new Properties();
-		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
-		return s;
-	}
 }
