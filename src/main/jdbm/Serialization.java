@@ -381,96 +381,30 @@ class Serialization implements Serializer
 						LongPacker.packLong(out,((Long)o).longValue()+1);
 				}
 			}else{
-				out.write(ARRAYLIST);
-				LongPacker.packInt(out,l.size());
-				for(Object o:l)
-					serialize(out, o);
+                serializeCollection(ARRAYLIST, out, obj);
 			}
 
 		}else if(clazz ==  LinkedList.class){
-			LinkedList l = (LinkedList) obj;
-			out.write(LINKEDLIST);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l)
-				serialize(out, o);
+            serializeCollection(LINKEDLIST,out,obj);
 		}else if(clazz ==  Vector.class){
-			Vector l = (Vector) obj;
-			out.write(VECTOR);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l)
-				serialize(out, o);
+            serializeCollection(VECTOR, out, obj);
 		}else if(clazz ==  TreeSet.class){
-			TreeSet l = (TreeSet) obj;
-			out.write(TREESET);
-			LongPacker.packInt(out,l.size());
-			serialize(out,l.comparator());
-
-			for(Object o:l)
-				serialize(out, o);
+            serializeCollection(TREESET,out,obj);
 		}else if(clazz ==  HashSet.class){
-			HashSet l = (HashSet) obj;
-			out.write(HASHSET);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l)
-				serialize(out, o);
+            serializeCollection(HASHSET,out,obj);
 		}else if(clazz ==  LinkedHashSet.class){
-			LinkedHashSet l = (LinkedHashSet) obj;
-			out.write(LINKEDHASHSET);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l)
-				serialize(out, o);
+            serializeCollection(LINKEDHASHSET,out,obj);
 		}else if(clazz ==  TreeMap.class){
-			TreeMap l = (TreeMap) obj;
-			out.write(TREEMAP);
-			LongPacker.packInt(out,l.size());
-
-			serialize(out, l.comparator());
-			for(Object o:l.keySet()){
-				serialize(out, o);
-				serialize(out, l.get(o));
-			}
+            serializeMap(TREEMAP,out,obj);
 		}else if(clazz ==  HashMap.class){
-			HashMap l = (HashMap) obj;
-			out.write(HASHMAP);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l.keySet()){
-				serialize(out, o);
-				serialize(out, l.get(o));
-			}
+            serializeMap(HASHMAP,out,obj);
 		}else if(clazz ==  LinkedHashMap.class){
-			LinkedHashMap l = (LinkedHashMap) obj;
-			out.write(LINKEDHASHMAP);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l.keySet()){
-				serialize(out, o);
-				serialize(out, l.get(o));
-			}
+            serializeMap(LINKEDHASHMAP,out,obj);
 		}else if(clazz ==  Hashtable.class){
-			Hashtable l = (Hashtable) obj;
-			out.write(HASHTABLE);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l.keySet()){
-				serialize(out, o);
-				serialize(out, l.get(o));
-			}
-
+            serializeMap(HASHTABLE,out,obj);
 		}else if(clazz ==  Properties.class){
-			Properties l = (Properties) obj;
-			out.write(PROPERTIES);
-			LongPacker.packInt(out,l.size());
-
-			for(Object o:l.keySet()){
-				serialize(out, o);
-				serialize(out, l.get(o));
-			}
-                }else if(clazz ==  Date.class){
+            serializeMap(PROPERTIES,out,obj);
+        }else if(clazz ==  Date.class){
 		    out.write(DATE);
                     out.writeLong(((Date)obj).getTime());
         }else if (clazz == BTree.class){
@@ -485,6 +419,26 @@ class Serialization implements Serializer
     		out.writeInt(DEBUGSTORE_DUMMY_END);
     	}
 	}
+
+    private void serializeMap(int header, DataOutput out, Object obj) throws IOException {
+        Map l = (Map) obj;
+		out.write(header);
+		LongPacker.packInt(out,l.size());
+		for(Object o:l.keySet()){
+			serialize(out, o);
+			serialize(out, l.get(o));
+		}
+    }
+
+    private void serializeCollection(int header, DataOutput out, Object obj) throws IOException {
+        Collection l = (Collection) obj;
+        out.write(header);
+        LongPacker.packInt(out,l.size());
+
+        for(Object o:l)
+            serialize(out, o);
+
+    }
 
     private void serializeByteArrayInt(DataOutput out, byte[] b) throws IOException {
         LongPacker.packInt(out, b.length);
