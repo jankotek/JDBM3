@@ -44,12 +44,12 @@ class Serialization implements Serializer
     void setClassInfo(SerialClassInfo serialClassInfo){
         this.serialClassInfo = serialClassInfo;
     }
-	
-	static final byte END_OF_NORMAL_SERIALIZATION = 111; 
-	
+
+	static final byte END_OF_NORMAL_SERIALIZATION = 111;
+
 	/** print statistics to STDOUT */
 	static final boolean DEBUG = false;
-	
+
 	/** if set to true, debug informations will be saved to store to make it more robust */
 	static final boolean DEBUGSTORE = false;
 	
@@ -389,13 +389,25 @@ class Serialization implements Serializer
 		}else if(clazz ==  Vector.class){
             serializeCollection(VECTOR, out, obj);
 		}else if(clazz ==  TreeSet.class){
-            serializeCollection(TREESET,out,obj);
+			TreeSet l = (TreeSet) obj;
+			out.write(TREESET);
+			LongPacker.packInt(out,l.size());
+			serialize(out,l.comparator());
+			for(Object o:l)
+				serialize(out, o);
 		}else if(clazz ==  HashSet.class){
             serializeCollection(HASHSET,out,obj);
 		}else if(clazz ==  LinkedHashSet.class){
             serializeCollection(LINKEDHASHSET,out,obj);
 		}else if(clazz ==  TreeMap.class){
-            serializeMap(TREEMAP,out,obj);
+            TreeMap l = (TreeMap) obj;
+            out.write(TREEMAP);
+            LongPacker.packInt(out,l.size());
+            serialize(out,l.comparator());
+            for(Object o:l.keySet()){
+                serialize(out, o);
+                serialize(out, l.get(o));
+            }
 		}else if(clazz ==  HashMap.class){
             serializeMap(HASHMAP,out,obj);
 		}else if(clazz ==  LinkedHashMap.class){
