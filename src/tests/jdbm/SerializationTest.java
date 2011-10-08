@@ -30,6 +30,10 @@ import junit.framework.TestCase;
 public class SerializationTest extends TestCase{
 
 	Serialization ser = new Serialization();
+    SerialClassInfo serInfo = new SerialClassInfo(ser);
+    {
+        ser.setClassInfo(serInfo);
+    }
 	
 	public void testInt() throws IOException, ClassNotFoundException{
 		int[] vals = {

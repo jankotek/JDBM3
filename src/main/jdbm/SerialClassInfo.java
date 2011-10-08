@@ -206,7 +206,7 @@ class SerialClassInfo {
         throw new Error("Class is not registered: "+clazz);
     }
 
-    public void writeObject(DataOutputStream out, Object obj) throws IOException {
+    public void writeObject(DataOutput out, Object obj) throws IOException {
         registerClass(obj.getClass());
 
         //write class header
@@ -229,23 +229,27 @@ class SerialClassInfo {
 
     }
 
-    public Object readObject(DataInputStream in) throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public Object readObject(DataInput in) throws IOException{
         //read class header
-        int classId = LongPacker.unpackInt(in);
-        ClassInfo classInfo = registered.get(classId);
-        Class clazz = Class.forName(classInfo.getName());
-        assertClassSerializable(clazz);
+        try{
+            int classId = LongPacker.unpackInt(in);
+            ClassInfo classInfo = registered.get(classId);
+            Class clazz = Class.forName(classInfo.getName());
+            assertClassSerializable(clazz);
 
-        Object o = Class.forName(classInfo.getName()).newInstance();
+            Object o = Class.forName(classInfo.getName()).newInstance();
 
-        int fieldCount = LongPacker.unpackInt(in);
-        for(int i=0; i<fieldCount; i++){
-            int fieldId = LongPacker.unpackInt(in);
-            FieldInfo f = classInfo.getField(fieldId);
-            Object fieldValue = serial.deserialize(in);
-            setFieldValue(f.getName(),o,fieldValue);
+            int fieldCount = LongPacker.unpackInt(in);
+            for(int i=0; i<fieldCount; i++){
+                int fieldId = LongPacker.unpackInt(in);
+                FieldInfo f = classInfo.getField(fieldId);
+                Object fieldValue = serial.deserialize(in);
+                setFieldValue(f.getName(),o,fieldValue);
+            }
+            return o;
+        }catch (Exception e){
+            throw new Error("Could not instanciate class",e);
         }
-        return o;
     }
 
 

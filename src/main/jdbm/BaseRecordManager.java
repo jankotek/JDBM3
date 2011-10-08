@@ -478,9 +478,14 @@ final class BaseRecordManager
     }
 
 
-    private final Serializer defualtSerializer = new Serialization();
+    private final Serialization defaultSerializer = new Serialization();
+    private final SerialClassInfo serialClassInfo = new SerialClassInfo(defaultSerializer);
+    {
+        defaultSerializer.setClassInfo(serialClassInfo);
+    }
+
     public Serializer defaultSerializer() {
-        return defualtSerializer;
+        return defaultSerializer;
     }
 
 

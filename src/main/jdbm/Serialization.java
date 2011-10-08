@@ -38,6 +38,12 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 class Serialization implements Serializer
 {
+
+    private SerialClassInfo serialClassInfo;
+
+    void setClassInfo(SerialClassInfo serialClassInfo){
+        this.serialClassInfo = serialClassInfo;
+    }
 	
 	static final byte END_OF_NORMAL_SERIALIZATION = 111; 
 	
@@ -51,7 +57,7 @@ class Serialization implements Serializer
 	private static final int DEBUGSTORE_DUMMY_END = 1234456;
 	
 	final static int NULL 			=   0;
-//	final static int NORMAL 			=   1;
+	final static int NORMAL 			=   1;
 	final static int BOOLEAN_TRUE 	=   2;
 	final static int BOOLEAN_FALSE 	=   3;
 	final static int INTEGER_MINUS_1 =   4;
@@ -540,7 +546,8 @@ class Serialization implements Serializer
             out.write(BTREE);
             ((BTree)obj).writeExternal(out);
 		}else{
-            throw new NotSerializableException("Dont know howto serialize: "+obj.getClass());
+            out.write(NORMAL);
+            serialClassInfo.writeObject(out,obj);
 		}
 
     	if(DEBUGSTORE){
@@ -750,6 +757,7 @@ class Serialization implements Serializer
 
     	switch(head){
     		case NULL:ret=  null;break;
+            case NORMAL: ret = serialClassInfo.readObject(is); break;
 			case BOOLEAN_TRUE:ret= true;break;
 			case BOOLEAN_FALSE:ret= false;break;
 			case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
