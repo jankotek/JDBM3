@@ -173,6 +173,8 @@ class Serialization extends SerialClassInfo implements Serializer
 	static final int BPAGE_NONLEAF 		= 163;
 	static final int HTREE_BUCKET 		= 164;
 	static final int HTREE_DIRECTORY 	= 165;
+    /** used for reference to already serialized object in object graph*/
+    static final int OBJECT_STACK 	= 166;
 	static final int JAVA_SERIALIZATION 	= 172;
 
 
@@ -204,8 +206,29 @@ class Serialization extends SerialClassInfo implements Serializer
     }
 
 
+    public void serialize(final DataOutput out, final Object obj) throws IOException {
+        serialize(out,obj,new ArrayList());
+    }
 
-	public void serialize(final DataOutput out, final Object obj) throws IOException {
+
+    private int identityIndexOf(Object obj, ArrayList objectStack){
+        for(int i=0; i<objectStack.size();i++){
+            if(obj == objectStack.get(i))
+                return i;
+        }
+        return -1;
+    }
+	public void serialize(final DataOutput out, final Object obj, ArrayList objectStack) throws IOException {
+
+        int indexInObjectStack = identityIndexOf(obj,objectStack);
+        if(indexInObjectStack!=-1){
+            //object was already serialized, just write reference to it and return
+            out.write(OBJECT_STACK);
+            LongPacker.packInt(out,indexInObjectStack);
+            return;
+        }
+        //add this object to objectStack
+        objectStack.add(obj);
 
     	final Class clazz = obj!=null?obj.getClass():null;
     	if(DEBUGSTORE){
@@ -419,7 +442,7 @@ class Serialization extends SerialClassInfo implements Serializer
             ((BTree)obj).writeExternal(out);
 		}else{
             out.write(NORMAL);
-            writeObject(out,obj);
+            writeObject(out,obj, objectStack);
 		}
 
     	if(DEBUGSTORE){
@@ -629,6 +652,9 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
     public Object deserialize(DataInput is) throws IOException, ClassNotFoundException{
+        return deserialize(is, new ArrayList());
+    }
+    public Object deserialize(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException{
 
     	Object ret = null;
 
@@ -640,7 +666,8 @@ class Serialization extends SerialClassInfo implements Serializer
 
     	switch(head){
     		case NULL:ret=  null;break;
-            case NORMAL: ret = readObject(is); break;
+            case NORMAL: ret = readObject(is,objectStack); break;
+            case OBJECT_STACK: ret = objectStack.get(LongPacker.unpackInt(is)); break;
 			case BOOLEAN_TRUE:ret= true;break;
 			case BOOLEAN_FALSE:ret= false;break;
 			case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
@@ -739,6 +766,8 @@ class Serialization extends SerialClassInfo implements Serializer
     	if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_END){
     		throw new InternalError("Wrong offset '"+ret+ "' - "+ret.getClass());
     	}
+
+        objectStack.add(ret); //TODO there is serious problem with order in which objects are added
 
 
     	return ret;

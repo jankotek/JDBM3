@@ -3,6 +3,8 @@ package jdbm;
 import junit.framework.TestCase;
 
 import java.io.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 
 public class SerialClassInfoTest extends TestCase {
 
@@ -155,14 +157,31 @@ public class SerialClassInfoTest extends TestCase {
     public void testSerializable() throws Exception {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        s.writeObject(new DataOutputStream(out),b);
+        s.writeObject(new DataOutputStream(out),b,new ArrayList());
 
         ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        Object bx = s.readObject(new DataInputStream(in));
+        Object bx = s.readObject(new DataInputStream(in),new ArrayList());
 
         assertEquals(bx,b);
     }
 
+
+    public void testRecursion() throws Exception{
+        AbstractMap.SimpleEntry b = new AbstractMap.SimpleEntry("abcd",null);
+        b.setValue(b.getKey());
+
+        Serialization s2 = new Serialization();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        s2.serialize(new DataOutputStream(out),b);
+
+        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        AbstractMap.SimpleEntry bx = (AbstractMap.SimpleEntry) s2.deserialize(new DataInputStream(in));
+
+        assertEquals(bx,b);
+        assert(bx.getKey() == bx.getValue());
+
+
+    }
 
 
 }

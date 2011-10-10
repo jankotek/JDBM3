@@ -11,7 +11,7 @@ import java.lang.reflect.*;
 /**
  * This class stores information about serialized classes and fields.
  */
-abstract class SerialClassInfo implements Serializer{
+abstract class SerialClassInfo {
 
     /**
      * Stores info about single class stored in JDBM.
@@ -198,7 +198,7 @@ abstract class SerialClassInfo implements Serializer{
         throw new Error("Class is not registered: "+clazz);
     }
 
-    public void writeObject(DataOutput out, Object obj) throws IOException {
+    public void writeObject(DataOutput out, Object obj, ArrayList objectStack) throws IOException {
         registerClass(obj.getClass());
 
         //write class header
@@ -215,13 +215,15 @@ abstract class SerialClassInfo implements Serializer{
             LongPacker.packInt(out,fieldId);
             //and write value
             Object fieldValue = getFieldValue(f.getName(),obj);
-            serialize(out, fieldValue);
+            serialize(out, fieldValue, objectStack);
         }
 
 
     }
 
-    public Object readObject(DataInput in) throws IOException{
+
+
+    public Object readObject(DataInput in,ArrayList objectStack) throws IOException{
         //read class header
         try{
             int classId = LongPacker.unpackInt(in);
@@ -229,18 +231,13 @@ abstract class SerialClassInfo implements Serializer{
             Class clazz = Class.forName(classInfo.getName());
             assertClassSerializable(clazz);
 
-            Object o;
-            try{
-                o = clazz.newInstance();
-            }catch (InstantiationException e){
-                o = createInstance(clazz, Object.class);
-            }
-
+            Object o = createInstance(clazz, Object.class);
+            objectStack.add(o);
             int fieldCount = LongPacker.unpackInt(in);
             for(int i=0; i<fieldCount; i++){
                 int fieldId = LongPacker.unpackInt(in);
                 FieldInfo f = classInfo.getField(fieldId);
-                Object fieldValue = deserialize(in);
+                Object fieldValue = deserialize(in, objectStack);
                 setFieldValue(f.getName(),o,fieldValue);
             }
             return o;
@@ -248,7 +245,6 @@ abstract class SerialClassInfo implements Serializer{
             throw new Error("Could not instanciate class",e);
         }
     }
-
 
     /**
      * Little trick to create new instance without using constructor.
@@ -269,6 +265,10 @@ abstract class SerialClassInfo implements Serializer{
         } catch (Exception e) {
             throw new IllegalStateException("Cannot create object", e);
         }
-  }
+    }
+
+    protected abstract Object deserialize(DataInput in, ArrayList objectStack) throws IOException, ClassNotFoundException;
+    protected abstract void serialize(DataOutput out, Object fieldValue, ArrayList objectStack) throws IOException;
+
 
 }
