@@ -154,15 +154,20 @@ public class SerialClassInfoTest extends TestCase {
         assertEquals(-1F,s.getFieldValue("floatField",b2));
     }
 
-    public void testSerializable() throws Exception {
 
+    <E>E serialize(E e) throws ClassNotFoundException, IOException {
+        Serialization s2 = new Serialization();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        s.writeObject(new DataOutputStream(out),b,new ArrayList());
+        s2.serialize(new DataOutputStream(out),e);
 
         ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        Object bx = s.readObject(new DataInputStream(in),new ArrayList());
+        return  (E) s2.deserialize(new DataInputStream(in));
 
-        assertEquals(bx,b);
+    }
+
+    public void testSerializable() throws Exception {
+
+        assertEquals(serialize(b),b);
     }
 
 
@@ -170,18 +175,34 @@ public class SerialClassInfoTest extends TestCase {
         AbstractMap.SimpleEntry b = new AbstractMap.SimpleEntry("abcd",null);
         b.setValue(b.getKey());
 
-        Serialization s2 = new Serialization();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        s2.serialize(new DataOutputStream(out),b);
-
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        AbstractMap.SimpleEntry bx = (AbstractMap.SimpleEntry) s2.deserialize(new DataInputStream(in));
-
+        AbstractMap.SimpleEntry bx = serialize(b);
         assertEquals(bx,b);
         assert(bx.getKey() == bx.getValue());
 
+    }
+
+    public void testRecursion2() throws Exception{
+        AbstractMap.SimpleEntry b = new AbstractMap.SimpleEntry("abcd",null);
+        b.setValue(b);
+
+        AbstractMap.SimpleEntry bx = serialize(b);
+        assertTrue(bx == bx.getValue());
+        assertEquals(bx.getKey(), "abcd");
 
     }
 
+
+
+    public void testRecursion3() throws Exception{
+        ArrayList l = new ArrayList();
+        l.add("123");
+        l.add(l);
+
+        ArrayList l2 = serialize(l);
+
+        assertTrue(l.size()==2);
+        assertEquals(l.get(0),"123");
+        assertTrue(l.get(1)==l);
+    }
 
 }

@@ -218,7 +218,8 @@ class Serialization extends SerialClassInfo implements Serializer
         }
         return -1;
     }
-	public void serialize(final DataOutput out, final Object obj, ArrayList objectStack) throws IOException {
+
+    public void serialize(final DataOutput out, final Object obj, ArrayList objectStack) throws IOException {
 
         int indexInObjectStack = identityIndexOf(obj,objectStack);
         if(indexInObjectStack!=-1){
@@ -230,243 +231,243 @@ class Serialization extends SerialClassInfo implements Serializer
         //add this object to objectStack
         objectStack.add(obj);
 
-    	final Class clazz = obj!=null?obj.getClass():null;
-    	if(DEBUGSTORE){
-    		out.writeInt(DEBUGSTORE_DUMMY_START);
-    	}
-    	if(obj == null){
-    		out.write(NULL);
-    	}else if (clazz ==  Boolean.class){
-    		if(((Boolean)obj).booleanValue())
-    			out.write(BOOLEAN_TRUE);
-    		else
-    			out.write(BOOLEAN_FALSE);
-    	}else if (clazz ==  Integer.class){
-    		final int val = (Integer) obj;
-    		writeInteger(out, val);
-		}else if (clazz ==  Double.class){
-			double v = (Double) obj;
-			if(v == -1d)
-				out.write(DOUBLE_MINUS_1);
-			else if(v == 0d)
-				out.write(DOUBLE_0);
-			else if(v == 1d)
-				out.write(DOUBLE_1);
-			else if(v >= 0&& v<=255 && (int)v == v){
-				out.write(DOUBLE_255);
-				out.write((int) v);
-			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
-				out.write(DOUBLE_SHORT);
-				out.writeShort((int) v);
-			}else{
-				out.write(DOUBLE_FULL);
-				out.writeDouble(v);
-			}
-		}else if (clazz ==  Float.class){
-			float v = (Float) obj;
-			if(v == -1f)
-				out.write(FLOAT_MINUS_1);
-			else if(v == 0f)
-				out.write(FLOAT_0);
-			else if(v == 1f)
-				out.write(FLOAT_1);
-			else if(v >= 0&& v<=255 && (int)v == v){
-				out.write(FLOAT_255);
-				out.write((int) v);
-			}else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
-				out.write(FLOAT_SHORT);
-				out.writeShort((int) v);
+        final Class clazz = obj!=null?obj.getClass():null;
+        if(DEBUGSTORE){
+            out.writeInt(DEBUGSTORE_DUMMY_START);
+        }
+        if(obj == null){
+            out.write(NULL);
+        }else if (clazz ==  Boolean.class){
+            if(((Boolean)obj).booleanValue())
+                out.write(BOOLEAN_TRUE);
+            else
+                out.write(BOOLEAN_FALSE);
+        }else if (clazz ==  Integer.class){
+            final int val = (Integer) obj;
+            writeInteger(out, val);
+        }else if (clazz ==  Double.class){
+            double v = (Double) obj;
+            if(v == -1d)
+                out.write(DOUBLE_MINUS_1);
+            else if(v == 0d)
+                out.write(DOUBLE_0);
+            else if(v == 1d)
+                out.write(DOUBLE_1);
+            else if(v >= 0&& v<=255 && (int)v == v){
+                out.write(DOUBLE_255);
+                out.write((int) v);
+            }else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
+                out.write(DOUBLE_SHORT);
+                out.writeShort((int) v);
+            }else{
+                out.write(DOUBLE_FULL);
+                out.writeDouble(v);
+            }
+        }else if (clazz ==  Float.class){
+            float v = (Float) obj;
+            if(v == -1f)
+                out.write(FLOAT_MINUS_1);
+            else if(v == 0f)
+                out.write(FLOAT_0);
+            else if(v == 1f)
+                out.write(FLOAT_1);
+            else if(v >= 0&& v<=255 && (int)v == v){
+                out.write(FLOAT_255);
+                out.write((int) v);
+            }else if(v >= Short.MIN_VALUE&& v<=Short.MAX_VALUE && (short)v == v){
+                out.write(FLOAT_SHORT);
+                out.writeShort((int) v);
 
-			}else{
-				out.write(FLOAT_FULL);
-				out.writeFloat(v);
-			}
-                }else if (clazz ==  BigInteger.class){
-                    out.write(BIGINTEGER);
-                    byte[] buf = ((BigInteger)obj).toByteArray();
-                    serializeByteArrayInt(out, buf);
+            }else{
+                out.write(FLOAT_FULL);
+                out.writeFloat(v);
+            }
+        }else if (clazz ==  BigInteger.class){
+            out.write(BIGINTEGER);
+            byte[] buf = ((BigInteger)obj).toByteArray();
+            serializeByteArrayInt(out, buf);
 
-                }else if (clazz ==  BigDecimal.class){
-                    out.write(BIGDECIMAL);
-                    BigDecimal d = (BigDecimal)obj;
-                    serializeByteArrayInt(out,d.unscaledValue().toByteArray());
-                    LongPacker.packInt(out,d.scale());
-		}else if (clazz ==  Long.class){
-			final long val = (Long) obj;
-    		writeLong(out, val);
-		}else if (clazz ==  Short.class){
-			short val = (Short)obj;
-			if(val == -1)
-				out.write(SHORT_MINUS_1);
-			else if(val == 0)
-				out.write(SHORT_0);
-			else if(val == 1)
-				out.write(SHORT_1);
-			else if(val > 0 && val<255){
-				out.write(SHORT_255);
-				out.write(val);
-			}else{
-				out.write(SHORT_FULL);
-				out.writeShort(val);
-			}
-		}else if (clazz ==  Byte.class){
-			byte val = (Byte)obj;
-			if(val == -1)
-				out.write(BYTE_MINUS_1);
-			else if(val == 0)
-				out.write(BYTE_0);
-			else if(val == 1)
-				out.write(BYTE_1);
-			else{
-				out.write(SHORT_FULL);
-				out.writeByte(val);
-			}
-    	}else if (clazz ==  Character.class){
-    		out.write(CHAR);
-    		out.writeChar((Character) obj);
-		}else if(clazz == String.class){
-			byte[] s = ((String)obj).getBytes(UTF8);
-			if(s.length==0){
-				out.write(STRING_EMPTY);
-			}else{
-				out.write(STRING);
-				LongPacker.packInt(out, s.length);
+        }else if (clazz ==  BigDecimal.class){
+            out.write(BIGDECIMAL);
+            BigDecimal d = (BigDecimal)obj;
+            serializeByteArrayInt(out,d.unscaledValue().toByteArray());
+            LongPacker.packInt(out,d.scale());
+        }else if (clazz ==  Long.class){
+            final long val = (Long) obj;
+            writeLong(out, val);
+        }else if (clazz ==  Short.class){
+            short val = (Short)obj;
+            if(val == -1)
+                out.write(SHORT_MINUS_1);
+            else if(val == 0)
+                out.write(SHORT_0);
+            else if(val == 1)
+                out.write(SHORT_1);
+            else if(val > 0 && val<255){
+                out.write(SHORT_255);
+                out.write(val);
+            }else{
+                out.write(SHORT_FULL);
+                out.writeShort(val);
+            }
+        }else if (clazz ==  Byte.class){
+            byte val = (Byte)obj;
+            if(val == -1)
+                out.write(BYTE_MINUS_1);
+            else if(val == 0)
+                out.write(BYTE_0);
+            else if(val == 1)
+                out.write(BYTE_1);
+            else{
+                out.write(SHORT_FULL);
+                out.writeByte(val);
+            }
+        }else if (clazz ==  Character.class){
+            out.write(CHAR);
+            out.writeChar((Character) obj);
+        }else if(clazz == String.class){
+            byte[] s = ((String)obj).getBytes(UTF8);
+            if(s.length==0){
+                out.write(STRING_EMPTY);
+            }else{
+                out.write(STRING);
+                LongPacker.packInt(out, s.length);
                 out.write(s);
-			}
-		}else if(obj instanceof Class){
-			out.write(CLASS);
-			serialize(out, ((Class) obj).getName());
-		}else if(obj instanceof int[]){
-			writeIntArray(out, (int[]) obj);
-		}else if(obj instanceof long[]){
-			writeLongArray(out,(long[])obj);
-		}else if(obj instanceof byte[]){
-			byte[] b = (byte[]) obj;
-			out.write(ARRAY_BYTE_INT);
+            }
+        }else if(obj instanceof Class){
+            out.write(CLASS);
+            serialize(out, ((Class) obj).getName());
+        }else if(obj instanceof int[]){
+            writeIntArray(out, (int[]) obj);
+        }else if(obj instanceof long[]){
+            writeLongArray(out,(long[])obj);
+        }else if(obj instanceof byte[]){
+            byte[] b = (byte[]) obj;
+            out.write(ARRAY_BYTE_INT);
             serializeByteArrayInt(out, b);
 
-		}else if(obj instanceof Object[]){
-			Object[] b = (Object[]) obj;
+        }else if(obj instanceof Object[]){
+            Object[] b = (Object[]) obj;
             boolean packableLongs = b.length<=255;
-			if(packableLongs){
-				//check if it contains packable longs
-				for(Object o:b){
-					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
-						packableLongs = false;
-						break;
-					}
-				}
+            if(packableLongs){
+                //check if it contains packable longs
+                for(Object o:b){
+                    if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
+                        packableLongs = false;
+                        break;
+                    }
+                }
             }
 
             if(packableLongs){
-                    //packable Longs is special case,  it is often used in JDBM to reference fields
-					out.write(ARRAY_OBJECT_PACKED_LONG);
-					out.write(b.length);
-					for(Object o : b){
-						if(o == null)
-							LongPacker.packLong(out,0);
-						else
-							LongPacker.packLong(out,((Long)o).longValue()+1);
-					}
+                //packable Longs is special case,  it is often used in JDBM to reference fields
+                out.write(ARRAY_OBJECT_PACKED_LONG);
+                out.write(b.length);
+                for(Object o : b){
+                    if(o == null)
+                        LongPacker.packLong(out,0);
+                    else
+                        LongPacker.packLong(out,((Long)o).longValue()+1);
+                }
 
-			}else{
-				out.write(ARRAY_OBJECT);
-				LongPacker.packInt(out,b.length);
-				for(Object o : b)
-					serialize(out,o);
+            }else{
+                out.write(ARRAY_OBJECT);
+                LongPacker.packInt(out,b.length);
+                for(Object o : b)
+                    serialize(out,o,objectStack);
 
-			}
+            }
 
-		}else if(clazz ==  ArrayList.class){
-			ArrayList l = (ArrayList) obj;
+        }else if(clazz ==  ArrayList.class){
+            ArrayList l = (ArrayList) obj;
             boolean packableLongs = l.size()<255;
-			if(packableLongs){
-                  //packable Longs is special case,  it is often used in JDBM to reference fields
-				for(Object o:l){
-					if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
-						packableLongs = false;
-						break;
-					}
-				}
+            if(packableLongs){
+                //packable Longs is special case,  it is often used in JDBM to reference fields
+                for(Object o:l){
+                    if(o!=null && (o.getClass() != Long.class || (((Long)o).longValue()<0 && ((Long)o).longValue()!=Long.MAX_VALUE))){
+                        packableLongs = false;
+                        break;
+                    }
+                }
             }
             if(packableLongs){
-			    out.write(ARRAYLIST_PACKED_LONG);
-				out.write(l.size());
-				for(Object o : l){
-					if(o == null)
-						LongPacker.packLong(out,0);
-					else
-						LongPacker.packLong(out,((Long)o).longValue()+1);
-				}
-			}else{
-                serializeCollection(ARRAYLIST, out, obj);
-			}
+                out.write(ARRAYLIST_PACKED_LONG);
+                out.write(l.size());
+                for(Object o : l){
+                    if(o == null)
+                        LongPacker.packLong(out,0);
+                    else
+                        LongPacker.packLong(out,((Long)o).longValue()+1);
+                }
+            }else{
+                serializeCollection(ARRAYLIST, out, obj,objectStack);
+            }
 
-		}else if(clazz ==  LinkedList.class){
-            serializeCollection(LINKEDLIST,out,obj);
-		}else if(clazz ==  Vector.class){
-            serializeCollection(VECTOR, out, obj);
-		}else if(clazz ==  TreeSet.class){
-			TreeSet l = (TreeSet) obj;
-			out.write(TREESET);
-			LongPacker.packInt(out,l.size());
-			serialize(out,l.comparator());
-			for(Object o:l)
-				serialize(out, o);
-		}else if(clazz ==  HashSet.class){
-            serializeCollection(HASHSET,out,obj);
-		}else if(clazz ==  LinkedHashSet.class){
-            serializeCollection(LINKEDHASHSET,out,obj);
-		}else if(clazz ==  TreeMap.class){
+        }else if(clazz ==  LinkedList.class){
+            serializeCollection(LINKEDLIST,out,obj,objectStack);
+        }else if(clazz ==  Vector.class){
+            serializeCollection(VECTOR, out, obj,objectStack);
+        }else if(clazz ==  TreeSet.class){
+            TreeSet l = (TreeSet) obj;
+            out.write(TREESET);
+            LongPacker.packInt(out,l.size());
+            serialize(out,l.comparator(),objectStack);
+            for(Object o:l)
+                serialize(out, o,objectStack);
+        }else if(clazz ==  HashSet.class){
+            serializeCollection(HASHSET,out,obj,objectStack);
+        }else if(clazz ==  LinkedHashSet.class){
+            serializeCollection(LINKEDHASHSET,out,obj,objectStack);
+        }else if(clazz ==  TreeMap.class){
             TreeMap l = (TreeMap) obj;
             out.write(TREEMAP);
             LongPacker.packInt(out,l.size());
-            serialize(out,l.comparator());
+            serialize(out,l.comparator(),objectStack);
             for(Object o:l.keySet()){
-                serialize(out, o);
-                serialize(out, l.get(o));
+                serialize(out, o,objectStack);
+                serialize(out, l.get(o),objectStack);
             }
-		}else if(clazz ==  HashMap.class){
-            serializeMap(HASHMAP,out,obj);
-		}else if(clazz ==  LinkedHashMap.class){
-            serializeMap(LINKEDHASHMAP,out,obj);
-		}else if(clazz ==  Hashtable.class){
-            serializeMap(HASHTABLE,out,obj);
-		}else if(clazz ==  Properties.class){
-            serializeMap(PROPERTIES,out,obj);
+        }else if(clazz ==  HashMap.class){
+            serializeMap(HASHMAP,out,obj,objectStack);
+        }else if(clazz ==  LinkedHashMap.class){
+            serializeMap(LINKEDHASHMAP,out,obj,objectStack);
+        }else if(clazz ==  Hashtable.class){
+            serializeMap(HASHTABLE,out,obj,objectStack);
+        }else if(clazz ==  Properties.class){
+            serializeMap(PROPERTIES,out,obj,objectStack);
         }else if(clazz ==  Date.class){
-		    out.write(DATE);
-                    out.writeLong(((Date)obj).getTime());
+            out.write(DATE);
+            out.writeLong(((Date)obj).getTime());
         }else if (clazz == BTree.class){
             out.write(BTREE);
             ((BTree)obj).writeExternal(out);
-		}else{
+        }else{
             out.write(NORMAL);
             writeObject(out,obj, objectStack);
-		}
+        }
 
-    	if(DEBUGSTORE){
-    		out.writeInt(DEBUGSTORE_DUMMY_END);
-    	}
-	}
+        if(DEBUGSTORE){
+            out.writeInt(DEBUGSTORE_DUMMY_END);
+        }
+    }
 
-    private void serializeMap(int header, DataOutput out, Object obj) throws IOException {
+    private void serializeMap(int header, DataOutput out, Object obj,ArrayList objectStack) throws IOException {
         Map l = (Map) obj;
 		out.write(header);
 		LongPacker.packInt(out,l.size());
 		for(Object o:l.keySet()){
-			serialize(out, o);
-			serialize(out, l.get(o));
+			serialize(out, o,objectStack);
+			serialize(out, l.get(o),objectStack);
 		}
     }
 
-    private void serializeCollection(int header, DataOutput out, Object obj) throws IOException {
+    private void serializeCollection(int header, DataOutput out, Object obj,ArrayList objectStack) throws IOException {
         Collection l = (Collection) obj;
         out.write(header);
         LongPacker.packInt(out,l.size());
 
         for(Object o:l)
-            serialize(out, o);
+            serialize(out, o,objectStack);
 
     }
 
@@ -656,125 +657,130 @@ class Serialization extends SerialClassInfo implements Serializer
     }
     public Object deserialize(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException{
 
-    	Object ret = null;
+        Object ret = null;
 
-    	if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_START){
-    		throw new InternalError("Wrong offset");
-    	}
+        if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_START){
+            throw new InternalError("Wrong offset");
+        }
 
-    	int head = is.readUnsignedByte();
+        int oldObjectStackSize = objectStack.size();
 
-    	switch(head){
-    		case NULL:ret=  null;break;
+        int head = is.readUnsignedByte();
+
+        switch(head){
+            case NULL:ret=  null;break;
             case NORMAL: ret = readObject(is,objectStack); break;
             case OBJECT_STACK: ret = objectStack.get(LongPacker.unpackInt(is)); break;
-			case BOOLEAN_TRUE:ret= true;break;
-			case BOOLEAN_FALSE:ret= false;break;
-			case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
-			case INTEGER_0:ret= Integer.valueOf(0);break;
-			case INTEGER_1:ret= Integer.valueOf(1);break;
-			case INTEGER_2:ret= Integer.valueOf(2);break;
-			case INTEGER_3:ret= Integer.valueOf(3);break;
-			case INTEGER_4:ret= Integer.valueOf(4);break;
-			case INTEGER_5:ret= Integer.valueOf(5);break;
-			case INTEGER_6:ret= Integer.valueOf(6);break;
-			case INTEGER_7:ret= Integer.valueOf(7);break;
-			case INTEGER_8:ret= Integer.valueOf(8);break;
-			case INTEGER_MINUS_MAX:ret=  Integer.valueOf(Integer.MIN_VALUE);break;
-			case INTEGER_255:ret= Integer.valueOf(is.readUnsignedByte());break;
-			case INTEGER_PACK_NEG:ret=  Integer.valueOf(-LongPacker.unpackInt(is));break;
-			case INTEGER_PACK:ret=  Integer.valueOf(LongPacker.unpackInt(is));break;
-			case LONG_MINUS_1:ret= Long.valueOf(-1);break;
-			case LONG_0:ret= Long.valueOf(0);break;
-			case LONG_1:ret= Long.valueOf(1);break;
-			case LONG_2:ret= Long.valueOf(2);break;
-			case LONG_3:ret= Long.valueOf(3);break;
-			case LONG_4:ret= Long.valueOf(4);break;
-			case LONG_5:ret= Long.valueOf(5);break;
-			case LONG_6:ret= Long.valueOf(6);break;
-			case LONG_7:ret= Long.valueOf(7);break;
-			case LONG_8:ret= Long.valueOf(8);break;
-			case LONG_255:ret= Long.valueOf(is.readUnsignedByte());break;
-			case LONG_PACK_NEG:ret=  Long.valueOf(-LongPacker.unpackLong(is));break;
-			case LONG_PACK:ret=  Long.valueOf(LongPacker.unpackLong(is));break;
-			case LONG_MINUS_MAX:ret=  Long.valueOf(Long.MIN_VALUE);break;
-			case SHORT_MINUS_1:ret= Short.valueOf((short)-1);break;
-			case SHORT_0:ret= Short.valueOf((short)0);break;
-			case SHORT_1:ret= Short.valueOf((short)1);break;
-			case SHORT_255:ret= Short.valueOf((short)is.readUnsignedByte());break;
-			case SHORT_FULL:ret= Short.valueOf(is.readShort());break;
-			case BYTE_MINUS_1:ret= Byte.valueOf((byte)-1);break;
-			case BYTE_0:ret= Byte.valueOf((byte)0);break;
-			case BYTE_1:ret= Byte.valueOf((byte)1);break;
-			case BYTE_FULL:ret= Byte.valueOf(is.readByte());break;
-			case CHAR:ret= Character.valueOf(is.readChar());break;
-			case FLOAT_MINUS_1:ret= Float.valueOf(-1);break;
-			case FLOAT_0:ret= Float.valueOf(0);break;
-			case FLOAT_1:ret= Float.valueOf(1);break;
-			case FLOAT_255:ret= Float.valueOf(is.readUnsignedByte());break;
-			case FLOAT_SHORT:ret=  Float.valueOf(is.readShort());break;
-			case FLOAT_FULL:ret= Float.valueOf(is.readFloat());break;
-			case DOUBLE_MINUS_1:ret= Double.valueOf(-1);break;
-			case DOUBLE_0:ret= Double.valueOf(0);break;
-			case DOUBLE_1:ret= Double.valueOf(1);break;
-			case DOUBLE_255:ret= Double.valueOf(is.readUnsignedByte());break;
-			case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
-			case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;
-                        case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));break;
-                        case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
-			case STRING:ret= deserializeString(is);break;
-			case STRING_EMPTY:ret= EMPTY_STRING;break;
-			case ARRAYLIST:ret= deserializeArrayList(is);break;
-			case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
-			case ARRAY_OBJECT:ret= deserializeArrayObject(is);break;
-			case ARRAY_OBJECT_PACKED_LONG:ret= deserializeArrayObjectPackedLong(is);break;
-			case LINKEDLIST:ret= deserializeLinkedList(is);break;
-			case TREESET:ret= deserializeTreeSet(is);break;
-			case HASHSET:ret= deserializeHashSet(is);break;
-			case LINKEDHASHSET:ret= deserializeLinkedHashSet(is);break;
-			case VECTOR:ret= deserializeVector(is);break;
-			case TREEMAP:ret= deserializeTreeMap(is);break;
-			case HASHMAP:ret= deserializeHashMap(is);break;
-			case LINKEDHASHMAP:ret= deserializeLinkedHashMap(is);break;
-			case HASHTABLE:ret= deserializeHashtable(is);break;
-			case PROPERTIES:ret= deserializeProperties(is);break;
-			case CLASS:ret = deserializeClass(is);break;
-                        case DATE:ret = new Date(is.readLong());break;
+            case BOOLEAN_TRUE: ret= Boolean.TRUE;break;
+            case BOOLEAN_FALSE: ret= Boolean.FALSE;break;
+            case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
+            case INTEGER_0:ret= Integer.valueOf(0);break;
+            case INTEGER_1:ret= Integer.valueOf(1);break;
+            case INTEGER_2:ret= Integer.valueOf(2);break;
+            case INTEGER_3:ret= Integer.valueOf(3);break;
+            case INTEGER_4:ret= Integer.valueOf(4);break;
+            case INTEGER_5:ret= Integer.valueOf(5);break;
+            case INTEGER_6:ret= Integer.valueOf(6);break;
+            case INTEGER_7:ret= Integer.valueOf(7);break;
+            case INTEGER_8:ret= Integer.valueOf(8);break;
+            case INTEGER_MINUS_MAX:ret=  Integer.valueOf(Integer.MIN_VALUE);break;
+            case INTEGER_255:ret= Integer.valueOf(is.readUnsignedByte());break;
+            case INTEGER_PACK_NEG:ret=  Integer.valueOf(-LongPacker.unpackInt(is));break;
+            case INTEGER_PACK:ret=  Integer.valueOf(LongPacker.unpackInt(is));break;
+            case LONG_MINUS_1:ret= Long.valueOf(-1);break;
+            case LONG_0:ret= Long.valueOf(0);break;
+            case LONG_1:ret= Long.valueOf(1);break;
+            case LONG_2:ret= Long.valueOf(2);break;
+            case LONG_3:ret= Long.valueOf(3);break;
+            case LONG_4:ret= Long.valueOf(4);break;
+            case LONG_5:ret= Long.valueOf(5);break;
+            case LONG_6:ret= Long.valueOf(6);break;
+            case LONG_7:ret= Long.valueOf(7);break;
+            case LONG_8:ret= Long.valueOf(8);break;
+            case LONG_255:ret= Long.valueOf(is.readUnsignedByte());break;
+            case LONG_PACK_NEG:ret=  Long.valueOf(-LongPacker.unpackLong(is));break;
+            case LONG_PACK:ret=  Long.valueOf(LongPacker.unpackLong(is));break;
+            case LONG_MINUS_MAX:ret=  Long.valueOf(Long.MIN_VALUE);break;
+            case SHORT_MINUS_1:ret= Short.valueOf((short)-1);break;
+            case SHORT_0:ret= Short.valueOf((short)0);break;
+            case SHORT_1:ret= Short.valueOf((short)1);break;
+            case SHORT_255:ret= Short.valueOf((short)is.readUnsignedByte());break;
+            case SHORT_FULL:ret= Short.valueOf(is.readShort());break;
+            case BYTE_MINUS_1:ret= Byte.valueOf((byte)-1);break;
+            case BYTE_0:ret= Byte.valueOf((byte)0);break;
+            case BYTE_1:ret= Byte.valueOf((byte)1);break;
+            case BYTE_FULL:ret= Byte.valueOf(is.readByte());break;
+            case CHAR:ret= Character.valueOf(is.readChar());break;
+            case FLOAT_MINUS_1:ret= Float.valueOf(-1);break;
+            case FLOAT_0:ret= Float.valueOf(0);break;
+            case FLOAT_1:ret= Float.valueOf(1);break;
+            case FLOAT_255:ret= Float.valueOf(is.readUnsignedByte());break;
+            case FLOAT_SHORT:ret=  Float.valueOf(is.readShort());break;
+            case FLOAT_FULL:ret= Float.valueOf(is.readFloat());break;
+            case DOUBLE_MINUS_1:ret= Double.valueOf(-1);break;
+            case DOUBLE_0:ret= Double.valueOf(0);break;
+            case DOUBLE_1:ret= Double.valueOf(1);break;
+            case DOUBLE_255:ret= Double.valueOf(is.readUnsignedByte());break;
+            case DOUBLE_SHORT:ret= Double.valueOf(is.readShort());break;
+            case DOUBLE_FULL:ret= Double.valueOf(is.readDouble());break;
+            case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));break;
+            case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
+            case STRING:ret= deserializeString(is);break;
+            case STRING_EMPTY:ret= EMPTY_STRING;break;
+            case ARRAYLIST:ret= deserializeArrayList(is,objectStack);break;
+            case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
+            case ARRAY_OBJECT:ret= deserializeArrayObject(is,objectStack);break;
+            case ARRAY_OBJECT_PACKED_LONG:ret= deserializeArrayObjectPackedLong(is);break;
+            case LINKEDLIST:ret= deserializeLinkedList(is,objectStack);break;
+            case TREESET:ret= deserializeTreeSet(is,objectStack);break;
+            case HASHSET:ret= deserializeHashSet(is,objectStack);break;
+            case LINKEDHASHSET:ret= deserializeLinkedHashSet(is,objectStack);break;
+            case VECTOR:ret= deserializeVector(is,objectStack);break;
+            case TREEMAP:ret= deserializeTreeMap(is,objectStack);break;
+            case HASHMAP:ret= deserializeHashMap(is,objectStack);break;
+            case LINKEDHASHMAP:ret= deserializeLinkedHashMap(is,objectStack);break;
+            case HASHTABLE:ret= deserializeHashtable(is,objectStack);break;
+            case PROPERTIES:ret= deserializeProperties(is,objectStack);break;
+            case CLASS:ret = deserializeClass(is);break;
+            case DATE:ret = new Date(is.readLong());break;
 
 
-			case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
-			case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
-			case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
-			case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
-			case ARRAY_INT_PACKED: ret= deserializeArrayIntPack(is);break;
-			case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
-			case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
-			case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
-			case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
-			case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
-			case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+            case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
+            case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
+            case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
+            case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
+            case ARRAY_INT_PACKED: ret= deserializeArrayIntPack(is);break;
+            case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
+            case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
+            case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
+            case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
+            case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
+            case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
             case BTREE: ret = BTree.readExternal(is,this); break;
-			case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
-			case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
-			case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
+            case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
+            case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
+            case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
 
-			case -1: throw new EOFException();
+            case -1: throw new EOFException();
 
-			default: throw new InternalError("Unknown serialization header: "+head);
-    	}
+            default: throw new InternalError("Unknown serialization header: "+head);
+        }
 
-    	if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_END){
-    		throw new InternalError("Wrong offset '"+ret+ "' - "+ret.getClass());
-    	}
+        if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_END){
+            throw new InternalError("Wrong offset '"+ret+ "' - "+ret.getClass());
+        }
 
-        objectStack.add(ret); //TODO there is serious problem with order in which objects are added
+        if(head!=OBJECT_STACK && objectStack.size() == oldObjectStackSize){
+            //check if object was not already added to stack as part of collection
+            objectStack.add(ret);
+        }
 
 
-    	return ret;
-	}
+        return ret;
+    }
 
 
-	private Class deserializeClass(DataInput is) throws IOException, ClassNotFoundException {
+    private Class deserializeClass(DataInput is) throws IOException, ClassNotFoundException {
 		String className = (String) deserialize(is);
 		Class cls = Class.forName(className);
 		return cls;
@@ -899,11 +905,12 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private Object[] deserializeArrayObject(DataInput is) throws IOException, ClassNotFoundException {
+	private Object[] deserializeArrayObject(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size =LongPacker.unpackInt(is);
 		Object[] s = new Object[size];
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s[i] = deserialize(is);
+			s[i] = deserialize(is,objectStack);
 		return s;
 	}
 
@@ -922,11 +929,13 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private ArrayList<Object> deserializeArrayList(DataInput is) throws IOException, ClassNotFoundException {
+	private ArrayList<Object> deserializeArrayList(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		ArrayList<Object> s = new ArrayList<Object>(size);
-		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+                objectStack.add(s);
+		for(int i = 0; i<size;i++){
+		    s.add(deserialize(is,objectStack));
+                }
 		return s;
 	}
 
@@ -947,111 +956,121 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private LinkedList<Object> deserializeLinkedList(DataInput is) throws IOException, ClassNotFoundException {
+	private LinkedList<Object> deserializeLinkedList(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		LinkedList<Object> s = new LinkedList<Object>();
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+			s.add(deserialize(is,objectStack));
 		return s;
 	}
 
 
-	private Vector<Object> deserializeVector(DataInput is) throws IOException, ClassNotFoundException {
+	private Vector<Object> deserializeVector(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		Vector<Object> s = new Vector<Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+			s.add(deserialize(is,objectStack));
 		return s;
 	}
 
 
-	private HashSet<Object> deserializeHashSet(DataInput is) throws IOException, ClassNotFoundException {
+	private HashSet<Object> deserializeHashSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		HashSet<Object> s = new HashSet<Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+			s.add(deserialize(is,objectStack));
 		return s;
 	}
 
 
-	private LinkedHashSet<Object> deserializeLinkedHashSet(DataInput is) throws IOException, ClassNotFoundException {
+	private LinkedHashSet<Object> deserializeLinkedHashSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+			s.add(deserialize(is,objectStack));
 		return s;
 	}
 
 
 
-	private TreeSet<Object> deserializeTreeSet(DataInput is) throws IOException, ClassNotFoundException {
+	private TreeSet<Object> deserializeTreeSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		TreeSet<Object> s = new TreeSet<Object>();
-		Comparator comparator = (Comparator) deserialize(is);
+                objectStack.add(s);
+		Comparator comparator = (Comparator) deserialize(is,objectStack);
 		if(comparator!=null)
 			s = new TreeSet<Object>(comparator);
 
 		for(int i = 0; i<size;i++)
-			s.add(deserialize(is));
+			s.add(deserialize(is,objectStack));
 		return s;
 	}
 
 
 
-	private TreeMap<Object,Object> deserializeTreeMap(DataInput is) throws IOException, ClassNotFoundException {
+	private TreeMap<Object,Object> deserializeTreeMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
-		Comparator comparator = (Comparator) deserialize(is);
+                objectStack.add(s);
+		Comparator comparator = (Comparator) deserialize(is,objectStack);
 		if(comparator!=null)
 			s = new TreeMap<Object,Object>(comparator);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
+			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
 
 
 
-	private HashMap<Object,Object> deserializeHashMap(DataInput is) throws IOException, ClassNotFoundException {
+	private HashMap<Object,Object> deserializeHashMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
+			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
 
 
 
 
-	private LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInput is) throws IOException, ClassNotFoundException {
+	private LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
+			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
 
 
 
-	private  Hashtable<Object,Object> deserializeHashtable(DataInput is) throws IOException, ClassNotFoundException {
+	private  Hashtable<Object,Object> deserializeHashtable(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
+			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
 
 
 
-	private  Properties deserializeProperties(DataInput is) throws IOException, ClassNotFoundException {
+	private  Properties deserializeProperties(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		Properties s = new Properties();
+                objectStack.add(s);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is),deserialize(is));
+			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
 
