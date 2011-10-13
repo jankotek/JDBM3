@@ -7,6 +7,7 @@ import java.awt.image.ImagingOpException;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
+import jdbm.Serialization.FastArrayList;
 
 /**
  * This class stores information about serialized classes and fields.
@@ -198,7 +199,7 @@ abstract class SerialClassInfo {
         throw new Error("Class is not registered: "+clazz);
     }
 
-    public void writeObject(DataOutput out, Object obj, ArrayList objectStack) throws IOException {
+    public void writeObject(DataOutput out, Object obj, FastArrayList objectStack) throws IOException {
         registerClass(obj.getClass());
 
         //write class header
@@ -223,7 +224,7 @@ abstract class SerialClassInfo {
 
 
 
-    public Object readObject(DataInput in,ArrayList objectStack) throws IOException{
+    public Object readObject(DataInput in,FastArrayList objectStack) throws IOException{
         //read class header
         try{
             int classId = LongPacker.unpackInt(in);
@@ -267,8 +268,8 @@ abstract class SerialClassInfo {
         }
     }
 
-    protected abstract Object deserialize(DataInput in, ArrayList objectStack) throws IOException, ClassNotFoundException;
-    protected abstract void serialize(DataOutput out, Object fieldValue, ArrayList objectStack) throws IOException;
+    protected abstract Object deserialize(DataInput in, FastArrayList objectStack) throws IOException, ClassNotFoundException;
+    protected abstract void serialize(DataOutput out, Object fieldValue, FastArrayList objectStack) throws IOException;
 
 
 }

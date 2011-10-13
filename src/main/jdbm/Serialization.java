@@ -207,21 +207,13 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
     public void serialize(final DataOutput out, final Object obj) throws IOException {
-        serialize(out,obj,new ArrayList());
+        serialize(out,obj,new FastArrayList());
     }
 
 
-    private int identityIndexOf(Object obj, ArrayList objectStack){
-        for(int i=0; i<objectStack.size();i++){
-            if(obj == objectStack.get(i))
-                return i;
-        }
-        return -1;
-    }
+    public void serialize(final DataOutput out, final Object obj, FastArrayList objectStack) throws IOException {
 
-    public void serialize(final DataOutput out, final Object obj, ArrayList objectStack) throws IOException {
-
-        int indexInObjectStack = identityIndexOf(obj,objectStack);
+        int indexInObjectStack = objectStack.identityIndexOf(obj);
         if(indexInObjectStack!=-1){
             //object was already serialized, just write reference to it and return
             out.write(OBJECT_STACK);
@@ -451,7 +443,7 @@ class Serialization extends SerialClassInfo implements Serializer
         }
     }
 
-    private void serializeMap(int header, DataOutput out, Object obj,ArrayList objectStack) throws IOException {
+    private void serializeMap(int header, DataOutput out, Object obj,FastArrayList objectStack) throws IOException {
         Map l = (Map) obj;
 		out.write(header);
 		LongPacker.packInt(out,l.size());
@@ -461,7 +453,7 @@ class Serialization extends SerialClassInfo implements Serializer
 		}
     }
 
-    private void serializeCollection(int header, DataOutput out, Object obj,ArrayList objectStack) throws IOException {
+    private void serializeCollection(int header, DataOutput out, Object obj,FastArrayList objectStack) throws IOException {
         Collection l = (Collection) obj;
         out.write(header);
         LongPacker.packInt(out,l.size());
@@ -653,9 +645,9 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
     public Object deserialize(DataInput is) throws IOException, ClassNotFoundException{
-        return deserialize(is, new ArrayList());
+        return deserialize(is, new FastArrayList());
     }
-    public Object deserialize(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException{
+    public Object deserialize(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException{
 
         Object ret = null;
 
@@ -905,7 +897,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private Object[] deserializeArrayObject(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private Object[] deserializeArrayObject(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size =LongPacker.unpackInt(is);
 		Object[] s = new Object[size];
                 objectStack.add(s);
@@ -929,7 +921,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private ArrayList<Object> deserializeArrayList(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private ArrayList<Object> deserializeArrayList(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		ArrayList<Object> s = new ArrayList<Object>(size);
                 objectStack.add(s);
@@ -956,7 +948,7 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private LinkedList<Object> deserializeLinkedList(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private LinkedList<Object> deserializeLinkedList(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		LinkedList<Object> s = new LinkedList<Object>();
                 objectStack.add(s);
@@ -966,7 +958,7 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private Vector<Object> deserializeVector(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private Vector<Object> deserializeVector(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		Vector<Object> s = new Vector<Object>(size);
                 objectStack.add(s);
@@ -976,7 +968,7 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private HashSet<Object> deserializeHashSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private HashSet<Object> deserializeHashSet(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		HashSet<Object> s = new HashSet<Object>(size);
                 objectStack.add(s);
@@ -986,7 +978,7 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private LinkedHashSet<Object> deserializeLinkedHashSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private LinkedHashSet<Object> deserializeLinkedHashSet(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		LinkedHashSet<Object> s = new LinkedHashSet<Object>(size);
                 objectStack.add(s);
@@ -997,7 +989,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private TreeSet<Object> deserializeTreeSet(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private TreeSet<Object> deserializeTreeSet(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 		TreeSet<Object> s = new TreeSet<Object>();
                 objectStack.add(s);
@@ -1012,7 +1004,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private TreeMap<Object,Object> deserializeTreeMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private TreeMap<Object,Object> deserializeTreeMap(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		TreeMap<Object,Object> s = new TreeMap<Object,Object>();
@@ -1027,7 +1019,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private HashMap<Object,Object> deserializeHashMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private HashMap<Object,Object> deserializeHashMap(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		HashMap<Object,Object> s = new HashMap<Object,Object>(size);
@@ -1040,7 +1032,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private LinkedHashMap<Object,Object> deserializeLinkedHashMap(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		LinkedHashMap<Object,Object> s = new LinkedHashMap<Object,Object>(size);
@@ -1052,7 +1044,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private  Hashtable<Object,Object> deserializeHashtable(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private  Hashtable<Object,Object> deserializeHashtable(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		Hashtable<Object,Object> s = new Hashtable<Object,Object>(size);
@@ -1064,7 +1056,7 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
 
-	private  Properties deserializeProperties(DataInput is, ArrayList objectStack) throws IOException, ClassNotFoundException {
+	private  Properties deserializeProperties(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
 
 		Properties s = new Properties();
@@ -1073,5 +1065,56 @@ class Serialization extends SerialClassInfo implements Serializer
 			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
 		return s;
 	}
+
+
+    /**
+     * Utility class similar to ArrayList, but with fast identity search.
+     */
+    static class FastArrayList{
+
+        private int size = 0;
+        private Object[] elementData = new Object[8];
+
+        Object get(int index){
+            if(index>=size) throw new IndexOutOfBoundsException();
+            return elementData[index];
+        }
+
+        void add(Object o){
+            if(elementData.length==size){
+                //grow array if necessary
+                elementData = Arrays.copyOf(elementData, elementData.length *2);
+            }
+
+            elementData[size] = o;
+            size++;
+        }
+
+        int size(){
+            return size;
+        }
+
+
+        /**
+         * This method is reason why ArrayList is not used.
+         * Search an item in list and returns its index.
+         * It uses identity rather than 'equalsTo'
+         * One could argue that TreeMap should be used instead,
+         * but we do not expect large object trees.
+         * This search is VERY FAST compared to Maps, it does not allocate
+         * new instances or uses method calls.
+         *
+         * @param obj
+         * @return index of object in list or -1 if not found
+         */
+        int identityIndexOf(Object obj){
+            for(int i=0; i<size;i++){
+                if(obj == elementData[i])
+                    return i;
+            }
+            return -1;
+        }
+
+    }
 
 }
