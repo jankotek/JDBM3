@@ -206,6 +206,8 @@ final class BaseRecordManager
         	throw new IOException("Unsupported version of store. Please update JDBM. Minimal supported ver:"+STORE_FORMAT_VERSION+", store ver:"+versionNumber);
         setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
 
+        defaultSerializer = null;
+
 	}
 
 
@@ -525,6 +527,7 @@ final class BaseRecordManager
 
         _physPageman.rollback();
         _logicPageman.rollback();
+        defaultSerializer = null;
     }
 
 
