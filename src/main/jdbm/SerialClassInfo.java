@@ -14,6 +14,51 @@ import jdbm.Serialization.FastArrayList;
  */
 abstract class SerialClassInfo {
 
+    static final Serializer<ArrayList<ClassInfo>> serializer = new Serializer< ArrayList<ClassInfo>>(){
+
+        public void serialize(DataOutput out, ArrayList<ClassInfo> obj) throws IOException {
+            LongPacker.packInt(out,obj.size());
+            for(ClassInfo ci :obj){
+                out.writeUTF(ci.getName());
+                LongPacker.packInt(out,ci.fields.size());
+                for(FieldInfo fi : ci.fields){
+                    out.writeUTF(fi.getName());
+                    out.writeBoolean(fi.isPrimitive());
+                    out.writeUTF(fi.getType());
+                }
+            }
+        }
+
+        public ArrayList<ClassInfo> deserialize(DataInput in) throws IOException, ClassNotFoundException {
+            int size = LongPacker.unpackInt(in);
+            ArrayList<ClassInfo> ret = new ArrayList<ClassInfo>(size);
+
+            for(int i=0;i<size;i++){
+                String className = in.readUTF();
+                int fieldsNum = LongPacker.unpackInt(in);
+                FieldInfo[] fields = new FieldInfo[fieldsNum];
+                for(int j=0;j<fieldsNum;j++){
+                    fields[j] = new FieldInfo(in.readUTF(), in.readBoolean(),in.readUTF());
+                }
+                ret.add(new ClassInfo(className,fields));
+            }
+            return ret;
+        }
+    };
+
+    private long serialClassInfoRecid;
+
+    public SerialClassInfo(RecordManager recman, long serialClassInfoRecid) throws IOException {
+        this.recman = recman;
+        if(recman!=null){
+            this.serialClassInfoRecid = serialClassInfoRecid;
+            this.registered = recman.fetch(serialClassInfoRecid,serializer);
+        }else{
+            //recman can be null for unit testing
+            this.registered = new ArrayList<ClassInfo>();
+        }
+    }
+
     /**
      * Stores info about single class stored in JDBM.
      * Roughly corresponds to 'java.io.ObjectStreamClass'
@@ -68,9 +113,9 @@ abstract class SerialClassInfo {
 
         private final String name;
         private final boolean primitive;
-        private final Class type;
+        private final String type;
 
-        public FieldInfo(String name, boolean primitive, Class type) {
+        public FieldInfo(String name, boolean primitive, String type) {
             this.name = name;
             this.primitive = primitive;
             this.type = type;
@@ -84,18 +129,21 @@ abstract class SerialClassInfo {
             return primitive;
         }
 
-        public Class getType() {
+        public String getType() {
             return type;
         }
 
     }
 
 
-    private List<ClassInfo> registered = new ArrayList<ClassInfo>();
+    private ArrayList<ClassInfo> registered;
+
+    private final RecordManager recman;
 
 
 
-    public void registerClass(Class clazz) throws NotSerializableException, InvalidClassException {
+
+    public void registerClass(Class clazz) throws IOException {
         assertClassSerializable(clazz);
 
         if(containsClass(clazz))
@@ -107,11 +155,15 @@ abstract class SerialClassInfo {
         FieldInfo[] fields = new FieldInfo[streamFields.length];
         for(int i=0;i<fields.length;i++){
             ObjectStreamField sf = streamFields[i];
-            fields[i] = new FieldInfo(sf.getName(),sf.isPrimitive(),sf.getType());
+            fields[i] = new FieldInfo(sf.getName(),sf.isPrimitive(),sf.getType().getName());
         }
 
         ClassInfo i = new ClassInfo(clazz.getName(),fields);
         registered.add(i);
+
+        if(recman!=null)
+            recman.update(serialClassInfoRecid,registered,serializer);
+
     }
 
     private void assertClassSerializable(Class clazz) throws NotSerializableException, InvalidClassException {

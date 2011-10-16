@@ -145,7 +145,7 @@ final class BaseRecordManager
     private Map<String,Long> _nameDirectory;
 
     /**
-     * Reserved slot for name directory.
+     * Reserved slot for name directory recid.
      */
     public static final int NAME_DIRECTORY_ROOT = 0;
 
@@ -155,6 +155,10 @@ final class BaseRecordManager
      */
     public static final int STORE_VERSION_NUMBER_ROOT = 1;
 
+    /**
+     * Reserved slot for recid where Serial class info is stored
+     */
+    public static final int SERIAL_CLASS_INFO_RECID_ROOT = 2;
 
 
 
@@ -201,6 +205,7 @@ final class BaseRecordManager
         if(versionNumber>STORE_FORMAT_VERSION)
         	throw new IOException("Unsupported version of store. Please update JDBM. Minimal supported ver:"+STORE_FORMAT_VERSION+", store ver:"+versionNumber);
         setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
+
 	}
 
 
@@ -478,9 +483,21 @@ final class BaseRecordManager
     }
 
 
-    private final Serialization defaultSerializer = new Serialization();
+    private Serialization defaultSerializer;
 
-    public Serializer defaultSerializer() {
+    public synchronized Serializer defaultSerializer() {
+        if(defaultSerializer == null) try{
+            long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
+            if(serialClassInfoRecid == 0){
+                //insert new empty array list
+                serialClassInfoRecid = insert(new ArrayList<SerialClassInfo.ClassInfo>(0),SerialClassInfo.serializer);
+                setRoot(SERIAL_CLASS_INFO_RECID_ROOT,serialClassInfoRecid);
+            }
+
+            defaultSerializer = new Serialization(this,serialClassInfoRecid);
+        }catch(IOException e){
+            throw new IOError(e);
+        }
         return defaultSerializer;
     }
 

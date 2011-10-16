@@ -26,9 +26,13 @@ import junit.framework.TestCase;
 @SuppressWarnings("unchecked")
 public class SerializationTest extends TestCase{
 
-	Serialization ser = new Serialization();
+    Serialization ser;
 
-	public void testInt() throws IOException, ClassNotFoundException{
+    public SerializationTest() throws IOException {
+        ser = new Serialization(null,0);
+    }
+
+    public void testInt() throws IOException, ClassNotFoundException{
 		int[] vals = {
 				Integer.MIN_VALUE,
 				-Short.MIN_VALUE * 2,

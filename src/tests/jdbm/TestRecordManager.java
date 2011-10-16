@@ -140,6 +140,8 @@ public class TestRecordManager extends TestCaseWithTestFile {
         // Note: We start out with an empty file
         recman = newRecordManager();
 
+        recman.insert(""); //first insert an empty record, to make sure serializer is initialized
+        recman.commit();
         // insert a 150000 byte record.
         byte[] data1 = UtilTT.makeRecord(150000, (byte) 1);
         long rowid1 = recman.insert(data1);
@@ -221,13 +223,15 @@ public class TestRecordManager extends TestCaseWithTestFile {
 
     public void testCountRecid() throws Exception{
         BaseRecordManager recman = newBaseRecordManager();
+        recman.insert(""); //first insert an empty record, to make sure serializer is initialized
+        long baseCount = recman.countRecords();
         for(int i = 1;i<3000;i++){
             Object val = "qjiodjqwoidjqwiodoi";
 
             recman.insert(val);
             if(i%1000==0) recman.commit();
 
-            assertEquals(recman.countRecords(),i);
+            assertEquals(recman.countRecords(),i+baseCount);
         }
 
     }

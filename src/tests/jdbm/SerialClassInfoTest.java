@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 
-public class SerialClassInfoTest extends TestCase {
+public class SerialClassInfoTest extends TestCaseWithTestFile {
 
     static class Bean1 implements Serializable {
 
@@ -83,7 +83,12 @@ public class SerialClassInfoTest extends TestCase {
     }
 
 
-    SerialClassInfo s = new Serialization();
+    SerialClassInfo s;
+
+    public void setUp() throws IOException {
+        s = new Serialization(null,0);
+    }
+
     Bean1 b = new Bean1("aa","bb");
     Bean2 b2 = new Bean2("aa","bb","cc");
 
@@ -156,7 +161,7 @@ public class SerialClassInfoTest extends TestCase {
 
 
     <E>E serialize(E e) throws ClassNotFoundException, IOException {
-        Serialization s2 = new Serialization();
+        Serialization s2 = new Serialization(null,0);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         s2.serialize(new DataOutputStream(out),e);
 
@@ -203,6 +208,21 @@ public class SerialClassInfoTest extends TestCase {
         assertTrue(l.size()==2);
         assertEquals(l.get(0),"123");
         assertTrue(l.get(1)==l);
+    }
+
+    public void testPersisted() throws Exception{
+        Bean1 b1 = new Bean1("abc","dcd");
+        String f = newTestFile();
+        RecordManager r1 = new RecordManagerBuilder(f).build();
+        long recid = r1.insert(b1);
+        r1.commit();;
+        r1.close();
+
+        RecordManager r2 = new RecordManagerBuilder(f).build();
+        Bean1 b2 = (Bean1) r2.fetch(recid);
+        r2.close();
+        assertEquals(b1,b2);
+
     }
 
 }
