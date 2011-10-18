@@ -31,6 +31,7 @@ public class RecordManagerBuilder {
 
     private boolean batchInsert = false;
     private boolean disableTransactions = false;
+    private boolean readonly = false;
 
 
     /**
@@ -110,6 +111,17 @@ public class RecordManagerBuilder {
     }
 
 
+    /**
+     * Make RecordManager readonly.
+     * Update/delete/insert operation will throw 'UnsupportedOperationException'
+     *
+     * @return this builder
+     */
+    public RecordManagerBuilder readonly(){
+        readonly = true;
+        return this;
+    }
+
 
     /**
      * Disable cache completely
@@ -173,6 +185,9 @@ public class RecordManagerBuilder {
 
         if(batchInsert)
             ( (BaseRecordManager) recman ).setAppendToEnd(true);
+
+        if(readonly)
+            ( (BaseRecordManager) recman ).setReadonly(true);
 
 
         String cacheType2 = cacheType;

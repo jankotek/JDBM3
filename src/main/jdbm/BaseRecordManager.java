@@ -20,15 +20,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 
 /**
  *  This class manages records, which are uninterpreted blobs of data. The
@@ -81,6 +76,21 @@ final class BaseRecordManager
      * Physical row identifier manager.
      */
     private PhysicalRowIdManager _physMgr;
+
+    /**
+     * Indicated that store is opened for readonly operations
+     * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
+     */
+    private boolean readonly = false;
+
+    void setReadonly(boolean readonly){
+        this.readonly = readonly;
+    }
+
+    void checkCanWrite(){
+        if(readonly)
+            throw new UnsupportedOperationException("Could not write, store is opened as read-only");
+    }
 
 
     /** if true, new records alwayes saved to end of file
@@ -269,6 +279,7 @@ final class BaseRecordManager
     {
                 
         checkIfClosed();
+        checkCanWrite();
     	if(bufferInUse){
     		//current reusable buffer is in use, have to fallback into creating new instances
     		byte[] buffer = new byte[1024];
@@ -307,6 +318,7 @@ final class BaseRecordManager
     {
     	
         checkIfClosed();
+        checkCanWrite();
         if ( logRowId <= 0 ) {
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
                                                 + logRowId );
@@ -329,6 +341,7 @@ final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        checkCanWrite();
         if ( recid <= 0 ) {
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
                                                 + recid );
@@ -451,6 +464,7 @@ final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        checkCanWrite();
 
         _physPageman.getFileHeader().setRoot( id, rowid );
     }
@@ -473,6 +487,7 @@ final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        checkCanWrite();
 
         Map<String,Long> nameDirectory = getNameDirectory();
         if ( recid == 0 ) {
@@ -508,6 +523,7 @@ final class BaseRecordManager
         throws IOException
     {
         checkIfClosed();
+        checkCanWrite();
         /** flush free phys rows into pages*/
         _physMgr.commit();
         _logicMgr.commit();
@@ -554,6 +570,7 @@ final class BaseRecordManager
     private void saveNameDirectory( Map<String,Long> directory )
         throws IOException
     {
+        checkCanWrite();
         long recid = getRoot(NAME_DIRECTORY_ROOT);
         if ( recid == 0 ) {
             throw new IOException( "Name directory must exist" );
@@ -582,6 +599,7 @@ final class BaseRecordManager
 
 	public synchronized void defrag() throws IOException {
 		checkIfClosed();
+        checkCanWrite();
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename; 
