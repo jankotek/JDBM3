@@ -34,21 +34,20 @@ final class TranslationPage extends PageHeader {
     /**
      *  Constructs a data page view from the indicated block.
      */
-    TranslationPage(BlockIo block, int blockSize) {
+    TranslationPage(BlockIo block) {
         super(block);
-        
     }
 
     /**
      *  Factory method to create or return a data page for the
      *  indicated block.
      */
-    static TranslationPage getTranslationPageView(BlockIo block, int blockSize) {
+    static TranslationPage getTranslationPageView(BlockIo block) {
         BlockView view = block.getView();
         if (view != null && view instanceof TranslationPage)
             return (TranslationPage) view;
         else
-            return new TranslationPage(block, blockSize);
+            return new TranslationPage(block);
     }
 
 //    /** Returns the value of the indicated rowid on the page */

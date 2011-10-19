@@ -35,10 +35,6 @@ import java.util.TreeSet;
  *  {@link RecordFile}. The transaction log is either clean, or
  *  in progress. In the latter case, the transaction manager
  *  takes care of a roll forward.
- *<p>
- *  Implementation note: this is a proof-of-concept implementation
- *  which hasn't been optimized for speed. For instance, all sorts
- *  of streams are created for every transaction.
  */
 // TODO: Handle the case where we are recovering lg9 and lg0, were we
 // should start with lg9 instead of lg0!

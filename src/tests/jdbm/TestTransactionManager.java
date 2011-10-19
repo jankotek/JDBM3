@@ -59,7 +59,7 @@ public class TestTransactionManager extends TestCaseWithTestFile {
         // The second instance should start recovery.
         RecordFile file2 = new RecordFile(file);
 
-        assertDataSizeEquals("len2", 3 * RecordFile.DEFAULT_BLOCK_SIZE);
+        assertDataSizeEquals("len2", 3 * RecordFile.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);
 
         file2.forceClose();
@@ -88,14 +88,14 @@ public class TestTransactionManager extends TestCaseWithTestFile {
 
         // The data file now has the first slotfull
         assertDataSizeEquals("len1", TransactionManager.DEFAULT_TXNS_IN_LOG *
-                             RecordFile.DEFAULT_BLOCK_SIZE);
+                             RecordFile.BLOCK_SIZE);
         assertLogSizeNotZero("len1");
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
         RecordFile file2 = new RecordFile(file);
 
-        assertDataSizeEquals("len2", txnCount * RecordFile.DEFAULT_BLOCK_SIZE);
+        assertDataSizeEquals("len2", txnCount * RecordFile.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);
 
         file2.forceClose();

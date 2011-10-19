@@ -27,7 +27,6 @@ final class LogicalRowIdManager {
 	private final PageManager pageman;
 	private final FreeLogicalRowIdPageManager freeman;
 	final short ELEMS_PER_PAGE;
-	private int blockSize; 
 
 	/**
 	 * Creates a log rowid manager using the indicated record file and page manager
@@ -36,8 +35,7 @@ final class LogicalRowIdManager {
 		this.file = file;
 		this.pageman = pageman;
 		this.freeman = freeman;
-		this.blockSize = file.BLOCK_SIZE;
-		this.ELEMS_PER_PAGE = (short)((blockSize - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
+		this.ELEMS_PER_PAGE = (short)((RecordFile.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
 	}
 
 	/**
@@ -92,7 +90,7 @@ final class LogicalRowIdManager {
 	 */
 	void delete(long rowid) throws IOException {
 		//zero out old location, is needed for defragmentation
-		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)),blockSize);
+		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)));
 		xlatPage.setLocationBlock(Location.getOffset(rowid), 0);
 		xlatPage.setLocationOffset(Location.getOffset(rowid), (short)0);
 		file.release(Location.getBlock(rowid), true);
@@ -109,7 +107,7 @@ final class LogicalRowIdManager {
 	 */
 	void update(long rowid, long loc) throws IOException {
 
-		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)),blockSize);
+		TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)));
 		//make sure it is right type of page
 		
 		
@@ -137,7 +135,7 @@ final class LogicalRowIdManager {
 		final short offset = Location.getOffset(rowid);
 		
 		BlockIo bio = file.get(block);
-		TranslationPage xlatPage = TranslationPage.getTranslationPageView(bio,blockSize);		
+		TranslationPage xlatPage = TranslationPage.getTranslationPageView(bio);
 		try {
 			long retval = Location.toLong(
 					xlatPage.getLocationBlock(offset),

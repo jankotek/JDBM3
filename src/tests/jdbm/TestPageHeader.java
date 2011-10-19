@@ -32,7 +32,7 @@ public class TestPageHeader extends TestCase {
      *  Test set, write, read
      */
     public void testSetWriteRead() throws Exception {
-  BlockIo data = new BlockIo(0, new byte[RecordFile.DEFAULT_BLOCK_SIZE]);
+  BlockIo data = new BlockIo(0, new byte[RecordFile.BLOCK_SIZE]);
   PageHeader p = new PageHeader(data, Magic.FREE_PAGE);
   p.setNext(10);
   p.setPrev(33);

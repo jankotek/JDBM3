@@ -172,7 +172,7 @@ final class BaseRecordManager
 
 
 
-	private final byte[] _insertBuffer = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
+	private final byte[] _insertBuffer = new byte[RecordFile.BLOCK_SIZE];
 	private final OpenByteArrayOutputStream _insertBAO = new OpenByteArrayOutputStream(_insertBuffer);
 	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
 	private final OpenByteArrayInputStream _insertBAI = new OpenByteArrayInputStream(_insertBuffer);
@@ -199,14 +199,14 @@ final class BaseRecordManager
 
 
 	private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR, RecordFile.DEFAULT_BLOCK_SIZE);
+        _physFile = new RecordFile( _filename + DBR);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
-        if(RecordFile.DEFAULT_BLOCK_SIZE >256*8)
+        if(RecordFile.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
-        _logicFile = new RecordFile( _filename +IDR, RecordFile.DEFAULT_BLOCK_SIZE);
+        _logicFile = new RecordFile( _filename +IDR);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -615,7 +615,7 @@ final class BaseRecordManager
 		}
 		for(long pageid:logicalPages){			
 			BlockIo io = _logicFile.get(pageid); 
-			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io, RecordFile.DEFAULT_BLOCK_SIZE);
+			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 		
 			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
 				final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
@@ -746,7 +746,7 @@ final class BaseRecordManager
          long page = cursor.next();
          while(page!=0){
              BlockIo io = _logicFile.get(page);
-             TranslationPage xlatPage = TranslationPage.getTranslationPageView(io, RecordFile.DEFAULT_BLOCK_SIZE);
+             TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
              for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
                      int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
                      if(pos>Short.MAX_VALUE)

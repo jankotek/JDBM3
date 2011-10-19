@@ -16,8 +16,6 @@
 
 package jdbm;
 
-import java.io.IOException;
-
 /**
  *  This class represents a file header. It is a 1:1 representation of
  *  the data that appears in block 0 of a file.

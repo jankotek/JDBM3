@@ -31,7 +31,7 @@ import java.util.Iterator;
  *  The set of dirty records on the in-use list constitutes a transaction.
  *  Later on, we will send these records to some recovery thingy.
  *<p>
- *  RecordFile is splited between more files, each with max size 1GB. 
+ *  RecordFile is splited between more files, each with max size 1GB.
  */
 final class RecordFile {
     final TransactionManager txnMgr;
@@ -62,14 +62,14 @@ final class RecordFile {
 
     // transactions disabled?
     private boolean transactionsDisabled = false;
-    
-    static final int DEFAULT_BLOCK_SIZE =2048;
 
-//    /** The length of a single block. */
-    final int BLOCK_SIZE ;//= 8192;//4096;
-//    /** maximal file size not rounded to block size */
+    /** the lenght of single block */
+    static final int BLOCK_SIZE =2048;
+
+
+    /** maximal file size not rounded to block size */
     private final static long _FILESIZE = 1000000000l;
-    private final long MAX_FILE_SIZE;// = _FILESIZE - _FILESIZE%BLOCK_SIZE;
+    private final long MAX_FILE_SIZE =  _FILESIZE - _FILESIZE%BLOCK_SIZE;
 
 
     /** A block of clean data to wipe clean pages. */
@@ -78,9 +78,6 @@ final class RecordFile {
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
     private final String fileName;
     
-    RecordFile(String fileName) throws IOException {
-    	this(fileName,DEFAULT_BLOCK_SIZE);
-    }
 
     /**
      *  Creates a new object on the indicated filename. The file is
@@ -91,9 +88,7 @@ final class RecordFile {
      *  @throws IOException whenever the creation of the underlying
      *          RandomAccessFile throws it.
      */
-    RecordFile(String fileName, int blockSize) throws IOException {
-    	this.BLOCK_SIZE = blockSize;
-    	MAX_FILE_SIZE =  _FILESIZE - _FILESIZE%BLOCK_SIZE;
+    RecordFile(String fileName) throws IOException {
     	cleanData = new byte[BLOCK_SIZE];
         this.fileName = fileName;
         //make sure first file can be opened
@@ -111,12 +106,12 @@ final class RecordFile {
 
     RandomAccessFile getRaf(long offset) throws IOException {
     	int fileNumber = (int) (offset/MAX_FILE_SIZE);
-    
+
    		//increase capacity of array lists if needed
    		for(int i = rafs.size();i<=fileNumber;i++){
    			rafs.add(null);
     	}
-    		
+
 		RandomAccessFile ret = rafs.get(fileNumber);
 		if(ret == null){
 			String name = fileName+"."+fileNumber;

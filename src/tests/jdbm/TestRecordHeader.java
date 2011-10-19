@@ -36,7 +36,7 @@ public class TestRecordHeader extends TestCase {
 	 * Test basics - read and write at an offset
 	 */
 	public void testReadWrite() throws Exception {
-		byte[] data = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
+		byte[] data = new byte[RecordFile.BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
 		RecordHeader.setAvailableSize(test, (short) 6,2345);
@@ -57,7 +57,7 @@ public class TestRecordHeader extends TestCase {
 		assertEquals("inconsistent rounding at max rec size",
 				RecordHeader.MAX_RECORD_SIZE, RecordHeader.roundAvailableSize(RecordHeader.MAX_RECORD_SIZE));
 		
-		byte[] data = new byte[RecordFile.DEFAULT_BLOCK_SIZE];
+		byte[] data = new byte[RecordFile.BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		Random r = new Random();
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
