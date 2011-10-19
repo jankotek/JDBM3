@@ -300,7 +300,7 @@ final class TransactionManager {
 
         // open a new ObjectOutputStream in order to store
         // newer states of BlockIo
-        oos = new DataOutputStream(new BufferedOutputStream(fos));
+//        oos = new DataOutputStream(new BufferedOutputStream(fos));
     }
 
     /** Flushes and syncs */
@@ -383,9 +383,6 @@ final class TransactionManager {
             }
         }
 
-        public boolean equals(Object obj) {
-            return super.equals(obj);
-        }
     } // class BlockIOComparator
 
 }
