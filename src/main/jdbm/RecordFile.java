@@ -19,8 +19,6 @@ package jdbm;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.OverlappingFileLockException;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -66,18 +64,13 @@ final class RecordFile {
     /** the lenght of single block */
     static final int BLOCK_SIZE =2048;
 
-
-    /** maximal file size not rounded to block size */
-    private final static long _FILESIZE = 1000000000l;
-    private final long MAX_FILE_SIZE =  _FILESIZE - _FILESIZE%BLOCK_SIZE;
-
-
     /** A block of clean data to wipe clean pages. */
-    final byte[] cleanData;
+    static final byte[] cleanData = new byte[RecordFile.BLOCK_SIZE];
 
-    private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
-    private final String fileName;
-    
+
+
+
+    private Storage storage;
 
     /**
      *  Creates a new object on the indicated filename. The file is
@@ -89,44 +82,10 @@ final class RecordFile {
      *          RandomAccessFile throws it.
      */
     RecordFile(String fileName) throws IOException {
-    	cleanData = new byte[BLOCK_SIZE];
-        this.fileName = fileName;
-        //make sure first file can be opened
-        //lock it
-        try{
-        	getRaf(0).getChannel().tryLock();
-        }catch(IOException e){
-        	throw new IOException("Could not lock DB file: "+fileName,e);
-        }catch(OverlappingFileLockException e){
-            throw new IOException("Could not lock DB file: "+fileName,e);
-        }
-
-        txnMgr = new TransactionManager(this);
+        this.storage = new Storage(fileName);
+        txnMgr = new TransactionManager(this,storage);
     }
 
-    RandomAccessFile getRaf(long offset) throws IOException {
-    	int fileNumber = (int) (offset/MAX_FILE_SIZE);
-
-   		//increase capacity of array lists if needed
-   		for(int i = rafs.size();i<=fileNumber;i++){
-   			rafs.add(null);
-    	}
-
-		RandomAccessFile ret = rafs.get(fileNumber);
-		if(ret == null){
-			String name = fileName+"."+fileNumber;
-			ret = new RandomAccessFile(name, "rw");
-			rafs.set(fileNumber, ret);
-		}
-		return ret;
-	}
-
-	/**
-     *  Returns the file name.
-     */
-    String getFileName() {
-        return fileName;
-    }
 
     /**
      *  Disables transactions: doesn't sync and doesn't use the
@@ -176,10 +135,8 @@ final class RecordFile {
          // get a new node and read it from the file
          node = getNewNode(blockid);
          long offset = blockid * BLOCK_SIZE;
-         RandomAccessFile file = getRaf(offset);
+         storage.read(offset,node.getData(),BLOCK_SIZE);
 
-         read(file, offset%MAX_FILE_SIZE, node.getData(), BLOCK_SIZE);   
-         
          inUse.put(blockid, node);
          node.setClean();
          return node;
@@ -263,9 +220,7 @@ final class RecordFile {
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
                 long offset = node.getBlockId() * BLOCK_SIZE;
-                RandomAccessFile file = getRaf(offset);
-                file.seek(offset % MAX_FILE_SIZE);
-                file.write(node.getData());
+                storage.write(offset,node.getData());
                 node.setClean();
                 free.put(node.getBlockId(),node);
             }
@@ -327,12 +282,7 @@ final class RecordFile {
             throw new Error("inUse blocks at close time");
         }
 
-        for(RandomAccessFile f :rafs){
-        	if(f!=null)
-        		f.close();
-        }
-        rafs = null;      
-        
+        storage.forceClose();
     }
 
 
@@ -342,11 +292,7 @@ final class RecordFile {
      */
     void forceClose() throws IOException {
       txnMgr.forceClose();
-      for(RandomAccessFile f :rafs){
-      	if(f!=null)
-      		f.close();
-      }
-      rafs = null;  
+      storage.forceClose();
     }
 
     /**
@@ -390,9 +336,7 @@ final class RecordFile {
         byte[] data = node.getData();
         if (data != null) {
             long offset = node.getBlockId() * BLOCK_SIZE;
-            RandomAccessFile file = getRaf(offset);
-            file.seek(offset % MAX_FILE_SIZE);
-            file.write(data);
+            storage.write(offset,data);
         }
     }
 
@@ -414,29 +358,8 @@ final class RecordFile {
      *  Synchronizes the file.
      */
     void sync() throws IOException {
-    	for(RandomAccessFile file:rafs)
-    		if(file!=null)
-    			file.getFD().sync();
+    	storage.sync();
     }
 
-
-           /**
-            * Utility method: Read a block from a RandomAccessFile
-            */
-            private void read(RandomAccessFile file, long offset,
-                    byte[] buffer, int nBytes) throws IOException {
-                file.seek(offset);
-                int remaining = nBytes;
-                int pos = 0;
-                while (remaining > 0) {
-                    int read = file.read(buffer, pos, remaining);
-                    if (read == -1) {
-                        System.arraycopy(cleanData, 0, buffer, pos, remaining);
-                        break;
-                    }
-                    remaining -= read;
-                    pos += read;
-                }
-            }
 
 }

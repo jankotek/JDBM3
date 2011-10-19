@@ -69,6 +69,7 @@ final class TransactionManager {
 
     /** Extension of a log file. */
     static final String extension = ".t";
+    private Storage storage;
 
     /**
      *  Instantiates a transaction manager instance. If recovery
@@ -76,18 +77,19 @@ final class TransactionManager {
      *
      *  @param owner the RecordFile instance that owns this transaction mgr.
      */
-    TransactionManager(RecordFile owner) throws IOException {
+    TransactionManager(RecordFile owner,Storage storage) throws IOException {
         this.owner = owner;
+        this.storage = storage;
         recover();
         open();
     }
 
-    
+
     /**
      * Synchronize log file data with the main database file.
      * <p>
-     * After this call, the main database file is guaranteed to be 
-     * consistent and guaranteed to be the only file needed for 
+     * After this call, the main database file is guaranteed to be
+     * consistent and guaranteed to be the only file needed for
      * backup purposes.
      */
     public void synchronizeLog()
@@ -96,7 +98,7 @@ final class TransactionManager {
         synchronizeLogFromMemory();
     }
 
-    
+
     /**
      * Set the maximum number of transactions to record in
      * the log (and keep in memory) before the log is
@@ -123,7 +125,7 @@ final class TransactionManager {
     
     /** Builds logfile name  */
     private String makeLogName() {
-        return owner.getFileName() + extension;
+        return storage.getFileName() + extension;
     }
 
 
