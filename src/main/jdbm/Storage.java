@@ -1,7 +1,6 @@
 package jdbm;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 
@@ -92,7 +91,52 @@ public class Storage {
     }
 
 
-    public String getFileName() {
-        return fileName;
+    static final String transaction_log_file_extension = ".t";
+
+
+    public DataOutputStream openTransactionLog() throws FileNotFoundException {
+        String logName = fileName + transaction_log_file_extension;
+        final FileOutputStream fileOut = new FileOutputStream(logName);
+        return new DataOutputStream(new BufferedOutputStream(fileOut)){
+
+            //default implementation of flush on FileOutputStream does nothing,
+            //so we use little workaround to make sure that data were really flushed
+            public void flush() throws IOException {
+                super.flush();
+                fileOut.flush();
+                fileOut.getFD().sync();
+            }
+        };
+    }
+
+
+
+    public DataInputStream readTransactionLog() throws FileNotFoundException {
+
+        File logFile = new File(fileName + transaction_log_file_extension);
+        if (!logFile.exists())
+            return null;
+        if (logFile.length() == 0) {
+            logFile.delete();
+            return null;
+        }
+
+        DataInputStream ois = new DataInputStream(new BufferedInputStream(new FileInputStream(logFile)));
+
+        try {
+            if (ois.readShort() != Magic.LOGFILE_HEADER)
+                throw new Error("Bad magic on log file");
+        } catch (IOException e) {
+            // corrupted/empty logfile
+            logFile.delete();
+            return null;
+        }
+        return ois;
+    }
+
+    public void deleteTransactionLog() {
+        File logFile = new File(fileName + transaction_log_file_extension);
+        if(logFile.exists())
+            logFile.delete();
     }
 }

@@ -17,13 +17,8 @@
 
 package jdbm;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,7 +38,6 @@ final class TransactionManager {
     private RecordFile owner;
 
     // streams for transaction log.
-    private FileOutputStream fos;
     private DataOutputStream oos;
 
     /** 
@@ -67,8 +61,6 @@ final class TransactionManager {
     private ArrayList<BlockIo>[] txns = new ArrayList[DEFAULT_TXNS_IN_LOG];
     private int curTxn = -1;
 
-    /** Extension of a log file. */
-    static final String extension = ".t";
     private Storage storage;
 
     /**
@@ -122,11 +114,6 @@ final class TransactionManager {
         txns = new ArrayList[ maxTxns ];
     }
 
-    
-    /** Builds logfile name  */
-    private String makeLogName() {
-        return storage.getFileName() + extension;
-    }
 
 
     /** Synchs in-core transactions to data file and opens a fresh log */
@@ -166,8 +153,8 @@ final class TransactionManager {
 
     /** Opens the log file */
     private void open() throws IOException {
-        fos = new FileOutputStream(makeLogName());
-        oos = new DataOutputStream(new BufferedOutputStream(fos));
+
+        oos = storage.openTransactionLog();
         oos.writeShort(Magic.LOGFILE_HEADER);
         oos.flush();
         curTxn = -1;
@@ -175,26 +162,11 @@ final class TransactionManager {
 
     /** Startup recovery on all files */
     private void recover() throws IOException {
-        String logName = makeLogName();
-        File logFile = new File(logName);
-        if (!logFile.exists())
-            return;
-        if (logFile.length() == 0) {
-            logFile.delete();
-            return;
-        }
 
-        FileInputStream fis = new FileInputStream(logFile);
-        DataInputStream ois = new DataInputStream(new BufferedInputStream(fis));
+        DataInputStream ois = storage.readTransactionLog();
 
-        try {
-            if (ois.readShort() != Magic.LOGFILE_HEADER)
-                throw new Error("Bad magic on log file");
-        } catch (IOException e) {
-            // corrupted/empty logfile
-            logFile.delete();
-            return;
-        }
+        // if transaction log is empty, or does not exist
+        if(ois == null) return;
 
         while (true) {
             ArrayList<BlockIo> blocks = null;
@@ -212,17 +184,9 @@ final class TransactionManager {
             }
             synchronizeBlocks(blocks, false);
 
-            // ObjectInputStream must match exactly each
-            // ObjectOutputStream created during writes
-//            try {
-                ois = new DataInputStream(fis);
-//            } catch (IOException e) {
-//                // corrupted logfile, ignore rest of transactions
-//                break;
-//            }
         }
         owner.sync();
-        logFile.delete();
+        storage.deleteTransactionLog();
     }
 
     /** Synchronizes the indicated blocks with the owner. */
@@ -306,8 +270,6 @@ final class TransactionManager {
     /** Flushes and syncs */
     private void sync() throws IOException {
         oos.flush();
-        fos.flush();
-        fos.getFD().sync();
     }
 
     /**
@@ -325,9 +287,7 @@ final class TransactionManager {
     private void close() throws IOException {
         sync();
         oos.close();
-        fos.close();
         oos = null;
-        fos = null;
     }
 
     /**
@@ -336,9 +296,7 @@ final class TransactionManager {
      */
     void forceClose() throws IOException {
         oos.close();
-        fos.close();
         oos = null;
-        fos = null;
     }
 
     /**

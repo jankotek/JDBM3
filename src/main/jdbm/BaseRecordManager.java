@@ -657,8 +657,8 @@ final class BaseRecordManager
 			String f2 = filename2+"_OLD"+ext;
 			
 			//first rename transaction log
-			File f1t = new File(f1+TransactionManager.extension);
-			File f2t = new File(f2+TransactionManager.extension);
+			File f1t = new File(f1+Storage.transaction_log_file_extension);
+			File f2t = new File(f2+Storage.transaction_log_file_extension);
 			f1t.renameTo(f2t);
 			filesToDelete.add(f2t);
 			
@@ -678,8 +678,8 @@ final class BaseRecordManager
 			String f2 = filename1+ext;
 			
 			//first rename transaction log
-			File f1t = new File(f1+TransactionManager.extension);
-			File f2t = new File(f2+TransactionManager.extension);
+			File f1t = new File(f1+Storage.transaction_log_file_extension);
+			File f2t = new File(f2+Storage.transaction_log_file_extension);
 			f1t.renameTo(f2t);
 			
 			//rename data files, iterate until file exist

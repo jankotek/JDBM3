@@ -112,13 +112,13 @@ public class TestTransactionManager extends TestCaseWithTestFile {
     void assertLogSizeEquals(String msg, long size) {
         assertEquals(msg + " log size", size,
                      new File(file
-                              + TransactionManager.extension).length());
+                              + Storage.transaction_log_file_extension).length());
     }
 
     void assertLogSizeNotZero(String msg) {
         assertTrue(msg + " log size",
                new File(file
-                        + TransactionManager.extension).length() != 0);
+                        + Storage.transaction_log_file_extension).length() != 0);
     }
 
     /**
