@@ -82,7 +82,7 @@ final class RecordFile {
      *          RandomAccessFile throws it.
      */
     RecordFile(String fileName) throws IOException {
-        this.storage = new Storage(fileName);
+        this.storage = new StorageDisk(fileName);
         txnMgr = new TransactionManager(this,storage);
     }
 

@@ -598,8 +598,9 @@ final class BaseRecordManager
 
 
 	public synchronized void defrag() throws IOException {
+
 		checkIfClosed();
-        checkCanWrite();
+                checkCanWrite();
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename; 
@@ -657,8 +658,8 @@ final class BaseRecordManager
 			String f2 = filename2+"_OLD"+ext;
 			
 			//first rename transaction log
-			File f1t = new File(f1+Storage.transaction_log_file_extension);
-			File f2t = new File(f2+Storage.transaction_log_file_extension);
+			File f1t = new File(f1+StorageDisk.transaction_log_file_extension);
+			File f2t = new File(f2+StorageDisk.transaction_log_file_extension);
 			f1t.renameTo(f2t);
 			filesToDelete.add(f2t);
 			
@@ -678,8 +679,8 @@ final class BaseRecordManager
 			String f2 = filename1+ext;
 			
 			//first rename transaction log
-			File f1t = new File(f1+Storage.transaction_log_file_extension);
-			File f2t = new File(f2+Storage.transaction_log_file_extension);
+			File f1t = new File(f1+StorageDisk.transaction_log_file_extension);
+			File f2t = new File(f2+StorageDisk.transaction_log_file_extension);
 			f1t.renameTo(f2t);
 			
 			//rename data files, iterate until file exist
