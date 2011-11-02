@@ -190,7 +190,7 @@ final class BaseRecordManager
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public BaseRecordManager( String filename )
+    public BaseRecordManager( String filename)
         throws IOException
     {
     	_filename = filename;

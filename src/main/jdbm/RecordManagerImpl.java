@@ -18,6 +18,8 @@ package jdbm;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Abstract class for record manager which implements most of stuff
@@ -27,7 +29,7 @@ import java.util.Comparator;
  */
 abstract class RecordManagerImpl implements RecordManager{
 	
-	public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
+    public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
         return hashMap(name,null,null);
     }
 
@@ -50,6 +52,14 @@ abstract class RecordManagerImpl implements RecordManager{
 		}catch(IOException  e){
 			throw new IOError(e);
 		}
+	}
+
+        public synchronized <K> Set<K> hashSet(String name) {
+            return hashSet(name);
+        }
+
+	public synchronized <K> Set<K> hashSet(String name, Serializer<K> keySerializer) {
+                return new HTreeSet(hashMap(name,keySerializer,null));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -103,7 +113,23 @@ abstract class RecordManagerImpl implements RecordManager{
 	}
 
 
+        public synchronized <K> SortedSet<K> treeSet(String name) {
+            return treeSet(name, null, null);
+        }
 
+	public synchronized <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer) {
+            return treeSet(name,keySerializer,null);
+	}
+
+        public synchronized <K> SortedSet<K> treeSet(String name, Comparator<K> keyComparator) {
+            return treeSet(name,null,keyComparator);
+        }
+
+        public synchronized <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer, Comparator<K> keyComparator) {
+            return new BTreeSet<K>(treeMap(name,
+                    keyComparator!=null? keyComparator:ComparableComparator.INSTANCE,
+                    null,keySerializer));
+        }
 
 
     public void update( long recid, Object obj ) throws IOException{

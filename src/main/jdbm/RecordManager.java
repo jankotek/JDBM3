@@ -19,6 +19,8 @@ package jdbm;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.Set;
+import java.util.SortedSet;
 
 /**
  *  An interface to manages records, which are objects serialized to byte[] on background.
@@ -232,6 +234,15 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer);
 
+    /**
+     * Create or load existing HashMap
+     */
+    public  <K> Set<K> hashSet(String name);
+
+    /**
+     * Create or load existing HashMap
+     */
+    public <K> Set<K> hashSet(String name, Serializer<K> keySerializer);
 
 
     /**
@@ -326,6 +337,15 @@ public interface  RecordManager
      */
 	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
 			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
+
+
+    public  <K> SortedSet<K> treeSet(String name);
+
+    public  <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer);
+
+    public  <K> SortedSet<K> treeSet(String name, Comparator<K> keyComparator);
+
+    public  <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer, Comparator<K> keyComparator);
 
 
     Serializer defaultSerializer();

@@ -139,7 +139,7 @@ class Serialization extends SerialClassInfo implements Serializer
 	final static int NOTUSED_ARRAYLIST_255		= 104;
 	final static int ARRAYLIST			= 105;
 
-	final static int NOTUSED_TREEMAP_255			= 106;
+    	final static int NOTUSED_TREEMAP_255			= 106;
 	final static int TREEMAP				= 107;
 	final static int NOTUSED_HASHMAP_255			= 108;
 	final static int HASHMAP				= 109;
@@ -177,8 +177,8 @@ class Serialization extends SerialClassInfo implements Serializer
     static final int OBJECT_STACK 	= 166;
 	static final int JAVA_SERIALIZATION 	= 172;
 
-
-        private static final String EMPTY_STRING = "";
+        /** empty string is used as dummy value to represent null values in HashSet and TreeSet */
+        static final String EMPTY_STRING = "";
         private static final String UTF8 = "UTF-8";
 
     Serialization(RecordManager recman, long serialClassInfoRecid) throws IOException {

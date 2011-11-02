@@ -182,7 +182,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 			}
 
                     public int size(){
-                        return tree.size();
+                        return BTreeSortedMap.this.size();
                     }
 
 		};
@@ -223,6 +223,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 				return null;
 			if(!inBounds((K) key))
 				throw new IllegalArgumentException("out of bounds");
+
 			return tree.remove((K) key);
 		}catch (ClassCastException e){
 			return null;
@@ -342,7 +343,19 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 	}
 
     public int size(){
-        return tree.size();
+        if(fromKey == null && toKey == null)
+            return tree.size(); //use fast counter on tree if Map has no bounds
+        else{
+            //had to count items in iterator
+            Iterator iter = keySet().iterator();
+            int counter = 0;
+            while(iter.hasNext()){
+                iter.next();
+                counter++;
+            }
+            return counter;
+        }
+
     }
 
 

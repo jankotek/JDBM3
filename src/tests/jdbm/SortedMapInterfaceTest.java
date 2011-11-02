@@ -207,6 +207,10 @@ public abstract class SortedMapInterfaceTest<K, V>
         SortedMap<K, V> subMap
             = map.subMap(list.get(i).getKey(), list.get(j).getKey());
         assertEquals(expected, toList(subMap.entrySet()));
+        assertEquals(expected.size(), subMap.size());
+        assertEquals(expected.size(), subMap.keySet().size());
+        assertEquals(expected.size(), subMap.entrySet().size());
+        assertEquals(expected.size(), subMap.values().size());
       }
     }
   }
