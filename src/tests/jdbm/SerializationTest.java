@@ -347,4 +347,21 @@ public class SerializationTest extends TestCase{
             d = new BigInteger("-535345345345344456567889889895165654423236");
             assertEquals(d,ser.deserialize(ser.serialize(d)));
         }
+
+
+        public void testJDBMLinkedListEntry() throws IOException, ClassNotFoundException {
+            JDBMLinkedList.Entry e = new JDBMLinkedList.Entry(0,0,"");
+            JDBMLinkedList.Entry e2 = (JDBMLinkedList.Entry) ser.deserialize(ser.serialize(e));
+
+            assertEquals(e.next,e2.next);
+            assertEquals(e.prev,e2.prev);
+            assertEquals(e.value,e2.value);
+
+            e = new JDBMLinkedList.Entry(312,1245,new Integer(0));
+            e2 = (JDBMLinkedList.Entry) ser.deserialize(ser.serialize(e));
+
+            assertEquals(e.next,e2.next);
+            assertEquals(e.prev,e2.prev);
+            assertEquals(e.value,e2.value);
+        }
 }

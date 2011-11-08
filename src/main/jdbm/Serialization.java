@@ -167,6 +167,9 @@ class Serialization extends SerialClassInfo implements Serializer
 
         final static int DATE				= 127;
 
+        static final int JDBMLINKEDLIST 	= 159;
+        static final int JDBMLINKEDLIST_ENTRY 	= 160;
+
 	final static int BTREE				= 161;
 
 	static final int BPAGE_LEAF 			= 162;
@@ -437,6 +440,15 @@ class Serialization extends SerialClassInfo implements Serializer
         }else if (clazz == BTree.class){
             out.write(BTREE);
             ((BTree)obj).writeExternal(out);
+        }else if (clazz == JDBMLinkedList.class){
+            out.write(JDBMLINKEDLIST);
+            ((JDBMLinkedList)obj).serialize(out);
+        }else if (clazz == JDBMLinkedList.Entry.class){
+            out.write(JDBMLINKEDLIST_ENTRY);
+            JDBMLinkedList.Entry e = (JDBMLinkedList.Entry)obj;
+            LongPacker.packLong(out,e.prev);
+            LongPacker.packLong(out,e.next);
+            serialize(out,e.value);
         }else{
             out.write(NORMAL);
             writeObject(out,obj, objectStack);
@@ -752,6 +764,8 @@ class Serialization extends SerialClassInfo implements Serializer
             case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
             case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
             case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+            case JDBMLINKEDLIST: ret = JDBMLinkedList.deserialize(is);break;
+            case JDBMLINKEDLIST_ENTRY: ret = new JDBMLinkedList.Entry(LongPacker.unpackLong(is),LongPacker.unpackLong(is),deserialize(is)); break;
             case BTREE: ret = BTree.readExternal(is,this); break;
             case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
             case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");

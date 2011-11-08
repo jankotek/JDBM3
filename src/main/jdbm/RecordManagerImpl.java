@@ -18,6 +18,7 @@ package jdbm;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -130,6 +131,35 @@ abstract class RecordManagerImpl implements RecordManager{
                     keyComparator!=null? keyComparator:ComparableComparator.INSTANCE,
                     null,keySerializer));
         }
+
+
+    public <K> List<K> linkedList(String name){
+        return linkedList(name,null);
+    }
+
+    public <K> List<K> linkedList(String name,  Serializer<K> serializer){
+        try{
+            JDBMLinkedList<K> list;
+
+            // create or load
+            long recid = getNamedObject( name);
+            if ( recid != 0 ) {
+                list = new JDBMLinkedList<K>(this,recid);
+            } else {
+                //allocate record and overwrite it
+                recid = insert(null);
+                list = new JDBMLinkedList<K>(this,recid);
+                update(recid,list);
+                setNamedObject( name, recid );
+            }
+            return list;
+        }catch (IOException e){
+            throw new IOError(e);
+        }
+
+    }
+
+
 
 
     public void update( long recid, Object obj ) throws IOException{

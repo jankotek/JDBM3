@@ -19,6 +19,7 @@ package jdbm;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -118,7 +119,7 @@ public interface  RecordManager
      *  @return the object contained in the record, null if given recid does not exist
      *  @throws IOException when one of the underlying I/O operations fails.
      */
-    public abstract Object fetch( long recid )
+    public abstract <A> A fetch( long recid )
         throws IOException;
 
 
@@ -347,7 +348,13 @@ public interface  RecordManager
 
     public  <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer, Comparator<K> keyComparator);
 
+    public <K> List<K> linkedList(String name);
+
+    public <K> List<K> linkedList(String name,  Serializer<K> serializer);
 
     Serializer defaultSerializer();
+
+
 }
+
 
