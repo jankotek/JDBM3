@@ -42,10 +42,4 @@ public class TestPageHeader extends TestCase {
   assertEquals("prev", 33, p.getPrev());
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-  junit.textui.TestRunner.run(new TestSuite(TestPageHeader.class));
-    }
 }

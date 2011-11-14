@@ -151,11 +151,5 @@ public class TestHashDirectory extends TestCaseWithTestFile {
         assertEquals(hash.size(), count);
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestHashDirectory.class));
-    }
 
 }

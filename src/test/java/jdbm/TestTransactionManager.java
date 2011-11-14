@@ -121,10 +121,4 @@ public class TestTransactionManager extends TestCaseWithTestFile {
                         + StorageDisk.transaction_log_file_extension).length() != 0);
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestTransactionManager.class));
-    }
 }

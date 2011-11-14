@@ -182,11 +182,4 @@ public class TestRollback
 	    
     
     
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main( String[] args )
-    {
-        junit.textui.TestRunner.run( new TestSuite( TestRollback.class ) );
-    }
 }

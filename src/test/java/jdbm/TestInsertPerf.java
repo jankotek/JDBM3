@@ -55,19 +55,6 @@ public class TestInsertPerf extends TestCaseWithTestFile
                                 
     }
     
-    
-    public static void main( String[] args ) {
-        if ( args.length != 1 ) {
-            System.out.println( "Usage:  TestInsertPerf [numberOfObjects]" );
-            return;
-        }
-        int numberOfObjects = Integer.parseInt( args[ 0 ] );
-        TestInsertPerf test = new TestInsertPerf( numberOfObjects );
-        try {
-            test.insert();
-        } catch ( IOException except ) {
-            except.printStackTrace();   
-        }
-    }
+
 
 }

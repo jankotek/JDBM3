@@ -204,15 +204,5 @@ public class TestPerformance extends TestCase {
         }
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestPerformance.class));
 
-        // if you just want one test:
-        //  TestSuite suite = new TestSuite();
-        //  suite.addTest(new TestPerformance("testDeletes"));
-        //  junit.textui.TestRunner.run(suite);
-    }
 }

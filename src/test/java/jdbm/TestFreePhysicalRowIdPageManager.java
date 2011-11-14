@@ -40,6 +40,7 @@ public class TestFreePhysicalRowIdPageManager extends TestCaseWithTestFile {
 	 * Test basics
 	 */
 	public void testBasics() throws Exception {
+
 		RecordFile f = newRecordFile();
 		PageManager pm = new PageManager(f);
 		FreePhysicalRowIdPageManager freeMgr = new FreePhysicalRowIdPageManager(
@@ -52,12 +53,5 @@ public class TestFreePhysicalRowIdPageManager extends TestCaseWithTestFile {
 		pm.close();
 		f.close();
 	}
-
-	/**
-	 * Runs all tests in this class
-	 */
-	public static void main(String[] args) {
-		junit.textui.TestRunner.run(new TestSuite(
-				TestFreePhysicalRowIdPageManager.class));
-	}
 }
+

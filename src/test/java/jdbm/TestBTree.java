@@ -690,12 +690,6 @@ public class TestBTree
         return ( tree_obj.equals( entry.getValue() ) );
     }
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main( String[] args ) {
-        junit.textui.TestRunner.run( new TestSuite( TestBTree.class ) );
-    }
 
     /**
      * Inner class for testing puroposes only (multithreaded access)

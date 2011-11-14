@@ -57,11 +57,5 @@ public class TestDataPage extends TestCase {
   assertEquals("first", 1000, page.getFirst());
     }
     
-    
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-  junit.textui.TestRunner.run(new TestSuite(TestDataPage.class));
-    }
+
 }

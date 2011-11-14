@@ -72,10 +72,5 @@ public class TestBlockIo extends TestCase {
   assertEquals("int", INT_VALUE, test.readInt(10));
     }
     
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-  junit.textui.TestRunner.run(new TestSuite(TestBlockIo.class));
-    }
+
 }

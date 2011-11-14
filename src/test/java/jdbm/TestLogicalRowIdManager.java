@@ -62,10 +62,4 @@ public class TestLogicalRowIdManager extends TestCaseWithTestFile {
     }
 
 
-    /**
-     *  Runs all tests in this class
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(new TestSuite(TestLogicalRowIdManager.class));
-    }
 }

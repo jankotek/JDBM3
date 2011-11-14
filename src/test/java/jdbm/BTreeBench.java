@@ -36,9 +36,6 @@ public class BTreeBench extends TestCaseWithTestFile {
      * 
      * @throws IOException
      */
-    // TODO[cdg] Fix this test
-    //@Ignore   
-
     public void test_001() throws IOException {
     	recman = newRecordManager();
         BTree<Long,Long> tree = BTree.createInstance(recman);
