@@ -18,7 +18,8 @@ package jdbm;
 import java.io.IOException;
 
 /**
- * An listener notifed when record is inserted, updated or removed 
+ * An listener notifed when record is inserted, updated or removed.
+ * On TreeSet, HashSet and LinkedList this listener always returns null value.
  * 
  * @author Jan Kotek
  *

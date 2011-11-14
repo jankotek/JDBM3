@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>JDBM</groupId>
+  <artifactId>JDBM</artifactId>
+  <version>3.0-SNAPTSHOT</version>
+
+
+  <developers>
+    <developer>
+      <name>Jan Kotek</name>
+      <id>jan</id>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>Apache 2</name>
+    </license>
+  </licenses>
+
+
+
+  <dependencies>
+  	<dependency>
+  		<groupId>junit</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>4.8.2</version>
+  		<type>jar</type>
+  		<scope>test</scope>
+  		<optional>false</optional>
+  	</dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>          
+          <target>1.5</target>          
+          <source>1.5</source>          
+        </configuration>
+      </plugin>
+      </plugins>
+  </build>
+
+</project>
