@@ -16,7 +16,7 @@ public class HugeData {
 
 		/** open db */
         RecordManager recman = new RecordManagerBuilder("hugedata").build();
-        PrimaryTreeMap<Long, String> m = recman.treeMap("hugemap");
+        PrimaryTreeMap<Long, String> m = recman.createTreeMap("hugemap");
         
         /** insert 1e7 records */
         for(long i = 0;i<1e8;i++){

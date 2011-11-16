@@ -209,6 +209,16 @@ public interface  RecordManager
         throws IOException;
 
     
+    /**
+     * Create or load existing HashMap
+     */
+    public  <K> Set<K> createHashSet(String name);
+
+    /**
+     * Create or load existing HashMap
+     */
+    public <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
+
 
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
@@ -219,31 +229,10 @@ public interface  RecordManager
      * @param name record name
      * @return
      */
-	public <K, V> PrimaryHashMap<K, V> hashMap(String name);
+	public <K, V> PrimaryHashMap<K, V> createHashMap(String name);
 
 
 
-    /**
-     * Creates or load existing Primary Hash Map which persists data into DB.
-     * This method uses custom serializer for keys.
-     *
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keySerializer serializer to be used for Keys
-     * @return
-     */
-	public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer);
-
-    /**
-     * Create or load existing HashMap
-     */
-    public  <K> Set<K> hashSet(String name);
-
-    /**
-     * Create or load existing HashMap
-     */
-    public <K> Set<K> hashSet(String name, Serializer<K> keySerializer);
 
 
     /**
@@ -258,7 +247,7 @@ public interface  RecordManager
      * @param valueSerializer serializer to be used for Values
      * @return
      */
-	public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
+	public <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
@@ -271,60 +260,9 @@ public interface  RecordManager
      */
 
 	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name);
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> createTreeMap(String name);
 
-    /**
-     * Creates or load existing TreeMap which persists data into DB.
-     * 
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage.
-     * @return
-     */
-	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer);
-	
-    /**
-     * Creates or load existing TreeMap which persists data into DB.
-     * 
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage.
-     * @param keySerializer Serializer used for keys. This may reduce disk space usage.
-     * @return
-     */
-	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, 
-			Serializer<V> valueSerializer, Serializer<K> keySerializer);
-	
-    /**
-     * Creates or load existing TreeMap which persists data into DB.
-     * 
-     * 
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keyComparator Comparator used to sort keys
-     * @return
-     */
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator);
 
-    /**
-     * Creates or load existing TreeMap which persists data into DB.
-     * 
-     * 
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keyComparator Comparator used to sort keys
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage
-     * @return
-     */
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-			Comparator<K> keyComparator, Serializer<V> valueSerializer) ;
-	
     /**
      * Creates or load existing TreeMap which persists data into DB. 
      * 
@@ -336,21 +274,18 @@ public interface  RecordManager
      * @param keySerializer Serializer used for keys. This may reduce disk space usage     * 
      * @return
      */
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
+	public <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
+                                                         Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) ;
 
 
-    public  <K> SortedSet<K> treeSet(String name);
+    public  <K> SortedSet<K> createTreeSet(String name);
 
-    public  <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer);
 
-    public  <K> SortedSet<K> treeSet(String name, Comparator<K> keyComparator);
+    public  <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer);
 
-    public  <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer, Comparator<K> keyComparator);
+    public <K> List<K> createLinkedList(String name);
 
-    public <K> List<K> linkedList(String name);
-
-    public <K> List<K> linkedList(String name,  Serializer<K> serializer);
+    public <K> List<K> createLinkedList(String name, Serializer<K> serializer);
 
     Serializer defaultSerializer();
 

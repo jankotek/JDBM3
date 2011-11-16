@@ -24,7 +24,7 @@ public class TestInsertUpdate extends TestCaseWithTestFile {
             }
         };
                 
-        Map<Long, Long> map = recman.hashMap("custom", serializer, serializer);
+        Map<Long, Long> map = recman.createHashMap("custom", serializer, serializer);
         
         map.put(new Long(1), new Long(1));
         map.put(new Long(2), new Long(2));

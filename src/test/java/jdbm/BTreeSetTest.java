@@ -48,7 +48,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_Constructor() {
 		// Test for method java.util.TreeSet()
-		assertTrue("Did not construct correct TreeSet", recman.treeSet("test").isEmpty());
+		assertTrue("Did not construct correct TreeSet", recman.createTreeSet("test").isEmpty());
 	}
 
 
@@ -57,7 +57,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_ConstructorLjava_util_Comparator() {
 		// Test for method java.util.TreeSet(java.util.Comparator)
-		SortedSet myTreeSet = recman.treeSet("test",new ReversedIntegerComparator());
+		SortedSet myTreeSet = recman.createTreeSet("test", new ReversedIntegerComparator(),null);
 		assertTrue("Did not construct correct TreeSet", myTreeSet.isEmpty());
 		myTreeSet.add(new Integer(1));
 		myTreeSet.add(new Integer(2));
@@ -75,10 +75,10 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	public void test_ConstructorLjava_util_SortedSet() {
 		// Test for method java.util.TreeSet(java.util.SortedSet)
 		ReversedIntegerComparator comp = new ReversedIntegerComparator();
-		SortedSet myTreeSet = recman.treeSet("test",comp);
+		SortedSet myTreeSet = recman.createTreeSet("test", comp,null);
 		for (int i = 0; i < objArray.length; i++)
 			myTreeSet.add(objArray[i]);
-		SortedSet anotherTreeSet = recman.treeSet("test");
+		SortedSet anotherTreeSet = recman.createTreeSet("test");
                 anotherTreeSet.addAll(myTreeSet);
 		assertTrue("TreeSet is not correct size",
                         anotherTreeSet.size() == objArray.length);
@@ -109,7 +109,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	public void test_addAllLjava_util_Collection() {
 		// Test for method boolean
 		// java.util.TreeSet.addAll(java.util.Collection)
-		SortedSet s = recman.treeSet("test");
+		SortedSet s = recman.createTreeSet("test");
 		s.addAll(ts);
 		assertTrue("Incorrect size after add", s.size() == ts.size());
 		Iterator i = ts.iterator();
@@ -134,7 +134,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	public void test_comparator() {
 		// Test for method java.util.Comparator java.util.TreeSet.comparator()
 		ReversedIntegerComparator comp = new ReversedIntegerComparator();
-		SortedSet myTreeSet = recman.treeSet("test",comp);
+		SortedSet myTreeSet = recman.createTreeSet("test", comp,null);
 		assertTrue("Answered incorrect comparator",
 				myTreeSet.comparator() == comp);
 	}
@@ -177,7 +177,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_isEmpty() {
 		// Test for method boolean java.util.TreeSet.isEmpty()
-		assertTrue("Empty set returned false", recman.treeSet("test").isEmpty());
+		assertTrue("Empty set returned false", recman.createTreeSet("test").isEmpty());
 		assertTrue("Non-Empty returned true", !ts.isEmpty());
 	}
 
@@ -186,7 +186,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_iterator() {
 		// Test for method java.util.Iterator java.util.TreeSet.iterator()
-		SortedSet s = recman.treeSet("test");
+		SortedSet s = recman.createTreeSet("test");
 		s.addAll(ts);
 		Iterator i = ts.iterator();
 		Set as = new HashSet(Arrays.asList(objArray));
@@ -268,8 +268,8 @@ public class BTreeSetTest extends TestCaseWithTestFile {
      */
     public void test_equals() throws Exception {
         // comparing TreeSets with different object types
-        Set s1 = recman.treeSet("test1");
-        Set s2 = recman.treeSet("test2");
+        Set s1 = recman.createTreeSet("test1");
+        Set s2 = recman.createTreeSet("test2");
         s1.add("key1");
         s1.add("key2");
         s2.add(new Integer(1));
@@ -278,7 +278,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
         assertFalse("Sets should not be equal 2", s2.equals(s1));
 
         // comparing TreeSet with HashSet
-        s1 = recman.treeSet("test");
+        s1 = recman.createTreeSet("test");
         s2 = new HashSet();
         s1.add("key");
         s2.add(new Object());
@@ -295,7 +295,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
         public void setUp() throws Exception {
                 super.setUp();
                 recman = newRecordManager();
-		ts = recman.treeSet("testBTreeSet");
+		ts = recman.createTreeSet("testBTreeSet");
 		for (int i = 0; i < objArray.length; i++) {
 			Object x = objArray[i] = new Integer(i);
 			ts.add(x);

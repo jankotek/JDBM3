@@ -232,9 +232,9 @@ class BTree<K,V>
         }
 
         if ( comparator == null ) {
-            throw new IllegalArgumentException( "Argument 'comparator' is null" );
+            comparator = ComparableComparator.INSTANCE;
         }
-        if ( ! ( comparator instanceof Serializable ) ) {
+        if ( ! ( comparator instanceof Serializable ) && comparator!=ComparableComparator.INSTANCE ) {
             throw new IllegalArgumentException( "Argument 'comparator' must be serializable" );
         }
 

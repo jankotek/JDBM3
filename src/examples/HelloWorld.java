@@ -18,7 +18,7 @@ public class HelloWorld {
 		/** Creates TreeMap which stores data in database.  
 		 *  Constructor method takes recordName (something like SQL table name)*/
 		String recordName = "firstTreeMap";
-		PrimaryTreeMap<Integer,String> treeMap = recMan.treeMap(recordName); 
+		PrimaryTreeMap<Integer,String> treeMap = recMan.createTreeMap(recordName);
 
 		/** add some stuff to map*/
 		treeMap.put(1, "One");

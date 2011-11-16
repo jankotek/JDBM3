@@ -17,8 +17,6 @@
 package jdbm;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -213,7 +211,7 @@ public class TestRecordManager extends TestCaseWithTestFile {
 			}};
 			
 		RecordManager recman = newRecordManager();
-		PrimaryTreeMap<Long,String> t =  recman.treeMap("test",ser);
+		PrimaryTreeMap<Long,String> t =  recman.createTreeMap("test", null, ser,null);
 		t.put(1l, "hopsa hejsa1");
 		t.put(2l, "hopsa hejsa2");
 		recman.commit();

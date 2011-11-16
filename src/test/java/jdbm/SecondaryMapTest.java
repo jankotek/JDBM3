@@ -32,7 +32,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 	
 	public void testSecondaryTreeMap() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, String> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, String> m = r.createTreeMap("aa");
 		SecondaryTreeMap<Integer, Integer, String> s = m.secondaryTreeMap("bb", 
 				new SecondaryKeyExtractor<Integer, Integer, String>() {
 
@@ -55,7 +55,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 	
 	public void testSecondaryHashMap() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, String> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, String> m = r.createTreeMap("aa");
 		SecondaryHashMap<Integer, Integer, String> s = m.secondaryHashMap("bb", 
 				new SecondaryKeyExtractor<Integer, Integer, String>() {
 
@@ -78,7 +78,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 	
 	public void testSecondaryTreeMapManyToOne() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, String> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, String> m = r.createTreeMap("aa");
 		SecondaryTreeMap<Integer, Integer, String> s = m.secondaryTreeMapManyToOne("bb", 
 				new SecondaryKeyExtractor<Iterable<Integer>, Integer, String>() {
 
@@ -107,7 +107,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 
 	public void testSecondaryHashMapManyToOne() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, String> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, String> m = r.createTreeMap("aa");
 		SecondaryHashMap<Integer, Integer, String> s = m.secondaryHashMapManyToOne("bb", 
 				new SecondaryKeyExtractor<Iterable<Integer>, Integer, String>() {
 
@@ -135,7 +135,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 	
 	public void testInverseHashView() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, String> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, String> m = r.createTreeMap("aa");
 		InverseHashView<Integer, String> inverse = m.inverseHashView("aaInverse");		
 		m.put(1, "a");
 		m.put(2, "ab");
@@ -151,7 +151,7 @@ public class SecondaryMapTest extends TestCaseWithTestFile{
 	
 	public void testInverseHashIdentityCheck() throws IOException{
 		RecordManager r = newRecordManager();
-		PrimaryTreeMap<Integer, Object> m = r.treeMap("aa");
+		PrimaryTreeMap<Integer, Object> m = r.createTreeMap("aa");
 		InverseHashView<Integer, Object> inverse = m.inverseHashView("aaInverse");
 		try{
 			for(int i =0; i<1000;i++){

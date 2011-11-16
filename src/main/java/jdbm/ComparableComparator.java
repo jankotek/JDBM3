@@ -15,7 +15,6 @@
  ******************************************************************************/
 package jdbm;
 
-import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -28,12 +27,10 @@ import java.util.Comparator;
  */
 @SuppressWarnings("unchecked") 
 public class ComparableComparator<A extends Comparable>
-	implements Comparator<A>,Serializable {	
+	implements Comparator<A> {
 	
 	/** use this instance, dont allocate new*/
 	public final static Comparator INSTANCE =  new ComparableComparator();
-
-	private static final long serialVersionUID = 1678377822276476166L;
 	
 	/** everyone should use INSTANCE*/
 	private ComparableComparator(){};

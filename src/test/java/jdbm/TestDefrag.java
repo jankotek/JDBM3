@@ -1,7 +1,5 @@
 package jdbm;
 
-import sun.reflect.generics.tree.DoubleSignature;
-
 import java.io.IOException;
 import java.util.*;
 
@@ -42,7 +40,7 @@ public class TestDefrag extends TestCaseWithTestFile{
 	public void testDefragBtree() throws IOException{
 		String file = newTestFile();
 		BaseRecordManager m = new BaseRecordManager(file);
-		PrimaryTreeMap t = m.treeMap("aa");
+		PrimaryTreeMap t = m.createTreeMap("aa");
 		TreeMap t2 = new TreeMap();
 		for(int i =0;i<10000;i ++ ){
 			t.put(i, ""+i);
@@ -52,14 +50,14 @@ public class TestDefrag extends TestCaseWithTestFile{
 		m.defrag();		
 		m.close();
 		m = new BaseRecordManager(file);
-		t = m.treeMap("aa");
+		t = m.createTreeMap("aa");
 		assertEquals(t,t2);
 	}
 
         public void testDefragLinkedList() throws Exception{
             String file = newTestFile();
             BaseRecordManager r = new BaseRecordManager(file);
-            List l = r.linkedList("test");
+            List l = r.createLinkedList("test");
             Map<Long,Double> junk = new LinkedHashMap<Long,Double>();
 
             for(int i = 0;i<1e4;i++){
@@ -79,7 +77,7 @@ public class TestDefrag extends TestCaseWithTestFile{
             assertEquals(oldRecCount,r.countRecords());
 
             //compare that list was unchanged
-            assertEquals(l2, new ArrayList(r.linkedList("test")));
+            assertEquals(l2, new ArrayList(r.createLinkedList("test")));
 
             //and check that random junk still have the same recids
             for(Long recid :junk.keySet()){

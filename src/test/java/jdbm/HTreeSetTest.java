@@ -17,8 +17,6 @@
 
 package jdbm;
 
-import java.io.IOException;
-
 
 import java.util.Iterator;
 import java.util.Set;
@@ -45,7 +43,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_Constructor() {
 		// Test for method java.util.HashSet()
-		Set hs2 = recman.hashSet("secondHashSet",null);
+		Set hs2 = recman.createHashSet("secondHashSet", null);
 		assertEquals("Created incorrect HashSet", 0, hs2.size());
 	}
 
@@ -95,7 +93,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_isEmpty() {
 		// Test for method boolean java.util.HashSet.isEmpty()
-		assertTrue("Empty set returned false", recman.hashSet("secondHashSet",null).isEmpty());
+		assertTrue("Empty set returned false", recman.createHashSet("secondHashSet", null).isEmpty());
 		assertTrue("Non-empty set returned true", !hs.isEmpty());
 	}
 
@@ -145,7 +143,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	public void setUp() throws Exception {
                 super.setUp();
                 recman = newRecordManager();
-		hs = recman.hashSet("testHashSet",null);
+		hs = recman.createHashSet("testHashSet", null);
 		for (int i = 0; i < objArray.length; i++)
 			hs.add(objArray[i]);
 	}

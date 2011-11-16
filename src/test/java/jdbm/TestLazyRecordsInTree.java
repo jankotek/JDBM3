@@ -1,7 +1,6 @@
 package jdbm;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Map;
 
 public class TestLazyRecordsInTree extends TestCaseWithTestFile{
@@ -46,13 +45,13 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile{
 
     public void testBTree() throws IOException {
         BaseRecordManager r = newBaseRecordManager();
-        Map<Integer,String> m = r.treeMap("test");
+        Map<Integer,String> m = r.createTreeMap("test");
         doIt(r,m);
     }
 
     public void testHTree() throws IOException {
         BaseRecordManager r = newBaseRecordManager();
-        Map<Integer,String> m = r.hashMap("test");
+        Map<Integer,String> m = r.createHashMap("test");
         doIt(r,m);
     }
 

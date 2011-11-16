@@ -75,7 +75,7 @@ public class Persons1 {
 		//init Record Manager and dao
 		RecordManager recman = new RecordManagerBuilder("persons1").build();
 
-		PrimaryTreeMap<String,Person> personsByName = recman.treeMap("personsByName");
+		PrimaryTreeMap<String,Person> personsByName = recman.createTreeMap("personsByName");
 
 		SecondaryTreeMap<String, String, Person> personsByTown = 
 				personsByName.secondaryTreeMap("personsByTown", 

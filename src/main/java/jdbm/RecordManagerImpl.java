@@ -30,15 +30,12 @@ import java.util.SortedSet;
  */
 abstract class RecordManagerImpl implements RecordManager{
 	
-    public <K, V> PrimaryHashMap<K, V> hashMap(String name) {
-        return hashMap(name,null,null);
+    public <K, V> PrimaryHashMap<K, V> createHashMap(String name) {
+        return createHashMap(name, null, null);
     }
 
-    public <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer) {
-        return hashMap(name,keySerializer,null);
-    }
 
-	public synchronized <K, V> PrimaryHashMap<K, V> hashMap(String name, Serializer<K> keySerializer,  Serializer<V> valueSerializer) {
+	public synchronized <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
 		try{
 			HTree<K, V> tree = null;
         
@@ -55,44 +52,23 @@ abstract class RecordManagerImpl implements RecordManager{
 		}
 	}
 
-        public synchronized <K> Set<K> hashSet(String name) {
-            return hashSet(name);
+        public synchronized <K> Set<K> createHashSet(String name) {
+            return createHashSet(name,null);
         }
 
-	public synchronized <K> Set<K> hashSet(String name, Serializer<K> keySerializer) {
-                return new HTreeSet(hashMap(name,keySerializer,null));
+        public synchronized <K> Set<K> createHashSet(String name, Serializer<K> keySerializer) {
+                return new HTreeSet(createHashMap(name,keySerializer,null));
 	}
 
 	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name) {
-		return treeMap(name, ComparableComparator.INSTANCE);
+	public <K extends Comparable, V> PrimaryTreeMap<K, V> createTreeMap(String name) {
+		return createTreeMap(name, null,null,null);
 	}
 
 
-	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer) {
-		return treeMap(name, ComparableComparator.INSTANCE, valueSerializer);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public <K extends Comparable, V> PrimaryTreeMap<K, V> treeMap(String name, Serializer<V> valueSerializer, Serializer<K> keySerializer) {	
-		return treeMap(name, ComparableComparator.INSTANCE, valueSerializer,keySerializer);
-	}
 
-
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name, Comparator<K> keyComparator) {
-		return treeMap(name, keyComparator, null);
-	}
-	
-
-
-	public <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-		Comparator<K> keyComparator, Serializer<V> valueSerializer) {
-		return treeMap(name,keyComparator,valueSerializer,null);
-	}
-
-	public synchronized <K, V> PrimaryTreeMap<K, V> treeMap(String name,
-			Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) {
+	public synchronized <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
+                Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) {
 		try{
 			BTree<K,V> tree = null;
         
@@ -114,30 +90,23 @@ abstract class RecordManagerImpl implements RecordManager{
 	}
 
 
-        public synchronized <K> SortedSet<K> treeSet(String name) {
-            return treeSet(name, null, null);
-        }
-
-	public synchronized <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer) {
-            return treeSet(name,keySerializer,null);
-	}
-
-        public synchronized <K> SortedSet<K> treeSet(String name, Comparator<K> keyComparator) {
-            return treeSet(name,null,keyComparator);
-        }
-
-        public synchronized <K> SortedSet<K> treeSet(String name, Serializer<K> keySerializer, Comparator<K> keyComparator) {
-            return new BTreeSet<K>(treeMap(name,
-                    keyComparator!=null? keyComparator:ComparableComparator.INSTANCE,
-                    null,keySerializer));
+        public synchronized <K> SortedSet<K> createTreeSet(String name) {
+            return createTreeSet(name, null, null);
         }
 
 
-    public <K> List<K> linkedList(String name){
-        return linkedList(name,null);
+        public synchronized <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator,Serializer<K> keySerializer) {
+            return new BTreeSet<K>(createTreeMap(name,
+                    keyComparator != null ? keyComparator : ComparableComparator.INSTANCE,
+                    null, keySerializer));
+        }
+
+
+    public <K> List<K> createLinkedList(String name){
+        return createLinkedList(name, null);
     }
 
-    public <K> List<K> linkedList(String name,  Serializer<K> serializer){
+    public <K> List<K> createLinkedList(String name, Serializer<K> serializer){
         try{
             JDBMLinkedList<K> list;
 
@@ -145,7 +114,7 @@ abstract class RecordManagerImpl implements RecordManager{
             long recid = getNamedObject( name);
             if ( recid != 0 ) {
                 list = (JDBMLinkedList<K>) fetch(recid);
-                list.setRecmanAndListRedic(this,recid);
+                list.setRecmanAndListRedic(this, recid);
             } else {
                 //allocate record and overwrite it
                 recid = insert(null);

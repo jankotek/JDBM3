@@ -31,7 +31,7 @@ public class TestIssues extends TestCaseWithTestFile{
 
     public void testBTreeClear() throws IOException {
         final RecordManager recman = newRecordManager();
-        final PrimaryTreeMap<String,String> treeMap = recman.treeMap("test");
+        final PrimaryTreeMap<String,String> treeMap = recman.createTreeMap("test");
 
         for (int i = 0; i < 1001; i++) {
             treeMap.put(String.valueOf(i),String.valueOf(i));

@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
 
 /**
  *
@@ -118,7 +117,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 		for (int i = 0; i >= 150 && (i < 200); i++)
 			assertTrue("Failed to ad elements properly",
 					ll.get(i) == objArray[i - 100]);
-		List myList = recman.linkedList("testXX");
+		List myList = recman.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -146,7 +145,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
      */
     public void test_addAllILjava_util_Collection_2() {
         // Regression for HARMONY-467
-        JDBMLinkedList obj = (JDBMLinkedList) recman.linkedList("testXX");
+        JDBMLinkedList obj = (JDBMLinkedList) recman.createLinkedList("testXX");
         try {
             obj.addAll(-1, (Collection) null);
             fail("IndexOutOfBoundsException expected");
@@ -176,7 +175,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 			assertTrue("Failed to add to existing list", ll.get(i + 100)
 					.equals(l.get(i)));
 		}
-		List myList = recman.linkedList("testXX");
+		List myList = recman.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -306,7 +305,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 			}
 			++n;
 		}
-		List myList = recman.linkedList("testXX");
+		List myList = recman.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -415,7 +414,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 		Object[] retArray;
 		retArray = ll.toArray(argArray);
 		assertTrue("Returned different array than passed", retArray == argArray);
-		List retList = recman.linkedList("testXX1");
+		List retList = recman.createLinkedList("testXX1");
                 retList.addAll(Arrays.asList(retArray));
 		Iterator li = ll.iterator();
 		Iterator ri = retList.iterator();
@@ -434,7 +433,7 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 		assertTrue("Returned different array than passed", retArray == argArray);
 		retArray = ll.toArray(argArray);
 		assertTrue("Returned different array than passed", retArray == argArray);
-		retList = recman.linkedList("testXX2");
+		retList = recman.createLinkedList("testXX2");
                 retList.addAll(Arrays.asList(retArray));
 		li = ll.iterator();
 		ri = retList.iterator();
@@ -472,11 +471,11 @@ public class JDBMLinkedListTest extends TestCaseWithTestFile {
 	public void setUp() throws Exception {
         super.setUp();
             this.recman = newRecordManager();
-		ll = (JDBMLinkedList) recman.linkedList("ll");
+		ll = (JDBMLinkedList) recman.createLinkedList("ll");
 		for (int i = 0; i < objArray.length; i++) {
 			ll.add(objArray[i]);
         }
-        testList = (JDBMLinkedList<Object>) recman.linkedList("testList");
+        testList = (JDBMLinkedList<Object>) recman.createLinkedList("testList");
         testObjOne = new Object();
         testObjTwo = new Object();
         testObjThree = new Object();

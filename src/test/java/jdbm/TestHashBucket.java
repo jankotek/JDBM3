@@ -19,7 +19,6 @@ package jdbm;
 
 import java.io.*;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  *  This class contains all Unit tests for {@link HashBucket}.
@@ -82,7 +81,7 @@ public class TestHashBucket extends TestCaseWithTestFile {
         };
 
         RecordManager recman = newRecordManager();
-        Map<Long,Long> s = recman.hashMap("test",ser,ser);
+        Map<Long,Long> s = recman.createHashMap("test", ser, ser);
 
         s.put(new Long(1),new Long(2));
         s.put(new Long(4), new Long(5));
