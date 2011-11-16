@@ -1,7 +1,9 @@
 package jdbm;
 
+import sun.reflect.generics.tree.DoubleSignature;
+
 import java.io.IOException;
-import java.util.TreeMap;
+import java.util.*;
 
 public class TestDefrag extends TestCaseWithTestFile{
 
@@ -53,4 +55,37 @@ public class TestDefrag extends TestCaseWithTestFile{
 		t = m.treeMap("aa");
 		assertEquals(t,t2);
 	}
+
+        public void testDefragLinkedList() throws Exception{
+            String file = newTestFile();
+            BaseRecordManager r = new BaseRecordManager(file);
+            List l = r.linkedList("test");
+            Map<Long,Double> junk = new LinkedHashMap<Long,Double>();
+
+            for(int i = 0;i<1e4;i++){
+                //insert some junk
+                Double d = Math.random();
+                l.add(d);
+                junk.put(r.insert(d),d);
+            }
+            r.commit();
+            //make copy of linked list
+            List l2 = new ArrayList(l);
+            long oldRecCount = r.countRecords();
+            r.defrag();
+
+            r.close();
+            r = new BaseRecordManager(file);
+            assertEquals(oldRecCount,r.countRecords());
+
+            //compare that list was unchanged
+            assertEquals(l2, new ArrayList(r.linkedList("test")));
+
+            //and check that random junk still have the same recids
+            for(Long recid :junk.keySet()){
+                assertEquals(junk.get(recid),r.fetch(recid));
+            }
+
+            r.close();
+        }
 }

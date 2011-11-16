@@ -144,7 +144,8 @@ abstract class RecordManagerImpl implements RecordManager{
             // create or load
             long recid = getNamedObject( name);
             if ( recid != 0 ) {
-                list = new JDBMLinkedList<K>(this,recid);
+                list = (JDBMLinkedList<K>) fetch(recid);
+                list.setRecmanAndListRedic(this,recid);
             } else {
                 //allocate record and overwrite it
                 recid = insert(null);

@@ -16,14 +16,9 @@
 
 package jdbm;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOError;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.io.*;
+import java.util.*;
 
 /**
  *  This class manages records, which are uninterpreted blobs of data. The
@@ -198,7 +193,7 @@ final class BaseRecordManager
     }
 
 
-	private void reopen() throws IOException {
+    private void reopen() throws IOException {
         _physFile = new RecordFile( _filename + DBR);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
@@ -449,6 +444,17 @@ final class BaseRecordManager
 		}
 	}
 
+    byte[] fetchRaw(long recid) throws IOException {
+        recid = decompressRecid(recid);
+        long physLocation = _logicMgr.fetch(recid);
+        if(physLocation == 0){
+                //throw new IOException("Record not found, recid: "+recid);
+                return null;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        _physMgr.fetch(out, physLocation);
+        return out.toByteArray();
+    }
 
 
     public synchronized long getRoot( int id )
@@ -603,66 +609,115 @@ final class BaseRecordManager
                 checkCanWrite();
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
-		final String filename1 = _filename; 
+		final String filename1 = _filename;
 		BaseRecordManager recman2 = new BaseRecordManager(filename2);
 		recman2.disableTransactions();
-	
-		PageCursor logicalCur = new PageCursor(_logicPageman, Magic.TRANSLATION_PAGE);
-		List<Long> logicalPages = new ArrayList<Long>();		
-		long last = logicalCur.next();;
-		while(last!=0){
-			logicalPages.add(last);
-			last = logicalCur.next();			
-		}
-		for(long pageid:logicalPages){			
-			BlockIo io = _logicFile.get(pageid); 
+
+                //recreate logical file with original page layout
+                {
+                    //find maximal logical pageid
+                    LongHashMap<String> logicalPages = new LongHashMap<String>();
+                    long maxpageid = 0;
+                    for(long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                        pageid!=0;
+                        pageid= _logicPageman.getNext(pageid)
+                    ){
+                        maxpageid = Math.max(maxpageid,pageid);
+                        logicalPages.put(pageid,Serialization.EMPTY_STRING);
+                    }
+
+                    //fill second recman with logical pages
+                    for(
+                      long pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
+                      pageid<=maxpageid;
+                      pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE)
+                    ){}
+
+                    //free pages which are not actually logical in second recman
+                    for(long pageid = recman2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                        pageid<=maxpageid;
+                        pageid += RecordFile.BLOCK_SIZE
+                    ){
+                        if(logicalPages.get(pageid)==null){
+                            recman2._logicPageman.free(Magic.TRANSLATION_PAGE,Magic.TRANSLATION_PAGE);
+                        }
+                    }
+                    logicalPages = null;
+                }
+
+
+
+                //reinsert collections so physical records are located near each other
+                //iterate over named object recids, it is sorted with TreeSet
+                for(Long namedRecid : new TreeSet<Long>(getNameDirectory().values()) ){
+                    Object obj = fetch(namedRecid);
+                    if(obj instanceof JDBMLinkedList){
+                        JDBMLinkedList.defrag(namedRecid,this,recman2);
+                    }
+
+                }
+
+
+                for(long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                    pageid!=0;
+                    pageid= _logicPageman.getNext(pageid)
+                    ){
+			BlockIo io = _logicFile.get(pageid);
 			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
-		
+
 			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
 				final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
 				if(pos>Short.MAX_VALUE)
 					throw new Error();
 
+				//write to new file
+                                final long logicalRowId = Location.toLong(pageid,(short)pos);
 
+                                //read from logical location in second recman,
+                                //check if record was already inserted as part of collections
+                                if( recman2._logicPageman.getLast(Magic.TRANSLATION_PAGE)>=pageid &&
+                                        recman2._logicMgr.fetch(logicalRowId)!=0){
+                                    //yes, this record already exists in second recman
+                                    continue;
+                                }
 
-				//get physical location
+				//get physical location in this recman
 				long physRowId = Location.toLong(
 						xlatPage.getLocationBlock((short)pos),
 						xlatPage.getLocationOffset((short)pos));
 				if(physRowId == 0)
 					continue;
 
-				//read from physical location
+				//read from physical location at this recman
 				ByteArrayOutputStream b = new ByteArrayOutputStream();
 				_physMgr.fetch(b, physRowId);
 				byte[] bb = b.toByteArray();
-				//write to new file
-                                final long logicalRowId = Location.toLong(pageid,(short)pos);
-				recman2.forceInsert(logicalRowId, bb);
-				
+
+                                //force insert into other file, without decompressing logical id to external form
+                                long physLoc = recman2._physMgr.insert(bb, 0, bb.length);
+                                recman2._logicMgr.forceInsert(logicalRowId, physLoc);
+
 			}
 			_logicFile.release(io);
-			recman2.commit();
-			
 		}
 		recman2.setRoot(NAME_DIRECTORY_ROOT,getRoot(NAME_DIRECTORY_ROOT));
-		recman2.commit();
-		
+
 		recman2.close();
 		close();
+
 		List<File> filesToDelete = new ArrayList<File>();
-		//now rename old files 
+		//now rename old files
 		String[] exts = {IDR, DBR};
 		for(String ext:exts){
-			String f1 = filename1+ext;			
+			String f1 = filename1+ext;
 			String f2 = filename2+"_OLD"+ext;
-			
+
 			//first rename transaction log
 			File f1t = new File(f1+StorageDisk.transaction_log_file_extension);
 			File f2t = new File(f2+StorageDisk.transaction_log_file_extension);
 			f1t.renameTo(f2t);
 			filesToDelete.add(f2t);
-			
+
 			//rename data files, iterate until file exist
 			for(int i=0;;i++){
 				File f1d = new File(f1+"."+i);
@@ -672,49 +727,50 @@ final class BaseRecordManager
 				filesToDelete.add(f2d);
 			}
 		}
-		
-		//rename new files 
+
+		//rename new files
 		for(String ext:exts){
-			String f1 = filename2+ext;			
+			String f1 = filename2+ext;
 			String f2 = filename1+ext;
-			
+
 			//first rename transaction log
 			File f1t = new File(f1+StorageDisk.transaction_log_file_extension);
 			File f2t = new File(f2+StorageDisk.transaction_log_file_extension);
 			f1t.renameTo(f2t);
-			
+
 			//rename data files, iterate until file exist
 			for(int i=0;;i++){
 				File f1d = new File(f1+"."+i);
 				if(!f1d.exists()) break;
 				File f2d = new File(f2+"."+i);
-				f1d.renameTo(f2d);			
+				f1d.renameTo(f2d);
 			}
 		}
-		
+
 		for(File d:filesToDelete){
 			d.delete();
 		}
-		
-		
+
+
 		reopen();
 	}
-	
+
 	/**
 	 * Insert data at forced logicalRowId, use only for defragmentation !! 
 	 * @param logicalRowId 
 	 * @param data
 	 * @throws IOException 
 	 */
-	private void forceInsert(long logicalRowId, byte[] data) throws IOException {
+	void forceInsert(long logicalRowId, byte[] data) throws IOException {
+                logicalRowId = decompressRecid(logicalRowId);
 		long physLoc = _physMgr.insert(data, 0, data.length);
 		_logicMgr.forceInsert(logicalRowId, physLoc);
 	}
 
-	
+
 	/**
 	 * Compress recid from physical form (block - offset) to (block - slot). 
-	 * This way resulting number is smaller and can be easyer packed with LongPacker  
+	 * This way resulting number is smaller and can be easier packed with LongPacker
 	 */
 	static long compressRecid(long recid){
 		long block = Location.getBlock(recid);
@@ -743,8 +799,8 @@ final class BaseRecordManager
      */
      long countRecords() throws IOException {
          long counter = 0;
-         PageCursor cursor = new PageCursor(_logicPageman, Magic.TRANSLATION_PAGE);
-         long page = cursor.next();
+
+         long page = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
          while(page!=0){
              BlockIo io = _logicFile.get(page);
              TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
@@ -761,7 +817,7 @@ final class BaseRecordManager
                              counter+=1;
              }
              _logicFile.release(io);
-             page = cursor.next();
+             page = _logicPageman.getNext(page);
          }
          return counter;
      }

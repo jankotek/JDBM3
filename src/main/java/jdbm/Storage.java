@@ -5,7 +5,7 @@ import java.io.*;
 /**
  *
  */
-public interface Storage {
+interface Storage {
 
 
     void read(long offset, byte[] data, int blockSize) throws IOException;
@@ -20,5 +20,5 @@ public interface Storage {
 
     void sync() throws IOException;
 
-    DataOutputStream openTransactionLog() throws FileNotFoundException, IOException;
+    DataOutputStream openTransactionLog() throws  IOException;
 }

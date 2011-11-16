@@ -71,13 +71,6 @@ final class LogicalRowIdManager {
 	 * @throws IOException 
 	 */
 	void forceInsert(long logicalRowId, long physLoc) throws IOException {
-		//create pages until we reach requested block
-		long lastBlock  = pageman.getLast(Magic.TRANSLATION_PAGE);
-		while(lastBlock!=Location.getBlock(logicalRowId)){
-			lastBlock = pageman.allocate(Magic.TRANSLATION_PAGE);
-			if(lastBlock>Location.getBlock(logicalRowId))
-				throw new Error("outallocated");
-		}
 		if(fetch(logicalRowId) != 0)
 			throw new Error("can not forceInsert, record already exists: "+logicalRowId);		
 		

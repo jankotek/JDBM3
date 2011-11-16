@@ -49,10 +49,10 @@ final class PageManager {
      *  page.
      */
     long allocate(short type) throws IOException {
-        
+
         if (type == Magic.FREE_PAGE)
             throw new Error("allocate of free page?");
-        
+
         // do we have something on the free list?
         long retval = header.getFirstOf(Magic.FREE_PAGE);
         boolean isNew = false;
@@ -78,7 +78,7 @@ final class PageManager {
         long oldLast = header.getLastOf(type);
         
         // Clean data.
-        System.arraycopy(RecordFile.cleanData, 0,
+        System.arraycopy(RecordFile.CLEAN_DATA, 0,
                          buf.getData(), 0, 
                          file.BLOCK_SIZE);
         pageHdr.setType(type);
@@ -105,7 +105,7 @@ final class PageManager {
         
         return retval;
     }
-    
+
     /**
      *  Frees a page of the indicated type.
      */
@@ -238,5 +238,6 @@ final class PageManager {
     FileHeader getFileHeader() {
         return header;
     }
-    
+
+
 }

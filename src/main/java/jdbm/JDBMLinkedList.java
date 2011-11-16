@@ -48,6 +48,11 @@ class JDBMLinkedList<E> extends AbstractSequentialList<E>{
         this.listrecid = listrecid;
     }
 
+    void setRecmanAndListRedic(RecordManager recman, long listrecid){
+        this.recman = recman;
+        this.listrecid = listrecid;
+    }
+
     public ListIterator<E> listIterator(int index) {
         if(index < 0 || index>size)
             throw new IndexOutOfBoundsException();
@@ -119,6 +124,8 @@ class JDBMLinkedList<E> extends AbstractSequentialList<E>{
     }
 
 
+
+    //TODO entry is currently serialized with header,this adds one byte to each item, use custom serializer
 
     static class Entry<E>{
         long prev = 0;
@@ -307,4 +314,29 @@ class JDBMLinkedList<E> extends AbstractSequentialList<E>{
 
         }
     }
+
+    /**
+     * Copyes collection from one Recman to other, while keeping logical recids unchanged
+     */
+    static void defrag(long recid, BaseRecordManager r1, BaseRecordManager r2) throws IOException{
+        try{
+        byte[] data = r1.fetchRaw(recid);
+        r2.forceInsert(recid,data);
+        DataInput in = new DataInputStream(new ByteArrayInputStream(data));
+        JDBMLinkedList l = (JDBMLinkedList) r1.defaultSerializer().deserialize(in);
+        long current = l.first;
+        while(current!=0){
+            data = r1.fetchRaw(current);
+            in = new DataInputStream(new ByteArrayInputStream(data));
+            r2.forceInsert(current,data);
+            //TODO this deserializes list entry, but we only need header (optimize with partial deserialization)
+            Entry e = (Entry) r1.defaultSerializer().deserialize(in);
+            current = e.next;
+        }
+        }catch(ClassNotFoundException e){
+            throw new IOError(e);
+        }
+
+    }
+
 }

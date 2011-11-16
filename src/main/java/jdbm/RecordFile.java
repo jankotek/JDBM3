@@ -65,7 +65,7 @@ final class RecordFile {
     static final int BLOCK_SIZE =2048;
 
     /** A block of clean data to wipe clean pages. */
-    static final byte[] cleanData = new byte[RecordFile.BLOCK_SIZE];
+    static final byte[] CLEAN_DATA = new byte[RecordFile.BLOCK_SIZE];
 
 
 

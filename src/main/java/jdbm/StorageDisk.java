@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Storage which used files on disk to store data
  */
-public class StorageDisk implements Storage{
+class StorageDisk implements Storage{
 
     /** maximal file size not rounded to block size */
     private final static long _FILESIZE = 1000000000l;
@@ -82,7 +82,7 @@ public class StorageDisk implements Storage{
         while (remaining > 0) {
             int read = file.read(buffer, pos, remaining);
             if (read == -1) {
-                System.arraycopy(RecordFile.cleanData, 0, buffer, pos, remaining);
+                System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer, pos, remaining);
                 break;
             }
             remaining -= read;
