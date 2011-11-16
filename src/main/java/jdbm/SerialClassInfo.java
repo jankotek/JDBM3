@@ -96,11 +96,16 @@ abstract class SerialClassInfo {
                 if(fields.get(i).getName().equals(name))
                     return i;
             }
-            throw new Error("Field not found: "+name);
+            return -1;
         }
 
         public FieldInfo getField(int serialId){
             return fields.get(serialId);
+        }
+
+        public int addFieldInfo(FieldInfo field){
+            fields.add(field);
+            return fields.size()  -1;
         }
 
     }
@@ -119,6 +124,10 @@ abstract class SerialClassInfo {
             this.name = name;
             this.primitive = primitive;
             this.type = type;
+        }
+
+        public FieldInfo(ObjectStreamField sf) {
+            this(sf.getName(),sf.isPrimitive(),sf.getType().getName());
         }
 
         public String getName() {
@@ -155,7 +164,7 @@ abstract class SerialClassInfo {
         FieldInfo[] fields = new FieldInfo[streamFields.length];
         for(int i=0;i<fields.length;i++){
             ObjectStreamField sf = streamFields[i];
-            fields[i] = new FieldInfo(sf.getName(),sf.isPrimitive(),sf.getType().getName());
+            fields[i] = new FieldInfo(sf);
         }
 
         ClassInfo i = new ClassInfo(clazz.getName(),fields);
@@ -265,6 +274,12 @@ abstract class SerialClassInfo {
         for(ObjectStreamField f:streamClass.getFields()){
             //write field ID
             int fieldId = classInfo.getFieldId(f.getName());
+            if(fieldId==-1){
+                //field does not exists in class definition stored in db,
+                //propably new field was added so add field descriptor
+                fieldId = classInfo.addFieldInfo(new FieldInfo(f));
+                recman.update(serialClassInfoRecid,registered,serializer);
+            }
             LongPacker.packInt(out,fieldId);
             //and write value
             Object fieldValue = getFieldValue(f.getName(),obj);
