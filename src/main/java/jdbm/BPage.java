@@ -1497,7 +1497,7 @@ final class BPage<K,V>
         height -= 1;
         if ( height > 0 ) {
             for ( int i=_first; i<_btree._pageSize; i++ ) {
-                if ( _children[ i ] == RecordManager.NULL_RECID ) continue;
+                if ( _children[ i ] == 0 ) continue;
                 
                 BPage child = childBPage( i );
                 out.add(new Long(child._recid));

@@ -29,7 +29,7 @@ import java.util.Iterator;
  * @author Cees de Groot
  */
 class RecordManagerCache
-    extends RecordManagerCollections
+    extends RecordManager
 {
 
     /**
