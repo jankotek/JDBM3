@@ -21,7 +21,7 @@ import java.util.Comparator;
 /**
  * Comparator for byte arrays.
  *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @author Alex Boisvert
  */
 public final class ByteArrayComparator
     implements Comparator<byte[]>, Serializable

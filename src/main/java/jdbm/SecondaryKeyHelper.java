@@ -375,7 +375,7 @@ final class SecondaryKeyHelper {
 				return new Integer(hashCode);
 			}
 		};
-		final SecondaryTreeMap<Integer, K, V> inverseMap = secondaryTreeMap(recordName,hashExtractor,ComparableComparator.INSTANCE,base,null);
+		final SecondaryTreeMap<Integer, K, V> inverseMap = secondaryTreeMap(recordName,hashExtractor,Utils.COMPARABLE_COMPARATOR,base,null);
 		
 		return new InverseHashView<K, V>() {
 			public K findKeyForValue(V val) {

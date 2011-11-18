@@ -26,7 +26,7 @@ import java.util.*;
  *  WARNING!  If this instance is used in a transactional context, it
  *            *must* be discarded after a rollback.
  *
- *  @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ *  @author Alex Boisvert
  */
 class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 {
@@ -38,13 +38,13 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
             try{
                 int i = ds.read();
                 if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
-                    HashBucket ret = new HashBucket(HTree.this);
+                    HTreeBucket ret = new HTreeBucket(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
                         throw new InternalError("bytes left: "+ds.available());
                     return ret;
                 }else if( i == Serialization.HTREE_DIRECTORY){
-                    HashDirectory ret = new HashDirectory(HTree.this);
+                    HTreeDirectory ret = new HTreeDirectory(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
                         throw new InternalError("bytes left: "+ds.available());
@@ -58,13 +58,13 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 
         }
         public void serialize(DataOutput out, Object obj) throws IOException {
-            if(obj instanceof HashBucket){
+            if(obj instanceof HTreeBucket){
                 out.write(Serialization.HTREE_BUCKET);
-                HashBucket b = (HashBucket) obj;
+                HTreeBucket b = (HTreeBucket) obj;
                 b.writeExternal(out);
             }else{
                 out.write(Serialization.HTREE_DIRECTORY);
-                HashDirectory n = (HashDirectory) obj;
+                HTreeDirectory n = (HTreeDirectory) obj;
                 n.writeExternal(out);
             }
         }
@@ -74,7 +74,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     /**
      * Root hash directory.
      */
-    private HashDirectory<K,V> _root;
+    private HTreeDirectory<K,V> _root;
 
 
     /**
@@ -129,13 +129,13 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                                                    Serializer<V> valueSerializer )
         throws IOException
     {
-        HashDirectory<K,V>  root;
+        HTreeDirectory<K,V> root;
         long           recid;
 
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
-        this._root = new HashDirectory<K,V>( this, (byte) 0 );
+        this._root = new HTreeDirectory<K,V>( this, (byte) 0 );
         recid = recman.insert( this._root, this.SERIALIZER );
         this._root.setPersistenceContext(recman, recid);
 
@@ -166,12 +166,12 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                                           Serializer<V> valueSerializer )
         throws IOException
     {
-        HashDirectory<K,V> root;
+        HTreeDirectory<K,V> root;
 
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
-        this._root = (HashDirectory<K,V>) recman.fetch( root_recid, this.SERIALIZER  );
+        this._root = (HTreeDirectory<K,V>) recman.fetch( root_recid, this.SERIALIZER  );
         this._root.setPersistenceContext( recman, root_recid );
 
 

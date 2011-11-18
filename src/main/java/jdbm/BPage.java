@@ -17,10 +17,7 @@
 
 package jdbm;
 
-import sun.java2d.pipe.BufferedTextPipe;
-
 import java.io.*;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -38,7 +35,7 @@ import java.util.List;
  * "infinite" key value, meaning that any insert will be to the left of this
  * pseudo-key
  *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @author Alex Boisvert
  */
 final class BPage<K,V>
     implements Serializer<BPage<K,V>>
@@ -1195,14 +1192,14 @@ final class BPage<K,V>
 
 
 			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : _btree.getRecordManager().defaultSerializer();
-			OpenByteArrayInputStream in1 = null;
+			Utils.OpenByteArrayInputStream in1 = null;
 			SerializerInput in2 = null;
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				if(in1 == null){
-					in1 = new OpenByteArrayInputStream(b);
+					in1 = new Utils.OpenByteArrayInputStream(b);
 					in2 = new SerializerInput(in1);
 				}
 				in1.reset(b, b.length);
@@ -1240,7 +1237,7 @@ final class BPage<K,V>
 		/**
 		 * Special compression to compress Long and Integer
 		 */
-		if (_btree._comparator == ComparableComparator.INSTANCE && 
+		if (_btree._comparator == Utils.COMPARABLE_COMPARATOR &&
 				(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer())) {
 			boolean allInteger = true;
 			for (int i = firstUse ; i <_btree._pageSize; i++) {
@@ -1353,7 +1350,7 @@ final class BPage<K,V>
 		Serializer ser = _btree.keySerializer;
 		byte[] previous = null;
 		byte[] buffer = new byte[1024];
-		OpenByteArrayOutputStream out2 = new OpenByteArrayOutputStream(buffer);
+		Utils.OpenByteArrayOutputStream out2 = new Utils.OpenByteArrayOutputStream(buffer);
 		SerializerOutput out3 = new SerializerOutput(out2);
 		for (int i = firstUse ; i < _btree._pageSize; i++) {
 			if(keys[i] == null){

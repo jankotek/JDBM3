@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package jdbm;
 
-import java.io.IOException;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
- * An listener notifed when record is inserted, updated or removed.
- * On TreeSet, HashSet and LinkedList this listener always returns null value.
- * 
- * @author Jan Kotek
- *
- * @param <K> key type
- * @param <V> value type
+ * This class contains all Unit tests for {@link Location}.
  */
-public interface RecordListener<K,V> {
-	
-	void recordInserted(K key, V value)throws IOException;
-	
-	void recordUpdated(K key, V oldValue, V newValue)throws IOException;
-	
-	void recordRemoved(K key, V value)throws IOException;
+public class LocationTest extends TestCase {
+
+	public LocationTest(String name) {
+		super(name);
+	}
+
+	/**
+	 * Basic tests
+	 */
+	public void testBasics() {
+
+		long loc = Location.toLong(10, (short) 20);
+
+		assertEquals("block2", 10, Location.getBlock(loc));
+		assertEquals("offset2", 20, Location.getOffset(loc));
+
+	}
 
 }

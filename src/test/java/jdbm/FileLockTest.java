@@ -13,25 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package jdbm;
 
+import java.io.IOError;
 import java.io.IOException;
 
-/**
- * An listener notifed when record is inserted, updated or removed.
- * On TreeSet, HashSet and LinkedList this listener always returns null value.
- * 
- * @author Jan Kotek
- *
- * @param <K> key type
- * @param <V> value type
- */
-public interface RecordListener<K,V> {
-	
-	void recordInserted(K key, V value)throws IOException;
-	
-	void recordUpdated(K key, V oldValue, V newValue)throws IOException;
-	
-	void recordRemoved(K key, V value)throws IOException;
+public class FileLockTest extends TestCaseWithTestFile {
 
+	public void testLock() throws IOException {
+		String file = newTestFile();
+		
+		RecordManager recman1 = new RecordManagerBuilder(file).build();
+		//now open same file second time, exception should be thrown
+		try{
+			RecordManager recman2 = new RecordManagerBuilder(file).build();
+			fail("Exception should be thrown if file was locked");
+		}catch(IOError e){
+			//expected
+		}
+				
+		recman1.close();
+		
+		//after close lock should be released, reopen
+		RecordManager recman3 = new RecordManagerBuilder(file).build();
+		recman3.close();
+	}
 }

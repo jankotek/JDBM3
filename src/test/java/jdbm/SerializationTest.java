@@ -180,7 +180,7 @@ public class SerializationTest extends TestCase{
 	}
 	
 	public void testLinkedList() throws ClassNotFoundException, IOException{
-		Collection c = new LinkedList();
+		Collection c = new java.util.LinkedList();
 		for(int i = 0; i<200;i++)
 			c.add(i);
 		assertEquals(c, ser.deserialize(ser.serialize(c)));		
@@ -349,19 +349,4 @@ public class SerializationTest extends TestCase{
         }
 
 
-        public void testJDBMLinkedListEntry() throws IOException, ClassNotFoundException {
-            JDBMLinkedList.Entry e = new JDBMLinkedList.Entry(0,0,"");
-            JDBMLinkedList.Entry e2 = (JDBMLinkedList.Entry) ser.deserialize(ser.serialize(e));
-
-            assertEquals(e.next,e2.next);
-            assertEquals(e.prev,e2.prev);
-            assertEquals(e.value,e2.value);
-
-            e = new JDBMLinkedList.Entry(312,1245,new Integer(0));
-            e2 = (JDBMLinkedList.Entry) ser.deserialize(ser.serialize(e));
-
-            assertEquals(e.next,e2.next);
-            assertEquals(e.prev,e2.prev);
-            assertEquals(e.value,e2.value);
-        }
 }

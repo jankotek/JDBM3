@@ -13,25 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package jdbm;
 
-import java.io.IOException;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
- * An listener notifed when record is inserted, updated or removed.
- * On TreeSet, HashSet and LinkedList this listener always returns null value.
- * 
- * @author Jan Kotek
- *
- * @param <K> key type
- * @param <V> value type
+ *  This class contains all Unit tests for {@link PageHeader}.
  */
-public interface RecordListener<K,V> {
-	
-	void recordInserted(K key, V value)throws IOException;
-	
-	void recordUpdated(K key, V oldValue, V newValue)throws IOException;
-	
-	void recordRemoved(K key, V value)throws IOException;
+public class PageHeaderTest extends TestCase {
+
+    public PageHeaderTest(String name) {
+  super(name);
+    }
+
+    /**
+     *  Test set, write, read
+     */
+    public void testSetWriteRead() throws Exception {
+  BlockIo data = new BlockIo(0, new byte[RecordFile.BLOCK_SIZE]);
+  PageHeader p = new PageHeader(data, Magic.FREE_PAGE);
+  p.setNext(10);
+  p.setPrev(33);
+  
+  p = new PageHeader(data);
+  assertEquals("next", 10, p.getNext());
+  assertEquals("prev", 33, p.getPrev());
+    }
 
 }

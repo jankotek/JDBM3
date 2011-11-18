@@ -98,8 +98,8 @@ public class TestCaseWithTestFile extends TestCase {
 		return new RecordManagerBuilder(newTestFile()).build();
 	}
 
-        static public BaseRecordManager newBaseRecordManager() throws IOException{
-            return (BaseRecordManager) new RecordManagerBuilder(newTestFile()).disableCache().build();
+        static public RecordManagerStorage newBaseRecordManager() throws IOException{
+            return (RecordManagerStorage) new RecordManagerBuilder(newTestFile()).disableCache().build();
         }
 
 	

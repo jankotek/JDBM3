@@ -38,9 +38,9 @@ import java.util.SortedSet;
  *  <p> 
  *  RecordManader is also factory for primary Maps. 
  *  <p>
- * @author <a href="mailto:opencoeli@gmail.com">Jan Kotek</a>
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
- * @author <a href="cg@cdegroot.com">Cees de Groot</a>
+ * @author Jan Kotek
+ * @author Alex Boisvert
+ * @author Cees de Groot
  */
 public interface  RecordManager
 {
@@ -286,6 +286,8 @@ public interface  RecordManager
     public <K> List<K> createLinkedList(String name);
 
     public <K> List<K> createLinkedList(String name, Serializer<K> serializer);
+
+    <K> List<K> loadLinkedList(String name);
 
     Serializer defaultSerializer();
 

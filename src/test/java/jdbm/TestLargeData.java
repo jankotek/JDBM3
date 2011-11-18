@@ -6,7 +6,7 @@ public class TestLargeData extends TestCaseWithTestFile{
 
 	public void testLargeData() throws IOException{
 	    		
-		RecordManager recman = new BaseRecordManager(newTestFile());
+		RecordManager recman = new RecordManagerStorage(newTestFile());
 		
 		byte[] data = UtilTT.makeRecord(1000000, (byte) 12);
 		final long id = recman.insert(data);		

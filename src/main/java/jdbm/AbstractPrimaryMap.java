@@ -37,7 +37,7 @@ public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implemen
 	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMap(
 			String objectName, SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor) {
 		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this,null);
+				Utils.COMPARABLE_COMPARATOR,this,null);
 	}
 
 
@@ -56,7 +56,7 @@ public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implemen
 	public <A extends Comparable> SecondaryTreeMap<A, K, V> secondaryTreeMapManyToOne(
 			String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor) {
 		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this,null);
+				Utils.COMPARABLE_COMPARATOR,this,null);
 	}
 
 
@@ -78,7 +78,7 @@ public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implemen
 			String objectName, SecondaryKeyExtractor<A, K, V> secondaryKeyExtractor,
             Serializer<A> secondaryKeySerializer) {
 		return SecondaryKeyHelper.secondaryTreeMap(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this,secondaryKeySerializer);
+				Utils.COMPARABLE_COMPARATOR,this,secondaryKeySerializer);
 	}
 
 
@@ -100,7 +100,7 @@ public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implemen
 			String objectName, SecondaryKeyExtractor<Iterable<A>, K, V> secondaryKeyExtractor,
             Serializer<A> secondaryKeySerializer) {
 		return SecondaryKeyHelper.secondarySortedMapManyToOne(objectName,secondaryKeyExtractor,
-				ComparableComparator.INSTANCE,this,secondaryKeySerializer);
+				Utils.COMPARABLE_COMPARATOR,this,secondaryKeySerializer);
 	}
 	
 	public InverseHashView<K, V> inverseHashView(String objectName) {

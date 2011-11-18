@@ -13,33 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package jdbm;
 
+import junit.framework.TestSuite;
+
 /**
- * Provides inverse view on persisted map.
- * It uses hash index to get Key which belongs to Value. Value must correctly implement hashCode .
- * Internally is backed by SecondaryTreeMap which uses value hashCode as Secondary key.  
- * 
- * @author Jan Kotek
- *
- * @param <K>
- * @param <V>
+ * This class contains all Unit tests for {@link FreeLogicalRowIdPageManager}.
  */
-public interface InverseHashView<K, V>{
+public class FreeLogicalRowIdPageManagerTest extends TestCaseWithTestFile {
+
 
 	/**
-	 * Finds first primary key which corresponds to value. There may be more then one, others are ignored
-	 * @param val 
-	 * @return first primary key found or null if not found
+	 * Test constructor
 	 */
-	K findKeyForValue(V val);
-	
-	/**
-	 * Finds primary keys which corresponds to value. There may be more then one, others are ignored
-	 * @param val 
-	 * @return  primary keys found 
-	 */
-	Iterable<K> findKeysForValue(V val);
+	public void testCtor() throws Exception {
+		RecordFile f = newRecordFile();
+		PageManager pm = new PageManager(f);
+		FreeLogicalRowIdPageManager freeMgr = new FreeLogicalRowIdPageManager(
+				f, pm);
 
-	
+		pm.close();
+		f.close();
+	}
+
+	/**
+	 * Test basics
+	 */
+	public void testBasics() throws Exception {
+		RecordFile f = newRecordFile();
+		PageManager pm = new PageManager(f);
+		FreeLogicalRowIdPageManager freeMgr = new FreeLogicalRowIdPageManager(
+				f, pm);
+
+		// allocate a rowid - should fail on an empty file
+		long loc = freeMgr.get();
+		assertTrue("loc is not null?", loc == 0);
+
+		pm.close();
+		f.close();
+	}
+
 }

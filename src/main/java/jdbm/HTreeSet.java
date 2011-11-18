@@ -34,11 +34,11 @@ class HTreeSet<E> extends AbstractSet<E> {
     }
 
     public boolean add(E e) {
-	return map.put(e, Serialization.EMPTY_STRING)==null;
+	return map.put(e, Utils.EMPTY_STRING)==null;
     }
 
     public boolean remove(Object o) {
-	return map.remove(o)==Serialization.EMPTY_STRING;
+	return map.remove(o)== Utils.EMPTY_STRING;
     }
     public void clear() {
 	map.clear();

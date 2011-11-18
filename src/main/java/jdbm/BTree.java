@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * both as small as possible to reduce disk I/O.   This is especially true for
  * the key size, which impacts all non-leaf <code>BPage</code> objects.
  *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @author Alex Boisvert
  */
 class BTree<K,V>
     implements  JdbmBase<K,V>
@@ -178,13 +178,12 @@ class BTree<K,V>
      * Create a new persistent BTree, with 16 entries per node.
      *
      * @param recman Record manager used for persistence.
-     * @param comparator Comparator used to order index entries
      */
     @SuppressWarnings("unchecked")
 	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManager recman)
         throws IOException
     {
-    	BTree<K,V> ret = createInstance( recman, ComparableComparator.INSTANCE, null, null, DEFAULT_SIZE ); 
+    	BTree<K,V> ret = createInstance( recman, Utils.COMPARABLE_COMPARATOR, null, null, DEFAULT_SIZE ); 
         return ret;
     }
 
@@ -232,9 +231,9 @@ class BTree<K,V>
         }
 
         if ( comparator == null ) {
-            comparator = ComparableComparator.INSTANCE;
+            comparator = Utils.COMPARABLE_COMPARATOR;
         }
-        if ( ! ( comparator instanceof Serializable ) && comparator!=ComparableComparator.INSTANCE ) {
+        if ( ! ( comparator instanceof Serializable ) && comparator!=Utils.COMPARABLE_COMPARATOR ) {
             throw new IllegalArgumentException( "Argument 'comparator' must be serializable" );
         }
 
@@ -581,7 +580,7 @@ class BTree<K,V>
         BTree tree = new BTree();
         tree._comparator = (Comparator) ser.deserialize(in);
         if(tree._comparator == null)
-            tree._comparator = ComparableComparator.INSTANCE;
+            tree._comparator = Utils.COMPARABLE_COMPARATOR;
       //serializer is not persistent from 2.0        
 //        _keySerializer = (Serializer<K>) in.readObject();
 //        _valueSerializer = (Serializer<V>) in.readObject();
@@ -596,7 +595,7 @@ class BTree<K,V>
     public void writeExternal( DataOutput out )
         throws IOException
     {
-         getRecordManager().defaultSerializer().serialize(out, (_comparator == ComparableComparator.INSTANCE ? null : _comparator));
+         getRecordManager().defaultSerializer().serialize(out, (_comparator == Utils.COMPARABLE_COMPARATOR ? null : _comparator));
         //serializer is not persistent from 2.0         
 //        out.writeObject( _keySerializer );
 //        out.writeObject( _valueSerializer );
@@ -713,7 +712,7 @@ class BTree<K,V>
     /**
      * Tuple consisting of a key-value pair.
      *
-     * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+     * @author Alex Boisvert
      */
     static final class BTreeTuple<K,V> {
 
@@ -736,7 +735,7 @@ class BTree<K,V>
      * Browser to traverse a collection of tuples.  The browser allows for
      * forward and reverse order traversal.
      *
-     * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+     * @author Alex Boisvert
      */
     static interface BTreeTupleBrowser<K,V> {
 

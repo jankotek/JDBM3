@@ -23,7 +23,7 @@ import java.io.*;
  * Interface used to provide a serialization mechanism other than a class' normal
  * serialization.
  *
- * @author <a href="mailto:boisvert@intalio.com">Alex Boisvert</a>
+ * @author Alex Boisvert
  */
 public interface Serializer<A>   
 {

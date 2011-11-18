@@ -38,7 +38,7 @@ public class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
     }
 
     public boolean add(E object) {
-        return backingMap.put(object, Serialization.EMPTY_STRING) == null;
+        return backingMap.put(object, Utils.EMPTY_STRING) == null;
     }
 
 

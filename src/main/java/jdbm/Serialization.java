@@ -168,7 +168,7 @@ class Serialization extends SerialClassInfo implements Serializer
         final static int DATE				= 127;
 
         static final int JDBMLINKEDLIST 	= 159;
-        static final int JDBMLINKEDLIST_ENTRY 	= 160;
+        static final int UNUSED_JDBMLINKEDLIST_ENTRY 	= 160;
 
 	final static int BTREE				= 161;
 
@@ -180,9 +180,7 @@ class Serialization extends SerialClassInfo implements Serializer
     static final int OBJECT_STACK 	= 166;
 	static final int JAVA_SERIALIZATION 	= 172;
 
-        /** empty string is used as dummy value to represent null values in HashSet and TreeSet */
-        static final String EMPTY_STRING = "";
-        private static final String UTF8 = "UTF-8";
+    private static final String UTF8 = "UTF-8";
 
     Serialization(RecordManager recman, long serialClassInfoRecid) throws IOException {
         super(recman, serialClassInfoRecid);
@@ -402,7 +400,7 @@ class Serialization extends SerialClassInfo implements Serializer
                 serializeCollection(ARRAYLIST, out, obj,objectStack);
             }
 
-        }else if(clazz ==  LinkedList.class){
+        }else if(clazz ==  java.util.LinkedList.class){
             serializeCollection(LINKEDLIST,out,obj,objectStack);
         }else if(clazz ==  Vector.class){
             serializeCollection(VECTOR, out, obj,objectStack);
@@ -440,15 +438,9 @@ class Serialization extends SerialClassInfo implements Serializer
         }else if (clazz == BTree.class){
             out.write(BTREE);
             ((BTree)obj).writeExternal(out);
-        }else if (clazz == JDBMLinkedList.class){
+        }else if (clazz == LinkedList.class){
             out.write(JDBMLINKEDLIST);
-            ((JDBMLinkedList)obj).serialize(out);
-        }else if (clazz == JDBMLinkedList.Entry.class){
-            out.write(JDBMLINKEDLIST_ENTRY);
-            JDBMLinkedList.Entry e = (JDBMLinkedList.Entry)obj;
-            LongPacker.packLong(out,e.prev);
-            LongPacker.packLong(out,e.next);
-            serialize(out,e.value);
+            ((LinkedList)obj).serialize(out);
         }else{
             out.write(NORMAL);
             writeObject(out,obj, objectStack);
@@ -734,7 +726,7 @@ class Serialization extends SerialClassInfo implements Serializer
             case BIGINTEGER: ret = new BigInteger(deserializeArrayByteInt(is));break;
             case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
             case STRING:ret= deserializeString(is);break;
-            case STRING_EMPTY:ret= EMPTY_STRING;break;
+            case STRING_EMPTY:ret= Utils.EMPTY_STRING;break;
             case ARRAYLIST:ret= deserializeArrayList(is,objectStack);break;
             case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
             case ARRAY_OBJECT:ret= deserializeArrayObject(is,objectStack);break;
@@ -764,8 +756,7 @@ class Serialization extends SerialClassInfo implements Serializer
             case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
             case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
             case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
-            case JDBMLINKEDLIST: ret = JDBMLinkedList.deserialize(is);break;
-            case JDBMLINKEDLIST_ENTRY: ret = new JDBMLinkedList.Entry(LongPacker.unpackLong(is),LongPacker.unpackLong(is),deserialize(is)); break;
+            case JDBMLINKEDLIST: ret = LinkedList.deserialize(is);break;
             case BTREE: ret = BTree.readExternal(is,this); break;
             case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
             case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
@@ -966,9 +957,9 @@ class Serialization extends SerialClassInfo implements Serializer
 	}
 
 
-	private LinkedList<Object> deserializeLinkedList(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
+	private java.util.LinkedList deserializeLinkedList(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
 		int size = LongPacker.unpackInt(is);
-		LinkedList<Object> s = new LinkedList<Object>();
+		java.util.LinkedList s = new java.util.LinkedList();
                 objectStack.add(s);
 		for(int i = 0; i<size;i++)
 			s.add(deserialize(is,objectStack));

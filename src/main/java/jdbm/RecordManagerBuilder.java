@@ -175,19 +175,19 @@ public class RecordManagerBuilder {
         RecordManager recman = null;
 
         try{
-            recman = new BaseRecordManager(location);
+            recman = new RecordManagerStorage(location);
         }catch(IOException e){
             throw new IOError(e);
         }
 
         if(disableTransactions)
-            ( (BaseRecordManager) recman ).disableTransactions();
+            ( (RecordManagerStorage) recman ).disableTransactions();
 
         if(batchInsert)
-            ( (BaseRecordManager) recman ).setAppendToEnd(true);
+            ( (RecordManagerStorage) recman ).setAppendToEnd(true);
 
         if(readonly)
-            ( (BaseRecordManager) recman ).setReadonly(true);
+            ( (RecordManagerStorage) recman ).setReadonly(true);
 
 
         String cacheType2 = cacheType;
@@ -204,11 +204,11 @@ public class RecordManagerBuilder {
         }
 
         if("mru".equals(cacheType2)){
-            recman = new CacheRecordManager( recman,mruCacheSize,false,true);
+            recman = new RecordManagerCache( recman,mruCacheSize,false,true);
         }else if("soft".equals(cacheType2)){
-             recman = new CacheRecordManager(recman, 0,true,true);
+             recman = new RecordManagerCache(recman, 0,true,true);
         }else if("weak".equals(cacheType2)){
-             recman = new CacheRecordManager(recman, 0,true,false);
+             recman = new RecordManagerCache(recman, 0,true,false);
 
         }else if("none".equals(cacheType2)){
             //do nothing

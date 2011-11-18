@@ -13,7 +13,7 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile{
         return s.toString();
     }
 
-    void doIt(BaseRecordManager r, Map<Integer,String> m) throws IOException {
+    void doIt(RecordManagerStorage r, Map<Integer,String> m) throws IOException {
         m.put(1,"");
         long counter = r.countRecords();
         //number of records should increase after inserting big record
@@ -44,13 +44,13 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile{
     }
 
     public void testBTree() throws IOException {
-        BaseRecordManager r = newBaseRecordManager();
+        RecordManagerStorage r = newBaseRecordManager();
         Map<Integer,String> m = r.createTreeMap("test");
         doIt(r,m);
     }
 
     public void testHTree() throws IOException {
-        BaseRecordManager r = newBaseRecordManager();
+        RecordManagerStorage r = newBaseRecordManager();
         Map<Integer,String> m = r.createHashMap("test");
         doIt(r,m);
     }
