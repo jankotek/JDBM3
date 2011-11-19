@@ -50,12 +50,9 @@ public class PageManagerTest extends TestCaseWithTestFile {
 
         f = new RecordFile(file);
         pm = new PageManager(f);
-        PageCursor curs = new PageCursor(pm, Magic.USED_PAGE);
+
         long i = 1;
-        while (true) {
-            long cur = curs.next();
-            if (cur == 0)
-            	break;
+        for(long cur = pm.getFirst(Magic.USED_PAGE);cur!=0;cur=pm.getNext(cur)){
             assertEquals("next", i++, cur);
             if (i > 120)
             	fail("list structure not ok");

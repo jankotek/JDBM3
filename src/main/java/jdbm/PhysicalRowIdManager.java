@@ -89,70 +89,21 @@ final class PhysicalRowIdManager {
 		free(rowid);
 	}
 
-	/**
-	 * Retrieves a record.
-	 */
-	// byte[] fetch( Location rowid )
-	// throws IOException
-	// {
-	// // fetch the record header
-	// PageCursor curs = new PageCursor( pageman, rowid.getBlock() );
-	// BlockIo block = file.get( curs.getCurrent() );
-	// RecordHeader head = new RecordHeader( block, rowid.getOffset() );
-	//
-	// // allocate a return buffer
-	// byte[] retval = new byte[ head.getCurrentSize() ];
-	// if ( retval.length == 0 ) {
-	// file.release( curs.getCurrent(), false );
-	// return retval;
-	// }
-	//
-	// // copy bytes in
-	// int offsetInBuffer = 0;
-	// int leftToRead = retval.length;
-	// short dataOffset = (short) (rowid.getOffset() + RecordHeader.SIZE);
-	// while ( leftToRead > 0 ) {
-	// // copy current page's data to return buffer
-	// int toCopy = RecordFile.BLOCK_SIZE - dataOffset;
-	// if ( leftToRead < toCopy ) {
-	// toCopy = leftToRead;
-	// }
-	// System.arraycopy( block.getData(), dataOffset,
-	// retval, offsetInBuffer,
-	// toCopy );
-	//
-	// // Go to the next block
-	// leftToRead -= toCopy;
-	// offsetInBuffer += toCopy;
-	//
-	// file.release( block );
-	//
-	// if ( leftToRead > 0 ) {
-	// block = file.get( curs.next() );
-	// dataOffset = DataPage.O_DATA;
-	// }
-	//
-	// }
-	//
-	// return retval;
-	// }
-
 	void fetch(OutputStream out, long rowid) throws IOException {
 		// fetch the record header
-		PageCursor curs = new PageCursor(pageman, Location.getBlock(rowid));
-		BlockIo block = file.get(curs.getCurrent());
+		long current = Location.getBlock(rowid);
+		BlockIo block = file.get(current);
 		short head = Location.getOffset(rowid);
 
 		// allocate a return buffer
 		// byte[] retval = new byte[ head.getCurrentSize() ];
 		final int size = RecordHeader.getCurrentSize(block,head);
 		if (size == 0) {
-			file.release(curs.getCurrent(), false);
+			file.release(current, false);
 			return;
 		}
 
 		// copy bytes in
-		int offsetInBuffer = 0;
 		int leftToRead = size;
 		short dataOffset = (short) (Location.getOffset(rowid) + RecordHeader.SIZE);
 		while (leftToRead > 0) {
@@ -167,12 +118,12 @@ final class PhysicalRowIdManager {
 
 			// Go to the next block
 			leftToRead -= toCopy;
-			offsetInBuffer += toCopy;
 			// out.flush();
 			file.release(block);
 
 			if (leftToRead > 0) {
-				block = file.get(curs.next());
+                current = pageman.getNext(current);
+				block = file.get(current);
 				dataOffset = DataPage.O_DATA;
 			}
 
@@ -306,12 +257,12 @@ final class PhysicalRowIdManager {
 	 * Writes out data to a rowid. Assumes that any resizing has been done.
 	 */
 	private void write(long rowid, byte[] data, int start, int length) throws IOException {
-		PageCursor curs = new PageCursor(pageman, Location.getBlock(rowid));
-		BlockIo block = file.get(curs.getCurrent());
+		long current =  Location.getBlock(rowid);
+		BlockIo block = file.get(current);
 		short hdr = Location.getOffset(rowid);
 		RecordHeader.setCurrentSize(block, hdr, length);
 		if (length == 0) {
-			file.release(curs.getCurrent(), true);
+			file.release(current, true);
 			return;
 		}
 
@@ -332,10 +283,11 @@ final class PhysicalRowIdManager {
 			leftToWrite -= toCopy;
 			offsetInBuffer += toCopy;
 
-			file.release(curs.getCurrent(), true);
+			file.release(current, true);
 
 			if (leftToWrite > 0) {
-				block = file.get(curs.next());
+                current = pageman.getNext(current);
+				block = file.get(current);
 				dataOffset = DataPage.O_DATA;
 			}
 		}

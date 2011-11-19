@@ -61,10 +61,9 @@ final class FreeLogicalRowIdPageManager {
         // Loop through the free Logical rowid list until we get
         // the first rowid.
         long retval = 0;
-        PageCursor curs = new PageCursor(pageman, Magic.FREELOGIDS_PAGE);
-        while (curs.next() != 0) {
+        for(long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current!=0; current = pageman.getNext(current)){
             FreeLogicalRowIdPage fp = FreeLogicalRowIdPage
-                .getFreeLogicalRowIdPageView(file.get(curs.getCurrent()),blockSize);
+                .getFreeLogicalRowIdPageView(file.get(current),blockSize);
             int slot = fp.getFirstAllocated();
             if (slot != -1) {
                 // got one!
@@ -73,17 +72,17 @@ final class FreeLogicalRowIdPageManager {
                 fp.free(slot);
                 if (fp.getCount() == 0) {
                     // page became empty - free it
-                    file.release(curs.getCurrent(), false);
-                    pageman.free(Magic.FREELOGIDS_PAGE, curs.getCurrent());
+                    file.release(current, false);
+                    pageman.free(Magic.FREELOGIDS_PAGE, current);
                 }
                 else
-                    file.release(curs.getCurrent(), true);
+                    file.release(current, true);
                 
                 return retval;
             }
             else {
                 // no luck, go to next page
-                file.release(curs.getCurrent(), false);
+                file.release(current, false);
             }     
         }
         return 0;
@@ -100,11 +99,11 @@ final class FreeLogicalRowIdPageManager {
 	public void commit() throws IOException {
 		//write all uncommited free records		
 		Iterator<Long> rowidIter = freeBlocksInTransactionRowid.iterator();
-		PageCursor curs = new PageCursor(pageman, Magic.FREELOGIDS_PAGE);
+
 		//iterate over filled pages
-		while (curs.next() != 0) {
-			long freePage = curs.getCurrent();
-			BlockIo curBlock = file.get(freePage);
+		for(long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current!=0; current = pageman.getNext(current)){
+
+			BlockIo curBlock = file.get(current);
 			FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
@@ -115,7 +114,7 @@ final class FreeLogicalRowIdPageManager {
 				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));			
 				slot = fp.getFirstFree();
 			}
-			file.release(freePage, true);
+			file.release(current, true);
 			if(!rowidIter.hasNext())
 				break;
 		}

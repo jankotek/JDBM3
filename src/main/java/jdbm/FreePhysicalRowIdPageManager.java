@@ -70,10 +70,10 @@ final class FreePhysicalRowIdPageManager {
 		// Loop through the free physical rowid list until we get
 		// a rowid that's large enough.
 		long retval = 0;
-		PageCursor curs = new PageCursor(_pageman, Magic.FREEPHYSIDS_PAGE);
-                int maxSize = -1;
-		while (curs.next() != 0) {
-			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(curs.getCurrent()), blockSize);
+
+        int maxSize = -1;
+		for(long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current!=0; current = _pageman.getNext(current)){
+			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(current), blockSize);
 			int slot = fp.getFirstLargerThan(size);
 			if (slot > 0) {
                                 //reset maximal size, as record has changed
@@ -84,18 +84,18 @@ final class FreePhysicalRowIdPageManager {
 				fp.free(slot);
 				if (fp.getCount() == 0) {
 					// page became empty - free it
-					_file.release(curs.getCurrent(), false);
-					_pageman.free(Magic.FREEPHYSIDS_PAGE, curs.getCurrent());
+					_file.release(current, false);
+					_pageman.free(Magic.FREEPHYSIDS_PAGE, current);
 				} else {
-					_file.release(curs.getCurrent(), true);
+					_file.release(current, true);
 				}
 
 				return retval;
 			} else {
-                                if(maxSize<-slot)
-                                    maxSize=-slot;
+                 if(maxSize<-slot)
+                    maxSize=-slot;
 				// no luck, go to next page
-				_file.release(curs.getCurrent(), false);
+				_file.release(current, false);
 			}
 
 		}
@@ -117,11 +117,10 @@ final class FreePhysicalRowIdPageManager {
 		//write all uncommited free records		
 		Iterator<Long> rowidIter = freeBlocksInTransactionRowid.iterator();
 		Iterator<Integer> sizeIter = freeBlocksInTransactionSize.iterator();
-		PageCursor curs = new PageCursor(_pageman, Magic.FREEPHYSIDS_PAGE);
+
 		//iterate over filled pages
-		while (curs.next() != 0) {
-			long freePage = curs.getCurrent();
-			BlockIo curBlock = _file.get(freePage);
+		for(long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current!=0; current = _pageman.getNext(current)){
+			BlockIo curBlock = _file.get(current);
 			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
@@ -134,7 +133,7 @@ final class FreePhysicalRowIdPageManager {
 				fp.FreePhysicalRowId_setSize(freePhysRowId, size);
 				slot = fp.getFirstFree();
 			}
-			_file.release(freePage, true);
+			_file.release(current, true);
 			if(!rowidIter.hasNext())
 				break;
 		}
