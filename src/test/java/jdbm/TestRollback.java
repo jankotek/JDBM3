@@ -17,8 +17,6 @@
 
 package jdbm;
 
-import junit.framework.TestSuite;
-
 /**
  *  Test cases for HTree rollback
  */

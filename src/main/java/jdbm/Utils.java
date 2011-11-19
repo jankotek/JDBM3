@@ -2,6 +2,8 @@ package jdbm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -92,6 +94,21 @@ class Utils {
 
     }
 
+    static final class SerializerOutput extends DataOutputStream {
+
+        public SerializerOutput(OutputStream out) {
+            super(out);
+        }
+
+        /**
+         * Reset counter inside DataOutputStream.
+         * Workaround method if SerializerOutput instance is reused
+         */
+         public void __resetWrittenCounter(){
+            written = 0;
+         }
+    }
+
     /*** Compares comparables. Default comparator for most of java types*/
     static final Comparator COMPARABLE_COMPARATOR =  new Comparator<Comparable>(){
 	public int compare(Comparable o1, Comparable o2) {
@@ -160,6 +177,7 @@ static final  class IntArrayList {
         size = 0;
     }
 }
+
 
 
 }

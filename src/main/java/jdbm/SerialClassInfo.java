@@ -2,8 +2,6 @@ package jdbm;
 
 import sun.reflect.ReflectionFactory;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.awt.image.ImagingOpException;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;

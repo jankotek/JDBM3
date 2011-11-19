@@ -1103,7 +1103,7 @@ final class BPage<K,V>
                              LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
                         }else if ( bpage._values[ i ] != null ) {
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		            serializer.serialize(new SerializerOutput(baos), (V)bpage._values[ i ] );
+		            serializer.serialize(new Utils.SerializerOutput(baos), (V)bpage._values[ i ] );
 
                             byte[] buf = baos.toByteArray();
                             if(buf.length>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
@@ -1347,7 +1347,7 @@ final class BPage<K,V>
 		byte[] previous = null;
 		byte[] buffer = new byte[1024];
 		Utils.OpenByteArrayOutputStream out2 = new Utils.OpenByteArrayOutputStream(buffer);
-		SerializerOutput out3 = new SerializerOutput(out2);
+		Utils.SerializerOutput out3 = new Utils.SerializerOutput(out2);
 		for (int i = firstUse ; i < _btree._pageSize; i++) {
 			if(keys[i] == null){
 				leadingValuePackWrite(oos, null, previous, 0);

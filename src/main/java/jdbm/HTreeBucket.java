@@ -244,7 +244,7 @@ final class HTreeBucket<K,V>
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         for(int i = 0;i<_keys.size();i++){
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            keySerializer.serialize(new SerializerOutput(baos), _keys.get(i));
+            keySerializer.serialize(new Utils.SerializerOutput(baos), _keys.get(i));
             byte[] buf = baos.toByteArray();
             LongPacker.packInt(out,buf.length);
             out.write(buf);
@@ -263,7 +263,7 @@ final class HTreeBucket<K,V>
             }else{
                 //transform to byte array
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                valSerializer.serialize(new SerializerOutput(baos), value);
+                valSerializer.serialize(new Utils.SerializerOutput(baos), value);
                 byte[] buf = baos.toByteArray();
                 if(buf.length>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                         //store as separate record

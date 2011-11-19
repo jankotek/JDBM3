@@ -1,7 +1,5 @@
 package jdbm;
 
-import junit.framework.TestCase;
-
 import java.io.*;
 import java.util.AbstractMap;
 import java.util.ArrayList;

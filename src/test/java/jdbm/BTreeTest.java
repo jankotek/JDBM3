@@ -30,7 +30,6 @@ import java.util.concurrent.locks.Lock;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link BTree}.
@@ -97,7 +96,7 @@ public class BTreeTest
      *  Basic tests
      */
     public void testBasics() throws IOException {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -149,7 +148,7 @@ public class BTreeTest
      *  Basic tests, just use the simple test possibilities of junit (cdaller)
      */
     public void testBasics2() throws IOException {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -189,7 +188,7 @@ public class BTreeTest
     public void testClose()
         throws IOException
     {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -271,7 +270,7 @@ public class BTreeTest
     public void testInsert()
         throws IOException
     {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -313,7 +312,7 @@ public class BTreeTest
     public void testRemove()
         throws IOException
     {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
 
         if ( DEBUG ) {
@@ -360,7 +359,7 @@ public class BTreeTest
     public void testFind()
         throws IOException
     {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -416,7 +415,7 @@ public class BTreeTest
         throws IOException
     {
 
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -589,7 +588,7 @@ public class BTreeTest
   public void testMultithreadAccess()
     throws IOException
   {
-        RecordManager  recman;
+        RecordManager recman;
         BTree          tree;
 
         if ( DEBUG )

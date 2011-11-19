@@ -169,7 +169,7 @@ final class RecordManagerStorage
 
 	private final byte[] _insertBuffer = new byte[RecordFile.BLOCK_SIZE];
 	private final Utils.OpenByteArrayOutputStream _insertBAO = new Utils.OpenByteArrayOutputStream(_insertBuffer);
-	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
+	private final Utils.SerializerOutput _insertOut = new Utils.SerializerOutput(_insertBAO);
 	private final Utils.OpenByteArrayInputStream _insertBAI = new Utils.OpenByteArrayInputStream(_insertBuffer);
 	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
 
@@ -279,7 +279,7 @@ final class RecordManagerStorage
     		//current reusable buffer is in use, have to fallback into creating new instances
     		byte[] buffer = new byte[1024];
     		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		SerializerOutput out = new SerializerOutput(bao);
+    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
     		return insert2(obj,serializer,buffer,bao,out);
     	}
 
@@ -294,7 +294,7 @@ final class RecordManagerStorage
     }
 
 
-	private <A> long insert2(A obj, Serializer<A> serializer, byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut)
+	private <A> long insert2(A obj, Serializer<A> serializer, byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut)
 			throws IOException {
 		insertBAO.reset(insertBuffer);
       
@@ -345,7 +345,7 @@ final class RecordManagerStorage
     		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		SerializerOutput out = new SerializerOutput(bao);
+    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
     		update2(recid,obj,serializer,buffer,bao,out);
     		return;
     	}
@@ -360,7 +360,7 @@ final class RecordManagerStorage
     }
 
 
-	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut)
+	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut)
 			throws IOException {
 		logRecid = decompressRecid(logRecid);
 		long physRecid = _logicMgr.fetch( logRecid );
@@ -397,7 +397,7 @@ final class RecordManagerStorage
     		//current reusable buffer is in use, have to create new instances
     		byte[] buffer = new byte[1024];
     		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		SerializerOutput out = new SerializerOutput(bao);
+    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
     		Utils.OpenByteArrayInputStream bai = new Utils.OpenByteArrayInputStream(buffer);
     		DataInputStream in = new DataInputStream(bai);
     		return fetch2(recid,serializer,buffer,bao,out, bai,in);
@@ -419,7 +419,7 @@ final class RecordManagerStorage
 
 
 	private <A> A fetch2(long recid, Serializer<A> serializer,byte[] insertBuffer, 
-				Utils.OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut,
+				Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut,
 				Utils.OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
 			throws IOException {
 

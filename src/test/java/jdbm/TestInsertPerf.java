@@ -16,7 +16,6 @@
 package jdbm;
 
 import java.io.IOException;
-import java.util.Properties;
 
 /**
  * Test BTree insert performance.

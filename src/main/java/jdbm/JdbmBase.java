@@ -17,9 +17,6 @@ package jdbm;
 
 import java.io.IOException;
 
-import jdbm.RecordListener;
-import jdbm.RecordManager;
-
 /**
  * common interface for Trees and PrimaryMaps
  * 
