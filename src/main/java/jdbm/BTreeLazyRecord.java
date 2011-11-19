@@ -3,8 +3,8 @@ package jdbm;
 import java.io.*;
 
 /**
- * An record lazly loaded from store.
- * TThis is used in BTree/HTree to store big records outside of index
+ * An record lazily loaded from store.
+ * This is used in BTree/HTree to store big records outside of index tree
  */
 class BTreeLazyRecord<E> {
     
@@ -58,7 +58,7 @@ class BTreeLazyRecord<E> {
 
 
 
-    static Object fastDeser(SerializerInput in,Serializer serializer,int expectedSize ) throws IOException, ClassNotFoundException {
+    static Object fastDeser(DataInputStream in,Serializer serializer,int expectedSize ) throws IOException, ClassNotFoundException {
         //we should propably copy data for deserialization into separate buffer and pass it to Serializer
         //but to make it faster, Serializer will operate directly on top of buffer.
         //and we check that it readed correct number of bytes.
@@ -83,7 +83,7 @@ class BTreeLazyRecord<E> {
      * if value in tree is serialized in more bytes, it is stored as separate record outside of tree
      * This value must be always smaller than 250
      */
-    static final int MAX_INTREE_RECORD_SIZE= 64;
+    static final int MAX_INTREE_RECORD_SIZE= 32;
     static{
         if(MAX_INTREE_RECORD_SIZE>250) throw new Error();
     }

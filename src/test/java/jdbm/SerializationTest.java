@@ -313,7 +313,7 @@ public class SerializationTest extends TestCase{
 		final int header2 = i2.read();
 
 		assertEquals(header1, header2);
-		assertEquals(header1, ser.JAVA_SERIALIZATION);
+		assertEquals(header1, SerializationHeader.JAVA_SERIALIZATION);
 		System.out.println("serialization header: "+header1);
 	}
 	

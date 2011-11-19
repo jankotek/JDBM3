@@ -985,10 +985,6 @@ final class BPage<K,V>
 //        }
 //    }
 
-
-    private static final int LEAF = Serialization.BPAGE_LEAF;
-    private static final int NOT_LEAF = Serialization.BPAGE_NONLEAF;
-    
     /**
      * Deserialize the content of an object from a byte array.
      *
@@ -997,14 +993,14 @@ final class BPage<K,V>
     public BPage<K,V> deserialize( DataInput ois2 )
         throws IOException
     {
-       SerializerInput ois = (SerializerInput) ois2;
+       DataInputStream ois = (DataInputStream) ois2;
 
 
       BPage<K,V> bpage = new BPage<K,V>();
 
   	  switch(ois.read()){
-  		case LEAF:bpage._isLeaf = true;break;
-  		case NOT_LEAF:bpage._isLeaf = false;break;
+  		case SerializationHeader.BPAGE_LEAF:bpage._isLeaf = true;break;
+  		case SerializationHeader.BPAGE_NONLEAF:bpage._isLeaf = false;break;
   		default: throw new InternalError("wrong BPage header");
   	  }
 
@@ -1060,7 +1056,7 @@ final class BPage<K,V>
 
         BPage<K,V> bpage =  obj;
 
-        oos.writeByte( bpage._isLeaf?LEAF:NOT_LEAF );
+        oos.writeByte( bpage._isLeaf?SerializationHeader.BPAGE_LEAF:SerializationHeader.BPAGE_NONLEAF );
         if ( bpage._isLeaf ) {
             LongPacker.packLong(oos, bpage._previous );
             LongPacker.packLong(oos, bpage._next );
@@ -1081,7 +1077,7 @@ final class BPage<K,V>
     }
 
 
-	private void readValues(SerializerInput ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
+	private void readValues(DataInputStream ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = new Object[ _btree._pageSize ];
                   Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
         	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
@@ -1089,7 +1085,7 @@ final class BPage<K,V>
                        if(header == BTreeLazyRecord.NULL){
                            bpage._values[ i ] = null;
                        }else if(header == BTreeLazyRecord.LAZY_RECORD){
-                           long recid = ois.readPackedLong();
+                           long recid = LongPacker.unpackLong(ois);
                            bpage._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
                        }else{
                            bpage._values[ i ] = BTreeLazyRecord.fastDeser(ois,serializer,header);
@@ -1136,7 +1132,7 @@ final class BPage<K,V>
 	private static final int ALL_OTHER = 6 <<5;
 
 
-	private K[] readKeys(SerializerInput ois, final int firstUse) throws IOException, ClassNotFoundException {
+	private K[] readKeys(DataInputStream ois, final int firstUse) throws IOException, ClassNotFoundException {
 		Object[] ret = new Object[_btree._pageSize];
 		final int type = ois.read();
 		if(type == ALL_NULL){
@@ -1193,14 +1189,14 @@ final class BPage<K,V>
 
 			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : _btree.getRecordManager().defaultSerializer();
 			Utils.OpenByteArrayInputStream in1 = null;
-			SerializerInput in2 = null;
+			DataInputStream in2 = null;
 			byte[] previous = null;
 			for(int i = firstUse;i<_btree._pageSize;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				if(in1 == null){
 					in1 = new Utils.OpenByteArrayInputStream(b);
-					in2 = new SerializerInput(in1);
+					in2 = new DataInputStream(in1);
 				}
 				in1.reset(b, b.length);
 				ret[i] = ser.deserialize(in2);

@@ -171,7 +171,7 @@ final class RecordManagerStorage
 	private final Utils.OpenByteArrayOutputStream _insertBAO = new Utils.OpenByteArrayOutputStream(_insertBuffer);
 	private final SerializerOutput _insertOut = new SerializerOutput(_insertBAO);
 	private final Utils.OpenByteArrayInputStream _insertBAI = new Utils.OpenByteArrayInputStream(_insertBuffer);
-	private final SerializerInput _insertIn = new SerializerInput(_insertBAI);
+	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
 
 	volatile private boolean bufferInUse = false;
 
@@ -399,7 +399,7 @@ final class RecordManagerStorage
     		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
     		SerializerOutput out = new SerializerOutput(bao);
     		Utils.OpenByteArrayInputStream bai = new Utils.OpenByteArrayInputStream(buffer);
-    		SerializerInput in = new SerializerInput(bai);
+    		DataInputStream in = new DataInputStream(bai);
     		return fetch2(recid,serializer,buffer,bao,out, bai,in);
     	}
         try{
@@ -420,7 +420,7 @@ final class RecordManagerStorage
 
 	private <A> A fetch2(long recid, Serializer<A> serializer,byte[] insertBuffer, 
 				Utils.OpenByteArrayOutputStream insertBAO, SerializerOutput insertOut,
-				Utils.OpenByteArrayInputStream insertBAI, SerializerInput insertIn)
+				Utils.OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
 			throws IOException {
 
 		recid = decompressRecid(recid);

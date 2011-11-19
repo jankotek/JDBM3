@@ -29,7 +29,7 @@ import java.io.OutputStream;
  * @author Jan Kotek
  *
  */
-public class SerializerOutput extends DataOutputStream {
+class SerializerOutput extends DataOutputStream {
 	
 	
 	public SerializerOutput(OutputStream out) {

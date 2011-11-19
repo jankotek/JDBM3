@@ -282,7 +282,7 @@ final class HTreeBucket<K,V>
     /**
      * Implement Externalizable interface.
      */
-    public void readExternal(SerializerInput in) throws IOException, ClassNotFoundException {
+    public void readExternal(DataInputStream in) throws IOException, ClassNotFoundException {
         _depth = LongPacker.unpackInt(in);
         final int size = in.read();
 
@@ -290,7 +290,7 @@ final class HTreeBucket<K,V>
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         _keys = new ArrayList<K>(OVERFLOW_SIZE);
         for(int i =0; i<size; i++){
-            int expectedSize = in.readPackedInt();
+            int expectedSize = LongPacker.unpackInt(in);
             K key = (K) BTreeLazyRecord.fastDeser(in, keySerializer, expectedSize);
             _keys.add(key);
         }
@@ -303,7 +303,7 @@ final class HTreeBucket<K,V>
             if(header == BTreeLazyRecord.NULL){
                 _values.add(null);
             }else if(header == BTreeLazyRecord.LAZY_RECORD){
-                long recid = in.readPackedLong();
+                long recid = LongPacker.unpackLong(in);
                 _values.add(new BTreeLazyRecord(tree.getRecordManager(),recid,valSerializer));
             }else{
                 _values.add(BTreeLazyRecord.fastDeser(in,valSerializer,header));

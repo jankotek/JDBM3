@@ -191,6 +191,7 @@ public final class LongPacker
 
     
     static final public int packInt( DataOutput os, int v ) throws IOException {
+        //TODO test that Integer.MAX_VALUE is packed into 4 bytes
     	return packLong(os,v);
     }
     

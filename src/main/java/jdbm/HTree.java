@@ -34,16 +34,16 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     final Serializer SERIALIZER = new Serializer<Object>() {
 
         public Object deserialize(DataInput ds2) throws IOException {
-            SerializerInput ds = (SerializerInput) ds2;
+            DataInputStream ds = (DataInputStream) ds2;
             try{
                 int i = ds.read();
-                if(i == Serialization.HTREE_BUCKET){ //is HashBucket?
+                if(i == SerializationHeader.HTREE_BUCKET){ //is HashBucket?
                     HTreeBucket ret = new HTreeBucket(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
                         throw new InternalError("bytes left: "+ds.available());
                     return ret;
-                }else if( i == Serialization.HTREE_DIRECTORY){
+                }else if( i == SerializationHeader.HTREE_DIRECTORY){
                     HTreeDirectory ret = new HTreeDirectory(HTree.this);
                     ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
@@ -59,11 +59,11 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
         }
         public void serialize(DataOutput out, Object obj) throws IOException {
             if(obj instanceof HTreeBucket){
-                out.write(Serialization.HTREE_BUCKET);
+                out.write(SerializationHeader.HTREE_BUCKET);
                 HTreeBucket b = (HTreeBucket) obj;
                 b.writeExternal(out);
             }else{
-                out.write(Serialization.HTREE_DIRECTORY);
+                out.write(SerializationHeader.HTREE_DIRECTORY);
                 HTreeDirectory n = (HTreeDirectory) obj;
                 n.writeExternal(out);
             }
