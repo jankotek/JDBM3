@@ -98,4 +98,68 @@ class Utils {
             return o1.compareTo(o2);
         }
     };
+
+/**
+ * Growable long[]
+ */
+static final  class LongArrayList {
+    int size = 0;
+    long[] data = new long[32];
+
+    void add(long l){
+        if(data.length==size){
+            //grow
+            data = Arrays.copyOf(data, size * 2);
+        }
+        data[size] = l;
+        size++;
+    }
+
+
+    void removeLast() {
+        size--;
+        data[size] = 0;
+    }
+
+    public void clear() {
+        if(data.length>32*8)
+            data = new long[32];
+        else
+            Arrays.fill(data,0L);
+        size = 0;
+    }
+}
+
+/**
+ * Growable int[]
+ */
+static final  class IntArrayList {
+    int size = 0;
+    int[] data = new int[32];
+
+    void add(int l){
+        if(data.length==size){
+            //grow
+            data = Arrays.copyOf(data, size * 2);
+        }
+        data[size] = l;
+        size++;
+    }
+
+
+    void removeLast() {
+        size--;
+        data[size] = 0;
+    }
+
+    public void clear() {
+        if(data.length>32*8)
+            data = new int[32];
+        else
+            Arrays.fill(data,0);
+        size = 0;
+    }
+}
+
+
 }

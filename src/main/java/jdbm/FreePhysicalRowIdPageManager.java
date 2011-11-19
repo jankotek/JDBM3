@@ -33,11 +33,11 @@ final class FreePhysicalRowIdPageManager {
 
 	private int blockSize;
 
-        /** if true, new records are always placed to end of file, new space is not reclaimed */
-        private boolean appendToEnd = false;
+    /** if true, new records are always placed to end of file, new space is not reclaimed */
+    private boolean appendToEnd = false;
 	
-	final ArrayList<Long> freeBlocksInTransactionRowid = new ArrayList<Long>();
-	final ArrayList<Integer> freeBlocksInTransactionSize = new ArrayList<Integer>();
+	private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
+	private final Utils.IntArrayList freeBlocksInTransactionSize = new Utils.IntArrayList();
 
 	/**
 	 * Creates a new instance using the indicated record file and page manager.
@@ -109,14 +109,14 @@ final class FreePhysicalRowIdPageManager {
 	 * Puts the indicated rowid on the free list, which avaits for commit
 	 */
 	void put(long rowid, int size) throws IOException {
-		freeBlocksInTransactionRowid.add(Long.valueOf(rowid));
-		freeBlocksInTransactionSize.add(Integer.valueOf(size));
+		freeBlocksInTransactionRowid.add(rowid);
+		freeBlocksInTransactionSize.add(size);
 	}
 
 	public void commit() throws IOException {
 		//write all uncommited free records		
-		Iterator<Long> rowidIter = freeBlocksInTransactionRowid.iterator();
-		Iterator<Integer> sizeIter = freeBlocksInTransactionSize.iterator();
+		int rowidpos = 0;
+
 
 		//iterate over filled pages
 		for(long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current!=0; current = _pageman.getNext(current)){
@@ -124,9 +124,10 @@ final class FreePhysicalRowIdPageManager {
 			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
-			while(slot!=-1 && rowidIter.hasNext()){
-				long rowid = rowidIter.next();
-				int size = sizeIter.next();		
+			while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){
+                int size = freeBlocksInTransactionSize.data[rowidpos];
+				long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
+
 				short freePhysRowId = fp.alloc(slot);
 				fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
 				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
@@ -134,22 +135,22 @@ final class FreePhysicalRowIdPageManager {
 				slot = fp.getFirstFree();
 			}
 			_file.release(current, true);
-			if(!rowidIter.hasNext())
+			if(!(rowidpos<freeBlocksInTransactionRowid.size))
 				break;
 		}
 		
 		//now we propably filled all already allocated pages,
 		//time to start allocationg new pages
-		while(rowidIter.hasNext()){
+		while(rowidpos<freeBlocksInTransactionRowid.size){
 			//allocate new page
 			long freePage = _pageman.allocate(Magic.FREEPHYSIDS_PAGE);
 			BlockIo curBlock = _file.get(freePage);
 			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
-			while(slot!=-1 && rowidIter.hasNext()){
-				long rowid = rowidIter.next();
-				int size = sizeIter.next();		
+			while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){
+                int size = freeBlocksInTransactionSize.data[rowidpos];
+				long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
 				short freePhysRowId = fp.alloc(slot);
 				fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
 				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
@@ -157,11 +158,11 @@ final class FreePhysicalRowIdPageManager {
 				slot = fp.getFirstFree();
 			}
 			_file.release(freePage, true);
-			if(!rowidIter.hasNext())
+			if(!(rowidpos<freeBlocksInTransactionRowid.size))
 				break;
 		}
 		
-		if(rowidIter.hasNext())
+		if(rowidpos<freeBlocksInTransactionRowid.size)
 			throw new InternalError();
 
 		freeBlocksInTransactionRowid.clear();

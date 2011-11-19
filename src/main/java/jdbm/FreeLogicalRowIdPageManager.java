@@ -18,9 +18,6 @@
 package jdbm;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  *  This class manages free Logical rowid pages and provides methods
@@ -33,7 +30,7 @@ final class FreeLogicalRowIdPageManager {
     private PageManager pageman;
 	private int blockSize;
 	
-	final List<Long> freeBlocksInTransactionRowid = new ArrayList<Long>();
+	private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
 
 
     /**
@@ -52,9 +49,9 @@ final class FreeLogicalRowIdPageManager {
      *  0 if nothing was found.
      */
     long get() throws IOException {
-    	if(!freeBlocksInTransactionRowid.isEmpty()){
-    		long first = freeBlocksInTransactionRowid.get(freeBlocksInTransactionRowid.size()-1);
-    		freeBlocksInTransactionRowid.remove(freeBlocksInTransactionRowid.size()-1);
+    	if(freeBlocksInTransactionRowid.size != 0){
+    		long first = freeBlocksInTransactionRowid.data[freeBlocksInTransactionRowid.size-1];
+    		freeBlocksInTransactionRowid.removeLast();
     		return first;
     	}
   
@@ -92,13 +89,13 @@ final class FreeLogicalRowIdPageManager {
      *  Puts the indicated rowid on the free list
      */
     void put(long rowid)throws IOException {
-        freeBlocksInTransactionRowid.add(Long.valueOf(rowid));
+        freeBlocksInTransactionRowid.add(rowid);
     }
     
 
 	public void commit() throws IOException {
 		//write all uncommited free records		
-		Iterator<Long> rowidIter = freeBlocksInTransactionRowid.iterator();
+		    int rowIdPos = 0;
 
 		//iterate over filled pages
 		for(long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current!=0; current = pageman.getNext(current)){
@@ -107,40 +104,40 @@ final class FreeLogicalRowIdPageManager {
 			FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
-			while(slot!=-1 && rowidIter.hasNext()){
-				long rowid = rowidIter.next();		
+			while(slot!=-1 && rowIdPos<freeBlocksInTransactionRowid.size){
+				long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
 				short freePhysRowId = fp.alloc(slot);
 				fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
 				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));			
 				slot = fp.getFirstFree();
 			}
 			file.release(current, true);
-			if(!rowidIter.hasNext())
+			if(!(rowIdPos<freeBlocksInTransactionRowid.size))
 				break;
 		}
 		
 		//now we propably filled all already allocated pages,
 		//time to start allocationg new pages
-		while(rowidIter.hasNext()){
+		while(rowIdPos<freeBlocksInTransactionRowid.size){
 			//allocate new page
 			long freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
 			BlockIo curBlock = file.get(freePage);
 			FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock, blockSize);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
-			while(slot!=-1 && rowidIter.hasNext()){
-				long rowid = rowidIter.next();		
+			while(slot!=-1 && rowIdPos<freeBlocksInTransactionRowid.size){
+				long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
 				short freePhysRowId = fp.alloc(slot);
 				fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
 				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
 				slot = fp.getFirstFree();
 			}
 			file.release(freePage, true);
-			if(!rowidIter.hasNext())
+			if(!(rowIdPos<freeBlocksInTransactionRowid.size))
 				break;
 		}
 		
-		if(rowidIter.hasNext())
+		if(rowIdPos<freeBlocksInTransactionRowid.size)
 			throw new InternalError();
 
 		freeBlocksInTransactionRowid.clear();
