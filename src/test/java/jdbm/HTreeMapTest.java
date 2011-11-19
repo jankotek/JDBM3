@@ -24,7 +24,7 @@ public class HTreeMapTest extends MapInterfaceTest<Integer,String>{
 		super(name, false,false,true,true,true,true);
 	}
 	
-	RecordManager r;
+	RecordManageAbstract r;
 	
 	public void setUp() throws Exception{
 		r = TestCaseWithTestFile.newRecordManager();		

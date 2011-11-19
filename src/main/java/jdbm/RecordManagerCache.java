@@ -29,13 +29,13 @@ import java.util.Iterator;
  * @author Cees de Groot
  */
 class RecordManagerCache
-    extends RecordManager
+    extends RecordManageAbstract
 {
 
     /**
      * Wrapped RecordManager
      */
-    protected RecordManager _recman;
+    protected RecordManageAbstract _recman;
 
 
     /** Cached object hashtable */
@@ -96,7 +96,7 @@ class RecordManagerCache
      * @param enableReferenceCache if cache using WeakReference or SoftReference should be enabled
      * @param useSoftReference if reference cache is enabled, decides beetween Soft or Weak reference
      */
-    public RecordManagerCache(RecordManager recman, int maxRecords, boolean enableReferenceCache, boolean useSoftReference)
+    public RecordManagerCache(RecordManageAbstract recman, int maxRecords, boolean enableReferenceCache, boolean useSoftReference)
     {
         if ( recman == null ) {
             throw new IllegalArgumentException( "Argument 'recman' is null" );

@@ -35,7 +35,7 @@ public class TestInsertPerf extends TestCaseWithTestFile
 
 
         long           start, finish;
-        RecordManager recman = new RecordManagerBuilder( "TestInsertPref-" + System.currentTimeMillis()).build();
+        RecordManageAbstract recman = new RecordManagerBuilder( "TestInsertPref-" + System.currentTimeMillis()).build();
         BTree btree = BTree.createInstance(recman);
         
         // Note:  One can use specialized serializers for better performance / database size

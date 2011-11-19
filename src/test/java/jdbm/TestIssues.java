@@ -11,7 +11,7 @@ public class TestIssues extends TestCaseWithTestFile{
     http://code.google.com/p/jdbm2/issues/detail?id=2
      */
     public void testHTreeClear() throws IOException {
-        final RecordManager recman = newRecordManager();
+        final RecordManageAbstract recman = newRecordManager();
         final HTree<String,String> tree = new  HTree(recman);
         recman.setNamedObject("test", tree.getRecid());
 

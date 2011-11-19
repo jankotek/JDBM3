@@ -171,8 +171,8 @@ public class RecordManagerBuilder {
      * @return new RecordManager
      * @throws java.io.IOError if db could not be opened
      */
-    public RecordManager build(){
-        RecordManager recman = null;
+    public RecordManageAbstract build(){
+        RecordManageAbstract recman = null;
 
         try{
             recman = new RecordManagerStorage(location);

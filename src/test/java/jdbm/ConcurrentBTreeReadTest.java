@@ -51,7 +51,7 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
         
     }
     
-    private RecordManager recman;
+    private RecordManageAbstract recman;
     
     private BTree btree;
     

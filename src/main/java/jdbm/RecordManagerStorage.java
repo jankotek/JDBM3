@@ -43,7 +43,7 @@ import java.util.*;
  * @author Cees de Groot
  */
 final class RecordManagerStorage
-    extends RecordManager
+    extends RecordManageAbstract
 {
 
 	private static final String IDR = ".idr";

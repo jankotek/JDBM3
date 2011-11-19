@@ -320,7 +320,7 @@ public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements Prim
 		tree.addRecordListener(listener);
 	}
 
-	public RecordManager getRecordManager() {
+	public RecordManageAbstract getRecordManager() {
 		return tree.getRecordManager();
 	}
 

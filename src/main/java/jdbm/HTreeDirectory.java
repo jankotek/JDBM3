@@ -70,7 +70,7 @@ final class HTreeDirectory<K,V>
     /**
      * PageManager used to persist changes in directory and buckets
      */
-    private transient RecordManager _recman;
+    private transient RecordManageAbstract _recman;
 
 
     /**
@@ -106,7 +106,7 @@ final class HTreeDirectory<K,V>
      * @param recman RecordManager which stores this directory
      * @param recid Record id of this directory.
      */
-    void setPersistenceContext( RecordManager recman, long recid )
+    void setPersistenceContext( RecordManageAbstract recman, long recid )
     {
         this._recman = recman;
         this._recid = recid;
@@ -562,7 +562,7 @@ final class HTreeDirectory<K,V>
 		}
     }
 
-    public RecordManager getRecordManager(){
+    public RecordManageAbstract getRecordManager(){
     	return _recman;
     }
 }

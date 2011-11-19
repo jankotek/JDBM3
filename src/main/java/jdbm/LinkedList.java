@@ -30,7 +30,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
 
 
-    private RecordManager recman;
+    private RecordManageAbstract recman;
     private long listrecid = 0;
 
     private int size = 0;
@@ -49,7 +49,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         this.valueSerializer = valueSerializer;
     }
 
-    LinkedList(RecordManager recman, long listrecid, Serializer<E> valueSerializer){
+    LinkedList(RecordManageAbstract recman, long listrecid, Serializer<E> valueSerializer){
         this.recman = recman;
         this.listrecid = listrecid;
         if(valueSerializer!=null && !(valueSerializer instanceof Serializable))
@@ -58,7 +58,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
     }
 
-    void setRecmanAndListRedic(RecordManager recman, long listrecid){
+    void setRecmanAndListRedic(RecordManageAbstract recman, long listrecid){
         this.recman = recman;
         this.listrecid = listrecid;
     }

@@ -32,7 +32,7 @@ public class BTreePageTest extends TestCaseWithTestFile {
      *  Basic tests
      */
     public void testBasics() throws IOException {
-        RecordManager recman;
+        RecordManageAbstract recman;
         String test, test1, test2, test3;
 
         test = "test";

@@ -64,7 +64,7 @@ public class StreamCorrupted
     public void testStreamCorrupted()
         throws IOException
     {
-        RecordManager recman;
+        RecordManageAbstract recman;
         BTree          btree;
         int            iterations;
 
