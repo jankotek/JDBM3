@@ -18,7 +18,7 @@ package jdbm;
 import java.io.IOError;
 import java.io.IOException;
 
-public class HTreeSecondaryMap<A,K,V> extends HTree<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
+class HTreeSecondaryMap<A,K,V> extends HTree<A,Iterable<K>> implements SecondaryHashMap<A,K,V>{
 
 	protected final JdbmBase<K,V > b;
 

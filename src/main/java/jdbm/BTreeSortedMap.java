@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.SortedMap;
 
 
-public class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTreeMap<K,V>{
+class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTreeMap<K,V>{
 	
 	protected final BTree<K,V> tree;
 	

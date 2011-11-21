@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Comparator;
 
-public abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implements PrimaryHashMap<K, V>{
+abstract class AbstractPrimaryMap<K, V> extends AbstractMap<K,V> implements PrimaryHashMap<K, V>{
 
 	
 	public <A> SecondaryHashMap<A, K,V> secondaryHashMap(String objectName,

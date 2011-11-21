@@ -27,7 +27,7 @@ import java.util.*;
  * 
  * This code originally comes from Apache Harmony, was adapted by Jan Kotek for JDBM
  */
-public class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
+class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
 
 
     /** Keys are this set's elements. Values are always Boolean.TRUE */

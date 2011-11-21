@@ -18,7 +18,7 @@ package jdbm;
 import java.io.IOError;
 import java.io.IOException;
 
-public class BTreeSecondarySortedMap<A,K,V> extends BTreeSortedMap<A,Iterable<K>> 
+class BTreeSecondarySortedMap<A,K,V> extends BTreeSortedMap<A,Iterable<K>>
 	implements SecondaryTreeMap<A,K,V>{
 
 	protected final JdbmBase<K,V > b;

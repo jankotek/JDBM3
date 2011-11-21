@@ -25,7 +25,7 @@ import java.io.IOException;
  * @param <K> key type
  * @param <V> value type
  */
-public interface JdbmBase<K,V> {
+interface JdbmBase<K,V> {
 
 	/**  
 	 * @return underlying record manager 
