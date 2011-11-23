@@ -189,9 +189,11 @@ class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTree
 
 	
 	public boolean inBounds(K e) {
-		if(fromKey!=null && comparator().compare(e,fromKey)<0)
+                Comparator comp = comparator();
+                if(comp==null) comp = Utils.COMPARABLE_COMPARATOR;
+		if(fromKey!=null && comp.compare(e,fromKey)<0)
 			return false;
-		if(toKey!=null && comparator().compare(e,toKey)>=0)
+		if(toKey!=null && comp.compare(e,toKey)>=0)
 			return false;
 		return true;
 	}
@@ -301,7 +303,9 @@ class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTree
 
 
 	public SortedMap<K, V> subMap(K fromKey, K toKey) {
-		if(comparator().compare(fromKey,toKey)>0)
+                Comparator comp = comparator();
+                if(comp == null) comp = Utils.COMPARABLE_COMPARATOR;
+		if(comp.compare(fromKey,toKey)>0)
 			throw new IllegalArgumentException("fromKey is bigger then toKey");
 		return new BTreeSortedMap<K, V>(tree, readonly,fromKey, toKey);
 	}

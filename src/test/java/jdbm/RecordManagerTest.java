@@ -195,10 +195,10 @@ public class RecordManagerTest extends TestCaseWithTestFile {
 
     	}
     }
-    
-    public void testTreeMapValueSerializer() throws Exception{
-    	final AtomicInteger i = new AtomicInteger(0);
-    	Serializer<String> ser = new Serializer<String>(){
+
+    final static AtomicInteger i = new AtomicInteger(0);
+
+    public static class Serial implements Serializer<String>{
 
 			public String deserialize(DataInput in) throws IOException, ClassNotFoundException {
 				i.incrementAndGet();
@@ -208,10 +208,14 @@ public class RecordManagerTest extends TestCaseWithTestFile {
 			public void serialize(DataOutput out, String obj) throws IOException {
 				i.incrementAndGet();
 				out.writeUTF(obj);
-			}};
+			}}
+    
+    public void testTreeMapValueSerializer() throws Exception{
+        i.set(0);
+    	Serializer<String> ser = new Serial();
 			
 		RecordManager recman = newRecordManager();
-		PrimaryTreeMap<Long,String> t =  recman.createTreeMap("test", null, ser,null);
+		PrimaryTreeMap<Long,String> t =  recman.<Long,String>createTreeMap("test", null, null, ser);
 		t.put(1l, "hopsa hejsa1");
 		t.put(2l, "hopsa hejsa2");
 		recman.commit();

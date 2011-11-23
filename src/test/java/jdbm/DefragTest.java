@@ -50,7 +50,7 @@ public class DefragTest extends TestCaseWithTestFile{
 		m.defrag();		
 		m.close();
 		m = new RecordManagerStorage(file);
-		t = m.createTreeMap("aa");
+		t = m.loadTreeMap("aa");
 		assertEquals(t,t2);
 	}
 

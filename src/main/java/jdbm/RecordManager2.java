@@ -17,10 +17,7 @@ package jdbm;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 
 /**
  * An abstract class implementing most of RecordManager.
@@ -87,26 +84,32 @@ import java.util.SortedSet;
                 return new HTreeSet(createHashMap(name,keySerializer,null));
 	}
 
+    public <K, V> PrimaryTreeMap<K, V> loadTreeMap(String name) {
+        try{
+            long recid = assertNameExist(name);
+            return BTree.<K,V>load( this, recid ).asMap();
+        }catch(IOException  e){
+	    throw new IOError(e);
+	}
+    }
+
     public <K extends Comparable, V> PrimaryTreeMap<K, V> createTreeMap(String name) {
 		return createTreeMap(name, null,null,null);
 	}
 
 
     public synchronized <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
-                                                                  Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer) {
+                                                                  Comparator<K> keyComparator,
+                                                                  Serializer<K> keySerializer,
+                                                                  Serializer<V> valueSerializer) {
 		try{
-			BTree<K,V> tree = null;
-        
-			// create or load 
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = BTree.load( this, recid );
-			} else {
-				tree = BTree.createInstance(this,keyComparator);
-				setNamedObject( name, tree.getRecid() );
-			}
+	                assertNameNotExist(name);
+
+			BTree<K,V> tree = BTree.createInstance(this,keyComparator);
+
 			tree.setKeySerializer(keySerializer);
 			tree.setValueSerializer(valueSerializer);
+                        setNamedObject( name, tree.getRecid() );
 			
 			return tree.asMap();
 		}catch(IOException  e){
@@ -115,15 +118,17 @@ import java.util.SortedSet;
 	}
 
 
+        public synchronized <K> SortedSet<K> loadTreeSet(String name) {
+            return new BTreeSet<K>((SortedMap <K, Object>)loadTreeMap(name));
+        }
+
         public synchronized <K> SortedSet<K> createTreeSet(String name) {
             return createTreeSet(name, null, null);
         }
 
 
         public synchronized <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer) {
-            return new BTreeSet<K>(createTreeMap(name,
-                    keyComparator != null ? keyComparator : Utils.COMPARABLE_COMPARATOR,
-                    null, keySerializer));
+            return new BTreeSet<K>(createTreeMap(name,keyComparator, keySerializer, null));
         }
 
 

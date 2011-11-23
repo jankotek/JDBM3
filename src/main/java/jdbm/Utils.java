@@ -39,7 +39,9 @@ class Utils {
         public void serialize(DataOutput out, Object obj) throws IOException {
             if(obj == null)
                 out.writeUTF(EMPTY_STRING);
-            else{
+            else if (obj == java.util.Collections.reverseOrder()){
+                out.writeUTF("!!REVERSED!!");
+            }else{
                 assertHasPublicNoArgConstructor(obj.getClass());
                 out.writeUTF(obj.getClass().getName());
             }
@@ -49,6 +51,8 @@ class Utils {
             String className = in.readUTF();
             if("".equals(className))
                 return null;
+            if("!!REVERSED!!".equals(className))
+                return java.util.Collections.reverseOrder();
             try {
                 Class clazz = Utils.class.getClassLoader().loadClass(className);
                 return clazz.getConstructor().newInstance();

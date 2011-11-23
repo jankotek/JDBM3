@@ -112,7 +112,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 		recman.defrag();		
 		recman.close();
 		recman = new RecordManagerStorage(file);
-		map = recman.createTreeMap("aa");
+		map = recman.loadTreeMap("aa");
 		for(long i = init; i<init+size/10;i++){
 			assertTrue(map.containsKey("aaaaa"+i));			
 		}

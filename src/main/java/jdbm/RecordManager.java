@@ -182,6 +182,8 @@ public interface RecordManager {
 
     <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
 
+    <K, V> PrimaryTreeMap<K, V> loadTreeMap(String name);
+
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
      *
@@ -200,12 +202,14 @@ public interface RecordManager {
      * @param <V> Value type
      * @param name record name
      * @param keyComparator Comparator used to sort keys
-     * @param valueSerializer Serializer used for values. This may reduce disk space usage
      * @param keySerializer Serializer used for keys. This may reduce disk space usage     *
+     * @param valueSerializer Serializer used for values. This may reduce disk space usage
      * @return
      */
     <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
-                                              Comparator<K> keyComparator, Serializer<V> valueSerializer, Serializer<K> keySerializer);
+                                              Comparator<K> keyComparator, Serializer<K> keySerializer,Serializer<V> valueSerializer);
+
+    <K> SortedSet<K> loadTreeSet(String name);
 
     <K> SortedSet<K> createTreeSet(String name);
 

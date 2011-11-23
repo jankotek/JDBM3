@@ -183,7 +183,7 @@ class BTree<K,V>
 	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManager2 recman)
         throws IOException
     {
-    	BTree<K,V> ret = createInstance( recman, Utils.COMPARABLE_COMPARATOR, null, null, DEFAULT_SIZE ); 
+    	BTree<K,V> ret = createInstance( recman, null, null, null, DEFAULT_SIZE );
         return ret;
     }
 
@@ -229,14 +229,6 @@ class BTree<K,V>
         if ( recman == null ) {
             throw new IllegalArgumentException( "Argument 'recman' is null" );
         }
-
-        if ( comparator == null ) {
-            comparator = Utils.COMPARABLE_COMPARATOR;
-        }
-        if ( ! ( comparator instanceof Serializable ) && comparator!=Utils.COMPARABLE_COMPARATOR ) {
-            throw new IllegalArgumentException( "Argument 'comparator' must be serializable" );
-        }
-
 
         // make sure there's an even number of entries per BPage
         if ( ( pageSize & 1 ) != 0 ) {
@@ -578,16 +570,13 @@ class BTree<K,V>
         throws IOException, ClassNotFoundException
     {
         BTree tree = new BTree();
-        tree._comparator = (Comparator) ser.deserialize(in);
-        if(tree._comparator == null)
-            tree._comparator = Utils.COMPARABLE_COMPARATOR;
-      //serializer is not persistent from 2.0        
-//        _keySerializer = (Serializer<K>) in.readObject();
-//        _valueSerializer = (Serializer<V>) in.readObject();
         tree._height = in.readInt();
         tree._root = in.readLong();
         tree._pageSize = in.readInt();
         tree._entries = in.readInt();
+        tree._comparator = (Comparator)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree.keySerializer = (Serializer)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree.valueSerializer = (Serializer)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
         return tree;
     }
 
@@ -595,14 +584,14 @@ class BTree<K,V>
     public void writeExternal( DataOutput out )
         throws IOException
     {
-         getRecordManager().defaultSerializer().serialize(out, (_comparator == Utils.COMPARABLE_COMPARATOR ? null : _comparator));
-        //serializer is not persistent from 2.0         
-//        out.writeObject( _keySerializer );
-//        out.writeObject( _valueSerializer );
         out.writeInt( _height );
         out.writeLong( _root );
         out.writeInt( _pageSize );
         out.writeInt( _entries );
+
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,_comparator);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,keySerializer);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
     }
 
 

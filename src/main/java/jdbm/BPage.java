@@ -18,6 +18,7 @@
 package jdbm;
 
 import java.io.*;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -280,7 +281,7 @@ final class BPage<K,V>
             K key2 =   _keys[ index ];
 //          // get returns the matching key or the next ordered key, so we must
 //          // check if we have an exact match
-          if ( key2==null || _btree._comparator.compare( key, key2 ) != 0 ) 
+          if ( key2==null || getComparator().compare( key, key2 ) != 0 )
               return null;
             
             if(_values[index] instanceof BTreeLazyRecord)
@@ -900,7 +901,12 @@ final class BPage<K,V>
         if ( value2 == null ) {
             return -1;
         }
-        return _btree._comparator.compare( value1, value2 );
+
+        return getComparator().compare( value1, value2 );
+    }
+
+    private Comparator getComparator() {
+        return _btree._comparator!=null ? _btree._comparator : Utils.COMPARABLE_COMPARATOR;
     }
 
 
@@ -1233,7 +1239,7 @@ final class BPage<K,V>
 		/**
 		 * Special compression to compress Long and Integer
 		 */
-		if (_btree._comparator == Utils.COMPARABLE_COMPARATOR &&
+		if ((_btree._comparator == Utils.COMPARABLE_COMPARATOR || _btree._comparator==null)&&
 				(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer())) {
 			boolean allInteger = true;
 			for (int i = firstUse ; i <_btree._pageSize; i++) {
