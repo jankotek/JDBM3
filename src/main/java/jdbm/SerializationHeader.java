@@ -123,7 +123,7 @@ final class SerializationHeader {
         final static int DATE				= 127;
 
         static final int JDBMLINKEDLIST 	= 159;
-        static final int UNUSED_JDBMLINKEDLIST_ENTRY 	= 160;
+        static final int HTREE 	= 160;
 
     final static int BTREE				= 161;
 

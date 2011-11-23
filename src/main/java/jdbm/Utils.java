@@ -26,12 +26,12 @@ class Utils {
                 return;
             try{
                 Constructor t = clazz.getConstructor();
-                if(t.isAccessible()){
-                    Object o = t.newInstance();
-                    classesWithConstructors.add(clazz.getName());
-                    return;
-                }
-            }catch(Exception e){}
+                Object o = t.newInstance();
+                classesWithConstructors.add(clazz.getName());
+                return;
+            }catch(Throwable e){
+                //e.printStackTrace();
+            }
             throw new IllegalArgumentException(("Class does not have public noarg constructor: "+clazz.getName()));
         }
 

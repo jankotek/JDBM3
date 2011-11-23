@@ -147,6 +147,9 @@ public interface RecordManager {
     void rollback()
         throws IOException;
 
+
+    <K, V> PrimaryHashMap<K, V> loadHashMap(String name);
+
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
      *
@@ -157,6 +160,7 @@ public interface RecordManager {
      * @return
      */
     <K, V> PrimaryHashMap<K, V> createHashMap(String name);
+
 
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
@@ -173,6 +177,8 @@ public interface RecordManager {
     <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
     <K> Set<K> createHashSet(String name);
+
+    <K> Set<K> loadHashSet(String name);
 
     <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
 

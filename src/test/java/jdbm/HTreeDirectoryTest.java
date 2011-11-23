@@ -37,10 +37,8 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
 
         RecordManager2 recman = newRecordManager();
 
-        HTree tree = new HTree(recman);
-        HTreeDirectory dir = new HTreeDirectory(tree, (byte)0);
-        long recid = recman.insert(dir,tree.SERIALIZER);
-        dir.setPersistenceContext(recman, recid);
+        HTree tree = (HTree) recman.createHashMap("test");
+        HTreeDirectory dir = tree.getRoot();
 
         dir.put("key", "value");
         String s = (String)dir.get("key");
@@ -56,10 +54,9 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
         System.out.println("testMixed");
 
         RecordManager2 recman = newRecordManager();
-        HTree tree = new HTree(recman);
-        HTreeDirectory dir = new HTreeDirectory(tree, (byte)0);
-        long recid = recman.insert(dir,tree.SERIALIZER);
-        dir.setPersistenceContext(recman, recid);
+
+        HTree tree = (HTree) recman.createHashMap("test");
+        HTreeDirectory dir = tree.getRoot();
 
         Hashtable hash = new Hashtable(); // use to compare results
 

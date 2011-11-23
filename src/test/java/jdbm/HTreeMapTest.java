@@ -42,12 +42,8 @@ public class HTreeMapTest extends MapInterfaceTest<Integer,String>{
 
 	@Override
 	protected Map<Integer,String> makeEmptyMap() throws UnsupportedOperationException {
-		try {
-			HTree<Integer,String> b = new HTree(r);
+			HTree<Integer,String> b = (HTree) r.createHashMap(""+Math.random());
 			return b;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} 		
 	}
 
 	@Override

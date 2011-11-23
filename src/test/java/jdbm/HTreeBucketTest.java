@@ -37,7 +37,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
 
         RecordManager recman = newRecordManager();
 
-        HTree tree = new HTree();
+        HTree tree = (HTree) recman.createHashMap("test");
 
         HTreeBucket bucket = new HTreeBucket(tree, 0);
 
@@ -67,9 +67,11 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
         recman.close();
     }
 
+    public static class LongSerializer implements Serializer<Long> {
 
-    public void testCustomSerializer() throws IOException {
-        Serializer<Long> ser = new Serializer<Long>(){
+            public LongSerializer() {
+
+            }
 
             public void serialize(DataOutput out, Long obj) throws IOException {
                 out.writeLong(obj);
@@ -78,7 +80,11 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
             public Long deserialize(DataInput in) throws IOException, ClassNotFoundException {
                 return in.readLong();
             }
-        };
+        }
+
+    public void testCustomSerializer() throws IOException {
+        Serializer<Long> ser = new LongSerializer();
+
 
         RecordManager recman = newRecordManager();
         Map<Long,Long> s = recman.createHashMap("test", ser, ser);

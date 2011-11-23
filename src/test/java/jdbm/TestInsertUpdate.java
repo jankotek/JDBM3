@@ -13,16 +13,7 @@ public class TestInsertUpdate extends TestCaseWithTestFile {
         @Test
         public void testInsertUpdateWithCustomSerializer () throws IOException {
         RecordManager recman = newRecordManager();
-        Serializer<Long> serializer = new Serializer<Long>(){
-
-            public void serialize(DataOutput out, Long obj) throws IOException {
-                out.writeLong(obj);
-            }
-
-            public Long deserialize(DataInput in) throws IOException, ClassNotFoundException {
-                return in.readLong();
-            }
-        };
+        Serializer<Long> serializer = new HTreeBucketTest.LongSerializer();
                 
         Map<Long, Long> map = recman.createHashMap("custom", serializer, serializer);
         

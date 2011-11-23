@@ -71,11 +71,6 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     };
 
 
-    /**
-     * Root hash directory.
-     */
-    private HTreeDirectory<K,V> _root;
-
 
     /**
      * Listeners which are notified about changes in records
@@ -93,6 +88,9 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      */
     protected Serializer<V> valueSerializer;
     protected boolean readonly = false;
+    private long rootRecid;
+    private RecordManager2 recman;
+    private long recid;
 
 
     public Serializer<K> getKeySerializer() {
@@ -104,80 +102,44 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 	}
 
 
-    HTree() {
-    }
-
 
     /**
      * Create a persistent hashtable.
-     *
-     * @param recman Record manager used for persistence.
      */
-    public HTree( RecordManager2 recman )
+    public HTree( RecordManager2 recman, long recid, Serializer<K> keySerializer, Serializer<V> valueSerializer )
         throws IOException
     {
-       this(recman, null, null);
-    }
-
-    /**
-     * Create a persistent hashtable.
-     *
-     * @param recman Record manager used for persistence.
-     */
-    public HTree( RecordManager2 recman,
-                                                   Serializer<K> keySerializer,
-                                                   Serializer<V> valueSerializer )
-        throws IOException
-    {
-        HTreeDirectory<K,V> root;
-        long           recid;
-
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+        this.recman = recman;
+        this.recid = recid;
 
-        this._root = new HTreeDirectory<K,V>( this, (byte) 0 );
-        recid = recman.insert( this._root, this.SERIALIZER );
-        this._root.setPersistenceContext(recman, recid);
-
+        //create new root record
+        this.rootRecid = recman.insert(null);
+        HTreeDirectory<K,V> root = new HTreeDirectory<K,V>( this, (byte) 0 );
+        root.setPersistenceContext(recman, rootRecid);
+        this.rootRecid = recman.insert( root, this.SERIALIZER );
     }
 
 
     /**
      * Load a persistent hashtable
-     *
-     * @param recman RecordManager used to store the persistent hashtable
-     * @param root_recid Record id of the root directory of the HTree
      */
-    public HTree( RecordManager2 recman,
-                                          long root_recid)
-    throws IOException
-    {
-        this(recman, root_recid, null, null);
-    }
-    /**
-     * Load a persistent hashtable
-     *
-     * @param recman RecordManager used to store the persistent hashtable
-     * @param root_recid Record id of the root directory of the HTree
-     */
-    public HTree( RecordManager2 recman,
-                                          long root_recid,
-                                          Serializer<K> keySerializer,
-                                          Serializer<V> valueSerializer )
+    public HTree(long rootRecid, Serializer<K> keySerializer, Serializer<V> valueSerializer )
         throws IOException
     {
-        HTreeDirectory<K,V> root;
-
+        this.rootRecid = rootRecid;
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-
-        this._root = (HTreeDirectory<K,V>) recman.fetch( root_recid, this.SERIALIZER  );
-        this._root.setPersistenceContext( recman, root_recid );
-
-
     }
 
-    transient long hashEqualsIdentityCounter=0;
+    void setPersistenceContext(RecordManager2 recman, long recid){
+        this.recman = recman;
+        this.recid = recid;
+    }
+
+
+
     
     public synchronized V put(K key, V value) {
 	if(readonly)
@@ -187,7 +149,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 		if(key == null || value == null)
 			throw new NullPointerException("Null key or value");
 		V oldVal = get(key);
-                _root.put(key, value);
+                getRoot().put(key, value);
                 if(oldVal == null){
                     for(RecordListener<K,V> r : recordListeners)
                             r.recordInserted(key,value);
@@ -208,7 +170,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
         try{
 	    if(key == null)
 		return null;
-	    return _root.get((K) key);
+	    return getRoot().get((K) key);
 	}catch (ClassCastException e){
 	    return null;
 	}catch (IOException e){
@@ -229,7 +191,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                            V val = null;
                            if(!recordListeners.isEmpty())
                                    val = get(key);
-                           _root.remove(key);
+                           getRoot().remove(key);
                                if(val!=null)
                                        for(RecordListener<K,V> r : recordListeners)
                                                r.recordRemoved((K)key,val);
@@ -267,20 +229,14 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     public synchronized Iterator<K> keys()
         throws IOException
     {
-        return _root.keys();
+        return getRoot().keys();
     }
 
-    /**
-     * Get the record identifier used to load this hashtable.
-     */
-    public long getRecid()
-    {
-        return _root.getRecid();
-    }
+
 
 
     public RecordManager2 getRecordManager() {
-        return _root.getRecordManager();
+        return getRoot().getRecordManager();
     }
 
     /**
@@ -433,6 +389,32 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
             };
 
 
+    public HTreeDirectory<K, V> getRoot() {
+        try{
+            HTreeDirectory<K, V> root = (HTreeDirectory<K,V>) recman.fetch( rootRecid, this.SERIALIZER  );
+            root.setPersistenceContext( recman, rootRecid );
+            return root;
+        }catch (IOException e){
+           throw new IOError(e);
+        }
+    }
 
+    public static HTree deserialize(DataInput is) throws IOException, ClassNotFoundException {
+        long rootRecid = LongPacker.unpackLong(is);
+        Serializer keySerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
+        Serializer valueSerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
+
+        return new HTree(rootRecid, keySerializer, valueSerializer);
+    }
+
+    void serialize(DataOutput out) throws IOException {
+        LongPacker.packLong(out,rootRecid);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,keySerializer);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
+    }
+
+    long getRecid(){
+        return recid;
+    }
 }
 

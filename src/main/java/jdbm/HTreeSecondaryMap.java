@@ -22,11 +22,6 @@ class HTreeSecondaryMap<A,K,V> extends HTree<A,Iterable<K>> implements Secondary
 
 	protected final JdbmBase<K,V > b;
 
-	public HTreeSecondaryMap(JdbmBase<K,V> b) {
-		super();
-                readonly = true;
-		this.b = b;
-	}
 
     public HTreeSecondaryMap(JdbmBase<K,V > b, long recid, Serializer<A> secondaryKeySerializer) throws IOException {
         //load existing instance
@@ -35,8 +30,8 @@ class HTreeSecondaryMap<A,K,V> extends HTree<A,Iterable<K>> implements Secondary
     }
 
     public HTreeSecondaryMap(JdbmBase<K,V > b,Serializer<A> secondaryKeySerializer) throws IOException {
-        //create new instance
-        super(b.getRecordManager(),secondaryKeySerializer,(Serializer<Iterable<K>>) null);
+        //create new instance and allocate new recid for this map
+        super(b.getRecordManager(), b.getRecordManager().insert(null), secondaryKeySerializer,null);
         this.b =b;
     }
 

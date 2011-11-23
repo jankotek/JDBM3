@@ -12,9 +12,7 @@ public class TestIssues extends TestCaseWithTestFile{
      */
     public void testHTreeClear() throws IOException {
         final RecordManager2 recman = newRecordManager();
-        final HTree<String,String> tree = new  HTree(recman);
-        recman.setNamedObject("test", tree.getRecid());
-
+        final HTree<String,String> tree = (HTree)recman.createHashMap("name");
 
         for (int i = 0; i < 1001; i++) {
             tree.put(String.valueOf(i),String.valueOf(i));

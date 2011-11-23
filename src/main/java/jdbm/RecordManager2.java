@@ -44,6 +44,16 @@ import java.util.SortedSet;
         return (A) fetch(recid,defaultSerializer());
     }
 
+    public <K, V> PrimaryHashMap<K, V> loadHashMap(String name) {
+        try{
+            long recid = assertNameExist(name);
+            HTree tree = fetch(recid);
+            tree.setPersistenceContext(this, recid);
+            return tree;
+        }catch(IOException  e){
+            throw new IOError(e);
+        }
+    }
 
     public <K, V> PrimaryHashMap<K, V> createHashMap(String name) {
         return createHashMap(name, null, null);
@@ -52,20 +62,22 @@ import java.util.SortedSet;
 
     public synchronized <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
 		try{
-			HTree<K, V> tree = null;
-        
-			long recid = getNamedObject( name);
-			if ( recid != 0 ) {
-				tree = new HTree( this, recid, keySerializer, valueSerializer);
-			} else {
-				tree = new HTree(this, keySerializer, valueSerializer);
-				setNamedObject( name, tree.getRecid() );
-			}
-			return tree;
+                    assertNameNotExist(name);
+
+                    long recid = insert(null);
+                    HTree<K, V> tree = new HTree(this, recid, keySerializer, valueSerializer);
+                    update(recid,tree);
+                    setNamedObject( name, recid );
+
+		    return tree;
 		}catch(IOException  e){
-			throw new IOError(e);
+		    throw new IOError(e);
 		}
 	}
+
+        public synchronized <K> Set<K> loadHashSet(String name) {
+        return new HTreeSet(loadHashMap(name));
+        }
 
         public synchronized <K> Set<K> createHashSet(String name) {
             return createHashSet(name,null);
@@ -121,13 +133,10 @@ import java.util.SortedSet;
 
     public <K> List<K> createLinkedList(String name, Serializer<K> serializer){
         try{
-            //TODO support value serializer at JDBMLinkedLIst
-            long recid = getNamedObject( name);
-            if ( recid != 0 )
-                throw new IllegalArgumentException("LinkedList with name '"+name+"' already exists");
+            assertNameNotExist(name);
 
              //allocate record and overwrite it
-            recid = insert(null);
+            long recid = insert(null);
             LinkedList<K> list = new LinkedList<K>(this,recid,serializer);
             update(recid,list);
             setNamedObject( name, recid );
@@ -141,9 +150,7 @@ import java.util.SortedSet;
 
     public <K> List<K> loadLinkedList(String name){
         try{
-            long recid = getNamedObject( name);
-            if ( recid == 0 )
-                throw new IllegalArgumentException("LinkedList with name '"+name+"' does not exist");
+            long recid = assertNameExist(name);
 
             LinkedList<K> list = (LinkedList<K>) fetch(recid);
             list.setRecmanAndListRedic(this, recid);
@@ -154,7 +161,17 @@ import java.util.SortedSet;
     }
 
 
+    private void assertNameNotExist(String name) throws IOException {
+        if(getNamedObject(name)!=0)
+            throw new IllegalArgumentException("Object with name '"+name+"' already exists");
+    }
 
+    private long assertNameExist(String name) throws IOException {
+        long recid = getNamedObject( name);
+        if ( recid == 0 )
+            throw new IllegalArgumentException("Object with name '"+name+"' does not exist");
+        return recid;
+    }
 
 
 

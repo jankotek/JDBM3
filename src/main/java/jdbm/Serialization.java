@@ -311,6 +311,10 @@ class Serialization extends SerialClassInfo implements Serializer
         }else if (clazz == BTree.class){
             out.write(BTREE);
             ((BTree)obj).writeExternal(out);
+        }else if (clazz == HTree.class){
+            out.write(HTREE);
+            ((HTree)obj).serialize(out);
+
         }else if (clazz == LinkedList.class){
             out.write(JDBMLINKEDLIST);
             ((LinkedList)obj).serialize(out);
@@ -630,6 +634,7 @@ class Serialization extends SerialClassInfo implements Serializer
             case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
             case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
             case JDBMLINKEDLIST: ret = LinkedList.deserialize(is);break;
+            case HTREE: ret = HTree.deserialize(is);break;
             case BTREE: ret = BTree.readExternal(is,this); break;
             case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
             case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");

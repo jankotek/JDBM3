@@ -35,18 +35,7 @@ public class TestRollback
         // Note: We start out with an empty file
         RecordManager2 recman =  newRecordManager();
 
-        long root = recman.getNamedObject( "xyz" );
-			 			
-        HTree<String,String> tree = null;
-        if ( root == 0 ) {
-            // create a new one
-            tree = new HTree( recman );
-            root = tree.getRecid();
-            recman.setNamedObject( "xyz", root );
-            recman.commit();
-        } else {
-            tree = new HTree( recman, root );
-        }
+        HTree tree = (HTree) recman.createHashMap("test");
 
         tree.put( "Foo", "Bar" );
         tree.put( "Fo", "Fum" );
@@ -57,7 +46,6 @@ public class TestRollback
 
         recman.rollback();
 
-        tree = new HTree( recman, root );
         assertTrue( tree.find( "Foo" ).equals( "Bar" ) );
         assertTrue( tree.find( "Fo" ).equals( "Fum" ) );
         assertTrue( tree.find( "Hello" ) == null );
@@ -70,24 +58,10 @@ public class TestRollback
     public void testRollback2() 
         throws Exception
     {
-        RecordManager2 recman;
-        long root;
 
-        // Note: We start out with an empty file
-        recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
-        root = recman.getNamedObject( "xyz" );
-
-        HTree tree = null;
-        if ( root == 0 ) {
-            // create a new one
-            tree = new HTree( recman );
-            root = tree.getRecid();
-            recman.setNamedObject( "xyz", root );
-            recman.commit();
-        } else {
-            tree = new HTree( recman, root );
-        }
+        HTree tree = (HTree) recman.createHashMap("test");
 
         tree.put( "hello", "world" );
         tree.put( "goodnight", "gracie" );
@@ -112,29 +86,17 @@ public class TestRollback
         // Note: We start out with an empty file
         RecordManager2 recman =  newRecordManager();
 
-        long root = recman.getNamedObject( "xyz" );
-			 			
-        BTree<String,String> tree = null;
-        if ( root == 0 ) {
-            // create a new one
-            tree = BTree.createInstance( recman );
-            root = tree.getRecid();
-            recman.setNamedObject( "xyz", root );
-            recman.commit();
-        } else {
-            tree = BTree.load( recman, root );
-        }
+        HTree<Object, Object> tree = (HTree<Object, Object>) recman.createHashMap("test");
 
-        tree.insert( "Foo", "Bar",true );
-        tree.insert( "Fo", "Fum",true );
+        tree.put("Foo", "Bar");
+        tree.put("Fo", "Fum");
 
         recman.commit();
 
-        tree.insert( "Hello", "World",true );
+        tree.put("Hello", "World");
 
         recman.rollback();
 
-        tree = BTree.load( recman, root );
         assertTrue( tree.get("Foo").equals( "Bar" ) );
         assertTrue( tree.get("Fo").equals( "Fum" ) );
         assertTrue( tree.get("Hello") == null );
