@@ -94,7 +94,7 @@ public class TestCaseWithTestFile extends TestCase {
 		return new RecordFile(newTestFile());
 	}
 
-	static public RecordManageAbstract newRecordManager() throws IOException{
+	static public RecordManager2 newRecordManager() throws IOException{
 		return new RecordManagerBuilder(newTestFile()).build();
 	}
 

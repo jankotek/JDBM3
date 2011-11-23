@@ -30,7 +30,7 @@ interface JdbmBase<K,V> {
 	/**  
 	 * @return underlying record manager 
 	 */
-	RecordManageAbstract getRecordManager();
+	RecordManager2 getRecordManager();
 	
     /**
      * add RecordListener which is notified about record changes

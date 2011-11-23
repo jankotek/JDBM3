@@ -33,7 +33,7 @@ public class TestRollback
     {
 
         // Note: We start out with an empty file
-        RecordManageAbstract recman =  newRecordManager();
+        RecordManager2 recman =  newRecordManager();
 
         long root = recman.getNamedObject( "xyz" );
 			 			
@@ -70,7 +70,7 @@ public class TestRollback
     public void testRollback2() 
         throws Exception
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         long root;
 
         // Note: We start out with an empty file
@@ -110,7 +110,7 @@ public class TestRollback
     {
 
         // Note: We start out with an empty file
-        RecordManageAbstract recman =  newRecordManager();
+        RecordManager2 recman =  newRecordManager();
 
         long root = recman.getNamedObject( "xyz" );
 			 			
@@ -147,7 +147,7 @@ public class TestRollback
     public void testRollback2b() 
         throws Exception
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         long root;
 
         // Note: We start out with an empty file

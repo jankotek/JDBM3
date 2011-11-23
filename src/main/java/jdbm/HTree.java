@@ -113,7 +113,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      *
      * @param recman Record manager used for persistence.
      */
-    public HTree( RecordManageAbstract recman )
+    public HTree( RecordManager2 recman )
         throws IOException
     {
        this(recman, null, null);
@@ -124,7 +124,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      *
      * @param recman Record manager used for persistence.
      */
-    public HTree( RecordManageAbstract recman,
+    public HTree( RecordManager2 recman,
                                                    Serializer<K> keySerializer,
                                                    Serializer<V> valueSerializer )
         throws IOException
@@ -148,7 +148,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      * @param recman RecordManager used to store the persistent hashtable
      * @param root_recid Record id of the root directory of the HTree
      */
-    public HTree( RecordManageAbstract recman,
+    public HTree( RecordManager2 recman,
                                           long root_recid)
     throws IOException
     {
@@ -160,7 +160,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      * @param recman RecordManager used to store the persistent hashtable
      * @param root_recid Record id of the root directory of the HTree
      */
-    public HTree( RecordManageAbstract recman,
+    public HTree( RecordManager2 recman,
                                           long root_recid,
                                           Serializer<K> keySerializer,
                                           Serializer<V> valueSerializer )
@@ -279,7 +279,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     }
 
 
-    public RecordManageAbstract getRecordManager() {
+    public RecordManager2 getRecordManager() {
         return _root.getRecordManager();
     }
 

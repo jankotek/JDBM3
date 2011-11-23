@@ -24,7 +24,7 @@ public class BTreeSortedMapTest extends SortedMapInterfaceTest<Integer,String>{
 		super(name, false,false,true,true,true,true);
 	}
 	
-	RecordManageAbstract r;
+	RecordManager2 r;
 	
 	public void setUp() throws Exception{
 		r = TestCaseWithTestFile.newRecordManager();		

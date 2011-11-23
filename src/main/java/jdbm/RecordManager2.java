@@ -26,7 +26,7 @@ import java.util.SortedSet;
  * An abstract class implementing most of RecordManager.
  * It also has some JDBM package protected stuff (getNamedRecord)
  */
- abstract class RecordManageAbstract implements RecordManager {
+ abstract class RecordManager2 implements RecordManager {
 
 
 

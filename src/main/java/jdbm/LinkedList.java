@@ -30,7 +30,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
 
 
-    private RecordManageAbstract recman;
+    private RecordManager2 recman;
     private long listrecid = 0;
 
     private int size = 0;
@@ -49,7 +49,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         this.valueSerializer = valueSerializer;
     }
 
-    LinkedList(RecordManageAbstract recman, long listrecid, Serializer<E> valueSerializer){
+    LinkedList(RecordManager2 recman, long listrecid, Serializer<E> valueSerializer){
         this.recman = recman;
         this.listrecid = listrecid;
         if(valueSerializer!=null && !(valueSerializer instanceof Serializable))
@@ -58,7 +58,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
     }
 
-    void setRecmanAndListRedic(RecordManageAbstract recman, long listrecid){
+    void setRecmanAndListRedic(RecordManager2 recman, long listrecid){
         this.recman = recman;
         this.listrecid = listrecid;
     }
@@ -125,7 +125,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         long first = LongPacker.unpackLong(is);
         long last = LongPacker.unpackLong(is);
         int size = LongPacker.unpackInt(is);
-        Serializer serializer = (Serializer) Utils.loadInstance(is.readUTF());
+        Serializer serializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
         return new LinkedList(first,last,size,serializer);
     }
 
@@ -133,12 +133,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         LongPacker.packLong(out,first);
         LongPacker.packLong(out,last);
         LongPacker.packInt(out, size);
-        if(valueSerializer == null)
-            out.writeUTF("");
-        else{
-            Utils.assertHasPublicNoArgConstructor(valueSerializer.getClass());
-            out.writeUTF(valueSerializer.getClass().getName());
-        }
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
     }
 
     private final Serializer<Entry> entrySerializer = new Serializer<Entry>(){

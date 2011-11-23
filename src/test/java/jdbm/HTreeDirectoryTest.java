@@ -35,7 +35,7 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testBasics() throws IOException {
         System.out.println("testBasics");
 
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
         HTree tree = new HTree(recman);
         HTreeDirectory dir = new HTreeDirectory(tree, (byte)0);
@@ -55,7 +55,7 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testMixed() throws IOException {
         System.out.println("testMixed");
 
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
         HTree tree = new HTree(recman);
         HTreeDirectory dir = new HTreeDirectory(tree, (byte)0);
         long recid = recman.insert(dir,tree.SERIALIZER);

@@ -96,7 +96,7 @@ public class BTreeTest
      *  Basic tests
      */
     public void testBasics() throws IOException {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -148,7 +148,7 @@ public class BTreeTest
      *  Basic tests, just use the simple test possibilities of junit (cdaller)
      */
     public void testBasics2() throws IOException {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -188,7 +188,7 @@ public class BTreeTest
     public void testClose()
         throws IOException
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -270,7 +270,7 @@ public class BTreeTest
     public void testInsert()
         throws IOException
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -312,7 +312,7 @@ public class BTreeTest
     public void testRemove()
         throws IOException
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
 
         if ( DEBUG ) {
@@ -359,7 +359,7 @@ public class BTreeTest
     public void testFind()
         throws IOException
     {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -393,7 +393,7 @@ public class BTreeTest
     {
         if ( DEBUG )
             System.out.println("BTreeTest.testFind");
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
         BTree<String, Serializable> tree = BTree.createInstance( recman);
 
         // put enough data into the tree so we definitely have multiple pages
@@ -415,7 +415,7 @@ public class BTreeTest
         throws IOException
     {
 
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
 
         if ( DEBUG )
@@ -457,7 +457,7 @@ public class BTreeTest
    }
     
     public void testRecordListener() throws IOException{
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
         BTree<Integer,String> tree = BTree.createInstance( recman);
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
@@ -534,7 +534,7 @@ public class BTreeTest
         
         long previousRecmanSize = 0;
         for (int i = 0; i < 5; i++){
-            RecordManageAbstract recman = new RecordManagerBuilder(recordManagerBasename).disableCache().build();
+            RecordManager2 recman = new RecordManagerBuilder(recordManagerBasename).disableCache().build();
       
             try{
                 BTree<String, Serializable> tree = BTree.createInstance( recman);
@@ -588,7 +588,7 @@ public class BTreeTest
   public void testMultithreadAccess()
     throws IOException
   {
-        RecordManageAbstract recman;
+        RecordManager2 recman;
         BTree          tree;
 
         if ( DEBUG )

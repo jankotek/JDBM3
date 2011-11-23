@@ -68,7 +68,7 @@ class BTree<K,V>
     /**
      * Page manager used to persist changes in BPages
      */
-    protected transient RecordManageAbstract _recman;
+    protected transient RecordManager2 _recman;
 
 
     /**
@@ -167,7 +167,7 @@ class BTree<K,V>
      * @param recman Record manager used for persistence.
      * @param comparator Comparator used to order index entries
      */
-    public static <K,V> BTree<K,V> createInstance( RecordManageAbstract recman,
+    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
                                         Comparator<K> comparator)
         throws IOException
     {
@@ -180,7 +180,7 @@ class BTree<K,V>
      * @param recman Record manager used for persistence.
      */
     @SuppressWarnings("unchecked")
-	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManageAbstract recman)
+	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManager2 recman)
         throws IOException
     {
     	BTree<K,V> ret = createInstance( recman, Utils.COMPARABLE_COMPARATOR, null, null, DEFAULT_SIZE ); 
@@ -197,7 +197,7 @@ class BTree<K,V>
      * @param valueSerializer Serializer used to serialize index values (optional)
      * @param comparator Comparator used to order index entries
      */
-    public static <K,V> BTree<K,V> createInstance( RecordManageAbstract recman,
+    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
                                         Comparator<K> comparator,
                                         Serializer<K> keySerializer,
                                         Serializer<V> valueSerializer )
@@ -217,7 +217,7 @@ class BTree<K,V>
      * @param valueSerializer Serializer used to serialize index values (optional)
      * @param pageSize Number of entries per page (must be even).
      */
-    public static <K,V> BTree<K,V> createInstance( RecordManageAbstract recman,
+    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
                                         Comparator<K> comparator,
                                         Serializer<K> keySerializer,
                                         Serializer<V> valueSerializer,
@@ -263,7 +263,7 @@ class BTree<K,V>
      * @param recid Record id of the BTree
      */
     @SuppressWarnings("unchecked")
-	public static <K,V> BTree<K,V> load( RecordManageAbstract recman, long recid )
+	public static <K,V> BTree<K,V> load( RecordManager2 recman, long recid )
         throws IOException
     {
         BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid);
@@ -669,7 +669,7 @@ class BTree<K,V>
     }
 
 
-	public RecordManageAbstract getRecordManager() {
+	public RecordManager2 getRecordManager() {
 		return _recman;
 	}
 	

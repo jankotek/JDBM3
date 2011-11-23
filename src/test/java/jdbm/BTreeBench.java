@@ -29,7 +29,7 @@ import java.util.Hashtable;
 public class BTreeBench extends TestCaseWithTestFile {
 
 
-	RecordManageAbstract recman;
+	RecordManager2 recman;
 
     /**
      * Test w/o compression or specialized key or value serializers.

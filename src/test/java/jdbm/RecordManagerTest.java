@@ -20,7 +20,7 @@ import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *  This class contains all Unit tests for {@link RecordManageAbstract}.
+ *  This class contains all Unit tests for {@link RecordManager2}.
  */
 public class RecordManagerTest extends TestCaseWithTestFile {
 

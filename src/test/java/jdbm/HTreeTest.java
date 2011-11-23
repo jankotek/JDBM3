@@ -37,7 +37,7 @@ public class HTreeTest extends TestCaseWithTestFile {
      */
     public void testIterator() throws IOException {
         
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
         HTree testTree = getHtree(recman, "htree");
     
@@ -60,7 +60,7 @@ public class HTreeTest extends TestCaseWithTestFile {
     }
 
     public void testRecordListener() throws IOException{
-        RecordManageAbstract recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
         HTree<Integer,String> tree = new HTree( recman);
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
@@ -117,7 +117,7 @@ public class HTreeTest extends TestCaseWithTestFile {
     }
 
     
-    private static HTree getHtree( RecordManageAbstract recman, String name )
+    private static HTree getHtree( RecordManager2 recman, String name )
       throws IOException
     {
         long recId = recman.getNamedObject("htree");  
