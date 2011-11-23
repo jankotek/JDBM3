@@ -46,6 +46,10 @@ abstract class SerialClassInfo {
 
     private long serialClassInfoRecid;
 
+    public SerialClassInfo(ArrayList<ClassInfo> registered){
+        this.registered = registered;
+    }
+
     public SerialClassInfo(RecordManager recman, long serialClassInfoRecid) throws IOException {
         this.recman = recman;
         if(recman!=null){
@@ -145,7 +149,7 @@ abstract class SerialClassInfo {
 
     private ArrayList<ClassInfo> registered;
 
-    private final RecordManager recman;
+    private RecordManager recman = null;
 
 
 

@@ -59,6 +59,10 @@ class Serialization extends SerialClassInfo implements Serializer
         super(recman, serialClassInfoRecid);
     }
 
+    public Serialization(ArrayList<ClassInfo> info) {
+        super(info);
+    }
+
     /**
      * Serialize the object into a byte array.
      */
