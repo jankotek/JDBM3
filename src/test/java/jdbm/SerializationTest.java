@@ -303,12 +303,12 @@ public class SerializationTest extends TestCase{
 	
 	public void testSerializationHeader() throws IOException{
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
-		new ObjectOutputStream(b).writeObject("lalala");
+		new java.io.ObjectOutputStream(b).writeObject("lalala");
 		ByteArrayInputStream i = new ByteArrayInputStream(b.toByteArray());
 		final int header1 = i.read();
 
 		ByteArrayOutputStream b2 = new ByteArrayOutputStream();
-		new ObjectOutputStream(b2).writeObject(new Integer(1));
+		new java.io.ObjectOutputStream(b2).writeObject(new Integer(1));
 		ByteArrayInputStream i2 = new ByteArrayInputStream(b2.toByteArray());
 		final int header2 = i2.read();
 
