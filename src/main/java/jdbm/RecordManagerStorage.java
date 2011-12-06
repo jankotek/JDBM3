@@ -17,6 +17,7 @@
 package jdbm;
 
 
+import javax.rmi.CORBA.Util;
 import java.io.*;
 import java.util.*;
 
@@ -603,6 +604,112 @@ final class RecordManagerStorage
 	}
 
 
+    private long statisticsCountPages(short pageType) throws IOException {
+        long pageCounter = 0;
+
+        for(long pageid = _logicPageman.getFirst(pageType);
+              pageid!=0;
+              pageid= _logicPageman.getNext(pageid)
+        ){
+          pageCounter++;
+        }
+
+        for(long pageid = _physPageman.getFirst(pageType);
+              pageid!=0;
+              pageid= _physPageman.getNext(pageid)
+        ){
+          pageCounter++;
+        }
+
+        return pageCounter;
+
+    }
+
+    public synchronized String calculateStatistics(){
+        try{
+
+            final StringBuilder b = new StringBuilder();
+
+            //count pages
+            {
+
+               b.append("PAGES:\n");
+               long total = 0;
+               long pages = statisticsCountPages(Magic.USED_PAGE);
+               total+=pages;
+               b.append("  "+pages+" used pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               pages = statisticsCountPages(Magic.TRANSLATION_PAGE);
+               total+=pages;
+               b.append("  "+pages+" record translation pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               pages = statisticsCountPages(Magic.FREE_PAGE);
+               total+=pages;
+               b.append("  "+pages+" free (unused) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               pages = statisticsCountPages(Magic.FREEPHYSIDS_PAGE);
+               total+=pages;
+               b.append("  "+pages+" free (phys) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               pages = statisticsCountPages(Magic.FREELOGIDS_PAGE);
+               total+=pages;
+               b.append("  "+pages+" free (logical) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  Total number of pages is "+total+" with size "+Utils.formatSpaceUsage(total*RecordFile.BLOCK_SIZE)+"\n");
+
+            }
+            {
+            b.append("RECORDS:\n");
+
+            long recordCount = 0;
+            long freeRecordCount = 0;
+            long maximalRecordSize = 0;
+            long maximalAvailSizeDiff = 0;
+            long totalRecordSize = 0;
+            long totalAvailDiff = 0;
+
+            //count records
+            for(long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                pageid!=0;
+                pageid= _logicPageman.getNext(pageid)
+                ){
+                BlockIo io = _logicFile.get(pageid);
+                TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
+
+                for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
+                    final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
+				    long physPage = xlatPage.getLocationBlock((short)pos);
+                    short physOffset = xlatPage.getLocationOffset((short)pos);
+				    if(physPage == 0 && physOffset == 0){
+				        freeRecordCount++;
+                        continue;
+                    }
+
+                    recordCount++;
+
+                    //get size
+                    BlockIo block = _physFile.get(physPage);
+                    int availSize = RecordHeader.getAvailableSize(block,physOffset);
+                    int currentSize = RecordHeader.getCurrentSize(block, physOffset);
+                    _physFile.release(block);
+
+                    maximalAvailSizeDiff = Math.max(maximalAvailSizeDiff, availSize-currentSize);
+                    maximalRecordSize = Math.max(maximalRecordSize,currentSize);
+                    totalAvailDiff +=availSize-currentSize;
+                    totalRecordSize+=currentSize;
+
+                }
+            }
+
+            b.append("  Contains "+recordCount+" records and "+freeRecordCount+" free slots.\n");
+            b.append("  Total space occupied by data is "+totalRecordSize+"\n");
+            b.append("  Average data size in record is "+ Utils.formatSpaceUsage(Math.round(1D*totalRecordSize/recordCount))+"\n");
+            b.append("  Maximal data size in record is "+ Utils.formatSpaceUsage(maximalRecordSize)+"\n");
+            b.append("  Space wasted in record fragmentation is "+ Utils.formatSpaceUsage(totalAvailDiff)+"\n");
+            b.append("  Maximal space wasted in single record fragmentation is "+ Utils.formatSpaceUsage(maximalAvailSizeDiff)+"\n");
+            }
+
+            return b.toString();
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+    }
+
 	public synchronized void defrag() throws IOException {
 
 		checkIfClosed();
@@ -795,7 +902,7 @@ final class RecordManagerStorage
 
     /**
      * Returns number of records stored in database.
-     * Is used for unit tests*
+     * Is used for unit tests
      */
      long countRecords() throws IOException {
          long counter = 0;
