@@ -134,8 +134,8 @@ final class RecordFile {
 
          // get a new node and read it from the file
          node = getNewNode(blockid);
-         long offset = blockid * BLOCK_SIZE;
-         storage.read(offset,node.getData(),BLOCK_SIZE);
+
+         storage.read(blockid,node.getData());
 
          inUse.put(blockid, node);
          node.setClean();
@@ -219,8 +219,7 @@ final class RecordFile {
             i.remove();
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
-                long offset = node.getBlockId() * BLOCK_SIZE;
-                storage.write(offset,node.getData());
+                storage.write(node.getBlockId(),node.getData());
                 node.setClean();
                 free.put(node.getBlockId(),node);
             }
@@ -335,8 +334,8 @@ final class RecordFile {
     void synch(BlockIo node) throws IOException {
         byte[] data = node.getData();
         if (data != null) {
-            long offset = node.getBlockId() * BLOCK_SIZE;
-            storage.write(offset,data);
+
+            storage.write(node.getBlockId(),data);
         }
     }
 

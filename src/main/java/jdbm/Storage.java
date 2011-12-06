@@ -7,12 +7,10 @@ import java.io.*;
  */
 interface Storage {
 
-
-    void read(long offset, byte[] data, int blockSize) throws IOException;
+    void write(long pageNumber, byte[] data) throws IOException;
+    void read(long pageNumber, byte[] data) throws IOException;
 
     void forceClose() throws IOException;
-
-    void write(long offset, byte[] data) throws IOException;
 
     DataInputStream readTransactionLog();
 

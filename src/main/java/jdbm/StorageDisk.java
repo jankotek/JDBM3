@@ -60,7 +60,10 @@ class StorageDisk implements Storage{
     }
 
 
-    public void write(long offset, byte[] data) throws IOException {
+    public void write(long pageNumber, byte[] data) throws IOException {
+        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+        long offset = pageNumber * RecordFile.BLOCK_SIZE;
+
         RandomAccessFile file = getRaf(offset);
         file.seek(offset % MAX_FILE_SIZE);
         file.write(data);
@@ -74,10 +77,13 @@ class StorageDisk implements Storage{
         rafs = null;
     }
 
-    public void read(long offset, byte[] buffer, int nBytes) throws IOException {
+    public void read(long pageNumber, byte[] buffer) throws IOException {
+        if(buffer.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+        long offset = pageNumber * RecordFile.BLOCK_SIZE;
+
         RandomAccessFile file = getRaf(offset);
         file.seek(offset%MAX_FILE_SIZE);
-        int remaining = nBytes;
+        int remaining = buffer.length;
         int pos = 0;
         while (remaining > 0) {
             int read = file.read(buffer, pos, remaining);

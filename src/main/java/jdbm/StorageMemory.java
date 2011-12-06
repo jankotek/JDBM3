@@ -1,54 +1,50 @@
 package jdbm;
 
 import java.io.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Storage which keeps all data in memory.
  * Data are lost after storage is closed.
  */
-//TODO StorageMemory is currently limited to 2GB
 class StorageMemory implements Storage{
 
-    private byte[] store = new byte[RecordFile.BLOCK_SIZE * 16];
+    private ArrayList<byte[]> pages = new ArrayList<byte[]>();
 
-    public void read(long offset, byte[] data, int blockSize) throws IOException {
-        if(store.length<=offset){
+
+    public void read(long pageNumber, byte[] data) throws IOException {
+        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+        if(pages.size()<=pageNumber || pages.get((int) pageNumber)==null){
             //out of bounds, so just return empty data
-            System.arraycopy(RecordFile.CLEAN_DATA,0 ,data,0,blockSize);
+            System.arraycopy(RecordFile.CLEAN_DATA,0 ,data,0,data.length);
             return;
         }
-        ensureSize(offset+blockSize);
-        System.arraycopy(store, (int) offset,data,0,blockSize);
+
+        byte[] data2 = pages.get((int) pageNumber);
+        System.arraycopy(data2,0,data,0,data.length);
     }
 
-    public void write(long offset, byte[] data) throws IOException {
-        ensureSize(offset+data.length);
-        System.arraycopy(data,0,store, (int) offset,data.length);
+    public void write(long pageNumber, byte[] data) throws IOException {
+        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+
+        byte[] data2 = new byte[data.length];
+        System.arraycopy(data,0,data2,0,data.length);
+
+        pages.ensureCapacity((int) (pageNumber+1));
+        pages.set((int) pageNumber,data2);
     }
-
-    private void ensureSize(long size){
-        if(size>=Integer.MAX_VALUE)
-            throw new Error("Memory storage does not supports store over 2GB");
-
-        if(store.length<size){
-            long newSize = store.length;
-            while(newSize<size){
-                newSize = Math.min(Integer.MAX_VALUE, size*2);
-            }
-            //grow
-            store = Arrays.copyOf(store, (int) newSize);
-        }
-
-    }
-
 
     public void sync() throws IOException {
     }
 
 
+
+
     public void forceClose() throws IOException {
-        store = null;
+        pages = null;
     }
 
     private ByteArrayOutputStream transLog;
