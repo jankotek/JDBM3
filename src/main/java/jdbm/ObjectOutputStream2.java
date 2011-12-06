@@ -6,9 +6,9 @@ import java.util.ArrayList;
 /**
 * An alternative to <code>java.io.ObjectOutputStream</code> which uses more efficient serialization
  */
-public class ObjectOutputStream extends DataOutputStream implements ObjectOutput {
+public class ObjectOutputStream2 extends DataOutputStream implements ObjectOutput {
 
-    public ObjectOutputStream(OutputStream out){
+    public ObjectOutputStream2(OutputStream out){
         super(out);
     }
 

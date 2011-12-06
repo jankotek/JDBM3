@@ -9,10 +9,10 @@ import java.util.ArrayList;
 /**
  * An alternative to <code>java.io.ObjectInputStream</code> which uses more efficient serialization
  */
-public class ObjectInputStream extends DataInputStream implements ObjectInput {
+public class ObjectInputStream2 extends DataInputStream implements ObjectInput {
 
 
-    public ObjectInputStream(InputStream in){
+    public ObjectInputStream2(InputStream in){
         super(in);
     }
 
