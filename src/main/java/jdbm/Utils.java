@@ -189,5 +189,16 @@ static final  class IntArrayList {
 }
 
 
+    static String formatSpaceUsage(long size){
+        if(size<1e4)
+            return size+"B";
+        else if(size<1e7)
+            return ""+Math.round(1D*size/1024D)+"KB";
+        else if(size<1e10)
+            return ""+Math.round(1D*size/1e6)+"MB";
+        else
+            return ""+Math.round(1D*size/1e9)+"GB";
+    }
+
 
 }

@@ -293,6 +293,8 @@ final class PhysicalRowIdManager {
 		}
 	}
 
+
+
 	void commit() throws IOException {
 		freeman.commit();		
 	}

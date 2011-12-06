@@ -291,6 +291,9 @@ class RecordManagerCache
         return _recman.defaultSerializer();
     }
 
+    public String calculateStatistics(){
+        return _recman.calculateStatistics();
+    }
 
     /**
      * Check if RecordManager has been closed.  If so, throw an

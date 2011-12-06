@@ -140,6 +140,13 @@ public interface RecordManager {
         throws IOException;
 
     /**
+     * This calculates some database statistics.
+     * Mostly what collections are presents and how much space is used.
+     * @return statistics contained in string
+     */
+    String calculateStatistics();
+
+    /**
      * Rollback (cancel) all changes since beginning of transaction.
      * JDBM supports only single transaction.
      * This operations affects all maps created by this RecordManager.
@@ -220,4 +227,6 @@ public interface RecordManager {
     <K> List<K> createLinkedList(String name, Serializer<K> serializer);
 
     <K> List<K> loadLinkedList(String name);
+
+
 }
