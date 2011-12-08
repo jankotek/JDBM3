@@ -530,11 +530,11 @@ public class BTreeTest
         // serializer.
 
         String recordManagerBasename = newTestFile();
-        String recordManagerDBname = recordManagerBasename+".dbr.0";
+        String recordManagerDBname = recordManagerBasename+".d.0";
         
         long previousRecmanSize = 0;
         for (int i = 0; i < 5; i++){
-            RecordManager2 recman = new RecordManagerBuilder(recordManagerBasename).disableCache().build();
+            RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(recordManagerBasename).disableCache().build();
       
             try{
                 BTree<String, Serializable> tree = BTree.createInstance( recman);

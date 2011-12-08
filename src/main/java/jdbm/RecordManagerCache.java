@@ -269,6 +269,10 @@ class RecordManagerCache
         _last = null;
     }
 
+    public void copyToZipStore(String zipFile) {
+        _recman.copyToZipStore(zipFile);
+    }
+
 
     public synchronized long getNamedObject( String name )
         throws IOException

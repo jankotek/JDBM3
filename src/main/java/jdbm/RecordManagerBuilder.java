@@ -171,11 +171,11 @@ public class RecordManagerBuilder {
      * @return new RecordManager
      * @throws java.io.IOError if db could not be opened
      */
-    public RecordManager2 build(){
+    public RecordManager build(){
         RecordManager2 recman = null;
 
         try{
-            recman = new RecordManagerStorage(location);
+            recman = new RecordManagerStorage(location,readonly);
         }catch(IOException e){
             throw new IOError(e);
         }
@@ -186,8 +186,6 @@ public class RecordManagerBuilder {
         if(batchInsert)
             ( (RecordManagerStorage) recman ).setAppendToEnd(true);
 
-        if(readonly)
-            ( (RecordManagerStorage) recman ).setReadonly(true);
 
 
         String cacheType2 = cacheType;

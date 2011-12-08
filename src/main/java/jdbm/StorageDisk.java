@@ -151,4 +151,6 @@ class StorageDisk implements Storage{
         if(logFile.exists())
             logFile.delete();
     }
+
+    public boolean isReadonly(){return false;}
 }

@@ -229,4 +229,9 @@ public interface RecordManager {
     <K> List<K> loadLinkedList(String name);
 
 
+    /**
+     * Copy data from RecordManager into zip db.
+     * @param zipFile
+     */
+    void copyToZipStore(String zipFile);
 }

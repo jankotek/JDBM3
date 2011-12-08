@@ -19,6 +19,8 @@ package jdbm;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  *  This class manages records, which are uninterpreted blobs of data. The
@@ -46,9 +48,9 @@ final class RecordManagerStorage
     extends RecordManager2
 {
 
-	private static final String IDR = ".idr";
+	private static final String IDR = ".i";
 
-	private static final String DBR = ".dbr";
+	static final String DBR = ".d";
 
 	
     /**
@@ -76,11 +78,8 @@ final class RecordManagerStorage
      * Indicated that store is opened for readonly operations
      * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
      */
-    private boolean readonly = false;
+    private final boolean readonly;
 
-    void setReadonly(boolean readonly){
-        this.readonly = readonly;
-    }
 
     void checkCanWrite(){
         if(readonly)
@@ -185,23 +184,24 @@ final class RecordManagerStorage
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public RecordManagerStorage(String filename)
+    public RecordManagerStorage(String filename, boolean readonly)
         throws IOException
     {
     	_filename = filename;
+        this.readonly = readonly;
     	reopen();
     }
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR);
+        _physFile = new RecordFile( _filename + DBR,readonly);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
         if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
-        _logicFile = new RecordFile( _filename +IDR);
+        _logicFile = new RecordFile( _filename +IDR,readonly);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -209,7 +209,8 @@ final class RecordManagerStorage
         long versionNumber = getRoot(STORE_VERSION_NUMBER_ROOT);
         if(versionNumber>STORE_FORMAT_VERSION)
         	throw new IOException("Unsupported version of store. Please update JDBM. Minimal supported ver:"+STORE_FORMAT_VERSION+", store ver:"+versionNumber);
-        setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
+        if(!readonly)
+            setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
 
         defaultSerializer = null;
 
@@ -235,7 +236,6 @@ final class RecordManagerStorage
     
 
 
-    
     /**
      *  Closes the record manager.
      *
@@ -506,6 +506,39 @@ final class RecordManagerStorage
     }
 
 
+    /**
+     * Load name directory
+     */
+    @SuppressWarnings("unchecked")
+	private Map<String,Long> getNameDirectory()
+        throws IOException
+    {
+        // retrieve directory of named hashtable
+        long nameDirectory_recid = getRoot( NAME_DIRECTORY_ROOT );
+        if ( nameDirectory_recid == 0 ) {
+            _nameDirectory = new HashMap<String,Long>();
+            nameDirectory_recid = insert( _nameDirectory );
+            setRoot( NAME_DIRECTORY_ROOT, nameDirectory_recid );
+        } else {
+            _nameDirectory = (Map<String,Long>) fetch( nameDirectory_recid );
+        }
+        return _nameDirectory;
+    }
+
+
+    private void saveNameDirectory( Map<String,Long> directory )
+        throws IOException
+    {
+        checkCanWrite();
+        long recid = getRoot(NAME_DIRECTORY_ROOT);
+        if ( recid == 0 ) {
+            throw new IOException( "Name directory must exist" );
+        }
+        update(recid, _nameDirectory);
+    }
+
+
+
     private Serialization defaultSerializer;
 
     public synchronized Serializer defaultSerializer() {
@@ -552,37 +585,79 @@ final class RecordManagerStorage
         defaultSerializer = null;
     }
 
+    public void copyToZipStore(String zipFile) {
+        try{
+            String zip = zipFile.substring(0,zipFile.indexOf("!/")); //TODO does not work on windows
+            String zip2 = zipFile.substring(zipFile.indexOf("!/")+2);
+            ZipOutputStream z = new ZipOutputStream(new FileOutputStream(zip));
 
-    /**
-     * Load name directory
-     */
-    @SuppressWarnings("unchecked")
-	private Map<String,Long> getNameDirectory()
-        throws IOException
-    {
-        // retrieve directory of named hashtable
-        long nameDirectory_recid = getRoot( NAME_DIRECTORY_ROOT );
-        if ( nameDirectory_recid == 0 ) {
-            _nameDirectory = new HashMap<String,Long>();
-            nameDirectory_recid = insert( _nameDirectory );
-            setRoot( NAME_DIRECTORY_ROOT, nameDirectory_recid );
-        } else {
-            _nameDirectory = (Map<String,Long>) fetch( nameDirectory_recid );
+            //copy zero pages
+            {
+                String file = zip2+IDR+0;
+                z.putNextEntry(new ZipEntry(file));
+                z.write(_logicPageman.getHeaderBufData());
+                z.closeEntry();
+            }
+            {
+                String file = zip2+DBR+0;
+                z.putNextEntry(new ZipEntry(file));
+                z.write(_physPageman.getHeaderBufData());
+                z.closeEntry();
+            }
+
+        //iterate over pages and create new file for each
+        for(long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+            pageid!=0;
+            pageid= _logicPageman.getNext(pageid)
+            ){
+                BlockIo block = _logicFile.get(pageid);
+                String file = zip2+IDR+pageid;
+                z.putNextEntry(new ZipEntry(file));
+                z.write(block.getData());
+                z.closeEntry();
+                _logicFile.release(block);
+            }
+        for(long pageid = _logicPageman.getFirst(Magic.FREELOGIDS_PAGE);
+            pageid!=0;
+            pageid= _logicPageman.getNext(pageid)
+            ){
+                 BlockIo block = _logicFile.get(pageid);
+                 String file = zip2+IDR+pageid;
+                 z.putNextEntry(new ZipEntry(file));
+                 z.write(block.getData());
+                z.closeEntry();
+                _logicFile.release(block);
+            }
+
+            for(long pageid = _physPageman.getFirst(Magic.USED_PAGE);
+                pageid!=0;
+                pageid= _physPageman.getNext(pageid)
+                ){
+                    BlockIo block = _physFile.get(pageid);
+                    String file = zip2+DBR+pageid;
+                    z.putNextEntry(new ZipEntry(file));
+                    z.write(block.getData());
+                    z.closeEntry();
+                    _physFile.release(block);
+                }
+            for(long pageid = _physPageman.getFirst(Magic.FREEPHYSIDS_PAGE);
+                pageid!=0;
+                pageid= _physPageman.getNext(pageid)
+                ){
+                     BlockIo block = _physFile.get(pageid);
+                     String file = zip2+DBR+pageid;
+                     z.putNextEntry(new ZipEntry(file));
+                     z.write(block.getData());
+                     z.closeEntry();
+                    _physFile.release(block);
+                }
+            z.close();
+
+        }catch(IOException e){
+            throw new IOError(e);
         }
-        return _nameDirectory;
     }
 
-
-    private void saveNameDirectory( Map<String,Long> directory )
-        throws IOException
-    {
-        checkCanWrite();
-        long recid = getRoot(NAME_DIRECTORY_ROOT);
-        if ( recid == 0 ) {
-            throw new IOException( "Name directory must exist" );
-        }
-        update(recid, _nameDirectory);
-    }
 
 
     /**
@@ -716,7 +791,7 @@ final class RecordManagerStorage
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename;
-		RecordManagerStorage recman2 = new RecordManagerStorage(filename2);
+		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, readonly);
 		recman2.disableTransactions();
 
                 //recreate logical file with original page layout

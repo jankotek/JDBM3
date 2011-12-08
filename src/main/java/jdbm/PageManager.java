@@ -240,4 +240,9 @@ final class PageManager {
     }
 
 
+    /** PageManager pernamently locks zero block, and we need this for backups */
+    byte[] getHeaderBufData(){
+        return headerBuf.getData();
+    }
+
 }

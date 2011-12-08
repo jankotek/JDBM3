@@ -23,19 +23,15 @@ import java.io.IOException;
 public class TestInsertPerf extends TestCaseWithTestFile
 {
 	
-	public TestInsertPerf() {}
 
-    int _numberOfObjects;
+    int _numberOfObjects = 1000;
 
-    public TestInsertPerf( int numberOfObjects ) {
-        _numberOfObjects = numberOfObjects;
-    }
 
-    public void insert() throws IOException {
+    public void testInsert() throws IOException {
 
 
         long           start, finish;
-        RecordManager2 recman = new RecordManagerBuilder( "TestInsertPref-" + System.currentTimeMillis()).build();
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder( "TestInsertPref-" + System.currentTimeMillis()).build();
         BTree btree = BTree.createInstance(recman);
         
         // Note:  One can use specialized serializers for better performance / database size

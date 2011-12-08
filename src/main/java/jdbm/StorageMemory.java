@@ -61,4 +61,6 @@ class StorageMemory implements Storage{
             transLog = new ByteArrayOutputStream();
         return new DataOutputStream(transLog);
     }
+
+    public boolean isReadonly(){return false;}
 }

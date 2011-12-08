@@ -27,48 +27,12 @@ import junit.framework.TestCase;
  * @author cdegroot <cg@cdegroot.com>
  *
  */
-public class TestCaseWithTestFile extends TestCase {
+abstract class TestCaseWithTestFile extends TestCase {
 
 	public static final String testFolder = System.getProperty("java.io.tmpdir",".") + "/_testdb";
 //	public static final String testFileName = "test";
 
-	public static void deleteFile(String filename) {
-	    File file = new File( filename );
-	
-	    if ( file.exists() ) {
-	        try {
-	            file.delete();                
-	        } catch ( Exception except ) {
-	            except.printStackTrace();
-	        }
-	        if ( file.exists() ) {
-	            
-	            /*
-	             * Since the same test file is reused over and over a failure to
-	             * remove the old file can cause spurious failures for the tests
-	             * that follow. In general this can be traced back to a test
-	             * that failed to close the file so that Java is not
-	             * willing/able to delete it in the setUp() for the next test.
-	             * 
-	             * Throwing an exception here generally means that you will
-	             * catch the test whose tearDown() left the store open, since
-	             * most test do (all should) delete the store file in their
-	             * tearDown().
-	             * 
-	             * @todo We need a means to both report the exception observed
-	             * by junit while still being able to tearDown the test.
-	             * Unfortunately junit does not support this option for us. We
-	             * basically need chained exceptions (multiple exceptions
-	             * thrown, not just the initCause). This should be raised as an
-	             * issue against junit.
-	             */ 
-	            
-	            throw new RuntimeException( "WARNING:  Cannot delete file: " + file );
-	            //System.out.println( "WARNING:  Cannot delete file: " + file );
-	        }
-	    }
-	}
-	
+
 
 	public void setUp() throws Exception {
 		File f = new File(testFolder);
@@ -91,20 +55,16 @@ public class TestCaseWithTestFile extends TestCase {
 	}
 
 	static public RecordFile newRecordFile() throws IOException{
-		return new RecordFile(newTestFile());
+		return new RecordFile(newTestFile(),false);
 	}
 
 	static public RecordManager2 newRecordManager() throws IOException{
-		return new RecordManagerBuilder(newTestFile()).build();
+		return (RecordManager2) new RecordManagerBuilder(newTestFile()).build();
 	}
 
         static public RecordManagerStorage newBaseRecordManager() throws IOException{
             return (RecordManagerStorage) new RecordManagerBuilder(newTestFile()).disableCache().build();
         }
 
-	
-	public void testDummy(){
-		//empty test case, so runner does not complain
-	}
 
 }

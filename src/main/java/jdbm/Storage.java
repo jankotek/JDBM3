@@ -15,6 +15,8 @@ interface Storage {
 
     void forceClose() throws IOException;
 
+    boolean isReadonly();
+
     DataInputStream readTransactionLog();
 
     void deleteTransactionLog();

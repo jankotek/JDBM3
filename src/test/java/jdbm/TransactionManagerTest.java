@@ -20,6 +20,7 @@ import java.io.File;
 
 /**
  *  This class contains all Unit tests for {@link TransactionManager}.
+ *  TODO sort out this testcase
  */
 public class TransactionManagerTest extends TestCaseWithTestFile {
 
@@ -30,7 +31,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      *  Test constructor. Oops - can only be done indirectly :-)
      */
     public void testCtor() throws Exception {
-        RecordFile file2 = new RecordFile(file);
+        RecordFile file2 = new RecordFile(file,false);
 
         file2.forceClose();
     }
@@ -39,7 +40,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      *  Test recovery
      */
     public void XtestRecovery() throws Exception {
-        RecordFile file1 = new RecordFile(file);
+        RecordFile file1 = new RecordFile(file,false);
 
         // Do three transactions.
         for (int i = 0; i < 3; i++) {
@@ -55,7 +56,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file);
+        RecordFile file2 = new RecordFile(file,false);
 
         assertDataSizeEquals("len2", 3 * Storage.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);
@@ -63,7 +64,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
         file2.forceClose();
 
         // assure we can recover this log file
-        RecordFile file3 = new RecordFile(file);
+        RecordFile file3 = new RecordFile(file,false);
 
         file3.forceClose();
     }
@@ -71,8 +72,8 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
     /**
      *  Test background synching
      */
-    public void XtestSynching() throws Exception {    	
-        RecordFile file1 = new RecordFile(file);
+    public void XtestSynching() throws Exception {
+        RecordFile file1 = new RecordFile(file,false);
 
         // Do enough transactions to fill the first slot
         int txnCount = TransactionManager.DEFAULT_TXNS_IN_LOG + 5;
@@ -86,12 +87,12 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // The data file now has the first slotfull
         assertDataSizeEquals("len1", TransactionManager.DEFAULT_TXNS_IN_LOG *
-                             Storage.BLOCK_SIZE);
+                             Storage.BLOCK_SIZE + 6);
         assertLogSizeNotZero("len1");
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file);
+        RecordFile file2 = new RecordFile(file,false);
 
         assertDataSizeEquals("len2", txnCount * Storage.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);
@@ -102,9 +103,9 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
     //  Helpers
 
     void assertDataSizeEquals(String msg, long size) {
-        assertEquals(msg + " data size", size,
+        assertEquals(msg + " data size", size ,
                      new File(file
-                              + "dbr").length());
+                              + ".t").length());
     }
 
     void assertLogSizeEquals(String msg, long size) {
