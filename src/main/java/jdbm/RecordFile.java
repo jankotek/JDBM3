@@ -18,7 +18,6 @@
 package jdbm;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Iterator;
 
 /**
@@ -61,11 +60,8 @@ final class RecordFile {
     // transactions disabled?
     private boolean transactionsDisabled = false;
 
-    /** the lenght of single block */
-    static final int BLOCK_SIZE =2048;
-
     /** A block of clean data to wipe clean pages. */
-    static final byte[] CLEAN_DATA = new byte[RecordFile.BLOCK_SIZE];
+    static final byte[] CLEAN_DATA = new byte[Storage.BLOCK_SIZE];
 
 
 
@@ -320,7 +316,7 @@ final class RecordFile {
         	it.remove();
         }
         if (retval == null)
-            retval = new BlockIo(0, new byte[BLOCK_SIZE]);
+            retval = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
 
         retval.setBlockId(blockid);
         retval.setView(null);

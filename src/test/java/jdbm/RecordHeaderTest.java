@@ -18,9 +18,6 @@ package jdbm;
 
 import java.util.Random;
 
-import jdbm.BlockIo;
-import jdbm.RecordFile;
-import jdbm.RecordHeader;
 import junit.framework.TestCase;
 
 /**
@@ -36,7 +33,7 @@ public class RecordHeaderTest extends TestCase {
 	 * Test basics - read and write at an offset
 	 */
 	public void testReadWrite() throws Exception {
-		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		byte[] data = new byte[Storage.BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
 		RecordHeader.setAvailableSize(test, (short) 6,2345);
@@ -57,7 +54,7 @@ public class RecordHeaderTest extends TestCase {
 		assertEquals("inconsistent rounding at max rec size",
 				RecordHeader.MAX_RECORD_SIZE, RecordHeader.roundAvailableSize(RecordHeader.MAX_RECORD_SIZE));
 		
-		byte[] data = new byte[RecordFile.BLOCK_SIZE];
+		byte[] data = new byte[Storage.BLOCK_SIZE];
 		BlockIo test = new BlockIo(0, data);
 		Random r = new Random();
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);

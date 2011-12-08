@@ -17,7 +17,6 @@
 package jdbm;
 
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link DataPage}.
@@ -33,11 +32,11 @@ public class DataPageTest extends TestCase {
      *  Test basics - read and write at an offset
      */
     public void testReadWrite() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   test.writeShort(0, (short) (Magic.BLOCK + Magic.USED_PAGE));
   
-  DataPage page = new DataPage(test, RecordFile.BLOCK_SIZE);
+  DataPage page = new DataPage(test, Storage.BLOCK_SIZE);
   page.setFirst((short) 1000);
   
   assertEquals("first", 1000, page.getFirst());
@@ -47,11 +46,11 @@ public class DataPageTest extends TestCase {
      *  Test factory method.
      */
     public void testFactory() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   test.writeShort(0, (short) (Magic.BLOCK + Magic.USED_PAGE));
 
-  DataPage page = DataPage.getDataPageView(test, RecordFile.BLOCK_SIZE);
+  DataPage page = DataPage.getDataPageView(test, Storage.BLOCK_SIZE);
   page.setFirst((short) 1000);
   
   assertEquals("first", 1000, page.getFirst());

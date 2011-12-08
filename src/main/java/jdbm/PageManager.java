@@ -80,7 +80,7 @@ final class PageManager {
         // Clean data.
         System.arraycopy(RecordFile.CLEAN_DATA, 0,
                          buf.getData(), 0, 
-                         file.BLOCK_SIZE);
+                         Storage.BLOCK_SIZE);
         pageHdr.setType(type);
         pageHdr.setPrev(oldLast);
         pageHdr.setNext(0);

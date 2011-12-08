@@ -38,7 +38,7 @@ final class PhysicalRowIdManager {
 		this.file = file;
 		this.pageman = pageManager;
 		this.freeman = freeman;
-		this.BLOCK_SIZE = file.BLOCK_SIZE;
+		this.BLOCK_SIZE = Storage.BLOCK_SIZE;
 		DATA_PER_PAGE = (short) (BLOCK_SIZE - DataPage.O_DATA);
 	}
 

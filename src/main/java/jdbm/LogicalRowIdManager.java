@@ -35,7 +35,7 @@ final class LogicalRowIdManager {
 		this.file = file;
 		this.pageman = pageman;
 		this.freeman = freeman;
-		this.ELEMS_PER_PAGE = (short)((RecordFile.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
+		this.ELEMS_PER_PAGE = (short)((Storage.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
 	}
 
 	/**

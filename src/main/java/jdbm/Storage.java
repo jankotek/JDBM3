@@ -7,6 +7,9 @@ import java.io.*;
  */
 interface Storage {
 
+    /** the lenght of single block */
+    int BLOCK_SIZE =2048;
+
     void write(long pageNumber, byte[] data) throws IOException;
     void read(long pageNumber, byte[] data) throws IOException;
 

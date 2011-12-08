@@ -16,7 +16,6 @@
 
 package jdbm;
 
-import jdbm.*;
 import junit.framework.TestCase;
 
 /**
@@ -33,20 +32,20 @@ public class FreePhysicalRowIdPageTest extends TestCase {
      *  Test constructor - create a page
      */
     public void testCtor() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test,RecordFile.BLOCK_SIZE);
+  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
     }
 
     /**
      *  Test basics
      */
     public void testBasics() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test,RecordFile.BLOCK_SIZE);
+  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
 
   // we have a completely empty page.
   assertEquals("zero count", 0, page.getCount());
@@ -72,7 +71,7 @@ public class FreePhysicalRowIdPageTest extends TestCase {
 
   // now, create a new page over the data and check whether
   // it's all the same.
-  page = new FreePhysicalRowIdPage(test,RecordFile.BLOCK_SIZE);
+  page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
 
   assertEquals("2: one left count", 1, page.getCount());
   assertTrue("2: isfree 0", page.isFree(0));
@@ -88,10 +87,10 @@ public class FreePhysicalRowIdPageTest extends TestCase {
 
 
     public void testOffsetSlotConversion(){
-    	  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+    	  byte[] data = new byte[Storage.BLOCK_SIZE];
     	  BlockIo test = new BlockIo(0, data);
     	  new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-    	  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, RecordFile.BLOCK_SIZE);
+    	  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
     	for(int slot = 0;slot<1e5;slot++){
     		short pos = page.slotToOffset(slot);
     		if(pos > 20000) return; //out of page size

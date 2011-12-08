@@ -17,7 +17,6 @@
 package jdbm;
 
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  *  This class contains all Unit tests for {@link FreeLogicalRowIdPage}.
@@ -33,20 +32,20 @@ public class FreeLogicalRowIdPageTest extends TestCase {
      *  Test constructor - create a page
      */
     public void testCtor() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREELOGIDS_PAGE);
-  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test,RecordFile.BLOCK_SIZE);
+  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
     }
 
     /**
      *  Test basics
      */
     public void testBasics() throws Exception {
-  byte[] data = new byte[RecordFile.BLOCK_SIZE];
+  byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREELOGIDS_PAGE);
-  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test,RecordFile.BLOCK_SIZE);
+  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
 
   // we have a completely empty page.
   assertEquals("zero count", 0, page.getCount());
@@ -71,7 +70,7 @@ public class FreeLogicalRowIdPageTest extends TestCase {
 
   // now, create a new page over the data and check whether
   // it's all the same.
-  page = new FreeLogicalRowIdPage(test, RecordFile.BLOCK_SIZE);
+  page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
 
   assertEquals("2: one left count", 1, page.getCount());
   assertTrue("2: isfree 0", page.isFree(0));

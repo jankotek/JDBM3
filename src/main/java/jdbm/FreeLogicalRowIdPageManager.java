@@ -41,7 +41,7 @@ final class FreeLogicalRowIdPageManager {
                                 PageManager pageman) throws IOException {
         this.file = file;
         this.pageman = pageman;
-        this.blockSize = file.BLOCK_SIZE;
+        this.blockSize = Storage.BLOCK_SIZE;
     }
 
     /**

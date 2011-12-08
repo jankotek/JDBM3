@@ -17,7 +17,6 @@
 package jdbm;
 
 
-import javax.rmi.CORBA.Util;
 import java.io.*;
 import java.util.*;
 
@@ -168,7 +167,7 @@ final class RecordManagerStorage
 
 
 
-	private final byte[] _insertBuffer = new byte[RecordFile.BLOCK_SIZE];
+	private final byte[] _insertBuffer = new byte[Storage.BLOCK_SIZE];
 	private final Utils.OpenByteArrayOutputStream _insertBAO = new Utils.OpenByteArrayOutputStream(_insertBuffer);
 	private final Utils.SerializerOutput _insertOut = new Utils.SerializerOutput(_insertBAO);
 	private final Utils.OpenByteArrayInputStream _insertBAI = new Utils.OpenByteArrayInputStream(_insertBuffer);
@@ -200,7 +199,7 @@ final class RecordManagerStorage
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
-        if(RecordFile.BLOCK_SIZE >256*8)
+        if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
         _logicFile = new RecordFile( _filename +IDR);
         _logicPageman = new PageManager( _logicFile );
@@ -637,20 +636,20 @@ final class RecordManagerStorage
                long total = 0;
                long pages = statisticsCountPages(Magic.USED_PAGE);
                total+=pages;
-               b.append("  "+pages+" used pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  "+pages+" used pages with size "+Utils.formatSpaceUsage(pages* Storage.BLOCK_SIZE)+"\n");
                pages = statisticsCountPages(Magic.TRANSLATION_PAGE);
                total+=pages;
-               b.append("  "+pages+" record translation pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  "+pages+" record translation pages with size "+Utils.formatSpaceUsage(pages* Storage.BLOCK_SIZE)+"\n");
                pages = statisticsCountPages(Magic.FREE_PAGE);
                total+=pages;
-               b.append("  "+pages+" free (unused) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  "+pages+" free (unused) pages with size "+Utils.formatSpaceUsage(pages* Storage.BLOCK_SIZE)+"\n");
                pages = statisticsCountPages(Magic.FREEPHYSIDS_PAGE);
                total+=pages;
-               b.append("  "+pages+" free (phys) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  "+pages+" free (phys) pages with size "+Utils.formatSpaceUsage(pages* Storage.BLOCK_SIZE)+"\n");
                pages = statisticsCountPages(Magic.FREELOGIDS_PAGE);
                total+=pages;
-               b.append("  "+pages+" free (logical) pages with size "+Utils.formatSpaceUsage(pages*RecordFile.BLOCK_SIZE)+"\n");
-               b.append("  Total number of pages is "+total+" with size "+Utils.formatSpaceUsage(total*RecordFile.BLOCK_SIZE)+"\n");
+               b.append("  "+pages+" free (logical) pages with size "+Utils.formatSpaceUsage(pages* Storage.BLOCK_SIZE)+"\n");
+               b.append("  Total number of pages is "+total+" with size "+Utils.formatSpaceUsage(total* Storage.BLOCK_SIZE)+"\n");
 
             }
             {
@@ -743,7 +742,7 @@ final class RecordManagerStorage
                     //free pages which are not actually logical in second recman
                     for(long pageid = recman2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
                         pageid<=maxpageid;
-                        pageid += RecordFile.BLOCK_SIZE
+                        pageid += Storage.BLOCK_SIZE
                     ){
                         if(logicalPages.get(pageid)==null){
                             recman2._logicPageman.free(Magic.TRANSLATION_PAGE,Magic.TRANSLATION_PAGE);

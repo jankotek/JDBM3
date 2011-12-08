@@ -1,10 +1,7 @@
 package jdbm;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Storage which keeps all data in memory.
@@ -16,7 +13,7 @@ class StorageMemory implements Storage{
 
 
     public void read(long pageNumber, byte[] data) throws IOException {
-        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+        if(data.length!= BLOCK_SIZE) throw new IllegalArgumentException();
         if(pages.size()<=pageNumber || pages.get((int) pageNumber)==null){
             //out of bounds, so just return empty data
             System.arraycopy(RecordFile.CLEAN_DATA,0 ,data,0,data.length);
@@ -28,7 +25,7 @@ class StorageMemory implements Storage{
     }
 
     public void write(long pageNumber, byte[] data) throws IOException {
-        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
+        if(data.length!= BLOCK_SIZE) throw new IllegalArgumentException();
 
         byte[] data2 = new byte[data.length];
         System.arraycopy(data,0,data2,0,data.length);

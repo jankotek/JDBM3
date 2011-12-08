@@ -17,8 +17,6 @@
 package jdbm;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * This class manages free physical rowid pages and provides methods to free and allocate physical rowids on a high
@@ -45,7 +43,7 @@ final class FreePhysicalRowIdPageManager {
 	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman, boolean append) throws IOException {
 		_file = file;
 		_pageman = pageman;
-		this.blockSize = file.BLOCK_SIZE;
+		this.blockSize = Storage.BLOCK_SIZE;
                 this.appendToEnd = append;
 
 	}

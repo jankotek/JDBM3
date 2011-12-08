@@ -12,7 +12,7 @@ class StorageDisk implements Storage{
     /** maximal file size not rounded to block size */
     private final static long _FILESIZE = 1000000000l;
     /** maximal file size rounded to block size */
-    private final long MAX_FILE_SIZE =  _FILESIZE - _FILESIZE % RecordFile.BLOCK_SIZE;
+    private final long MAX_FILE_SIZE =  _FILESIZE - _FILESIZE % BLOCK_SIZE;
 
 
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
@@ -61,8 +61,8 @@ class StorageDisk implements Storage{
 
 
     public void write(long pageNumber, byte[] data) throws IOException {
-        if(data.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
-        long offset = pageNumber * RecordFile.BLOCK_SIZE;
+        if(data.length!= BLOCK_SIZE) throw new IllegalArgumentException();
+        long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
         file.seek(offset % MAX_FILE_SIZE);
@@ -78,8 +78,8 @@ class StorageDisk implements Storage{
     }
 
     public void read(long pageNumber, byte[] buffer) throws IOException {
-        if(buffer.length!=RecordFile.BLOCK_SIZE) throw new IllegalArgumentException();
-        long offset = pageNumber * RecordFile.BLOCK_SIZE;
+        if(buffer.length!= BLOCK_SIZE) throw new IllegalArgumentException();
+        long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
         file.seek(offset%MAX_FILE_SIZE);
