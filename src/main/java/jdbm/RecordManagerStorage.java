@@ -79,6 +79,7 @@ final class RecordManagerStorage
      * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
      */
     private final boolean readonly;
+    private final boolean disableTransactions;
 
 
     void checkCanWrite(){
@@ -184,24 +185,25 @@ final class RecordManagerStorage
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public RecordManagerStorage(String filename, boolean readonly)
+    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions)
         throws IOException
     {
     	_filename = filename;
         this.readonly = readonly;
+        this.disableTransactions = disableTransactions;
     	reopen();
     }
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR,readonly);
+        _physFile = new RecordFile( _filename + DBR,readonly,disableTransactions);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
         if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
-        _logicFile = new RecordFile( _filename +IDR,readonly);
+        _logicFile = new RecordFile( _filename +IDR,readonly,disableTransactions);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -217,23 +219,6 @@ final class RecordManagerStorage
 	}
 
 
-    /**
-     *  Switches off transactioning for the record manager. This means
-     *  that a) a transaction log is not kept, and b) writes aren't
-     *  synch'ed after every update. This is useful when batch inserting
-     *  into a new database.
-     *  <p>
-     *  Only call this method directly after opening the file, otherwise
-     *  the results will be undefined.
-     */
-    public synchronized void disableTransactions()
-    {
-        checkIfClosed();
-
-        _physFile.disableTransactions();
-        _logicFile.disableTransactions();
-    }
-    
 
 
     /**
@@ -791,8 +776,7 @@ final class RecordManagerStorage
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename;
-		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, readonly);
-		recman2.disableTransactions();
+		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, false, true);
 
                 //recreate logical file with original page layout
                 {
@@ -1004,4 +988,8 @@ final class RecordManagerStorage
      }
 
 
+    public void setDiskFlush(boolean b) {
+
+
+    }
 }

@@ -31,7 +31,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      *  Test constructor. Oops - can only be done indirectly :-)
      */
     public void testCtor() throws Exception {
-        RecordFile file2 = new RecordFile(file,false);
+        RecordFile file2 = new RecordFile(file,false,false);
 
         file2.forceClose();
     }
@@ -40,7 +40,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      *  Test recovery
      */
     public void XtestRecovery() throws Exception {
-        RecordFile file1 = new RecordFile(file,false);
+        RecordFile file1 = new RecordFile(file,false,false);
 
         // Do three transactions.
         for (int i = 0; i < 3; i++) {
@@ -56,7 +56,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file,false);
+        RecordFile file2 = new RecordFile(file,false,false);
 
         assertDataSizeEquals("len2", 3 * Storage.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);
@@ -64,7 +64,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
         file2.forceClose();
 
         // assure we can recover this log file
-        RecordFile file3 = new RecordFile(file,false);
+        RecordFile file3 = new RecordFile(file,false,false);
 
         file3.forceClose();
     }
@@ -73,7 +73,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      *  Test background synching
      */
     public void XtestSynching() throws Exception {
-        RecordFile file1 = new RecordFile(file,false);
+        RecordFile file1 = new RecordFile(file,false,false);
 
         // Do enough transactions to fill the first slot
         int txnCount = TransactionManager.DEFAULT_TXNS_IN_LOG + 5;
@@ -92,7 +92,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file,false);
+        RecordFile file2 = new RecordFile(file,false,false);
 
         assertDataSizeEquals("len2", txnCount * Storage.BLOCK_SIZE);
         assertLogSizeEquals("len2", 8);

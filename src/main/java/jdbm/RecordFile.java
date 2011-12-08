@@ -77,7 +77,8 @@ final class RecordFile {
      *  @throws IOException whenever the creation of the underlying
      *          RandomAccessFile throws it.
      */
-    RecordFile(String fileName, boolean readonly) throws IOException {
+    RecordFile(String fileName, boolean readonly, boolean transactionDisabled) throws IOException {
+        this.transactionsDisabled = transactionDisabled;
         if(fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
         else
@@ -91,14 +92,6 @@ final class RecordFile {
         }
     }
 
-
-    /**
-     *  Disables transactions: doesn't sync and doesn't use the
-     *  transaction manager.
-     */
-    void disableTransactions() {
-        transactionsDisabled = true;
-    }
 
     /**
      *  Gets a block from the file. The returned byte array is
@@ -362,7 +355,7 @@ final class RecordFile {
      *  Synchronizes the file.
      */
     void sync() throws IOException {
-    	storage.sync();
+  	    storage.sync();
     }
 
 

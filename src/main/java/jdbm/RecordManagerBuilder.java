@@ -133,7 +133,6 @@ public class RecordManagerBuilder {
         return this;
     }
 
-
     /**
      * Enables  Batch Insert Mode. If this mode is activated,
      * JDBM can handle huge inserts and updates faster.
@@ -154,13 +153,20 @@ public class RecordManagerBuilder {
 
     /**
      * Option to disable transaction (to increase performance at the cost of potential data loss).
-     * <p/>
      * Transactions are enabled by default
+     * <p/>
+     *  Switches off transactioning for the record manager. This means
+     *  that a) a transaction log is not kept, and b) writes aren't
+     *  synch'ed after every update. This is useful when batch inserting
+     *  into a new database.
+     *  <p>
+     *  Only call this method directly after opening the file, otherwise
+     *  the results will be undefined.
      *
      * @return this builder
      */
     public RecordManagerBuilder disableTransactions(){
-        this.disableTransactions = false;
+        this.disableTransactions = true;
         return this;
     }
 
@@ -175,13 +181,11 @@ public class RecordManagerBuilder {
         RecordManager2 recman = null;
 
         try{
-            recman = new RecordManagerStorage(location,readonly);
+            recman = new RecordManagerStorage(location,readonly,disableTransactions);
         }catch(IOException e){
             throw new IOError(e);
         }
 
-        if(disableTransactions)
-            ( (RecordManagerStorage) recman ).disableTransactions();
 
         if(batchInsert)
             ( (RecordManagerStorage) recman ).setAppendToEnd(true);
@@ -217,6 +221,7 @@ public class RecordManagerBuilder {
 
          return recman;
     }
+
 
 
 }

@@ -91,11 +91,6 @@ class LongHashMap<V> implements  Serializable {
         	this.value = null;
         }
 
-        Entry(long theKey, V theValue) {
-            this.key = theKey;
-            this.value = theValue;
-            //origKeyHash = (int)(theKey ^ (theKey >>> 32));
-        }
 
     }
     

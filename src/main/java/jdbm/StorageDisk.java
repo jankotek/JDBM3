@@ -1,6 +1,8 @@
 package jdbm;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 
@@ -16,11 +18,14 @@ class StorageDisk implements Storage{
 
 
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
+//    private ArrayList<FileChannel> channels = new ArrayList<FileChannel>();
 
     private String fileName;
+    private boolean useNIO;
 
     public StorageDisk(String fileName) throws IOException {
         this.fileName = fileName;
+        this.useNIO = true;
         //make sure first file can be opened
         //lock it
         try{
@@ -55,8 +60,13 @@ class StorageDisk implements Storage{
      */
     public void sync() throws IOException {
         for(RandomAccessFile file:rafs)
-            if(file!=null)
-                file.getFD().sync();
+            if(file!=null){
+                if(!useNIO)
+                    file.getFD().sync();
+                else
+                    file.getChannel().force(true);
+            }
+
     }
 
 
@@ -65,8 +75,15 @@ class StorageDisk implements Storage{
         long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
-        file.seek(offset % MAX_FILE_SIZE);
-        file.write(data);
+        if(!useNIO){
+            file.seek(offset % MAX_FILE_SIZE);
+            file.write(data);
+        }else{
+            FileChannel c = file.getChannel();
+            c.position(offset % MAX_FILE_SIZE);
+            c.write(ByteBuffer.wrap(data));
+        }
+
     }
 
     public void forceClose() throws IOException {
@@ -82,17 +99,35 @@ class StorageDisk implements Storage{
         long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
-        file.seek(offset%MAX_FILE_SIZE);
-        int remaining = buffer.length;
-        int pos = 0;
-        while (remaining > 0) {
-            int read = file.read(buffer, pos, remaining);
-            if (read == -1) {
-                System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer, pos, remaining);
-                break;
+        if(!useNIO){
+            file.seek(offset%MAX_FILE_SIZE);
+            int remaining = buffer.length;
+            int pos = 0;
+            while (remaining > 0) {
+                int read = file.read(buffer, pos, remaining);
+                if (read == -1) {
+                    System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer, pos, remaining);
+                    break;
+                }
+                remaining -= read;
+                pos += read;
             }
-            remaining -= read;
-            pos += read;
+        }else{
+            FileChannel c = file.getChannel();
+            c.position(offset%MAX_FILE_SIZE);
+            int remaining = buffer.length;
+            ByteBuffer b = ByteBuffer.wrap(buffer);
+            int pos = 0;
+            while (remaining > 0) {
+                int read = c.read(b);
+
+                if (read == -1) {
+                    System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer, pos, remaining);
+                    break;
+                }
+                remaining -= read;
+                pos += read;
+            }
         }
     }
 

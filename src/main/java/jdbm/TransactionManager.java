@@ -67,9 +67,9 @@ final class TransactionManager {
      *  Instantiates a transaction manager instance. If recovery
      *  needs to be performed, it is done.
      *
-     *  @param owner the RecordFile instance that owns this transaction mgr.
+     * @param owner the RecordFile instance that owns this transaction mgr.
      */
-    TransactionManager(RecordFile owner,Storage storage) throws IOException {
+    TransactionManager(RecordFile owner, Storage storage) throws IOException {
         this.owner = owner;
         this.storage = storage;
         recover();
@@ -256,6 +256,7 @@ final class TransactionManager {
         for(BlockIo block:blocks){
             block.writeExternal(oos);
         }
+
 
         sync();
 
