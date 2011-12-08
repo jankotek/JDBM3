@@ -115,27 +115,33 @@ final class FreePhysicalRowIdPageManager {
 		//write all uncommited free records		
 		int rowidpos = 0;
 
+        if(freeBlocksInTransactionRowid.size<200){ //if there is too much released records, just write those into new page, this greatly speedsup imports.
 
-		//iterate over filled pages
-		for(long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current!=0; current = _pageman.getNext(current)){
-			BlockIo curBlock = _file.get(current);
-			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
-			int slot = fp.getFirstFree();
-			//iterate over free slots in page and fill them
-			while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){
-                int size = freeBlocksInTransactionSize.data[rowidpos];
-				long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
+		    //iterate over filled pages
+            final boolean fromLast = Math.random()<0.5; //iterating from begining makes pages filled wery quickly, so swap it sometimes.
+		    for(long current = fromLast? _pageman.getLast(Magic.FREEPHYSIDS_PAGE) : _pageman.getFirst(Magic.FREEPHYSIDS_PAGE);
+                current!=0;
+                current = fromLast?_pageman.getPrev(current):_pageman.getNext(current)
+                    ){
+		    	BlockIo curBlock = _file.get(current);
+	    		FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
+    			int slot = fp.getFirstFree();
+			    //iterate over free slots in page and fill them
+			    while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){
+                    int size = freeBlocksInTransactionSize.data[rowidpos];
+				    long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
 
-				short freePhysRowId = fp.alloc(slot);
-				fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
-				fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
-				fp.FreePhysicalRowId_setSize(freePhysRowId, size);
-				slot = fp.getFirstFree();
-			}
-			_file.release(current, true);
-			if(!(rowidpos<freeBlocksInTransactionRowid.size))
-				break;
-		}
+				    short freePhysRowId = fp.alloc(slot);
+			    	fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
+		    		fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
+	    			fp.FreePhysicalRowId_setSize(freePhysRowId, size);
+    				slot = fp.getFirstFree();
+			    }
+			    _file.release(current, true);
+			    if(!(rowidpos<freeBlocksInTransactionRowid.size))
+			    	break;
+		    }
+        }
 		
 		//now we propably filled all already allocated pages,
 		//time to start allocationg new pages
