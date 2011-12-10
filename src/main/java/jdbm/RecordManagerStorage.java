@@ -792,11 +792,16 @@ final class RecordManagerStorage
                     }
 
                     //fill second recman with logical pages
+                    long pageCounter = 0; 
                     for(
                       long pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
                       pageid<=maxpageid;
                       pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE)
-                    ){}
+                    ){
+                        pageCounter++;
+                        if(pageCounter%1000==0)
+                            recman2.commit();
+                    }
 
                     //free pages which are not actually logical in second recman
                     for(long pageid = recman2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
@@ -805,6 +810,9 @@ final class RecordManagerStorage
                     ){
                         if(logicalPages.get(pageid)==null){
                             recman2._logicPageman.free(Magic.TRANSLATION_PAGE,Magic.TRANSLATION_PAGE);
+                            pageCounter++;
+                            if(pageCounter%1000==0)
+                               recman2.commit();
                         }
                     }
                     logicalPages = null;
@@ -826,45 +834,46 @@ final class RecordManagerStorage
                 for(long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
                     pageid!=0;
                     pageid= _logicPageman.getNext(pageid)
-                    ){
-			BlockIo io = _logicFile.get(pageid);
-			TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
+                        ){
+                    BlockIo io = _logicFile.get(pageid);
+                    TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 
-			for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
-				final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
-				if(pos>Short.MAX_VALUE)
-					throw new Error();
+                    for(int i = 0;i<_logicMgr.ELEMS_PER_PAGE;i+=1){
+                        final int pos = TranslationPage.O_TRANS + i* TranslationPage.PhysicalRowId_SIZE;
+                        if(pos>Short.MAX_VALUE)
+                            throw new Error();
 
-				//write to new file
-                                final long logicalRowId = Location.toLong(pageid,(short)pos);
+                        //write to new file
+                        final long logicalRowId = Location.toLong(pageid,(short)pos);
 
-                                //read from logical location in second recman,
-                                //check if record was already inserted as part of collections
-                                if( recman2._logicPageman.getLast(Magic.TRANSLATION_PAGE)>=pageid &&
-                                        recman2._logicMgr.fetch(logicalRowId)!=0){
-                                    //yes, this record already exists in second recman
-                                    continue;
-                                }
+                        //read from logical location in second recman,
+                        //check if record was already inserted as part of collections
+                        if( recman2._logicPageman.getLast(Magic.TRANSLATION_PAGE)>=pageid &&
+                                recman2._logicMgr.fetch(logicalRowId)!=0){
+                            //yes, this record already exists in second recman
+                            continue;
+                        }
 
-				//get physical location in this recman
-				long physRowId = Location.toLong(
-						xlatPage.getLocationBlock((short)pos),
-						xlatPage.getLocationOffset((short)pos));
-				if(physRowId == 0)
-					continue;
+                        //get physical location in this recman
+                        long physRowId = Location.toLong(
+                                xlatPage.getLocationBlock((short)pos),
+                                xlatPage.getLocationOffset((short)pos));
+                        if(physRowId == 0)
+                            continue;
 
-				//read from physical location at this recman
-				ByteArrayOutputStream b = new ByteArrayOutputStream();
-				_physMgr.fetch(b, physRowId);
-				byte[] bb = b.toByteArray();
+                        //read from physical location at this recman
+                        ByteArrayOutputStream b = new ByteArrayOutputStream();
+                        _physMgr.fetch(b, physRowId);
+                        byte[] bb = b.toByteArray();
 
-                                //force insert into other file, without decompressing logical id to external form
-                                long physLoc = recman2._physMgr.insert(bb, 0, bb.length);
-                                recman2._logicMgr.forceInsert(logicalRowId, physLoc);
+                        //force insert into other file, without decompressing logical id to external form
+                        long physLoc = recman2._physMgr.insert(bb, 0, bb.length);
+                        recman2._logicMgr.forceInsert(logicalRowId, physLoc);
 
-			}
-			_logicFile.release(io);
-		}
+			        }
+			        _logicFile.release(io);
+                    recman2.commit();
+		        }
 		recman2.setRoot(NAME_DIRECTORY_ROOT,getRoot(NAME_DIRECTORY_ROOT));
 
 		recman2.close();
