@@ -11,15 +11,15 @@ public class HugeData {
     static public void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
-        RecordManager recman = new RecordManagerBuilder("/tmp/large/db"+Math.random())
+        RecordManager recman = new RecordManagerBuilder("/hugo/large/db")//+Math.random())
                 .disableTransactions().enableMRUCache()
                 //.disableDiskSync()
                 .build();
 
-        Map<Integer,String> map = recman.createTreeMap("test");
+        Map<Long,String> map = recman.createHashMap("test");
 
-        for(Integer i=1;i<1e8;i++){
-            if(i%1e5==0) {
+        for(Long i=1L;i<1e10;i++){
+            if(i%1e6==0) {
                 System.out.println(i);
                 recman.commit();
                 //Thread.sleep(1000000);

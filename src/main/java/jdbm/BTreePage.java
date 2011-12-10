@@ -126,15 +126,15 @@ final class BTreePage<K,V>
 
         _isLeaf = false;
 
-        _first = _btree._pageSize-2;
+        _first = BTree.DEFAULT_SIZE-2;
 
-        _keys = (K[]) new Object[ _btree._pageSize ];
-        _keys[ _btree._pageSize-2 ] = overflow.getLargestKey();
-        _keys[ _btree._pageSize-1 ] = root.getLargestKey();
+        _keys = (K[]) new Object[BTree.DEFAULT_SIZE ];
+        _keys[BTree.DEFAULT_SIZE-2 ] = overflow.getLargestKey();
+        _keys[BTree.DEFAULT_SIZE-1 ] = root.getLargestKey();
 
-        _children = new long[ _btree._pageSize ];
-        _children[ _btree._pageSize-2 ] = overflow._recid;
-        _children[ _btree._pageSize-1 ] = root._recid;
+        _children = new long[BTree.DEFAULT_SIZE];
+        _children[ BTree.DEFAULT_SIZE-2 ] = overflow._recid;
+        _children[ BTree.DEFAULT_SIZE-1 ] = root._recid;
 
         _recid = _btree._recman.insert( this, this );
     }
@@ -151,15 +151,15 @@ final class BTreePage<K,V>
 
         _isLeaf = true;
 
-        _first = btree._pageSize-2;
+        _first = BTree.DEFAULT_SIZE-2;
 
-        _keys = (K[]) new Object[ _btree._pageSize ];
-        _keys[ _btree._pageSize-2 ] = key;
-        _keys[ _btree._pageSize-1 ] = null;  // I am the root BPage for now
+        _keys = (K[]) new Object[BTree.DEFAULT_SIZE ];
+        _keys[BTree.DEFAULT_SIZE-2 ] = key;
+        _keys[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BPage for now
 
-        _values = (V[]) new Object[ _btree._pageSize ];
-        _values[ _btree._pageSize-2 ] = value;
-        _values[ _btree._pageSize-1 ] = null;  // I am the root BPage for now
+        _values = (V[]) new Object[BTree.DEFAULT_SIZE ];
+        _values[BTree.DEFAULT_SIZE-2 ] = value;
+        _values[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BPage for now
 
         _recid = _btree._recman.insert( this, this );
     }
@@ -177,13 +177,13 @@ final class BTreePage<K,V>
         _isLeaf = isLeaf;
 
         // page will initially be half-full
-        _first = _btree._pageSize/2;
+        _first = BTree.DEFAULT_SIZE/2;
 
-        _keys = (K[]) new Object[ _btree._pageSize ];
+        _keys = (K[]) new Object[BTree.DEFAULT_SIZE];
         if ( isLeaf ) {
-            _values = (V[]) new Object[ _btree._pageSize ];
+            _values = (V[]) new Object[BTree.DEFAULT_SIZE ];
         } else {
-            _children = new long[ _btree._pageSize ];
+            _children = new long[BTree.DEFAULT_SIZE ];
         }
 
         _recid = _btree._recman.insert( this, this );
@@ -196,7 +196,7 @@ final class BTreePage<K,V>
      */
     K getLargestKey()
     {
-        return _keys[ _btree._pageSize-1 ];
+        return _keys[BTree.DEFAULT_SIZE-1 ];
     }
 
 
@@ -341,7 +341,7 @@ final class BTreePage<K,V>
             }
         } else {
             int left = _first;
-            int right = _btree._pageSize-1;
+            int right =BTree.DEFAULT_SIZE-1;
 
             for (int i = left; i <= right; i++){
                 BTreePage<K,V> childBPage = loadBPage(_children[i]);
@@ -446,7 +446,7 @@ final class BTreePage<K,V>
         }
 
         // page is full, we must divide the page
-        int half = _btree._pageSize >> 1;
+        int half = BTree.DEFAULT_SIZE >> 1;
         BTreePage<K,V> newPage = new BTreePage<K,V>( _btree, _isLeaf );
         if ( index < half ) {
             // move lower-half of entries to overflow BPage,
@@ -524,7 +524,7 @@ final class BTreePage<K,V>
     {
         RemoveResult<K,V> result;
 
-        int half = _btree._pageSize / 2;
+        int half = BTree.DEFAULT_SIZE / 2;
         int index = findChildren( key );
 
         height -= 1;
@@ -737,7 +737,7 @@ final class BTreePage<K,V>
     private int findChildren( K key )
     {
         int left = _first;
-        int right = _btree._pageSize-1;
+        int right =BTree.DEFAULT_SIZE-1;
 
         // binary search
         while ( left < right )  {
@@ -922,7 +922,7 @@ final class BTreePage<K,V>
         }
         System.out.println( prefix + "-------------------------------------- BPage recid=" + _recid);
         System.out.println( prefix + "first=" + _first );
-        for ( int i=0; i< _btree._pageSize; i++ ) {
+        for ( int i=0; i<BTree.DEFAULT_SIZE; i++ ) {
             if ( _isLeaf ) {
                 System.out.println( prefix + "BPage [" + i + "] " + _keys[ i ] + " " + _values[ i ] );
             } else {
@@ -943,7 +943,7 @@ final class BTreePage<K,V>
         height -= 1;
         level += 1;
         if ( height > 0 ) {
-            for ( int i=_first; i<_btree._pageSize; i++ ) {
+            for ( int i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _keys[ i ] == null ) break;
                 BTreePage<K,V> child = childBPage( i );
                 child.dump( level );
@@ -1017,6 +1017,16 @@ final class BTreePage<K,V>
 
 
       bpage._first = LongPacker.unpackInt(ois);
+        
+      if(!bpage._isLeaf){
+          bpage._children = new long[BTree.DEFAULT_SIZE ];
+          for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
+              bpage._children[ i ] = LongPacker.unpackLong(ois);
+          }
+      }
+        
+      if(!_btree.loadValues)
+          return bpage;
 
       try {
 
@@ -1033,16 +1043,12 @@ final class BTreePage<K,V>
           } catch ( ClassNotFoundException except ) {
               throw new IOException( except);
           }
-      } else {
-          bpage._children = new long[ _btree._pageSize ];
-          for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
-              bpage._children[ i ] = LongPacker.unpackLong(ois);
-          }
       }
 
       return bpage;
 
     }
+
 
 
     /**
@@ -1070,23 +1076,24 @@ final class BTreePage<K,V>
 
         LongPacker.packInt(oos, bpage._first );
 
-       	writeKeys(oos, bpage._keys,bpage._first);
-
-        if ( bpage._isLeaf ) {
-        	writeValues(oos, bpage);
-        } else {
-            for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+        if(!bpage._isLeaf){
+            for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
             	LongPacker.packLong(oos,  bpage._children[ i ] );
             }
         }
 
+       	writeKeys(oos, bpage._keys,bpage._first);
+
+        if ( bpage._isLeaf ) {
+        	writeValues(oos, bpage);
+        }
     }
 
 
 	private void readValues(DataInputStream ois, BTreePage<K, V> bpage) throws IOException, ClassNotFoundException {
-		  bpage._values = new Object[ _btree._pageSize ];
+		  bpage._values = new Object[BTree.DEFAULT_SIZE ];
                   Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
-        	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+        	  for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
                        int header = ois.read();
                        if(header == BTreeLazyRecord.NULL){
                            bpage._values[ i ] = null;
@@ -1103,7 +1110,7 @@ final class BTreePage<K,V>
 	private void writeValues(DataOutput oos, BTreePage<K, V> bpage) throws IOException {
 
                 Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
-		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
+		for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
                         if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
                              LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
@@ -1139,7 +1146,7 @@ final class BTreePage<K,V>
 
 
 	private K[] readKeys(DataInputStream ois, final int firstUse) throws IOException, ClassNotFoundException {
-		Object[] ret = new Object[_btree._pageSize];
+		Object[] ret = new Object[BTree.DEFAULT_SIZE];
 		final int type = ois.read();
 		if(type == ALL_NULL){
 			return (K[])ret;
@@ -1148,7 +1155,7 @@ final class BTreePage<K,V>
 			if(type == ALL_INTEGERS_NEGATIVE)
 				first = -first;
 			ret[firstUse] = Integer.valueOf((int)first);
-			for(int i = firstUse+1;i<_btree._pageSize;i++){
+			for(int i = firstUse+1;i<BTree.DEFAULT_SIZE;i++){
 //				ret[i] = Serialization.readObject(ois);
 				long v = LongPacker.unpackLong(ois);
 				if(v == 0) continue; //null
@@ -1163,7 +1170,7 @@ final class BTreePage<K,V>
 				first = -first;
 
 			ret[firstUse] = Long.valueOf(first);
-			for(int i = firstUse+1;i<_btree._pageSize;i++){
+			for(int i = firstUse+1;i<BTree.DEFAULT_SIZE;i++){
 				//ret[i] = Serialization.readObject(ois);
 				long v = LongPacker.unpackLong(ois);
 				if(v == 0) continue; //null
@@ -1174,7 +1181,7 @@ final class BTreePage<K,V>
 			return (K[]) ret;
 		}else if(type == ALL_STRINGS){
 			byte[] previous = null;
-			for(int i = firstUse;i<_btree._pageSize;i++){
+			for(int i = firstUse;i<BTree.DEFAULT_SIZE;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				ret[i] = new String(b);
@@ -1186,7 +1193,7 @@ final class BTreePage<K,V>
 
             //TODO why this block is here?
 			if(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer()){
-				for (int i = firstUse ; i < _btree._pageSize; i++) {
+				for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 					ret[i] = _btree.getRecordManager().defaultSerializer().deserialize(ois);
 				}
 				return (K[]) ret;
@@ -1197,7 +1204,7 @@ final class BTreePage<K,V>
 			Utils.OpenByteArrayInputStream in1 = null;
 			DataInputStream in2 = null;
 			byte[] previous = null;
-			for(int i = firstUse;i<_btree._pageSize;i++){
+			for(int i = firstUse;i<BTree.DEFAULT_SIZE;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
 				if(in1 == null){
@@ -1220,12 +1227,12 @@ final class BTreePage<K,V>
 
 	@SuppressWarnings("unchecked")
 	private void writeKeys(DataOutput oos, K[] keys, final int firstUse) throws IOException {
-		if(keys.length!=_btree._pageSize)
+		if(keys.length!=BTree.DEFAULT_SIZE)
 			throw new IllegalArgumentException("wrong keys size");
 				
 		//check if all items on key are null
 		boolean allNull = true;
-		for (int i = firstUse ; i < _btree._pageSize; i++) {
+		for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 			if(keys[i]!=null){
 				allNull = false;
 				break;
@@ -1242,14 +1249,14 @@ final class BTreePage<K,V>
 		if ((_btree._comparator == Utils.COMPARABLE_COMPARATOR || _btree._comparator==null)&&
 				(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer())) {
 			boolean allInteger = true;
-			for (int i = firstUse ; i <_btree._pageSize; i++) {
+			for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 				if (keys[i]!=null && keys[i].getClass() != Integer.class) {
 					allInteger = false;
 					break;
 				}
 			}
 			boolean allLong = true;
-			for (int i = firstUse ; i < _btree._pageSize; i++) {
+			for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 				if (keys[i]!=null &&  (keys[i].getClass() != Long.class ||
 						//special case to exclude Long.MIN_VALUE from conversion, causes problems to LongPacker
 					((Long)keys[i]).longValue() == Long.MIN_VALUE)
@@ -1263,7 +1270,7 @@ final class BTreePage<K,V>
 				//check that diff between MIN and MAX fits into PACKED_LONG
 				long max = Long.MIN_VALUE;
 				long min = Long.MAX_VALUE;
-				for(int i = firstUse;i <_btree._pageSize;i++){
+				for(int i = firstUse;i <BTree.DEFAULT_SIZE;i++){
 					if(keys[i] == null) continue;
 					long v = (Long)keys[i];
 					if(v>max) max = v;
@@ -1297,7 +1304,7 @@ final class BTreePage<K,V>
 				//write first
 				LongPacker.packLong(oos,Math.abs(first));
 				//write others
-				for(int i = firstUse+1;i<_btree._pageSize;i++){
+				for(int i = firstUse+1;i<BTree.DEFAULT_SIZE;i++){
 //					Serialization.writeObject(oos, keys[i]);
 					if(keys[i] == null)
 						LongPacker.packLong(oos,0);
@@ -1312,7 +1319,7 @@ final class BTreePage<K,V>
 			}else{
 				//another special case for Strings
 				boolean allString = true;
-				for (int i = firstUse ; i < _btree._pageSize; i++) {
+				for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 					if (keys[i]!=null &&  (keys[i].getClass() != String.class)
 					) {
 						allString = false;
@@ -1322,7 +1329,7 @@ final class BTreePage<K,V>
 				if(allString){
 					oos.write(ALL_STRINGS );
 					byte[] previous = null;
-					for (int i = firstUse ; i < _btree._pageSize; i++) {
+					for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 						if(keys[i] == null){
 							leadingValuePackWrite(oos, null, previous, 0);
 						}else{
@@ -1341,7 +1348,7 @@ final class BTreePage<K,V>
 		 */
 		oos.write(ALL_OTHER );
 		if(_btree.keySerializer == null || _btree.keySerializer == _btree.getRecordManager().defaultSerializer()){
-			for (int i = firstUse ; i < _btree._pageSize; i++) {
+			for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 				_btree.getRecordManager().defaultSerializer().serialize(oos, keys[i]);
 			}		
 			return;
@@ -1354,7 +1361,7 @@ final class BTreePage<K,V>
 		byte[] buffer = new byte[1024];
 		Utils.OpenByteArrayOutputStream out2 = new Utils.OpenByteArrayOutputStream(buffer);
 		Utils.SerializerOutput out3 = new Utils.SerializerOutput(out2);
-		for (int i = firstUse ; i < _btree._pageSize; i++) {
+		for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 			if(keys[i] == null){
 				leadingValuePackWrite(oos, null, previous, 0);
 			}else{
@@ -1371,9 +1378,20 @@ final class BTreePage<K,V>
 		
 	}
 
+    public void defrag(RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+        if(_children !=null)
+            for(long child:_children){
+                if(child == 0) continue;
+                byte[] data = r1.fetchRaw(child);
+                r2.forceInsert(child,data);
+                BTreePage t = deserialize(new DataInputStream(new ByteArrayInputStream(data)));
+                t._btree =_btree;
+                t.defrag(r1,r2);
+            }
+    }
 
 
-	/** STATIC INNER CLASS
+    /** STATIC INNER CLASS
      *  Result from insert() method call
      */
     static class InsertResult<K,V> {
@@ -1442,7 +1460,7 @@ final class BTreePage<K,V>
         public boolean getNext( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
-            if ( _index < _page._btree._pageSize ) {
+            if ( _index < BTree.DEFAULT_SIZE ) {
                 if ( _page._keys[ _index ] == null ) {
                     // reached end of the tree.
                     return false;
@@ -1468,7 +1486,7 @@ final class BTreePage<K,V>
 
                 if ( _page._previous != 0 ) {
                     _page = _page.loadBPage( _page._previous );
-                    _index = _page._btree._pageSize;
+                    _index = BTree.DEFAULT_SIZE;
                 } else {
                     // reached beginning of the tree
                     return false;
@@ -1498,7 +1516,7 @@ final class BTreePage<K,V>
     {
         height -= 1;
         if ( height > 0 ) {
-            for ( int i=_first; i<_btree._pageSize; i++ ) {
+            for ( int i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _children[ i ] == 0 ) continue;
                 
                 BTreePage child = childBPage( i );

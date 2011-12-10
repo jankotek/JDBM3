@@ -94,6 +94,10 @@ class BTree<K,V>
      */
     protected Serializer<V> valueSerializer;
 
+    /** indicates if values should be loaded during deserialization, set to true during defragmentation */
+    boolean loadValues = true;
+
+
 
     public Serializer<K> getKeySerializer() {
 		return keySerializer;
@@ -126,11 +130,6 @@ class BTree<K,V>
      */
     private transient long _root;
 
-
-    /**
-     * Number of entries in each BPage.
-     */
-    protected int _pageSize;
 
 
     /**
@@ -171,7 +170,7 @@ class BTree<K,V>
                                         Comparator<K> comparator)
         throws IOException
     {
-        return createInstance( recman, comparator, null, null, DEFAULT_SIZE );
+        return createInstance( recman, comparator, null, null);
     }
     
     /**
@@ -183,29 +182,10 @@ class BTree<K,V>
 	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManager2 recman)
         throws IOException
     {
-    	BTree<K,V> ret = createInstance( recman, null, null, null, DEFAULT_SIZE );
+    	BTree<K,V> ret = createInstance( recman, null, null, null);
         return ret;
     }
 
-
-
-    /**
-     * Create a new persistent BTree, with 16 entries per node.
-     *
-     * @param recman Record manager used for persistence.
-     * @param keySerializer Serializer used to serialize index keys (optional)
-     * @param valueSerializer Serializer used to serialize index values (optional)
-     * @param comparator Comparator used to order index entries
-     */
-    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
-                                        Comparator<K> comparator,
-                                        Serializer<K> keySerializer,
-                                        Serializer<V> valueSerializer )
-        throws IOException
-    {
-        return createInstance( recman, comparator, keySerializer, 
-                               valueSerializer, DEFAULT_SIZE );
-    }
 
 
     /**
@@ -215,13 +195,11 @@ class BTree<K,V>
      * @param comparator Comparator used to order index entries
      * @param keySerializer Serializer used to serialize index keys (optional)
      * @param valueSerializer Serializer used to serialize index values (optional)
-     * @param pageSize Number of entries per page (must be even).
      */
     public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
                                         Comparator<K> comparator,
                                         Serializer<K> keySerializer,
-                                        Serializer<V> valueSerializer,
-                                        int pageSize )
+                                        Serializer<V> valueSerializer)
         throws IOException
     {
         BTree<K,V> btree;
@@ -230,17 +208,11 @@ class BTree<K,V>
             throw new IllegalArgumentException( "Argument 'recman' is null" );
         }
 
-        // make sure there's an even number of entries per BPage
-        if ( ( pageSize & 1 ) != 0 ) {
-            throw new IllegalArgumentException( "Argument 'pageSize' must be even" );
-        }
-
         btree = new BTree<K,V>();
         btree._recman = recman;
         btree._comparator = comparator;
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
-        btree._pageSize = pageSize;
         btree._bpageSerializer = new BTreePage<K,V>();
         btree._bpageSerializer._btree = btree;
         btree._recid = recman.insert( btree, btree.getRecordManager().defaultSerializer() );
@@ -383,7 +355,7 @@ class BTree<K,V>
 	            if ( _height == 0 ) {
 	                _root = 0;
 	            } else {
-	                _root = rootPage.childBPage( _pageSize-1 )._recid;
+	                _root = rootPage.childBPage(BTree.DEFAULT_SIZE-1 )._recid;
 	            }
 	        }
 	        if ( remove._value != null ) {
@@ -572,7 +544,6 @@ class BTree<K,V>
         BTree tree = new BTree();
         tree._height = in.readInt();
         tree._root = in.readLong();
-        tree._pageSize = in.readInt();
         tree._entries = in.readInt();
         tree._comparator = (Comparator)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
         tree.keySerializer = (Serializer)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
@@ -586,12 +557,33 @@ class BTree<K,V>
     {
         out.writeInt( _height );
         out.writeLong( _root );
-        out.writeInt( _pageSize );
         out.writeInt( _entries );
 
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out,_comparator);
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out,keySerializer);
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
+    }
+
+    public static void defrag(long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+        try{
+            byte[] data = r1.fetchRaw(recid);
+            r2.forceInsert(recid,data);
+            DataInput in = new DataInputStream(new ByteArrayInputStream(data));
+            BTree t = (BTree) r1.defaultSerializer().deserialize(in);
+            t.loadValues = false;
+            t._recman = r1;
+            t._bpageSerializer = new BTreePage(t,false);
+
+
+            BTreePage p = t.getRoot();
+            if(p!=null){
+                r2.forceInsert(t._root,r1.fetchRaw(t._root));
+                p.defrag(r1,r2);
+            }
+
+        }catch(ClassNotFoundException e){
+            throw new IOError(e);
+        }
     }
 
 

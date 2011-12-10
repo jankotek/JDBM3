@@ -232,9 +232,6 @@ final class HTreeBucket<K,V>
     }
 
 
-    /**
-     * Implement Externalizable interface.
-     */
     public void writeExternal( DataOutput out )
         throws IOException
     {
@@ -279,9 +276,6 @@ final class HTreeBucket<K,V>
     }
 
 
-    /**
-     * Implement Externalizable interface.
-     */
     public void readExternal(DataInputStream in) throws IOException, ClassNotFoundException {
         _depth = LongPacker.unpackInt(in);
         final int size = in.read();

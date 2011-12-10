@@ -39,7 +39,8 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                 int i = ds.read();
                 if(i == SerializationHeader.HTREE_BUCKET){ //is HashBucket?
                     HTreeBucket ret = new HTreeBucket(HTree.this);
-                    ret.readExternal(ds);
+                    if(loadValues)
+                        ret.readExternal(ds);
                     if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
                         throw new InternalError("bytes left: "+ds.available());
                     return ret;
@@ -92,6 +93,8 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     private RecordManager2 recman;
     private long recid;
 
+    /** indicates if values should be loaded during deserialization, set to true during defragmentation */
+    private boolean loadValues = true;
 
     public Serializer<K> getKeySerializer() {
 		return keySerializer;
@@ -415,6 +418,27 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 
     long getRecid(){
         return recid;
+    }
+
+    static void defrag(Long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+        try{
+        byte[] data = r1.fetchRaw(recid);
+        r2.forceInsert(recid,data);
+        DataInput in = new DataInputStream(new ByteArrayInputStream(data));
+        HTree t = (HTree) r1.defaultSerializer().deserialize(in);
+        t.recman = r1;
+        t.loadValues = false;
+
+        HTreeDirectory d = t.getRoot();
+        if(d!=null){
+            r2.forceInsert(t.rootRecid,r1.fetchRaw(t.rootRecid));
+            d.defrag(r1,r2);
+        }
+            
+        }catch(ClassNotFoundException e){
+            throw new IOError(e);
+        }
+
     }
 }
 

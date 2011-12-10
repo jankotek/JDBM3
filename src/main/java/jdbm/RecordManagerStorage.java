@@ -826,7 +826,12 @@ final class RecordManagerStorage
                     Object obj = fetch(namedRecid);
                     if(obj instanceof LinkedList){
                         LinkedList.defrag(namedRecid, this, recman2);
+                    }else if(obj instanceof HTree){
+                        HTree.defrag(namedRecid, this, recman2);
+                    }else if(obj instanceof BTree){
+                        BTree.defrag(namedRecid, this, recman2);
                     }
+
 
                 }
 

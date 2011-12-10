@@ -397,6 +397,18 @@ final class HTreeDirectory<K,V>
 
     }
 
+    public void defrag(RecordManagerStorage r1, RecordManagerStorage r2) throws IOException, ClassNotFoundException {
+        for(long child:_children){
+            if(child == 0) continue;
+            byte[] data = r1.fetchRaw(child);
+            r2.forceInsert(child,data);
+            Object t = tree.SERIALIZER.deserialize(new DataInputStream(new ByteArrayInputStream(data)));
+            if(t instanceof HTreeDirectory){
+                ((HTreeDirectory)t).defrag(r1,r2);
+            }
+        }
+    }
+
 
     ////////////////////////////////////////////////////////////////////////
     // INNER CLASS
