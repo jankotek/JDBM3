@@ -53,7 +53,6 @@ class BTree<K,V>
     implements  JdbmBase<K,V>
 {
 
-    private static final long serialVersionUID = 8883213742777032628L;
 
     private static final boolean DEBUG = false;
 
