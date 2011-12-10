@@ -46,7 +46,7 @@ public class BTreePageTest extends TestCaseWithTestFile {
 
         BTree tree = BTree.createInstance(recman);
 
-        BPage page = new BPage( tree, test, test );
+        BTreePage page = new BTreePage( tree, test, test );
 
         BTree.BTreeTupleBrowser browser;
         BTree.BTreeTuple tuple = new BTree.BTreeTuple();

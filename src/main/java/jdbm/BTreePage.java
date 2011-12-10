@@ -38,8 +38,8 @@ import java.util.List;
  *
  * @author Alex Boisvert
  */
-final class BPage<K,V>
-    implements Serializer<BPage<K,V>>
+final class BTreePage<K,V>
+    implements Serializer<BTreePage<K,V>>
 {
 
     private static final boolean DEBUG = false;
@@ -100,7 +100,7 @@ final class BPage<K,V>
     protected long _next;
 
     /**
-     * Return the B+Tree that is the owner of this {@link BPage}.
+     * Return the B+Tree that is the owner of this {@link BTreePage}.
      */
     public BTree<K,V> getBTree() {
         return _btree;
@@ -109,7 +109,7 @@ final class BPage<K,V>
     /**
      * No-argument constructor used by serialization.
      */
-    public BPage()
+    public BTreePage()
     {
         // empty
     }
@@ -119,7 +119,7 @@ final class BPage<K,V>
      * Root page overflow constructor
      */
     @SuppressWarnings("unchecked")
-	BPage( BTree<K,V> btree, BPage<K,V> root, BPage<K,V> overflow )
+    BTreePage(BTree<K, V> btree, BTreePage<K,V> root, BTreePage<K,V> overflow)
         throws IOException
     {
         _btree = btree;
@@ -144,7 +144,7 @@ final class BPage<K,V>
      * Root page (first insert) constructor.
      */
     @SuppressWarnings("unchecked")
-	BPage( BTree<K,V> btree, K key, V value )
+    BTreePage(BTree<K, V> btree, K key, V value)
         throws IOException
     {
         _btree = btree;
@@ -169,7 +169,7 @@ final class BPage<K,V>
      * Overflow page constructor.  Creates an empty BPage.
      */
     @SuppressWarnings("unchecked")
-	BPage( BTree<K,V> btree, boolean isLeaf )
+    BTreePage(BTree<K, V> btree, boolean isLeaf)
         throws IOException
     {
         _btree = btree;
@@ -248,7 +248,7 @@ final class BPage<K,V>
             return new Browser<K,V>( this, index );
         } else {
             // non-leaf BPage
-            BPage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = childBPage( index );
             return child.find( height, key );
         }
     }
@@ -293,7 +293,7 @@ final class BPage<K,V>
             //return new Browser<K,V>( this, index );
         } else {
             // non-leaf BPage
-            BPage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = childBPage( index );
             return child.findValue( height, key );
         }
     }
@@ -309,7 +309,7 @@ final class BPage<K,V>
         if ( _isLeaf ) {
             return new Browser<K,V>( this, _first );
         } else {
-            BPage<K,V> child = childBPage( _first );
+            BTreePage<K,V> child = childBPage( _first );
             return child.findFirst();
         }
     }
@@ -322,7 +322,7 @@ final class BPage<K,V>
     {
         if (_isLeaf){
             if (_next != 0){
-                BPage<K,V> nextBPage = loadBPage(_next);
+                BTreePage<K,V> nextBPage = loadBPage(_next);
                 if (nextBPage._previous == _recid){ // this consistency check can be removed in production code
                     nextBPage._previous = _previous;
                     _btree._recman.update(nextBPage._recid, nextBPage, nextBPage);
@@ -331,7 +331,7 @@ final class BPage<K,V>
                 }
             }
             if (_previous != 0){
-                BPage<K,V> previousBPage = loadBPage(_previous);
+                BTreePage<K,V> previousBPage = loadBPage(_previous);
                 if (previousBPage._next != _recid){ // this consistency check can be removed in production code
                     previousBPage._next = _next;
                     _btree._recman.update(previousBPage._recid, previousBPage, previousBPage);
@@ -344,7 +344,7 @@ final class BPage<K,V>
             int right = _btree._pageSize-1;
 
             for (int i = left; i <= right; i++){
-                BPage<K,V> childBPage = loadBPage(_children[i]);
+                BTreePage<K,V> childBPage = loadBPage(_children[i]);
                 childBPage.delete();
             }
         }
@@ -405,7 +405,7 @@ final class BPage<K,V>
             }
         } else {
             // non-leaf BPage
-            BPage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = childBPage( index );
             result = child.insert( height, key, value, replace );
 
             if ( result._existing != null ) {
@@ -447,7 +447,7 @@ final class BPage<K,V>
 
         // page is full, we must divide the page
         int half = _btree._pageSize >> 1;
-        BPage<K,V> newPage = new BPage<K,V>( _btree, _isLeaf );
+        BTreePage<K,V> newPage = new BTreePage<K,V>( _btree, _isLeaf );
         if ( index < half ) {
             // move lower-half of entries to overflow BPage,
             // including new entry
@@ -496,7 +496,7 @@ final class BPage<K,V>
             newPage._previous = _previous;
             newPage._next = _recid;
             if ( _previous != 0 ) {
-                BPage<K,V> previous = loadBPage( _previous );
+                BTreePage<K,V> previous = loadBPage( _previous );
                 previous._next = newPage._recid;
                 _btree._recman.update( _previous, previous, this );
 
@@ -549,7 +549,7 @@ final class BPage<K,V>
 
         } else {
             // recurse into Btree to remove entry on a children page
-            BPage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = childBPage( index );
             result = child.remove( height, key );
 
             // update children
@@ -563,7 +563,7 @@ final class BPage<K,V>
                 }
                 if ( index < _children.length-1 ) {
                     // exists greater brother page
-                    BPage<K,V> brother = childBPage( index+1 );
+                    BTreePage<K,V> brother = childBPage( index+1 );
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
                         // steal entries from "brother" page
@@ -624,12 +624,12 @@ final class BPage<K,V>
 
                         // re-link previous and next BPages
                         if ( child._previous != 0 ) {
-                            BPage<K,V> prev = loadBPage( child._previous );
+                            BTreePage<K,V> prev = loadBPage( child._previous );
                             prev._next = child._next;
                             _btree._recman.update( prev._recid, prev, this );
                         }
                         if ( child._next != 0 ) {
-                            BPage<K,V> next = loadBPage( child._next );
+                            BTreePage<K,V> next = loadBPage( child._next );
                             next._previous = child._previous;
                             _btree._recman.update( next._recid, next, this );
 
@@ -640,7 +640,7 @@ final class BPage<K,V>
                     }
                 } else {
                     // page "brother" is before "child"
-                    BPage<K,V> brother = childBPage( index-1 );
+                    BTreePage<K,V> brother = childBPage( index-1 );
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
                         // steal entries from "brother" page
@@ -704,12 +704,12 @@ final class BPage<K,V>
 
                         // re-link previous and next BPages
                         if ( brother._previous != 0 ) {
-                            BPage<K,V> prev = loadBPage( brother._previous );
+                            BTreePage<K,V> prev = loadBPage( brother._previous );
                             prev._next = brother._next;
                             _btree._recman.update( prev._recid, prev, this );
                         }
                         if ( brother._next != 0 ) {
-                            BPage<K,V> next = loadBPage( brother._next );
+                            BTreePage<K,V> next = loadBPage( brother._next );
                             next._previous = brother._previous;
                             _btree._recman.update( next._recid, next, this );
                         }
@@ -755,7 +755,7 @@ final class BPage<K,V>
     /**
      * Insert entry at given position.
      */
-    private static <K,V> void insertEntry( BPage<K,V> page, int index,
+    private static <K,V> void insertEntry( BTreePage<K,V> page, int index,
                                      K key, V value )
     {
         K[] keys = page._keys;
@@ -775,7 +775,7 @@ final class BPage<K,V>
     /**
      * Insert child at given position.
      */
-    private static <K,V> void  insertChild( BPage<K,V> page, int index,
+    private static <K,V> void  insertChild( BTreePage<K,V> page, int index,
                                      K key, long child )
     {
         K[] keys = page._keys;
@@ -794,7 +794,7 @@ final class BPage<K,V>
     /**
      * Remove entry at given position.
      */
-    private static <K,V> void removeEntry( BPage<K,V> page, int index )
+    private static <K,V> void removeEntry( BTreePage<K,V> page, int index )
     {
         K[] keys = page._keys;
         Object[] values = page._values;
@@ -831,7 +831,7 @@ final class BPage<K,V>
     /**
      * Set the entry at the given index.
      */
-    private static <K,V> void setEntry( BPage<K,V> page, int index, K key, V value )
+    private static <K,V> void setEntry( BTreePage<K,V> page, int index, K key, V value )
     {
         page._keys[ index ] = key;
         page._values[ index ] = value;
@@ -841,7 +841,7 @@ final class BPage<K,V>
     /**
      * Set the child BPage recid at the given index.
      */
-    private static <K,V> void setChild( BPage<K,V> page, int index, K key, long recid )
+    private static <K,V> void setChild( BTreePage<K,V> page, int index, K key, long recid )
     {
         page._keys[ index ] = key;
         page._children[ index ] = recid;
@@ -851,8 +851,8 @@ final class BPage<K,V>
     /**
      * Copy entries between two BPages
      */
-    private static <K,V> void copyEntries( BPage<K,V> source, int indexSource,
-                                     BPage<K,V> dest, int indexDest, int count )
+    private static <K,V> void copyEntries( BTreePage<K,V> source, int indexSource,
+                                     BTreePage<K,V> dest, int indexDest, int count )
     {
         System.arraycopy( source._keys, indexSource, dest._keys, indexDest, count);
         System.arraycopy( source._values, indexSource, dest._values, indexDest, count);
@@ -862,8 +862,8 @@ final class BPage<K,V>
     /**
      * Copy child BPage recids between two BPages
      */
-    private static <K,V> void copyChildren( BPage<K,V> source, int indexSource,
-                                      BPage<K,V> dest, int indexDest, int count )
+    private static <K,V> void copyChildren( BTreePage<K,V> source, int indexSource,
+                                      BTreePage<K,V> dest, int indexDest, int count )
     {
         System.arraycopy( source._keys, indexSource, dest._keys, indexDest, count);
         System.arraycopy( source._children, indexSource, dest._children, indexDest, count);
@@ -873,7 +873,7 @@ final class BPage<K,V>
     /**
      * Return the child BPage at given index.
      */
-    BPage<K,V> childBPage( int index )
+    BTreePage<K,V> childBPage( int index )
         throws IOException
     {
         return loadBPage( _children[ index ] );
@@ -883,10 +883,10 @@ final class BPage<K,V>
     /**
      * Load the BPage at the given recid.
      */
-	private BPage<K,V> loadBPage( long recid )
+	private BTreePage<K,V> loadBPage( long recid )
         throws IOException
     {
-        BPage<K,V> child =  _btree._recman.fetch( recid, this );
+        BTreePage<K,V> child =  _btree._recman.fetch( recid, this );
         child._recid = recid;
         child._btree = _btree;
         return child;
@@ -945,7 +945,7 @@ final class BPage<K,V>
         if ( height > 0 ) {
             for ( int i=_first; i<_btree._pageSize; i++ ) {
                 if ( _keys[ i ] == null ) break;
-                BPage<K,V> child = childBPage( i );
+                BTreePage<K,V> child = childBPage( i );
                 child.dump( level );
                 child.dumpRecursive( height, level );
             }
@@ -996,13 +996,13 @@ final class BPage<K,V>
      *
      */
     @SuppressWarnings("unchecked")
-    public BPage<K,V> deserialize( DataInput ois2 )
+    public BTreePage<K,V> deserialize( DataInput ois2 )
         throws IOException
     {
        DataInputStream ois = (DataInputStream) ois2;
 
 
-      BPage<K,V> bpage = new BPage<K,V>();
+      BTreePage<K,V> bpage = new BTreePage<K,V>();
 
   	  switch(ois.read()){
   		case SerializationHeader.BPAGE_LEAF:bpage._isLeaf = true;break;
@@ -1052,7 +1052,7 @@ final class BPage<K,V>
      * @return a byte array representing the object's state
      *
      */
-    public void serialize(DataOutput oos, BPage<K,V> obj )
+    public void serialize(DataOutput oos, BTreePage<K,V> obj )
         throws IOException
     {
 
@@ -1060,7 +1060,7 @@ final class BPage<K,V>
         // note:  It is assumed that BPage instance doing the serialization is the parent
         // of the BPage object being serialized.
 
-        BPage<K,V> bpage =  obj;
+        BTreePage<K,V> bpage =  obj;
 
         oos.writeByte( bpage._isLeaf?SerializationHeader.BPAGE_LEAF:SerializationHeader.BPAGE_NONLEAF );
         if ( bpage._isLeaf ) {
@@ -1083,7 +1083,7 @@ final class BPage<K,V>
     }
 
 
-	private void readValues(DataInputStream ois, BPage<K, V> bpage) throws IOException, ClassNotFoundException {
+	private void readValues(DataInputStream ois, BTreePage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = new Object[ _btree._pageSize ];
                   Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
         	  for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
@@ -1100,7 +1100,7 @@ final class BPage<K,V>
 	}
 
 
-	private void writeValues(DataOutput oos, BPage<K, V> bpage) throws IOException {
+	private void writeValues(DataOutput oos, BTreePage<K, V> bpage) throws IOException {
 
                 Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
 		for ( int i=bpage._first; i<_btree._pageSize; i++ ) {
@@ -1381,7 +1381,7 @@ final class BPage<K,V>
         /**
          * Overflow page.
          */
-        BPage<K,V> _overflow;
+        BTreePage<K,V> _overflow;
 
         /**
          * Existing value for the insertion key.
@@ -1417,7 +1417,7 @@ final class BPage<K,V>
         /**
          * Current page.
          */
-        private BPage<K,V> _page;
+        private BTreePage<K,V> _page;
 
 
         /**
@@ -1433,7 +1433,7 @@ final class BPage<K,V>
          * @param page Current page
          * @param index Position of the next tuple to return.
          */
-        Browser( BPage<K,V> page, int index )
+        Browser( BTreePage<K,V> page, int index )
         {
             _page = page;
             _index = index;
@@ -1501,7 +1501,7 @@ final class BPage<K,V>
             for ( int i=_first; i<_btree._pageSize; i++ ) {
                 if ( _children[ i ] == 0 ) continue;
                 
-                BPage child = childBPage( i );
+                BTreePage child = childBPage( i );
                 out.add(new Long(child._recid));
                 child.dumpChildPageRecIDs( out, height );
             }

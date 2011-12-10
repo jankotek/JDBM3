@@ -142,7 +142,7 @@ class BTree<K,V>
     /**
      * Serializer used for BPages of this tree
      */
-    private transient BPage<K,V> _bpageSerializer;
+    private transient BTreePage<K,V> _bpageSerializer;
     
     
     /**
@@ -241,7 +241,7 @@ class BTree<K,V>
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
         btree._pageSize = pageSize;
-        btree._bpageSerializer = new BPage<K,V>();
+        btree._bpageSerializer = new BTreePage<K,V>();
         btree._bpageSerializer._btree = btree;
         btree._recid = recman.insert( btree, btree.getRecordManager().defaultSerializer() );
         return btree;
@@ -261,7 +261,7 @@ class BTree<K,V>
         BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid);
         btree._recid = recid;
         btree._recman = recman;
-        btree._bpageSerializer = new BPage<K,V>();
+        btree._bpageSerializer = new BTreePage<K,V>();
         btree._bpageSerializer._btree = btree;
         return btree;
     }
@@ -300,14 +300,14 @@ class BTree<K,V>
         }
         try {
         	lock.writeLock().lock();
-	        BPage<K,V> rootPage = getRoot();
+	        BTreePage<K,V> rootPage = getRoot();
 	
 	        if ( rootPage == null ) {
 	            // BTree is currently empty, create a new root BPage
 	            if (DEBUG) {
 	                System.out.println( "BTree.insert() new root BPage" );
 	            }
-	            rootPage = new BPage<K,V>( this, key, value );
+	            rootPage = new BTreePage<K,V>( this, key, value );
 	            _root = rootPage._recid;
 	            _height = 1;
 	            _entries = 1;
@@ -318,14 +318,14 @@ class BTree<K,V>
 	            }
 	            return null;
             } else {
-	        BPage.InsertResult<K,V> insert = rootPage.insert( _height, key, value, replace );
+	        BTreePage.InsertResult<K,V> insert = rootPage.insert( _height, key, value, replace );
             boolean dirty = false;
             if ( insert._overflow != null ) {
                 // current root page overflowed, we replace with a new root page
                 if ( DEBUG ) {
                     System.out.println( "BTree.insert() replace root BPage due to overflow" );
                 }
-                rootPage = new BPage<K,V>( this, rootPage, insert._overflow );
+                rootPage = new BTreePage<K,V>( this, rootPage, insert._overflow );
                 _root = rootPage._recid;
                 _height += 1;
                 dirty = true;
@@ -369,12 +369,12 @@ class BTree<K,V>
         }
         try {
         	lock.writeLock().lock();
-	        BPage<K,V> rootPage = getRoot();
+	        BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
 	            return null;
 	        }
 	        boolean dirty = false;
-	        BPage.RemoveResult<K,V> remove = rootPage.remove( _height, key );
+	        BTreePage.RemoveResult<K,V> remove = rootPage.remove( _height, key );
 	        if ( remove._underflow && rootPage.isEmpty() ) {
 	            _height -= 1;
 	            dirty = true;
@@ -417,7 +417,7 @@ class BTree<K,V>
         }
         try {
         	lock.readLock().lock();
-	        BPage<K,V> rootPage = getRoot();
+	        BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
 	            return null;
 	        }
@@ -488,7 +488,7 @@ class BTree<K,V>
     {
     	try {
         	lock.readLock().lock();
-	        BPage<K,V> rootPage = getRoot();
+	        BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
 	            return EmptyBrowser.INSTANCE;
 	        }
@@ -518,7 +518,7 @@ class BTree<K,V>
     {
     	try {
         	lock.readLock().lock();
-	    	BPage<K,V> rootPage = getRoot();
+	    	BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
 	            return EmptyBrowser.INSTANCE;
 	        }
@@ -551,13 +551,13 @@ class BTree<K,V>
     /**
      * Return the root BPage, or null if it doesn't exist.
      */
-    BPage<K,V> getRoot()
+    BTreePage<K,V> getRoot()
         throws IOException
     {
         if ( _root == 0 ) {
             return null;
         }
-        BPage<K,V> root = (BPage<K,V>) _recman.fetch( _root, _bpageSerializer );
+        BTreePage<K,V> root = (BTreePage<K,V>) _recman.fetch( _root, _bpageSerializer );
         if (root != null) {
             root._recid = _root;
             root._btree = this;
@@ -675,7 +675,7 @@ class BTree<K,V>
     {
     	try {
         	lock.writeLock().lock();
-	        BPage<K,V> rootPage = getRoot();
+	        BTreePage<K,V> rootPage = getRoot();
 	        if (rootPage != null)
 	            rootPage.delete();
 	        _recman.delete(_recid);
@@ -691,7 +691,7 @@ class BTree<K,V>
      * @throws IOException
      */
     void dumpChildPageRecIDs(List<Long> out) throws IOException{
-        BPage<K,V> root = getRoot();
+        BTreePage<K,V> root = getRoot();
         if ( root != null ) {
             out.add(root._recid);
             root.dumpChildPageRecIDs( out, _height);

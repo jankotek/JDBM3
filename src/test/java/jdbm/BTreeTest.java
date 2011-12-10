@@ -564,7 +564,7 @@ public class BTreeTest
                 }
                 recman.commit();
                 
-                BPage root = tree.getRoot();
+                BTreePage root = tree.getRoot();
                 assertNull(root);
                 
             } finally {
