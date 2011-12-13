@@ -85,7 +85,7 @@ final class BTreePage<K,V>
     /**
      * Index of first used item at the page
      */
-    protected int _first;
+    protected byte _first;
 
 
     /**
@@ -281,7 +281,7 @@ final class BTreePage<K,V>
             K key2 =   _keys[ index ];
 //          // get returns the matching key or the next ordered key, so we must
 //          // check if we have an exact match
-          if ( key2==null || compare( key, key2 ) != 0 )
+          if ( key2==null || compare(key, key2) != 0 )
               return null;
             
             if(_values[index] instanceof BTreeLazyRecord)
@@ -371,7 +371,7 @@ final class BTreePage<K,V>
         InsertResult<K,V>  result;
         long          overflow;
 
-        int index = findChildren( key );
+        final byte index = findChildren( key );
 
         height -= 1;
         if ( height == 0 )  {
@@ -389,13 +389,14 @@ final class BTreePage<K,V>
                 if ( DEBUG ) {
                     System.out.println( "Bpage.insert() Key already exists." ) ;
                 }
-                if( _values[ index ] instanceof BTreeLazyRecord)
+                boolean isLazyRecord = _values[index] instanceof BTreeLazyRecord;
+                if(isLazyRecord)
                     result._existing =  ((BTreeLazyRecord<V>)_values[ index ]).get();
                 else
                     result._existing =  (V)_values[ index ];
                 if ( replace ) {
                     //remove old lazy record if necesarry
-                    if(_values [ index ] instanceof BTreeLazyRecord)
+                    if(isLazyRecord)
                         ((BTreeLazyRecord)_values [ index ]).delete();
                     _values [ index ] = value;
                     _btree._recman.update( _recid, this, this );
@@ -446,7 +447,7 @@ final class BTreePage<K,V>
         }
 
         // page is full, we must divide the page
-        int half = BTree.DEFAULT_SIZE >> 1;
+        final byte half = BTree.DEFAULT_SIZE >> 1;
         BTreePage<K,V> newPage = new BTreePage<K,V>( _btree, _isLeaf );
         if ( index < half ) {
             // move lower-half of entries to overflow BPage,
@@ -734,10 +735,10 @@ final class BTreePage<K,V>
      *
      * @return index of first children with equal or greater key.
      */
-    private int findChildren( K key )
+    private byte findChildren( K key )
     {
         int left = _first;
-        int right =BTree.DEFAULT_SIZE-1;
+        int right = BTree.DEFAULT_SIZE-1;
 
         // binary search
         while ( left < right )  {
@@ -748,7 +749,7 @@ final class BTreePage<K,V>
                 right = middle;
             }
         }
-        return right;
+        return (byte) right;
     }
 
 
@@ -1016,7 +1017,7 @@ final class BTreePage<K,V>
       }
 
 
-      bpage._first = LongPacker.unpackInt(ois);
+      bpage._first = ois.readByte();
         
       if(!bpage._isLeaf){
           bpage._children = new long[BTree.DEFAULT_SIZE ];
@@ -1074,7 +1075,7 @@ final class BTreePage<K,V>
             LongPacker.packLong(oos, bpage._next );
         }
 
-        LongPacker.packInt(oos, bpage._first );
+        oos.write(bpage._first);
 
         if(!bpage._isLeaf){
             for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
