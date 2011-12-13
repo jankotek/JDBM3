@@ -293,7 +293,7 @@ class LongHashMap<V> implements  Serializable {
         Entry<V> m;
         int hash = (int)(key);
         int index = (hash & 0x7FFFFFFF) % elementData.length;
-        m = findNonNullKeyEntry(key, index, hash);
+        m = findNonNullKeyEntry(key, index);
 
         if (m != null) {
             return m.value;
@@ -301,7 +301,7 @@ class LongHashMap<V> implements  Serializable {
         return null;
     }
 
-    final Entry<V> findNonNullKeyEntry(long key, int index, int keyHash) {
+    final Entry<V> findNonNullKeyEntry(long key, int index) {
         Entry<V> m = elementData[index];
             while (m != null) {
 
@@ -360,7 +360,7 @@ class LongHashMap<V> implements  Serializable {
         Entry<V> entry;
             int hash =(int)(key);
             int index = (hash & 0x7FFFFFFF) % elementData.length;
-            entry = findNonNullKeyEntry(key, index, hash);
+            entry = findNonNullKeyEntry(key, index);
             if (entry == null) {
                 modCount++;
                 if (++elementCount > threshold) {

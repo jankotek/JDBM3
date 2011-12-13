@@ -281,7 +281,7 @@ final class BTreePage<K,V>
             K key2 =   _keys[ index ];
 //          // get returns the matching key or the next ordered key, so we must
 //          // check if we have an exact match
-          if ( key2==null || getComparator().compare( key, key2 ) != 0 )
+          if ( key2==null || compare( key, key2 ) != 0 )
               return null;
             
             if(_values[index] instanceof BTreeLazyRecord)
@@ -902,13 +902,13 @@ final class BTreePage<K,V>
             return -1;
         }
 
-        return getComparator().compare( value1, value2 );
-    }
+        if(_btree._comparator==null){
+            return ((Comparable)value1).compareTo(value2);
+        }else{
+            return _btree._comparator.compare(value1,value2);
+        }
 
-    private Comparator getComparator() {
-        return _btree._comparator!=null ? _btree._comparator : Utils.COMPARABLE_COMPARATOR;
     }
-
 
     /**
      * Dump the structure of the tree on the screen.  This is used for debugging
