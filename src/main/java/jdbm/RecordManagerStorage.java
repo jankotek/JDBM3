@@ -17,6 +17,7 @@
 package jdbm;
 
 
+import javax.crypto.Cipher;
 import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -80,6 +81,10 @@ final class RecordManagerStorage
      */
     private final boolean readonly;
     private final boolean disableTransactions;
+    /** cipher used for decription, may be null*/
+    private Cipher cipherOut;
+    /** cipher used for encription, may be null*/
+    private Cipher cipherIn;
 
 
     void checkCanWrite(){
@@ -167,7 +172,7 @@ final class RecordManagerStorage
 
 
 
-	private final byte[] _insertBuffer = new byte[Storage.BLOCK_SIZE];
+	private final byte[] _insertBuffer = new byte[Storage.BLOCK_SIZE*2];
 	private final Utils.OpenByteArrayOutputStream _insertBAO = new Utils.OpenByteArrayOutputStream(_insertBuffer);
 	private final Utils.SerializerOutput _insertOut = new Utils.SerializerOutput(_insertBAO);
 	private final Utils.OpenByteArrayInputStream _insertBAI = new Utils.OpenByteArrayInputStream(_insertBuffer);
@@ -176,7 +181,13 @@ final class RecordManagerStorage
 	volatile private boolean bufferInUse = false;
 
 
-	private final String _filename; 
+	private final String _filename;
+
+    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions)throws IOException
+    {
+        this(filename,readonly,disableTransactions,null,null);
+    }
+
 
 
     /**
@@ -185,25 +196,29 @@ final class RecordManagerStorage
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions)
+    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions,
+                                Cipher cipherIn, Cipher cipherOut )
         throws IOException
     {
     	_filename = filename;
         this.readonly = readonly;
         this.disableTransactions = disableTransactions;
+        this.cipherIn = cipherIn;
+        this.cipherOut = cipherOut;
     	reopen();
     }
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR,readonly,disableTransactions);
+        _physFile = new RecordFile( _filename + DBR, readonly,disableTransactions,cipherIn,cipherOut);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
         
         if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
-        _logicFile = new RecordFile( _filename +IDR,readonly,disableTransactions);
+
+        _logicFile = new RecordFile( _filename +IDR,readonly,disableTransactions,cipherIn,cipherOut);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -580,13 +595,13 @@ final class RecordManagerStorage
             {
                 String file = zip2+IDR+0;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(_logicPageman.getHeaderBufData());
+                z.write(Utils.encrypt(cipherIn,_logicPageman.getHeaderBufData()));
                 z.closeEntry();
             }
             {
                 String file = zip2+DBR+0;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(_physPageman.getHeaderBufData());
+                z.write(Utils.encrypt(cipherIn,_physPageman.getHeaderBufData()));
                 z.closeEntry();
             }
 
@@ -598,7 +613,7 @@ final class RecordManagerStorage
                 BlockIo block = _logicFile.get(pageid);
                 String file = zip2+IDR+pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(block.getData());
+                z.write(Utils.encrypt(cipherIn,block.getData()));
                 z.closeEntry();
                 _logicFile.release(block);
             }
@@ -609,7 +624,7 @@ final class RecordManagerStorage
                  BlockIo block = _logicFile.get(pageid);
                  String file = zip2+IDR+pageid;
                  z.putNextEntry(new ZipEntry(file));
-                 z.write(block.getData());
+                 z.write(Utils.encrypt(cipherIn,block.getData()));
                 z.closeEntry();
                 _logicFile.release(block);
             }
@@ -621,7 +636,7 @@ final class RecordManagerStorage
                     BlockIo block = _physFile.get(pageid);
                     String file = zip2+DBR+pageid;
                     z.putNextEntry(new ZipEntry(file));
-                    z.write(block.getData());
+                    z.write(Utils.encrypt(cipherIn,block.getData()));
                     z.closeEntry();
                     _physFile.release(block);
                 }
@@ -632,7 +647,7 @@ final class RecordManagerStorage
                      BlockIo block = _physFile.get(pageid);
                      String file = zip2+DBR+pageid;
                      z.putNextEntry(new ZipEntry(file));
-                     z.write(block.getData());
+                     z.write(Utils.encrypt(cipherIn,block.getData()));
                      z.closeEntry();
                     _physFile.release(block);
                 }
@@ -776,7 +791,7 @@ final class RecordManagerStorage
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename;
-		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, false, true);
+		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, false, true,cipherIn, cipherOut);
 
                 //recreate logical file with original page layout
                 {

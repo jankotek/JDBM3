@@ -55,7 +55,7 @@ abstract class TestCaseWithTestFile extends TestCase {
 	}
 
 	static public RecordFile newRecordFile() throws IOException{
-		return new RecordFile(newTestFile(),false,false);
+		return new RecordFile(newTestFile());
 	}
 
 	static public RecordManager2 newRecordManager() throws IOException{

@@ -16,8 +16,17 @@
 
 package jdbm;
 
+import javax.crypto.*;
+
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOError;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.AlgorithmParameters;
+import java.security.spec.KeySpec;
+import java.util.Arrays;
 
 /**
  *
@@ -32,6 +41,7 @@ public class RecordManagerBuilder {
     private boolean batchInsert = false;
     private boolean disableTransactions = false;
     private boolean readonly = false;
+    private String password = null;
 
 
     /**
@@ -110,6 +120,17 @@ public class RecordManagerBuilder {
         return this;
     }
 
+    /**
+     * Enabled storage encryption using AES cipher
+     * Storage can not be read, unless the key is provided next time it is opened
+     * @param password
+     * @return this builder
+     */
+    public RecordManagerBuilder enableEncryption(String password){
+        this.password = password;
+        return this;
+    }
+
 
     /**
      * Make RecordManager readonly.
@@ -178,10 +199,46 @@ public class RecordManagerBuilder {
      * @throws java.io.IOError if db could not be opened
      */
     public RecordManager build(){
+
+        Cipher cipherIn = null;
+        Cipher cipherOut = null;
+        if(password!=null)try{
+            //initialize ciphers
+            //this code comes from stack owerflow
+            //http://stackoverflow.com/questions/992019/java-256bit-aes-encryption/992413#992413
+            byte[] salt = new byte[]{3,-34,123,53,78,121,-12,-1,45,-12,-48,89,11,100,99,8};
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1024, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKey secret = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            String transform = "AES/CBC/NoPadding";
+            IvParameterSpec params = new IvParameterSpec(salt);
+
+            cipherIn = Cipher.getInstance(transform);
+            cipherIn.init(Cipher.ENCRYPT_MODE, secret,params);
+
+            cipherOut = Cipher.getInstance(transform);
+            cipherOut.init(Cipher.DECRYPT_MODE, secret, params);
+
+            //sanity check, try with page size
+            byte[] data = new byte[Storage.BLOCK_SIZE];
+            byte[] encData = cipherIn.doFinal(data);
+            if(encData.length!=Storage.BLOCK_SIZE)
+                throw new Error("Block size changed after encryption, make sure you use '/NoPadding'");
+            byte[] data2 = cipherOut.doFinal(encData);
+            for(int i=0;i<data.length;i++){
+                if(data[i]!=data2[i]) throw new Error();
+            }
+
+        }catch(Exception e){
+            throw new IOError(e);
+        }
+
         RecordManager2 recman = null;
 
         try{
-            recman = new RecordManagerStorage(location,readonly,disableTransactions);
+            recman = new RecordManagerStorage(location,readonly,disableTransactions,cipherIn,cipherOut);
         }catch(IOException e){
             throw new IOError(e);
         }
@@ -221,7 +278,5 @@ public class RecordManagerBuilder {
 
          return recman;
     }
-
-
 
 }

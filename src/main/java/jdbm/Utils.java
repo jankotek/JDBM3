@@ -1,5 +1,9 @@
 package jdbm;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.ShortBufferException;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -62,6 +66,27 @@ class Utils {
 
         }
     };
+
+    public static Storage storageFab(String fileName) throws IOException {
+        Storage ret = null;
+        if(fileName.contains("!/"))
+            ret =  new StorageZip(fileName);
+        else
+            ret = new StorageDisk(fileName);
+        return ret;
+    }
+
+    public static byte[] encrypt(Cipher cipherIn, byte[] b) {
+        if(cipherIn == null)
+            return b;
+
+        try {
+            return cipherIn.doFinal(b);
+        } catch (Exception e) {
+            throw new IOError(e);
+        }
+
+    }
 
 
     static class OpenByteArrayInputStream extends ByteArrayInputStream {
@@ -199,6 +224,52 @@ static final  class IntArrayList {
         else
             return ""+Math.round(1D*size/1e9)+"GB";
     }
+
+
+
+    static boolean allZeros(byte[] b){
+        for(int i = 0;i<b.length;i++){
+            if(b[i]!=0)return false;
+        }
+        return true;
+    }
+
+
+//    public void write(byte[] data, ) throws IOException {
+//        try {
+//            s.write(pageNumber,cipherIn.doFinal(data));
+//        } catch (IllegalBlockSizeException e) {
+//            throw new IOError(e);
+//        } catch (BadPaddingException e) {
+//            throw new IOError(e);
+//        }
+//    }
+//
+//    public boolean read(long pageNumber, byte[] data) throws IOException {
+//
+//           byte[] buf = new byte[BLOCK_SIZE];
+//           if(s.read(pageNumber,buf)){
+//               try {
+//                    cipherOut.doFinal(buf, 0, BLOCK_SIZE, data);
+//               } catch (IllegalBlockSizeException e) {
+//                   throw new IOError(e);
+//               } catch (BadPaddingException e) {
+//                   throw new IOError(e);
+//               } catch (ShortBufferException e) {
+//                   throw new IOError(e);
+//               }
+//
+//               return true;
+//           }else{
+//              //page does not exist in underlying store
+//              System.arraycopy(RecordFile.CLEAN_DATA,0,data,0,BLOCK_SIZE);
+//              return false;
+//           }
+//
+//    }
+
+
+
 
 
 }

@@ -64,12 +64,12 @@ final public class RecordFileTest
         throws Exception
     {
     	String f = newTestFile();
-        RecordFile file = new RecordFile(f,false,false);
+        RecordFile file = new RecordFile(f);
         byte[] data = file.get( 0 ).getData();
         data[ 14 ] = (byte) 'b';
         file.release( 0, true );
         file.close();
-        file = new RecordFile(f,false,false);
+        file = new RecordFile(f);
         data = file.get( 0 ).getData();
         assertEquals( (byte) 'b', data[ 14 ] );
         file.release( 0, false );
@@ -84,7 +84,7 @@ final public class RecordFileTest
         throws Exception
     {
     	String f = newTestFile();
-        RecordFile file = new RecordFile(f,false,false);
+        RecordFile file = new RecordFile(f);
 
         // Write recid 0, byte 0 with 'b'
         byte[] data = file.get( 0 ).getData();
@@ -103,7 +103,7 @@ final public class RecordFileTest
 
         file.close();
 
-        file = new RecordFile(f,false,false);
+        file = new RecordFile(f);
         data = file.get( 0 ).getData();
         assertEquals( "0 = b", (byte) 'b', data[ 0 ] );
         file.release( 0, false );

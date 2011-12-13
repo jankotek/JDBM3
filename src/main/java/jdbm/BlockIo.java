@@ -17,10 +17,8 @@
 
 package jdbm;
 
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import javax.crypto.Cipher;
+import java.io.*;
 
 /**
  *  This class wraps a page-sized byte array and provides methods
@@ -287,18 +285,23 @@ final class BlockIo {
     }
 
     // implement externalizable interface
-    public void readExternal(DataInputStream in) throws IOException{
+    public void readExternal(DataInputStream in, Cipher cipherOut) throws IOException{
         blockId = LongPacker.unpackLong(in);
-        int length = LongPacker.unpackInt(in);
-        data = new byte[length];
-        in.readFully(data);
+        byte[] data2 = new byte[Storage.BLOCK_SIZE];
+        in.readFully(data2);
+        if(cipherOut == null || Utils.allZeros(data2))
+            data = data2;
+        else try{
+            data = cipherOut.doFinal(data2);
+        }catch (Exception e){
+            throw new IOError(e);
+        }
     }
 
     // implement externalizable interface
-    public void writeExternal(DataOutput out) throws IOException {
+    public void writeExternal(DataOutput out, Cipher cipherIn) throws IOException {
     	LongPacker.packLong(out, blockId);
-    	LongPacker.packInt(out, data.length);
-        out.write(data);
+        out.write(Utils.encrypt(cipherIn,data));
     }
 
     static final int UNSIGNED_SHORT_MAX = 256 * 256 -1;  

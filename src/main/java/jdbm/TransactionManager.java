@@ -17,6 +17,7 @@
 
 package jdbm;
 
+import javax.crypto.Cipher;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -62,16 +63,23 @@ final class TransactionManager {
     private int curTxn = -1;
 
     private Storage storage;
+    private Cipher cipherIn;
+    private Cipher cipherOut;
 
     /**
      *  Instantiates a transaction manager instance. If recovery
      *  needs to be performed, it is done.
      *
      * @param owner the RecordFile instance that owns this transaction mgr.
+     * @param storage
+     * @param cipherIn
+     * @param cipherOut
      */
-    TransactionManager(RecordFile owner, Storage storage) throws IOException {
+    TransactionManager(RecordFile owner, Storage storage, Cipher cipherIn, Cipher cipherOut) throws IOException {
         this.owner = owner;
         this.storage = storage;
+        this.cipherIn = cipherIn;
+        this.cipherOut = cipherOut;
         recover();
         open();
     }
@@ -175,7 +183,7 @@ final class TransactionManager {
                 blocks = new ArrayList<BlockIo>(size);
                 for(int i =0; i<size;i++){
                     BlockIo b = new BlockIo();
-                    b.readExternal(ois);
+                    b.readExternal(ois,cipherOut);
                     blocks.add(b);
                 }
             } catch (IOException e) {
@@ -254,7 +262,7 @@ final class TransactionManager {
         ArrayList<BlockIo> blocks = txns[curTxn];
         LongPacker.packInt(oos,blocks.size());
         for(BlockIo block:blocks){
-            block.writeExternal(oos);
+            block.writeExternal(oos,cipherIn);
         }
 
 

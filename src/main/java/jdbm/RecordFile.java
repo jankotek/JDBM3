@@ -17,6 +17,8 @@
 
 package jdbm;
 
+import javax.crypto.Cipher;
+import java.io.IOError;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -67,6 +69,8 @@ final class RecordFile {
 
 
     private Storage storage;
+    private Cipher cipherOut;
+    private Cipher cipherIn;
 
     /**
      *  Creates a new object on the indicated filename. The file is
@@ -77,7 +81,9 @@ final class RecordFile {
      *  @throws IOException whenever the creation of the underlying
      *          RandomAccessFile throws it.
      */
-    RecordFile(String fileName, boolean readonly, boolean transactionDisabled) throws IOException {
+    RecordFile(String fileName, boolean readonly, boolean transactionDisabled, Cipher cipherIn, Cipher cipherOut) throws IOException {
+        this.cipherIn = cipherIn;
+        this.cipherOut = cipherOut;
         this.transactionsDisabled = transactionDisabled;
         if(fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
@@ -86,10 +92,14 @@ final class RecordFile {
         if(this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on RecordManagerBuilder");
         if(!readonly){
-            txnMgr = new TransactionManager(this,storage);
+            txnMgr = new TransactionManager(this,storage,cipherIn,cipherOut);
         }else{
             txnMgr = null;
         }
+    }
+
+    public RecordFile(String filename) throws IOException {
+        this(filename,false,false,null,null);
     }
 
 
@@ -133,7 +143,21 @@ final class RecordFile {
          // get a new node and read it from the file
          node = getNewNode(blockid);
 
-         storage.read(blockid,node.getData());
+         if(cipherOut==null){
+             storage.read(blockid,node.getData());
+         }else{
+             //decrypt if needed
+             byte[] b = new byte[Storage.BLOCK_SIZE];
+             storage.read(blockid,b);
+             if(!Utils.allZeros(b))try {
+                     cipherOut.doFinal(b,0,Storage.BLOCK_SIZE,node.getData());
+                } catch (Exception e) {
+                     throw new IOError(e);
+             }else{
+                 System.arraycopy(CLEAN_DATA,0,node.getData(),0,Storage.BLOCK_SIZE);
+             }
+         }
+
 
          inUse.put(blockid, node);
          node.setClean();
@@ -217,7 +241,8 @@ final class RecordFile {
             i.remove();
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
-                storage.write(node.getBlockId(),node.getData());
+
+                storage.write(node.getBlockId(),Utils.encrypt(cipherIn,node.getData()));
                 node.setClean();
                 free.put(node.getBlockId(),node);
             }
@@ -230,6 +255,7 @@ final class RecordFile {
             txnMgr.commit();
         }
     }
+
 
     /**
      *  Rollback the current transaction by discarding all dirty buffers
@@ -332,8 +358,7 @@ final class RecordFile {
     void synch(BlockIo node) throws IOException {
         byte[] data = node.getData();
         if (data != null) {
-
-            storage.write(node.getBlockId(),data);
+            storage.write(node.getBlockId(),Utils.encrypt(cipherIn,data));
         }
     }
 
