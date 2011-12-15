@@ -42,17 +42,12 @@ class Serialization extends SerialClassInfo implements Serializer
 {
 
 
-	static final byte END_OF_NORMAL_SERIALIZATION = 111;
+
 
 	/** print statistics to STDOUT */
 	static final boolean DEBUG = false;
 
-	/** if set to true, debug informations will be saved to store to make it more robust */
-	static final boolean DEBUGSTORE = false;
-	
-	private static final int DEBUGSTORE_DUMMY_START = 456456567;
-	private static final int DEBUGSTORE_DUMMY_END = 1234456;
-	
+
     private static final String UTF8 = "UTF-8";
 
     Serialization(RecordManager recman, long serialClassInfoRecid) throws IOException {
@@ -89,36 +84,41 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
     public void serialize(final DataOutput out, final Object obj) throws IOException {
-        serialize(out,obj,new FastArrayList());
+        serialize(out,obj,null);
     }
 
 
     public void serialize(final DataOutput out, final Object obj, FastArrayList objectStack) throws IOException {
 
-        int indexInObjectStack = objectStack.identityIndexOf(obj);
-        if(indexInObjectStack!=-1){
-            //object was already serialized, just write reference to it and return
-            out.write(OBJECT_STACK);
-            LongPacker.packInt(out,indexInObjectStack);
-            return;
+        /**try to find object on stack if it exists*/
+        if(objectStack != null){
+            int indexInObjectStack = objectStack.identityIndexOf(obj);
+            if(indexInObjectStack!=-1){
+                //object was already serialized, just write reference to it and return
+                out.write(OBJECT_STACK);
+                LongPacker.packInt(out,indexInObjectStack);
+                return;
+            }
+            //add this object to objectStack
+            objectStack.add(obj);
         }
-        //add this object to objectStack
-        objectStack.add(obj);
 
         final Class clazz = obj!=null?obj.getClass():null;
-        if(DEBUGSTORE){
-            out.writeInt(DEBUGSTORE_DUMMY_START);
-        }
+
+        /** first try to serialize object without initializing object stack*/
         if(obj == null){
             out.write(NULL);
+            return;
         }else if (clazz ==  Boolean.class){
             if(((Boolean)obj).booleanValue())
                 out.write(BOOLEAN_TRUE);
             else
                 out.write(BOOLEAN_FALSE);
+            return;
         }else if (clazz ==  Integer.class){
             final int val = (Integer) obj;
             writeInteger(out, val);
+            return;
         }else if (clazz ==  Double.class){
             double v = (Double) obj;
             if(v == -1d)
@@ -137,6 +137,7 @@ class Serialization extends SerialClassInfo implements Serializer
                 out.write(DOUBLE_FULL);
                 out.writeDouble(v);
             }
+            return;
         }else if (clazz ==  Float.class){
             float v = (Float) obj;
             if(v == -1f)
@@ -156,19 +157,22 @@ class Serialization extends SerialClassInfo implements Serializer
                 out.write(FLOAT_FULL);
                 out.writeFloat(v);
             }
+            return;
         }else if (clazz ==  BigInteger.class){
             out.write(BIGINTEGER);
             byte[] buf = ((BigInteger)obj).toByteArray();
             serializeByteArrayInt(out, buf);
-
+            return;
         }else if (clazz ==  BigDecimal.class){
             out.write(BIGDECIMAL);
             BigDecimal d = (BigDecimal)obj;
             serializeByteArrayInt(out,d.unscaledValue().toByteArray());
             LongPacker.packInt(out,d.scale());
+            return;
         }else if (clazz ==  Long.class){
             final long val = (Long) obj;
             writeLong(out, val);
+            return;
         }else if (clazz ==  Short.class){
             short val = (Short)obj;
             if(val == -1)
@@ -184,6 +188,7 @@ class Serialization extends SerialClassInfo implements Serializer
                 out.write(SHORT_FULL);
                 out.writeShort(val);
             }
+            return;
         }else if (clazz ==  Byte.class){
             byte val = (Byte)obj;
             if(val == -1)
@@ -196,9 +201,11 @@ class Serialization extends SerialClassInfo implements Serializer
                 out.write(SHORT_FULL);
                 out.writeByte(val);
             }
+            return;
         }else if (clazz ==  Character.class){
             out.write(CHAR);
             out.writeChar((Character) obj);
+            return;
         }else if(clazz == String.class){
             byte[] s = ((String)obj).getBytes(UTF8);
             if(s.length==0){
@@ -208,19 +215,51 @@ class Serialization extends SerialClassInfo implements Serializer
                 LongPacker.packInt(out, s.length);
                 out.write(s);
             }
+            return;
         }else if(obj instanceof Class){
             out.write(CLASS);
             serialize(out, ((Class) obj).getName());
+            return;
         }else if(obj instanceof int[]){
             writeIntArray(out, (int[]) obj);
+            return;
         }else if(obj instanceof long[]){
             writeLongArray(out,(long[])obj);
+            return;
         }else if(obj instanceof byte[]){
             byte[] b = (byte[]) obj;
             out.write(ARRAY_BYTE_INT);
             serializeByteArrayInt(out, b);
+            return;
+        }else if(clazz ==  Date.class){
+            out.write(DATE);
+            out.writeLong(((Date)obj).getTime());
+            return;
+        }else if (clazz == BTree.class){
+            out.write(BTREE);
+            ((BTree)obj).writeExternal(out);
+            return;
+        }else if (clazz == HTree.class){
+            out.write(HTREE);
+            ((HTree)obj).serialize(out);
+            return;
+        }else if (clazz == LinkedList.class){
+            out.write(JDBMLINKEDLIST);
+            ((LinkedList)obj).serialize(out);
+            return;
+        }
 
-        }else if(obj instanceof Object[]){
+
+
+        /** classes bellow need object stack, so initialize it if not alredy initialized*/
+        if(objectStack==null){
+            objectStack = new FastArrayList();
+            objectStack.add(obj);
+        }
+
+
+
+        if(obj instanceof Object[]){
             Object[] b = (Object[]) obj;
             boolean packableLongs = b.length<=255;
             if(packableLongs){
@@ -309,27 +348,11 @@ class Serialization extends SerialClassInfo implements Serializer
             serializeMap(HASHTABLE,out,obj,objectStack);
         }else if(clazz ==  Properties.class){
             serializeMap(PROPERTIES,out,obj,objectStack);
-        }else if(clazz ==  Date.class){
-            out.write(DATE);
-            out.writeLong(((Date)obj).getTime());
-        }else if (clazz == BTree.class){
-            out.write(BTREE);
-            ((BTree)obj).writeExternal(out);
-        }else if (clazz == HTree.class){
-            out.write(HTREE);
-            ((HTree)obj).serialize(out);
-
-        }else if (clazz == LinkedList.class){
-            out.write(JDBMLINKEDLIST);
-            ((LinkedList)obj).serialize(out);
         }else{
             out.write(NORMAL);
             writeObject(out,obj, objectStack);
         }
 
-        if(DEBUGSTORE){
-            out.writeInt(DEBUGSTORE_DUMMY_END);
-        }
     }
 
     private void serializeMap(int header, DataOutput out, Object obj,FastArrayList objectStack) throws IOException {
@@ -534,24 +557,17 @@ class Serialization extends SerialClassInfo implements Serializer
 
 
     public Object deserialize(DataInput is) throws IOException, ClassNotFoundException{
-        return deserialize(is, new FastArrayList());
+        return deserialize(is, null);
     }
     public Object deserialize(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException{
 
-        Object ret = null;
+        Object ret=null;
 
-        if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_START){
-            throw new InternalError("Wrong offset");
-        }
+        final int head = is.readUnsignedByte();
 
-        int oldObjectStackSize = objectStack.size();
-
-        int head = is.readUnsignedByte();
-
+        /** first try to deserialize object without allocating object stack*/
         switch(head){
-            case NULL:ret=  null;break;
-            case NORMAL: ret = readObject(is,objectStack); break;
-            case OBJECT_STACK: ret = objectStack.get(LongPacker.unpackInt(is)); break;
+            case NULL:return null;
             case BOOLEAN_TRUE: ret= Boolean.TRUE;break;
             case BOOLEAN_FALSE: ret= Boolean.FALSE;break;
             case INTEGER_MINUS_1:ret= Integer.valueOf(-1);break;
@@ -608,8 +624,48 @@ class Serialization extends SerialClassInfo implements Serializer
             case BIGDECIMAL: ret = new BigDecimal(new BigInteger(deserializeArrayByteInt(is)),LongPacker.unpackInt(is));break;
             case STRING:ret= deserializeString(is);break;
             case STRING_EMPTY:ret= Utils.EMPTY_STRING;break;
-            case ARRAYLIST:ret= deserializeArrayList(is,objectStack);break;
+
+            case CLASS:ret = deserializeClass(is);break;
+            case DATE:ret = new Date(is.readLong());break;
+            case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
+            case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
+            case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
+            case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
+            case ARRAY_INT_PACKED: ret= deserializeArrayIntPack(is);break;
+            case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
+            case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
+            case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
+            case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
+            case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
             case ARRAYLIST_PACKED_LONG:ret= deserializeArrayListPackedLong(is);break;
+            case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
+            case JDBMLINKEDLIST: ret = LinkedList.deserialize(is);break;
+            case HTREE: ret = HTree.deserialize(is);break;
+            case BTREE: ret = BTree.readExternal(is,this); break;
+            case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
+            case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
+            case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
+
+            case -1: throw new EOFException();
+
+        }
+
+        if(ret!=null){
+            if(objectStack!=null)
+                objectStack.add(ret);
+            return ret;
+        }
+
+        /**  something else which needs object stack initialized*/
+
+        if(objectStack == null)
+            objectStack = new FastArrayList();
+        int oldObjectStackSize = objectStack.size();
+
+        switch(head){
+            case NORMAL: ret = readObject(is,objectStack); break;
+            case OBJECT_STACK: ret = objectStack.get(LongPacker.unpackInt(is)); break;
+            case ARRAYLIST:ret= deserializeArrayList(is,objectStack);break;
             case ARRAY_OBJECT:ret= deserializeArrayObject(is,objectStack);break;
             case ARRAY_OBJECT_PACKED_LONG:ret= deserializeArrayObjectPackedLong(is);break;
             case LINKEDLIST:ret= deserializeLinkedList(is,objectStack);break;
@@ -622,35 +678,8 @@ class Serialization extends SerialClassInfo implements Serializer
             case LINKEDHASHMAP:ret= deserializeLinkedHashMap(is,objectStack);break;
             case HASHTABLE:ret= deserializeHashtable(is,objectStack);break;
             case PROPERTIES:ret= deserializeProperties(is,objectStack);break;
-            case CLASS:ret = deserializeClass(is);break;
-            case DATE:ret = new Date(is.readLong());break;
-
-
-            case ARRAY_INT_B_255: ret= deserializeArrayIntB255(is);break;
-            case ARRAY_INT_B_INT: ret= deserializeArrayIntBInt(is);break;
-            case ARRAY_INT_S: ret= deserializeArrayIntSInt(is);break;
-            case ARRAY_INT_I: ret= deserializeArrayIntIInt(is);break;
-            case ARRAY_INT_PACKED: ret= deserializeArrayIntPack(is);break;
-            case ARRAY_LONG_B: ret= deserializeArrayLongB(is);break;
-            case ARRAY_LONG_S: ret= deserializeArrayLongS(is);break;
-            case ARRAY_LONG_I: ret= deserializeArrayLongI(is);break;
-            case ARRAY_LONG_L: ret= deserializeArrayLongL(is);break;
-            case ARRAY_LONG_PACKED: ret= deserializeArrayLongPack(is);break;
-            case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
-            case JDBMLINKEDLIST: ret = LinkedList.deserialize(is);break;
-            case HTREE: ret = HTree.deserialize(is);break;
-            case BTREE: ret = BTree.readExternal(is,this); break;
-            case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
-            case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
-            case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
-
-            case -1: throw new EOFException();
 
             default: throw new InternalError("Unknown serialization header: "+head);
-        }
-
-        if(DEBUGSTORE && is.readInt()!=DEBUGSTORE_DUMMY_END){
-            throw new InternalError("Wrong offset '"+ret+ "' - "+ret.getClass());
         }
 
         if(head!=OBJECT_STACK && objectStack.size() == oldObjectStackSize){
