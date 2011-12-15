@@ -45,10 +45,6 @@ public class RecordHeaderTest extends TestCase {
 	
 	public void testRecordSize(){	
 		
-		System.out.println("BASE0 "+RecordHeader.base0);
-		System.out.println("BASE1 "+RecordHeader.base1);
-		System.out.println("BASE2 "+RecordHeader.base2);
-		System.out.println("BASE3 "+RecordHeader.base3);
 		System.out.println("MAX_RECORD_SIZE "+RecordHeader.MAX_RECORD_SIZE);
 		
 		assertEquals("inconsistent rounding at max rec size",
