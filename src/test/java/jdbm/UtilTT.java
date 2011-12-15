@@ -16,6 +16,8 @@
 
 package jdbm;
 
+import junit.framework.TestCase;
+
 /**
  * This class contains some test utilities.
  */
@@ -34,16 +36,9 @@ public class UtilTT {
 	 * Checks whether the record has the indicated length and data
 	 */
 	public static boolean checkRecord(byte[] data, int length, byte b) {
-		if (data.length != length) {
-			System.err.println("length doesn't match: expected " + length + ", got " + data.length);
-			return false;
-		}
-
+        TestCase.assertEquals("lenght does not match",length,data.length);
 		for (int i = 0; i < length; i++)
-			if (data[i] != b) {
-				System.err.println("byte " + i + " wrong: expected " + b + ", got " + data[i]);
-				return false;
-			}
+            TestCase.assertEquals("byte " + i,b,data[i]);
 
 		return true;
 	}

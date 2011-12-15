@@ -542,7 +542,7 @@ final class HTreeDirectory<K,V>
                 // node is a bucket
                 HTreeBucket bucket = (HTreeBucket)node;
                 if ( _iterateKeys ) {
-                     ArrayList keys2 = (ArrayList) bucket.getKeys().clone();
+                     ArrayList keys2 = bucket.getKeys();
                     _iter = keys2.iterator();
                 } else {
                     _iter = bucket.getValues().iterator();

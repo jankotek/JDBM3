@@ -60,14 +60,16 @@ final class HTreeBucket<K,V>
      * Keys in this bucket.  Keys are ordered to match their respective
      * value in <code>_values</code>.
      */
-    private ArrayList<K> _keys;
+    private K[] _keys;
+
+    private byte size  = 0;
 
 
     /**
      * Values in this bucket.  Values are ordered to match their respective
      * key in <code>_keys</code>.
      */
-    private ArrayList _values;
+    private Object[] _values;
 
     private final HTree<K, V> tree;
 
@@ -93,8 +95,8 @@ final class HTreeBucket<K,V>
                             + "Depth=" + level );
         }
         _depth = level;
-        _keys = new ArrayList<K>( OVERFLOW_SIZE );
-        _values = new ArrayList<V>( OVERFLOW_SIZE );
+        _keys = (K[]) new Object[ OVERFLOW_SIZE ];
+        _values = new Object[ OVERFLOW_SIZE];
     }
 
 
@@ -103,7 +105,7 @@ final class HTreeBucket<K,V>
      */
     public int getElementCount()
     {
-        return _keys.size();
+        return size;
     }
 
 
@@ -125,7 +127,7 @@ final class HTreeBucket<K,V>
             return true;  // leaf buckets are never full
         } else {
             // non-leaf bucket
-            return ( _keys.size() < OVERFLOW_SIZE );
+            return ( size < OVERFLOW_SIZE );
         }
     }
 
@@ -139,21 +141,30 @@ final class HTreeBucket<K,V>
      */
     public V addElement( K key, V value )
     {
-        int existing = _keys.indexOf(key);
+        //find entry
+        byte existing = -1;
+        for(byte i=0;i<size;i++){
+            if(key.equals(_keys[i])){
+                existing = i;
+                break;
+            }
+        }
+
         if ( existing != -1 ) {
             // replace existing element
-            Object before = _values.get( existing );
+            Object before = _values[existing];
             if(before instanceof BTreeLazyRecord){
                 BTreeLazyRecord<V> rec = (BTreeLazyRecord<V>)before;
                 before = rec.get();
                 rec.delete();
             }
-            _values.set( existing, value );
+            _values[existing] =  value ;
             return (V)before;
         } else {
             // add new (key, value) pair
-            _keys.add( key );
-            _values.add( value );
+            _keys[size] = key;
+            _values[size] = value;
+            size++;
             return null;
         }
     }
@@ -168,16 +179,34 @@ final class HTreeBucket<K,V>
      */
     public V removeElement( K key )
     {
-        int existing = _keys.indexOf(key);
+        //find entry
+        byte existing = -1;
+        for(byte i=0;i<size ;i++){
+            if(key.equals(_keys[i])){
+                existing = i;
+                break;
+            }
+        }
+
         if ( existing != -1 ) {
-            Object o  =  _values.get( existing );
+            Object o  =  _values[existing];
             if(o instanceof BTreeLazyRecord){
                 BTreeLazyRecord<V> rec = (BTreeLazyRecord<V>)o;
                 o = rec.get();
                 rec.delete();
             }
-            _keys.remove( existing );
-            _values.remove( existing );
+
+
+            //move last element to existing
+            size--;
+            _keys[existing] = _keys[size];
+            _values[existing] = _values[size];
+
+            //and unset last element
+            _keys[size] = null;
+            _values[size] = null;
+
+
             return (V)o;
         } else {
             // not found
@@ -192,9 +221,17 @@ final class HTreeBucket<K,V>
      */
     public V getValue( K key )
     {
-        int existing = _keys.indexOf(key);
+                //find entry
+        byte existing = -1;
+        for(byte i=0;i<size;i++){
+            if(key.equals(_keys[i])){
+                existing = i;
+                break;
+            }
+        }
+
         if ( existing != -1 ) {
-            Object o  =  _values.get( existing );
+            Object o  =  _values[existing];
             if(o instanceof BTreeLazyRecord)
                 return ((BTreeLazyRecord<V>)o).get();
             else
@@ -215,7 +252,11 @@ final class HTreeBucket<K,V>
      */
     ArrayList<K> getKeys()
     {
-        return this._keys;
+        ArrayList<K> ret = new ArrayList<K>();
+        for(byte i=0;i<size;i++){
+            ret.add(_keys[i]);
+        }
+        return ret;
     }
 
 
@@ -228,7 +269,12 @@ final class HTreeBucket<K,V>
      */
     ArrayList<V> getValues()
     {
-        return this._values;
+        ArrayList<V> ret = new ArrayList<V>();
+        for(byte i=0;i<size;i++){
+            ret.add((V) _values[i]);
+        }
+        return ret;
+
     }
 
 
@@ -236,22 +282,24 @@ final class HTreeBucket<K,V>
         throws IOException
     {
         LongPacker.packInt(out, _depth);
-        out.write(_keys.size());
+        out.write(size);
+        Utils.OpenByteArrayOutputStream baos = new Utils.OpenByteArrayOutputStream(new byte[64]);
+        DataOutputStream out3 = new DataOutputStream(baos);
 
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
-        for(int i = 0;i<_keys.size();i++){
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            keySerializer.serialize(new Utils.SerializerOutput(baos), _keys.get(i));
-            byte[] buf = baos.toByteArray();
-            LongPacker.packInt(out,buf.length);
-            out.write(buf);
+        for(byte i = 0;i<size;i++){
+            baos.reset();
+            keySerializer.serialize(out3, _keys[i]);
+            LongPacker.packInt(out,baos.size());
+            out.write(baos.getBuf(),0,baos.size());
+
         }
 
         //write values
         Serializer valSerializer = tree.valueSerializer!=null?tree.valueSerializer : tree.getRecordManager().defaultSerializer();
 
-        for(int i = 0;i<_keys.size();i++){
-            Object value = _values.get(i);
+        for(byte i = 0;i<size;i++){
+            Object value = _values[i];
             if(value == null){
                 out.write(BTreeLazyRecord.NULL);
             }else if(value instanceof BTreeLazyRecord){
@@ -259,17 +307,17 @@ final class HTreeBucket<K,V>
                 LongPacker.packLong(out,((BTreeLazyRecord)value).recid);
             }else{
                 //transform to byte array
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                valSerializer.serialize(new Utils.SerializerOutput(baos), value);
-                byte[] buf = baos.toByteArray();
-                if(buf.length>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
+                baos.reset();
+                valSerializer.serialize(out3, value);
+
+                if(baos.size()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                         //store as separate record
-                        long recid = tree.getRecordManager().insert(buf,BTreeLazyRecord.FAKE_SERIALIZER);
+                        long recid = tree.getRecordManager().insert(baos.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
                         out.write(BTreeLazyRecord.LAZY_RECORD);
                         LongPacker.packLong(out,recid);
                 }else{
-                        out.write(buf.length);
-                        out.write(buf);
+                        out.write(baos.size());
+                        out.write(baos.getBuf(),0,baos.size());
                 }
             }
         }
@@ -278,29 +326,29 @@ final class HTreeBucket<K,V>
 
     public void readExternal(DataInputStream in) throws IOException, ClassNotFoundException {
         _depth = LongPacker.unpackInt(in);
-        final int size = in.read();
+        size = in.readByte();
 
         //read keys
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
-        _keys = new ArrayList<K>(OVERFLOW_SIZE);
-        for(int i =0; i<size; i++){
+        _keys = (K[]) new Object[OVERFLOW_SIZE];
+        for(byte i =0; i<size; i++){
             int expectedSize = LongPacker.unpackInt(in);
             K key = (K) BTreeLazyRecord.fastDeser(in, keySerializer, expectedSize);
-            _keys.add(key);
+            _keys[i] = key;
         }
 
          //read values
-        _values = new ArrayList(OVERFLOW_SIZE);
+        _values = new Object[OVERFLOW_SIZE];
         Serializer<V> valSerializer =  tree.valueSerializer!=null ?  tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
-        for(int i = 0;i<size;i++){
+        for(byte i = 0;i<size;i++){
             int header = in.read();
             if(header == BTreeLazyRecord.NULL){
-                _values.add(null);
+                _values[i] = null;
             }else if(header == BTreeLazyRecord.LAZY_RECORD){
                 long recid = LongPacker.unpackLong(in);
-                _values.add(new BTreeLazyRecord(tree.getRecordManager(),recid,valSerializer));
+                _values[i] = (new BTreeLazyRecord(tree.getRecordManager(),recid,valSerializer));
             }else{
-                _values.add(BTreeLazyRecord.fastDeser(in,valSerializer,header));
+                _values[i] = BTreeLazyRecord.fastDeser(in,valSerializer,header);
             }
         }
     }
