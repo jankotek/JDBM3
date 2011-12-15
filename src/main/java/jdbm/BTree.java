@@ -17,9 +17,9 @@
 package jdbm;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -146,7 +146,7 @@ class BTree<K,V>
     /**
      * Listeners which are notified about changes in records
      */
-    protected List<RecordListener<K,V>> recordListeners = new CopyOnWriteArrayList<RecordListener<K, V>>();
+    protected RecordListener[] recordListeners =new  RecordListener[0];
     
     protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -637,7 +637,8 @@ class BTree<K,V>
      * @param listener
      */
     public void addRecordListener(RecordListener<K,V> listener){
-    	recordListeners.add(listener);
+        recordListeners = Arrays.copyOf(recordListeners, recordListeners.length + 1);
+    	recordListeners[recordListeners.length-1]=listener;
     }
 
     /**
@@ -645,8 +646,11 @@ class BTree<K,V>
      * @param listener
      */
     public void removeRecordListener(RecordListener<K,V> listener){
-    	recordListeners.remove(listener);
+        List l = Arrays.asList(recordListeners);
+        l.remove(listener);
+    	recordListeners = (RecordListener[]) l.toArray(new RecordListener[1]);
     }
+
 
 
 	public RecordManager2 getRecordManager() {

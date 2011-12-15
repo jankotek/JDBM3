@@ -76,7 +76,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     /**
      * Listeners which are notified about changes in records
      */
-    protected List<RecordListener<K,V>> recordListeners = new ArrayList<RecordListener<K,V>>();
+    protected RecordListener[] recordListeners = new RecordListener[0];
 
  /**
      * Serializer used to serialize index keys (optional)
@@ -154,10 +154,10 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 		V oldVal = get(key);
                 getRoot().put(key, value);
                 if(oldVal == null){
-                    for(RecordListener<K,V> r : recordListeners)
+                        for(RecordListener<K,V> r : recordListeners)
                             r.recordInserted(key,value);
                 }else{
-                    for(RecordListener<K,V> r : recordListeners)
+                        for(RecordListener<K,V> r : recordListeners)
                             r.recordUpdated(key,oldVal,value);
                 }
 
@@ -192,12 +192,12 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 		V oldVal = get((K) key);
 		if(oldVal!=null){
                            V val = null;
-                           if(!recordListeners.isEmpty())
+                           if(recordListeners.length>0)
                                    val = get(key);
                            getRoot().remove(key);
-                               if(val!=null)
-                                       for(RecordListener<K,V> r : recordListeners)
-                                               r.recordRemoved((K)key,val);
+                           if(val!=null)
+                                for(RecordListener r : recordListeners)
+                                    r.recordRemoved(key,val);
                        }
 		return oldVal;
 	}catch (ClassCastException e){
@@ -247,7 +247,8 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      * @param listener
      */
     public void addRecordListener(RecordListener<K,V> listener){
-    	recordListeners.add(listener);
+        recordListeners = Arrays.copyOf(recordListeners,recordListeners.length+1);
+    	recordListeners[recordListeners.length-1]=listener;
     }
 
     /**
@@ -255,7 +256,9 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
      * @param listener
      */
     public void removeRecordListener(RecordListener<K,V> listener){
-    	recordListeners.remove(listener);
+        List l = Arrays.asList(recordListeners);
+        l.remove(listener);
+    	recordListeners = (RecordListener[]) l.toArray(new RecordListener[1]);
     }
 
 
