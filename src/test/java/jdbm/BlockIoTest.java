@@ -32,11 +32,8 @@ public class BlockIoTest extends TestCase {
     private static final short SHORT_VALUE = 0x1234;
     private static final int INT_VALUE = 0xe7b3c8a1;
     private static final long LONG_VALUE = 0xfdebca9876543210L;
+    private static final long LONG_VALUE2 = 1231290495545446485L;
 
-    public BlockIoTest(String name) {
-  super(name);
-    }
-    
 
     /**
      *  Test writing
@@ -47,12 +44,20 @@ public class BlockIoTest extends TestCase {
   test.writeShort(0, SHORT_VALUE);
   test.writeLong(2, LONG_VALUE);
   test.writeInt(10, INT_VALUE);
+  test.writeLong(14, LONG_VALUE2);
   
   DataInputStream is = 
       new DataInputStream(new ByteArrayInputStream(data));
   assertEquals("short", SHORT_VALUE, is.readShort());
   assertEquals("long", LONG_VALUE, is.readLong());
   assertEquals("int", INT_VALUE, is.readInt());
+   assertEquals("long", LONG_VALUE2, is.readLong());
+        
+        assertEquals("short", SHORT_VALUE, test.readShort(0));
+        assertEquals("long", LONG_VALUE, test.readLong(2));
+        assertEquals("int", INT_VALUE, test.readInt(10));
+         assertEquals("long", LONG_VALUE2, test.readLong(14));
+        
     }
 
     /**
@@ -64,12 +69,14 @@ public class BlockIoTest extends TestCase {
   os.writeShort(SHORT_VALUE);
   os.writeLong(LONG_VALUE);
   os.writeInt(INT_VALUE);
+  os.writeLong(LONG_VALUE2);
 
   byte[] data = bos.toByteArray();
   BlockIo test = new BlockIo(0, data);
   assertEquals("short", SHORT_VALUE, test.readShort(0));
   assertEquals("long", LONG_VALUE, test.readLong(2));
   assertEquals("int", INT_VALUE, test.readInt(10));
+  assertEquals("long", LONG_VALUE2, test.readLong(14));
     }
     
 
