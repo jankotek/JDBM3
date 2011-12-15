@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A bucket is a placeholder for multiple (key, value) pairs.  Buckets
@@ -276,6 +277,7 @@ final class HTreeBucket<K,V>
         return ret;
 
     }
+    
 
 
     public void writeExternal( DataOutput out )
@@ -284,7 +286,12 @@ final class HTreeBucket<K,V>
         LongPacker.packInt(out, _depth);
         out.write(size);
 
-        DataInputOutput out3 = new DataInputOutput();
+        
+        DataInputOutput out3 = tree.writeBufferCache.getAndSet(null);
+        if(out3 == null)
+            out3 = new DataInputOutput();
+        else
+            out3.reset();
 
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         for(byte i = 0;i<size;i++){
@@ -321,6 +328,8 @@ final class HTreeBucket<K,V>
                 }
             }
         }
+        tree.writeBufferCache.set(out3);
+
     }
 
 

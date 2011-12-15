@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *  Persistent hashtable implementation for PageManager.
@@ -103,6 +104,10 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 	public Serializer<V> getValueSerializer() {
 		return valueSerializer;
 	}
+
+
+    /** cache writing buffer, so it does not have to be allocated on each write */
+   AtomicReference<DataInputOutput> writeBufferCache = new AtomicReference<DataInputOutput>();
 
 
 
