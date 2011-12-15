@@ -34,20 +34,20 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     final Serializer SERIALIZER = new Serializer<Object>() {
 
         public Object deserialize(DataInput ds2) throws IOException {
-            DataInputStream ds = (DataInputStream) ds2;
+            DataInputOutput ds = (DataInputOutput) ds2;
             try{
-                int i = ds.read();
+                int i = ds.readUnsignedByte();
                 if(i == SerializationHeader.HTREE_BUCKET){ //is HashBucket?
                     HTreeBucket ret = new HTreeBucket(HTree.this);
                     if(loadValues)
                         ret.readExternal(ds);
-                    if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
+                    if(ds.available()!=0)
                         throw new InternalError("bytes left: "+ds.available());
                     return ret;
                 }else if( i == SerializationHeader.HTREE_DIRECTORY){
                     HTreeDirectory ret = new HTreeDirectory(HTree.this);
                     ret.readExternal(ds);
-                    if(ds.available()!=0 && ds.read()!=-1) // -1 is fix for compression, not sure what is happening
+                    if(ds.available()!=0)
                         throw new InternalError("bytes left: "+ds.available());
                     return ret;
                 }else {

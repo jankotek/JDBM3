@@ -283,15 +283,15 @@ final class HTreeBucket<K,V>
     {
         LongPacker.packInt(out, _depth);
         out.write(size);
-        Utils.OpenByteArrayOutputStream baos = new Utils.OpenByteArrayOutputStream(new byte[64]);
-        DataOutputStream out3 = new DataOutputStream(baos);
+
+        DataInputOutput out3 = new DataInputOutput();
 
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         for(byte i = 0;i<size;i++){
-            baos.reset();
+            out3.reset();
             keySerializer.serialize(out3, _keys[i]);
-            LongPacker.packInt(out,baos.size());
-            out.write(baos.getBuf(),0,baos.size());
+            LongPacker.packInt(out,out3.getPos());
+            out.write(out3.getBuf(),0,out3.getPos());
 
         }
 
@@ -307,24 +307,24 @@ final class HTreeBucket<K,V>
                 LongPacker.packLong(out,((BTreeLazyRecord)value).recid);
             }else{
                 //transform to byte array
-                baos.reset();
+                out3.reset();
                 valSerializer.serialize(out3, value);
 
-                if(baos.size()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
+                if(out3.getPos()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                         //store as separate record
-                        long recid = tree.getRecordManager().insert(baos.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
+                        long recid = tree.getRecordManager().insert(out3.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
                         out.write(BTreeLazyRecord.LAZY_RECORD);
                         LongPacker.packLong(out,recid);
                 }else{
-                        out.write(baos.size());
-                        out.write(baos.getBuf(),0,baos.size());
+                        out.write(out3.getPos());
+                        out.write(out3.getBuf(),0,out3.getPos());
                 }
             }
         }
     }
 
 
-    public void readExternal(DataInputStream in) throws IOException, ClassNotFoundException {
+    public void readExternal(DataInputOutput in) throws IOException, ClassNotFoundException {
         _depth = LongPacker.unpackInt(in);
         size = in.readByte();
 
@@ -341,7 +341,7 @@ final class HTreeBucket<K,V>
         _values = new Object[OVERFLOW_SIZE];
         Serializer<V> valSerializer =  tree.valueSerializer!=null ?  tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
         for(byte i = 0;i<size;i++){
-            int header = in.read();
+            int header = in.readUnsignedByte();
             if(header == BTreeLazyRecord.NULL){
                 _values[i] = null;
             }else if(header == BTreeLazyRecord.LAZY_RECORD){

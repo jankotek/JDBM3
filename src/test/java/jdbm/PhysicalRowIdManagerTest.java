@@ -16,8 +16,6 @@
 
 package jdbm;
 
-import java.io.ByteArrayOutputStream;
-
 /**
  *  This class contains all Unit tests for {@link PhysicalRowIdManager}.
  */
@@ -54,7 +52,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         // insert a 10,000 byte record.
         byte[] data = UtilTT.makeRecord(10000, (byte) 1);
         long loc = physMgr.insert( data, 0, data.length );
-		ByteArrayOutputStream a1 = new ByteArrayOutputStream();
+		DataInputOutput a1 = new DataInputOutput();
 		physMgr.fetch(a1,loc);
         assertTrue("check data1",
                UtilTT.checkRecord(a1.toByteArray(), 10000, (byte) 1));
@@ -62,7 +60,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         // update it as a 20,000 byte record.
         data = UtilTT.makeRecord(20000, (byte) 2);
         long loc2 = physMgr.update(loc, data, 0, data.length );
-		ByteArrayOutputStream a2 = new ByteArrayOutputStream();
+		DataInputOutput a2 = new DataInputOutput();
 		physMgr.fetch(a2,loc2);
         assertTrue("check data2",
                UtilTT.checkRecord(a2.toByteArray(), 20000, (byte) 2));
@@ -71,7 +69,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         // from growing
         data = UtilTT.makeRecord(20, (byte) 3);
         long loc3 = physMgr.insert(data, 0, data.length );
-		ByteArrayOutputStream a3 = new ByteArrayOutputStream();
+		DataInputOutput a3 = new DataInputOutput();
 		physMgr.fetch(a3,loc3);
         assertTrue("check data3",
                UtilTT.checkRecord(a3.toByteArray(), 20, (byte) 3));
@@ -79,7 +77,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         // now, grow the first record again
         data = UtilTT.makeRecord(30000, (byte) 4);
         loc2 = physMgr.update(loc2, data, 0, data.length );
-        ByteArrayOutputStream a4 = new ByteArrayOutputStream();
+        DataInputOutput a4 = new DataInputOutput();
         physMgr.fetch(a4,loc2);
         assertTrue("check data4",
                UtilTT.checkRecord(a4.toByteArray(), 30000, (byte) 4));

@@ -16,8 +16,8 @@
 
 package jdbm;
 
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.OutputStream;
 
 /**
  * This class manages physical row ids, and their data.
@@ -89,7 +89,7 @@ final class PhysicalRowIdManager {
 		free(rowid);
 	}
 
-	void fetch(OutputStream out, long rowid) throws IOException {
+	void fetch(DataOutput out, long rowid) throws IOException {
 		// fetch the record header
 		long current = Location.getBlock(rowid);
 		BlockIo block = file.get(current);

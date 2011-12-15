@@ -992,12 +992,13 @@ final class BTreePage<K,V>
     public BTreePage<K,V> deserialize( DataInput ois2 )
         throws IOException
     {
-       DataInputStream ois = (DataInputStream) ois2;
+       DataInputOutput ois = (DataInputOutput) ois2;
+
 
 
       BTreePage<K,V> bpage = new BTreePage<K,V>();
 
-  	  switch(ois.read()){
+  	  switch(ois.readUnsignedByte()){
   		case SerializationHeader.BPAGE_LEAF:bpage._isLeaf = true;break;
   		case SerializationHeader.BPAGE_NONLEAF:bpage._isLeaf = false;break;
   		default: throw new InternalError("wrong BPage header");
@@ -1083,11 +1084,11 @@ final class BTreePage<K,V>
     }
 
 
-	private void readValues(DataInputStream ois, BTreePage<K, V> bpage) throws IOException, ClassNotFoundException {
+	private void readValues(DataInputOutput ois, BTreePage<K, V> bpage) throws IOException, ClassNotFoundException {
 		  bpage._values = new Object[BTree.DEFAULT_SIZE ];
                   Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
         	  for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
-                       int header = ois.read();
+                       int header = ois.readUnsignedByte();
                        if(header == BTreeLazyRecord.NULL){
                            bpage._values[ i ] = null;
                        }else if(header == BTreeLazyRecord.LAZY_RECORD){
@@ -1103,32 +1104,31 @@ final class BTreePage<K,V>
 	private void writeValues(DataOutput oos, BTreePage<K, V> bpage) throws IOException {
 
 
-        Utils.OpenByteArrayOutputStream baos = null;
-        DataOutput output = null;
+
+        DataInputOutput output = null;
         Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
 		for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
                         if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
                              LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
                         }else if ( bpage._values[ i ] != null ) {
-                            if(baos == null){
-                                baos = new Utils.OpenByteArrayOutputStream(new byte[32]);
-                                output = new DataOutputStream(baos);
+                            if(output == null){
+                                output = new DataInputOutput();
                             }else{
-                                baos.reset();
+                                output.reset();
                             }
-                            baos.reset();
+
 		                    serializer.serialize(output, (V)bpage._values[ i ] );
 
-                            if(baos.size()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
+                            if(output.getPos()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                                 //write as separate record
-                                long recid = _btree._recman.insert(baos.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
+                                long recid = _btree._recman.insert(output.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
                                 oos.write(BTreeLazyRecord.LAZY_RECORD);
                                 LongPacker.packLong(oos,recid);
                             }else{
                                 //write as part of btree
-                                oos.write(baos.size());
-                                oos.write(baos.getBuf(),0,baos.size());
+                                oos.write(output.getPos());
+                                oos.write(output.getBuf(),0,output.getPos());
                             }
 		        } else {
                             oos.write(BTreeLazyRecord.NULL);
@@ -1146,9 +1146,9 @@ final class BTreePage<K,V>
 	private static final int ALL_OTHER = 6 <<5;
 
 
-	private K[] readKeys(DataInputStream ois, final int firstUse) throws IOException, ClassNotFoundException {
+	private K[] readKeys(DataInput ois, final int firstUse) throws IOException, ClassNotFoundException {
 		Object[] ret = new Object[BTree.DEFAULT_SIZE];
-		final int type = ois.read();
+		final int type = ois.readUnsignedByte();
 		if(type == ALL_NULL){
 			return (K[])ret;
 		}else if(type == ALL_INTEGERS || type == ALL_INTEGERS_NEGATIVE){
@@ -1202,17 +1202,15 @@ final class BTreePage<K,V>
 
 
 			Serializer ser = _btree.keySerializer!=null? _btree.keySerializer : _btree.getRecordManager().defaultSerializer();
-			Utils.OpenByteArrayInputStream in1 = null;
-			DataInputStream in2 = null;
+			DataInputOutput in2 = null;
 			byte[] previous = null;
 			for(int i = firstUse;i<BTree.DEFAULT_SIZE;i++){
 				byte[] b = leadingValuePackRead(ois, previous, 0);
 				if(b == null ) continue;
-				if(in1 == null){
-					in1 = new Utils.OpenByteArrayInputStream(b);
-					in2 = new DataInputStream(in1);
+				if(in2 == null){
+					in2 = new DataInputOutput();
 				}
-				in1.reset(b, b.length);
+				in2.reset(b);
 				ret[i] = ser.deserialize(in2);
 				previous = b;
 			}
@@ -1359,22 +1357,20 @@ final class BTreePage<K,V>
 		
 		Serializer ser = _btree.keySerializer;
 		byte[] previous = null;
-		byte[] buffer = new byte[1024];
-		Utils.OpenByteArrayOutputStream out2 = new Utils.OpenByteArrayOutputStream(buffer);
-		Utils.SerializerOutput out3 = new Utils.SerializerOutput(out2);
+
+
+		DataInputOutput out3 = new DataInputOutput();
 		for (int i = firstUse ; i <BTree.DEFAULT_SIZE; i++) {
 			if(keys[i] == null){
 				leadingValuePackWrite(oos, null, previous, 0);
 			}else{
-				out2.reset();
+				out3.reset();
 				ser.serialize(out3,keys[i]);
-				byte[] b = out2.toByteArray();
+				byte[] b = out3.toByteArray();
 				leadingValuePackWrite(oos, b, previous, 0);
 				previous = b;
 			}			
 		}
-			
-		return;
 		
 		
 	}
@@ -1385,7 +1381,7 @@ final class BTreePage<K,V>
                 if(child == 0) continue;
                 byte[] data = r1.fetchRaw(child);
                 r2.forceInsert(child,data);
-                BTreePage t = deserialize(new DataInputStream(new ByteArrayInputStream(data)));
+                BTreePage t = deserialize(new DataInputOutput(data));
                 t._btree =_btree;
                 t.defrag(r1,r2);
             }

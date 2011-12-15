@@ -40,7 +40,7 @@ public final class LongPacker {
         }
 
         while((value & ~0x7FL) != 0){
-            os.write((byte) (((int) value & 0x7F) | 0x80));
+            os.write((((int) value & 0x7F) | 0x80));
             value >>>= 7;
         }
         os.write((byte) value);
@@ -59,7 +59,7 @@ public final class LongPacker {
 
         long result = 0;
       	for (int offset = 0; offset < 64; offset += 7) {
-      		long b = is.readByte();
+      		long b = is.readUnsignedByte();
       		result |= (b & 0x7F) << offset;
       		if ((b & 0x80) == 0) {
       			return result;
@@ -85,7 +85,7 @@ public final class LongPacker {
         }
 
         while ((value & ~0x7F) != 0) {
-            os.write((byte) ((value & 0x7F) | 0x80));
+            os.write( ((value & 0x7F) | 0x80));
             value >>>= 7;
         }
 
@@ -94,7 +94,7 @@ public final class LongPacker {
 
     static public int unpackInt(DataInput is) throws IOException {
         for (int offset = 0, result = 0; offset < 32; offset += 7) {
-            int b = is.readByte();
+            int b = is.readUnsignedByte();
             result |= (b & 0x7F) << offset;
             if ((b & 0x80) == 0) {
                 return result;

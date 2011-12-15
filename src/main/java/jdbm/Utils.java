@@ -89,61 +89,6 @@ class Utils {
     }
 
 
-    static class OpenByteArrayInputStream extends ByteArrayInputStream {
-
-            public OpenByteArrayInputStream(byte[] buf) {
-                    super(buf);
-            }
-
-            public byte[] getBuf(){
-                    return buf;
-            }
-
-
-            public void reset(byte[] buf, int count){
-                    this.buf = buf;
-                    this.count = count;
-                    this.pos = 0;
-                    this.mark = 0;
-            }
-
-    }
-
-    static class OpenByteArrayOutputStream extends ByteArrayOutputStream {
-
-
-            public OpenByteArrayOutputStream(byte[] buf) {
-                    this.buf = buf;
-            }
-
-
-            public byte[] getBuf(){
-                    return buf;
-            }
-
-
-            public void reset(byte[] buf){
-                    this.buf = buf;
-                    this.count = 0;
-            }
-
-    }
-
-    static final class SerializerOutput extends DataOutputStream {
-
-        public SerializerOutput(OutputStream out) {
-            super(out);
-        }
-
-        /**
-         * Reset counter inside DataOutputStream.
-         * Workaround method if SerializerOutput instance is reused
-         */
-         public void __resetWrittenCounter(){
-            written = 0;
-         }
-    }
-
     /*** Compares comparables. Default comparator for most of java types*/
     static final Comparator COMPARABLE_COMPARATOR =  new Comparator<Comparable>(){
 	public int compare(Comparable o1, Comparable o2) {

@@ -207,13 +207,12 @@ class Serialization extends SerialClassInfo implements Serializer
             out.writeChar((Character) obj);
             return;
         }else if(clazz == String.class){
-            byte[] s = ((String)obj).getBytes(UTF8);
-            if(s.length==0){
+            String s = (String) obj;
+            if(s.length()==0){
                 out.write(STRING_EMPTY);
             }else{
                 out.write(STRING);
-                LongPacker.packInt(out, s.length);
-                out.write(s);
+                serializeString(out, s);
             }
             return;
         }else if(obj instanceof Class){
@@ -353,6 +352,12 @@ class Serialization extends SerialClassInfo implements Serializer
             writeObject(out,obj, objectStack);
         }
 
+    }
+
+    static void serializeString(DataOutput out, String obj) throws IOException {
+        byte[] s = obj.getBytes(UTF8);
+        LongPacker.packInt(out, s.length);
+        out.write(s);
     }
 
     private void serializeMap(int header, DataOutput out, Object obj,FastArrayList objectStack) throws IOException {
@@ -548,7 +553,7 @@ class Serialization extends SerialClassInfo implements Serializer
     }
 
 
-    private String deserializeString(DataInput buf) throws IOException {
+    static String deserializeString(DataInput buf) throws IOException {
     	int len  = LongPacker.unpackInt(buf);
     	byte[] b=  new byte[len];
     	buf.readFully(b);
@@ -641,7 +646,7 @@ class Serialization extends SerialClassInfo implements Serializer
             case ARRAY_BYTE_INT: ret= deserializeArrayByteInt(is);break;
             case JDBMLINKEDLIST: ret = LinkedList.deserialize(is);break;
             case HTREE: ret = HTree.deserialize(is);break;
-            case BTREE: ret = BTree.readExternal(is,this); break;
+            case BTREE: ret = BTree.readExternal(is); break;
             case BPAGE_LEAF: throw new InternalError("BPage header, wrong serializer used");
             case BPAGE_NONLEAF: throw new InternalError("BPage header, wrong serializer used");
             case JAVA_SERIALIZATION: throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
@@ -933,7 +938,7 @@ class Serialization extends SerialClassInfo implements Serializer
 		if(comparator!=null)
 			s = new TreeMap<Object,Object>(comparator);
 		for(int i = 0; i<size;i++)
-			s.put(deserialize(is,objectStack),deserialize(is,objectStack));
+			s.put(deserialize(is, objectStack), deserialize(is, objectStack));
 		return s;
 	}
 

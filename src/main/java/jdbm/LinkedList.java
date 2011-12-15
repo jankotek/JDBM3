@@ -352,14 +352,15 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         try{
         byte[] data = r1.fetchRaw(recid);
         r2.forceInsert(recid,data);
-        DataInput in = new DataInputStream(new ByteArrayInputStream(data));
+        DataInputOutput in = new DataInputOutput();
+        in.reset(data);
         LinkedList l = (LinkedList) r1.defaultSerializer().deserialize(in);
         l.loadValues = false;
         long current = l.first;
         long counter = 1;
         while(current!=0){
             data = r1.fetchRaw(current);
-            in = new DataInputStream(new ByteArrayInputStream(data));
+            in.reset(data);
             r2.forceInsert(current,data);
 
             Entry e = (Entry) l.entrySerializer.deserialize(in);

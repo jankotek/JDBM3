@@ -171,14 +171,8 @@ final class RecordManagerStorage
     public static final int SERIAL_CLASS_INFO_RECID_ROOT = 2;
 
 
-
-	private final byte[] _insertBuffer = new byte[Storage.BLOCK_SIZE*2];
-	private final Utils.OpenByteArrayOutputStream _insertBAO = new Utils.OpenByteArrayOutputStream(_insertBuffer);
-	private final Utils.SerializerOutput _insertOut = new Utils.SerializerOutput(_insertBAO);
-	private final Utils.OpenByteArrayInputStream _insertBAI = new Utils.OpenByteArrayInputStream(_insertBuffer);
-	private final DataInputStream _insertIn = new DataInputStream(_insertBAI);
-
-	volatile private boolean bufferInUse = false;
+    private final DataInputOutput buffer = new DataInputOutput();
+	private boolean bufferInUse = false;
 
 
 	private final String _filename;
@@ -277,32 +271,29 @@ final class RecordManagerStorage
         checkCanWrite();
     	if(bufferInUse){
     		//current reusable buffer is in use, have to fallback into creating new instances
-    		byte[] buffer = new byte[1024];
-    		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
-    		return insert2(obj,serializer,buffer,bao,out);
+            DataInputOutput buffer2 = new DataInputOutput();
+    		return insert2(obj,serializer,buffer2);
     	}
 
         try{
         		
         	bufferInUse = true;
-                _insertOut.__resetWrittenCounter();
-        	return insert2(obj, serializer,_insertBuffer,_insertBAO,_insertOut);
+        	return insert2(obj, serializer, buffer);
         }finally{
         	bufferInUse = false;
         }
     }
 
 
-	private <A> long insert2(A obj, Serializer<A> serializer, byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut)
+	private <A> long insert2(A obj, Serializer<A> serializer, DataInputOutput buf)
 			throws IOException {
-		insertBAO.reset(insertBuffer);
+		buf.reset();
       
-		serializer.serialize(insertOut, obj);
-		long physRowId = _physMgr.insert( insertBAO.getBuf(), 0, insertBAO.size() );
+		serializer.serialize(buf, obj);
+		long physRowId = _physMgr.insert( buf.getBuf(), 0, buf.getPos() );
 		long recid = _logicMgr.insert( physRowId );
 		if ( DEBUG ) {
-			System.out.println( "BaseRecordManager.insert() recid " + recid + " length " + insertBAO.size() ) ;
+			System.out.println( "BaseRecordManager.insert() recid " + recid + " length " + buf.getPos() ) ;
 		}
 		return compressRecid(recid);
 	}
@@ -343,38 +334,35 @@ final class RecordManagerStorage
         }
     	if(bufferInUse){
     		//current reusable buffer is in use, have to create new instances
-    		byte[] buffer = new byte[1024];
-    		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
-    		update2(recid,obj,serializer,buffer,bao,out);
+            DataInputOutput buffer2 = new DataInputOutput();
+    		update2(recid,obj,serializer,buffer2);
     		return;
     	}
 
         try{        
         	bufferInUse = true;
-        	_insertOut.__resetWrittenCounter();
-        	update2(recid, obj, serializer,_insertBuffer, _insertBAO, _insertOut);
+        	update2(recid, obj, serializer, buffer);
         }finally{
         	bufferInUse = false;
         }
     }
 
 
-	private <A> void update2(long logRecid, A obj, Serializer<A> serializer,byte[] insertBuffer, Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut)
+	private <A> void update2(long logRecid, A obj, Serializer<A> serializer, DataInputOutput buf)
 			throws IOException {
 		logRecid = decompressRecid(logRecid);
 		long physRecid = _logicMgr.fetch( logRecid );
 		if(physRecid == 0)
 			throw new IOException("Can not update, recid does not exist: "+logRecid);
-		insertBAO.reset(insertBuffer);
-		serializer.serialize(insertOut, obj );
+		buf.reset();
+		serializer.serialize(buf, obj );
 
 
 		if ( DEBUG ) {
-			System.out.println( "BaseRecordManager.update() recid " + logRecid + " length " + insertBAO.size() ) ;
+			System.out.println( "BaseRecordManager.update() recid " + logRecid + " length " + buf.getPos() ) ;
 		}
 
-		long newRecid = _physMgr.update( physRecid, insertBAO.getBuf(), 0, insertBAO.size() );
+		long newRecid = _physMgr.update( physRecid, buf.getBuf(), 0, buf.getPos() );
 		
 		_logicMgr.update( logRecid, newRecid );
 		
@@ -395,17 +383,12 @@ final class RecordManagerStorage
         
     	if(bufferInUse){
     		//current reusable buffer is in use, have to create new instances
-    		byte[] buffer = new byte[1024];
-    		Utils.OpenByteArrayOutputStream bao = new Utils.OpenByteArrayOutputStream(buffer);
-    		Utils.SerializerOutput out = new Utils.SerializerOutput(bao);
-    		Utils.OpenByteArrayInputStream bai = new Utils.OpenByteArrayInputStream(buffer);
-    		DataInputStream in = new DataInputStream(bai);
-    		return fetch2(recid,serializer,buffer,bao,out, bai,in);
+    		DataInputOutput buffer2 = new DataInputOutput();
+    		return fetch2(recid,serializer,buffer2);
     	}
         try{
         	bufferInUse = true;
-                _insertOut.__resetWrittenCounter();
-        	return fetch2(recid, serializer,_insertBuffer,_insertBAO,_insertOut,_insertBAI, _insertIn);
+        	return fetch2(recid, serializer,buffer);
         }finally{
         	bufferInUse = false;
         }
@@ -418,27 +401,25 @@ final class RecordManagerStorage
 
 
 
-	private <A> A fetch2(long recid, Serializer<A> serializer,byte[] insertBuffer, 
-				Utils.OpenByteArrayOutputStream insertBAO, Utils.SerializerOutput insertOut,
-				Utils.OpenByteArrayInputStream insertBAI, DataInputStream insertIn)
+	private <A> A fetch2(long recid, Serializer<A> serializer,DataInputOutput buf)
 			throws IOException {
 
 		recid = decompressRecid(recid);
 		
-		insertBAO.reset(insertBuffer);		
+		buf.reset();
 		long physLocation = _logicMgr.fetch(recid);
 		if(physLocation == 0){
 			//throw new IOException("Record not found, recid: "+recid);
 			return null;
 		}
-		_physMgr.fetch(insertBAO, physLocation);
+		_physMgr.fetch(buf, physLocation);
 
 		if ( DEBUG ) {
-			System.out.println( "BaseRecordManager.fetch() recid " + recid + " length " + insertBAO.size() ) ;
+			System.out.println( "BaseRecordManager.fetch() recid " + recid + " length " + buf.getPos() ) ;
 		}
-		insertBAI.reset(insertBAO.getBuf(), insertBAO.size());
+		buf.resetForReading();
 		try{
-        		return serializer.deserialize( insertIn );
+        		return serializer.deserialize(buf); //TODO there should be write limit to throw EOFException
 		}catch(ClassNotFoundException e){
 			throw new IOError(e);
 		}
@@ -451,9 +432,9 @@ final class RecordManagerStorage
                 //throw new IOException("Record not found, recid: "+recid);
                 return null;
         }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        _physMgr.fetch(out, physLocation);
-        return out.toByteArray();
+        DataInputOutput i = new DataInputOutput();
+        _physMgr.fetch(i, physLocation);
+        return i.toByteArray();
     }
 
 
@@ -882,7 +863,7 @@ final class RecordManagerStorage
                             continue;
 
                         //read from physical location at this recman
-                        ByteArrayOutputStream b = new ByteArrayOutputStream();
+                        DataInputOutput b = new DataInputOutput();
                         _physMgr.fetch(b, physRowId);
                         byte[] bb = b.toByteArray();
 

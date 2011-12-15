@@ -384,12 +384,12 @@ final class HTreeDirectory<K,V>
     /**
      * Implement Externalizable interface
      */
-    public synchronized void readExternal(DataInputStream in)
+    public synchronized void readExternal(DataInputOutput in)
     throws IOException, ClassNotFoundException {
         _depth = in.readByte();
         _children = new long[MAX_CHILDREN];
-        int zeroStart = in.read();
-        int zeroEnd = in.read();
+        int zeroStart = in.readUnsignedByte();
+        int zeroEnd = in.readUnsignedByte(); //TODO this may fit into one byte
 
         for(int i = zeroStart; i<=zeroEnd;i++){        	
         	_children[i] = LongPacker.unpackLong(in);

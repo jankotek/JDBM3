@@ -537,7 +537,7 @@ class BTree<K,V>
     }
 
 
-	static BTree readExternal( DataInput in, Serializer ser )
+	static BTree readExternal( DataInput in)
         throws IOException, ClassNotFoundException
     {
         BTree tree = new BTree();
@@ -567,7 +567,7 @@ class BTree<K,V>
         try{
             byte[] data = r1.fetchRaw(recid);
             r2.forceInsert(recid,data);
-            DataInput in = new DataInputStream(new ByteArrayInputStream(data));
+            DataInput in = new DataInputOutput(data);
             BTree t = (BTree) r1.defaultSerializer().deserialize(in);
             t.loadValues = false;
             t._recman = r1;

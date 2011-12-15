@@ -58,7 +58,7 @@ class BTreeLazyRecord<E> {
 
 
 
-    static Object fastDeser(DataInputStream in,Serializer serializer,int expectedSize ) throws IOException, ClassNotFoundException {
+    static Object fastDeser(DataInputOutput in,Serializer serializer,int expectedSize ) throws IOException, ClassNotFoundException {
         //we should propably copy data for deserialization into separate buffer and pass it to Serializer
         //but to make it faster, Serializer will operate directly on top of buffer.
         //and we check that it readed correct number of bytes.
@@ -73,7 +73,7 @@ class BTreeLazyRecord<E> {
             //deserializer did not readed all bytes, unussual but valid.
             //Skip some to get into correct position
             for(int ii = 0; ii<expectedSize-readed;ii++)
-                in.read();
+                in.readUnsignedByte();
         }
         return ret;
     }

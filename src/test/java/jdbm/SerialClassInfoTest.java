@@ -213,10 +213,11 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
         String f = newTestFile();
         RecordManager r1 = new RecordManagerBuilder(f).build();
         long recid = r1.insert(b1);
-        r1.commit();;
+        r1.commit();
         r1.close();
 
         RecordManager r2 = new RecordManagerBuilder(f).build();
+
         Bean1 b2 = (Bean1) r2.fetch(recid);
         r2.close();
         assertEquals(b1,b2);
