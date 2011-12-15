@@ -1395,7 +1395,7 @@ final class BTreePage<K,V>
     /** STATIC INNER CLASS
      *  Result from insert() method call
      */
-    static class InsertResult<K,V> {
+    static final class InsertResult<K,V> {
 
         /**
          * Overflow page.
@@ -1412,7 +1412,7 @@ final class BTreePage<K,V>
     /** STATIC INNER CLASS
      *  Result from remove() method call
      */
-    static class RemoveResult<K,V> {
+    static final class RemoveResult<K,V> {
 
         /**
          * Set to true if underlying pages underflowed
@@ -1429,7 +1429,7 @@ final class BTreePage<K,V>
     /** PRIVATE INNER CLASS
      * Browser to traverse leaf BPages.
      */
-    static class Browser<K,V>
+    static final class Browser<K,V>
         implements BTree.BTreeTupleBrowser<K,V>
     {
 
