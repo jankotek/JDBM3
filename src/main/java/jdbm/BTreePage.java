@@ -232,7 +232,7 @@ final class BTreePage<K,V>
     BTree.BTreeTupleBrowser<K,V> find( int height, K key )
         throws IOException
     {
-        int index = findChildren( key );
+        byte index = findChildren( key );
 
         /*
         if ( DEBUG ) {
@@ -248,7 +248,7 @@ final class BTreePage<K,V>
             return new Browser<K,V>( this, index );
         } else {
             // non-leaf BPage
-            BTreePage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = loadBPage(_children[index]);
             return child.find( height, key );
         }
     }
@@ -265,7 +265,7 @@ final class BTreePage<K,V>
     V findValue( int height, K key )
         throws IOException
     {
-        int index = findChildren( key );
+        byte index = findChildren( key );
 
         /*
         if ( DEBUG ) {
@@ -293,7 +293,7 @@ final class BTreePage<K,V>
             //return new Browser<K,V>( this, index );
         } else {
             // non-leaf BPage
-            BTreePage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = loadBPage(_children[index]);
             return child.findValue( height, key );
         }
     }
@@ -309,7 +309,7 @@ final class BTreePage<K,V>
         if ( _isLeaf ) {
             return new Browser<K,V>( this, _first );
         } else {
-            BTreePage<K,V> child = childBPage( _first );
+            BTreePage<K,V> child = loadBPage(_children[_first]);
             return child.findFirst();
         }
     }
@@ -406,7 +406,7 @@ final class BTreePage<K,V>
             }
         } else {
             // non-leaf BPage
-            BTreePage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = loadBPage(_children[index]);
             result = child.insert( height, key, value, replace );
 
             if ( result._existing != null ) {
@@ -526,7 +526,7 @@ final class BTreePage<K,V>
         RemoveResult<K,V> result;
 
         int half = BTree.DEFAULT_SIZE / 2;
-        int index = findChildren( key );
+        byte index = findChildren( key );
 
         height -= 1;
         if ( height == 0 ) {
@@ -550,7 +550,7 @@ final class BTreePage<K,V>
 
         } else {
             // recurse into Btree to remove entry on a children page
-            BTreePage<K,V> child = childBPage( index );
+            BTreePage<K,V> child = loadBPage(_children[index]);
             result = child.remove( height, key );
 
             // update children
@@ -564,7 +564,7 @@ final class BTreePage<K,V>
                 }
                 if ( index < _children.length-1 ) {
                     // exists greater brother page
-                    BTreePage<K,V> brother = childBPage( index+1 );
+                    BTreePage<K,V> brother = loadBPage(_children[index + 1]);
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
                         // steal entries from "brother" page
@@ -641,7 +641,7 @@ final class BTreePage<K,V>
                     }
                 } else {
                     // page "brother" is before "child"
-                    BTreePage<K,V> brother = childBPage( index-1 );
+                    BTreePage<K,V> brother = loadBPage(_children[index - 1]);
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
                         // steal entries from "brother" page
@@ -871,14 +871,6 @@ final class BTreePage<K,V>
     }
 
     
-    /**
-     * Return the child BPage at given index.
-     */
-    BTreePage<K,V> childBPage( int index )
-        throws IOException
-    {
-        return loadBPage( _children[ index ] );
-    }
 
 
     /**
@@ -944,9 +936,9 @@ final class BTreePage<K,V>
         height -= 1;
         level += 1;
         if ( height > 0 ) {
-            for ( int i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
+            for ( byte i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _keys[ i ] == null ) break;
-                BTreePage<K,V> child = childBPage( i );
+                BTreePage<K,V> child = loadBPage(_children[i]);
                 child.dump( level );
                 child.dumpRecursive( height, level );
             }
@@ -1110,25 +1102,33 @@ final class BTreePage<K,V>
 
 	private void writeValues(DataOutput oos, BTreePage<K, V> bpage) throws IOException {
 
-                Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
+
+        Utils.OpenByteArrayOutputStream baos = null;
+        DataOutput output = null;
+        Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
 		for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
                         if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
                              LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
                         }else if ( bpage._values[ i ] != null ) {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		            serializer.serialize(new Utils.SerializerOutput(baos), (V)bpage._values[ i ] );
+                            if(baos == null){
+                                baos = new Utils.OpenByteArrayOutputStream(new byte[32]);
+                                output = new DataOutputStream(baos);
+                            }else{
+                                baos.reset();
+                            }
+                            baos.reset();
+		                    serializer.serialize(output, (V)bpage._values[ i ] );
 
-                            byte[] buf = baos.toByteArray();
-                            if(buf.length>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
+                            if(baos.size()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                                 //write as separate record
-                                long recid = _btree._recman.insert(buf,BTreeLazyRecord.FAKE_SERIALIZER);
+                                long recid = _btree._recman.insert(baos.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
                                 oos.write(BTreeLazyRecord.LAZY_RECORD);
                                 LongPacker.packLong(oos,recid);
                             }else{
                                 //write as part of btree
-                                oos.write(buf.length);
-                                oos.write(buf);
+                                oos.write(baos.size());
+                                oos.write(baos.getBuf(),0,baos.size());
                             }
 		        } else {
                             oos.write(BTreeLazyRecord.NULL);
@@ -1443,7 +1443,7 @@ final class BTreePage<K,V>
          * Current index in the page.  The index positionned on the next
          * tuple to return.
          */
-        private int _index;
+        private byte _index;
 
 
         /**
@@ -1452,7 +1452,7 @@ final class BTreePage<K,V>
          * @param page Current page
          * @param index Position of the next tuple to return.
          */
-        Browser( BTreePage<K,V> page, int index )
+        Browser( BTreePage<K,V> page, byte index )
         {
             _page = page;
             _index = index;
@@ -1517,10 +1517,10 @@ final class BTreePage<K,V>
     {
         height -= 1;
         if ( height > 0 ) {
-            for ( int i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
+            for ( byte i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _children[ i ] == 0 ) continue;
                 
-                BTreePage child = childBPage( i );
+                BTreePage child = loadBPage(_children[i]);
                 out.add(new Long(child._recid));
                 child.dumpChildPageRecIDs( out, height );
             }
@@ -1591,6 +1591,10 @@ final class BTreePage<K,V>
 
     }
 
+
+    BTreePage<K,V> loadLastChildPage() throws IOException {
+        return loadBPage(_children[BTree.DEFAULT_SIZE - 1]);
+    }
 
 
     

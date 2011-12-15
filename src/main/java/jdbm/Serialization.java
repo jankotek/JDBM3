@@ -961,17 +961,17 @@ class Serialization extends SerialClassInfo implements Serializer
     /**
      * Utility class similar to ArrayList, but with fast identity search.
      */
-    static class FastArrayList{
+    static class FastArrayList<K>{
 
         private int size = 0;
-        private Object[] elementData = new Object[8];
+        private K[] elementData = (K[]) new Object[8];
 
-        Object get(int index){
+        K get(int index){
             if(index>=size) throw new IndexOutOfBoundsException();
             return elementData[index];
         }
 
-        void add(Object o){
+        void add(K o){
             if(elementData.length==size){
                 //grow array if necessary
                 elementData = Arrays.copyOf(elementData, elementData.length *2);

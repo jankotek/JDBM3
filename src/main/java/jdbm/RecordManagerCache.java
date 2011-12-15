@@ -123,8 +123,10 @@ class RecordManagerCache
     public synchronized <A> long insert( A obj, Serializer<A> serializer )
         throws IOException
     {
-        checkIfClosed();
-        
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
+
         long recid = _recman.insert( obj, serializer );
         
         //DONT use cache for inserts, it usually hurts performance on batch inserts
@@ -148,7 +150,9 @@ class RecordManagerCache
     public synchronized void delete( long recid )
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
 
         _recman.delete( recid );
         CacheEntry entry = _hash.get(recid);
@@ -168,8 +172,10 @@ class RecordManagerCache
     public synchronized <A> void update( long recid, A obj, 
                                      Serializer<A> serializer )
         throws IOException
-    {       
-        checkIfClosed();
+    {
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
         if(_enableReferenceCache) synchronized(_softHash) {
         	//soft cache can not contain dirty objects
         	ReferenceCacheEntry e = _softHash.remove(recid);
@@ -192,7 +198,10 @@ class RecordManagerCache
     public synchronized <A> A fetch( long recid, Serializer<A> serializer )
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
+
         if(_enableReferenceCache) synchronized(_softHash){
         	ReferenceCacheEntry e = _softHash.get(recid);
         	if(e!=null){
@@ -203,7 +212,7 @@ class RecordManagerCache
         	}
         }
 
-        CacheEntry entry = (CacheEntry) cacheGet( recid );
+        CacheEntry entry =  cacheGet( recid );
         if ( entry == null ) {
         	A value = _recman.fetch( recid, serializer );
         	if(!_enableReferenceCache)
@@ -226,7 +235,9 @@ class RecordManagerCache
     public synchronized void close()
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
 
         updateCacheEntries();
         _recman.close();
@@ -242,7 +253,9 @@ class RecordManagerCache
     public synchronized void commit()
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
         updateCacheEntries();
         _recman.commit();
     }
@@ -250,7 +263,9 @@ class RecordManagerCache
     public synchronized void rollback()
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
 
         _recman.rollback();
 
@@ -277,7 +292,9 @@ class RecordManagerCache
     public synchronized long getNamedObject( String name )
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
 
         return _recman.getNamedObject( name );
     }
@@ -286,7 +303,9 @@ class RecordManagerCache
     public synchronized void setNamedObject( String name, long recid )
         throws IOException
     {
-        checkIfClosed();
+        if ( _recman == null ) {
+            throw new IllegalStateException( "RecordManager has been closed" );
+        }
 
         _recman.setNamedObject( name, recid );
     }
@@ -299,19 +318,7 @@ class RecordManagerCache
         return _recman.calculateStatistics();
     }
 
-    /**
-     * Check if RecordManager has been closed.  If so, throw an
-     * IllegalStateException
-     */
-    private void checkIfClosed()
-        throws IllegalStateException
-    {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
-        }
-    }
 
-    
     /**
      * Update all dirty cache objects to the underlying RecordManager.
      */
@@ -334,8 +341,11 @@ class RecordManagerCache
      */
     protected CacheEntry cacheGet(long key) {
         CacheEntry entry = _hash.get(key);
-        if (entry != null) 
-            touchEntry(entry);
+        if (entry != null && _last != entry){
+            //touch entry
+            removeEntry(entry);
+            addEntry(entry);
+        }
         return entry;        
     }
 
@@ -349,7 +359,11 @@ class RecordManagerCache
         if (entry != null) {
             entry._obj = value;
             entry._serializer = serializer;
-            touchEntry(entry);
+            //touch entry
+            if (_last != entry) {
+                removeEntry(entry);
+                addEntry(entry);
+            }
         } else {
 
             if (_hash.size() == _max) {
@@ -402,17 +416,6 @@ class RecordManagerCache
         }
         entry._previous = null;
         entry._next = null;
-    }
-
-    /**
-     * Place entry at the end of linked list -- Most Recently Used
-     */
-    protected void touchEntry(CacheEntry entry) {
-        if (_last == entry) {
-            return;
-        }
-        removeEntry(entry);
-        addEntry(entry);
     }
 
     /**

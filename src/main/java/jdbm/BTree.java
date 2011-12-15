@@ -354,7 +354,7 @@ class BTree<K,V>
 	            if ( _height == 0 ) {
 	                _root = 0;
 	            } else {
-	                _root = rootPage.childBPage(BTree.DEFAULT_SIZE-1 )._recid;
+	                _root = rootPage.loadLastChildPage()._recid;
 	            }
 	        }
 	        if ( remove._value != null ) {
