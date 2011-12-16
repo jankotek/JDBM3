@@ -25,6 +25,7 @@ abstract class SerialClassInfo {
                     out.writeUTF(fi.getType());
                 }
             }
+
         }
 
         public ArrayList<ClassInfo> deserialize(DataInput in) throws IOException, ClassNotFoundException {

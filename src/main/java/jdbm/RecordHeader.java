@@ -31,20 +31,19 @@ package jdbm;
 final class RecordHeader {
     // offsets
     private static final short O_CURRENTSIZE = 0; // int currentSize
-    private static final short O_AVAILABLESIZE = Magic.SZ_SHORT; // int availableSize
-    static final int SIZE = O_AVAILABLESIZE + Magic.SZ_UNSIGNED_SHORT;
-    
+    private static final short O_AVAILABLESIZE = Magic.SZ_BYTE; // int availableSize
+    static final int SIZE = O_AVAILABLESIZE + Magic.SZ_SHORT;
     /**
-     * Maximal differnece between current and available size,
-     * Maximal value is resorved for currentSize 0, so use -1
+     * Maximal difference between current and available size,
+     * Maximal value is reserved for currentSize 0, so use -1
      */
-    static final int MAX_SIZE_SPACE = BlockIo.UNSIGNED_SHORT_MAX -1;
+    static final int MAX_SIZE_SPACE = 255-1;
     
 
     /** Returns the current size */
     static int getCurrentSize(final BlockIo block, final short pos) {
-    	int s = block.readUnsignedshort(pos + O_CURRENTSIZE);
-    	if(s == BlockIo.UNSIGNED_SHORT_MAX)
+    	int s = block.readByte(pos + O_CURRENTSIZE) & 0xFF;
+    	if(s == MAX_SIZE_SPACE+1)
     		return 0;
         return getAvailableSize(block, pos) - s;
     }
@@ -52,13 +51,13 @@ final class RecordHeader {
     /** Sets the current size */
     static void setCurrentSize(final BlockIo block, final short pos,int value) {
     	if(value == 0){
-    		block.writeUnsignedShort(pos + O_CURRENTSIZE, BlockIo.UNSIGNED_SHORT_MAX);
+    		block.writeByte(pos + O_CURRENTSIZE, (byte) (MAX_SIZE_SPACE+1));
     		return;
     	}
         int availSize = getAvailableSize(block,pos);
         if(value < (availSize - MAX_SIZE_SPACE) || value>availSize)
         	throw new IllegalArgumentException("currentSize out of bounds, need to realocate "+value+ " - "+availSize);
-    	block.writeUnsignedShort(pos + O_CURRENTSIZE, availSize - value);
+    	block.writeByte(pos + O_CURRENTSIZE, (byte) (availSize - value));
     }
     
     /** Returns the available size */
@@ -77,30 +76,34 @@ final class RecordHeader {
     }
 
 
-    private static short convertAvailSize(final int recordSize){
+    static short convertAvailSize(final int recordSize){
         if(recordSize<=Short.MAX_VALUE)
             return (short) recordSize;
         else{
             int shift = recordSize - Short.MAX_VALUE;
+            if(shift%MAX_SIZE_SPACE==0)
+                shift=shift/MAX_SIZE_SPACE;
+            else
+                shift=1+shift/MAX_SIZE_SPACE;
             shift = - shift;
-            return (short) (shift>>8);
+            return (short) (shift);
         }
 
     }
     
-    private static int deconvertAvailSize(short converted){
+    static int deconvertAvailSize(short converted){
         if(converted>=0)
             return converted;
         else{
-            int shifted = converted<<8;
-            shifted = - shifted;
+            int shifted = -converted;
+            shifted = shifted * MAX_SIZE_SPACE;
             return Short.MAX_VALUE + shifted;
         }
 
     }
     
 
-    static final int MAX_RECORD_SIZE = 8421375;
+    static final int MAX_RECORD_SIZE = 8355839;
 
 
     
@@ -111,16 +114,5 @@ final class RecordHeader {
     }
 
 
-//   this code is used to find MAXIMAL_RECORD_SIZE
-//    public static void main(String[] args){
-//        long max = 0;
-//        for(int i=0;i<1e7;i++){
-//            if(i == deconvertAvailSize(convertAvailSize(i))){
-//                max = i;
-//            }
-//        }
-//        System.out.println(max);
-//    }
-//
 
 }

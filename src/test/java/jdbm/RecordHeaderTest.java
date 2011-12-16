@@ -25,9 +25,7 @@ import junit.framework.TestCase;
  */
 public class RecordHeaderTest extends TestCase {
 
-	public RecordHeaderTest(String name) {
-		super(name);
-	}
+
 
 	/**
 	 * Test basics - read and write at an offset
@@ -37,9 +35,9 @@ public class RecordHeaderTest extends TestCase {
 		BlockIo test = new BlockIo(0, data);
 		//RecordHeader hdr = new RecordHeader(test, (short) 6);
 		RecordHeader.setAvailableSize(test, (short) 6,2345);
-		RecordHeader.setCurrentSize(test, (short) 6,1000);
+		RecordHeader.setCurrentSize(test, (short) 6,2300);
 
-		assertEquals("current size", 1000, RecordHeader.getCurrentSize(test, (short) 6));
+		assertEquals("current size", 2300, RecordHeader.getCurrentSize(test, (short) 6));
 		assertEquals("available size", 2345, RecordHeader.getAvailableSize(test, (short) 6));
 	}
 	
@@ -90,5 +88,57 @@ public class RecordHeaderTest extends TestCase {
 		}
 
 	}
+
+    public void testMaxRecordSize(){
+
+        long max = 0;
+        for(int i=0;i<1e7;i++){
+            int deconverted = RecordHeader.deconvertAvailSize(RecordHeader.convertAvailSize(i));
+            if(i == deconverted){
+                max = i;
+            }
+        }
+        assertEquals("Maximal record size does not match the calculated one: "+max,max,RecordHeader.MAX_RECORD_SIZE);
+
+    }
+    
+    public void testRoundingSmall(){
+        for(int i = 0;i<=Short.MAX_VALUE;i++){
+            assertEquals(i,RecordHeader.convertAvailSize(i));
+        }
+    }
+
+    public void testRounding(){
+
+        for(int i=0;i<RecordHeader.MAX_RECORD_SIZE;i++){
+            int deconverted = RecordHeader.deconvertAvailSize(RecordHeader.convertAvailSize(i));
+            assertTrue("deconverted size is smaller than actual: "+i+" versus "+deconverted,deconverted>=i);
+        }
+
+    }
+
+
+    
+    
+    public void testSetCurrentSize(){
+        BlockIo b = new BlockIo(4l,new byte[Storage.BLOCK_SIZE]);
+        short pos = 10;
+
+        RecordHeader.setAvailableSize(b,pos,1000);
+        assertEquals(1000,RecordHeader.getAvailableSize(b,pos));
+        RecordHeader.setCurrentSize(b,pos,900);
+        assertEquals(900,RecordHeader.getCurrentSize(b,pos));
+        RecordHeader.setCurrentSize(b,pos,0);
+        assertEquals(0,RecordHeader.getCurrentSize(b,pos));
+        RecordHeader.setCurrentSize(b,pos,1000-254);
+        assertEquals(1000-254,RecordHeader.getCurrentSize(b,pos));
+
+        short pos2 = 20;
+        RecordHeader.setAvailableSize(b,pos2,10000);
+        assertEquals(10000,RecordHeader.getAvailableSize(b,pos2));
+        RecordHeader.setCurrentSize(b,pos2,10000);
+        assertEquals(10000,RecordHeader.getCurrentSize(b,pos2));
+
+    }
 
 }

@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import static jdbm.Storage.*;
 
 /**
  * This class manages physical row ids, and their data.
@@ -28,7 +29,6 @@ final class PhysicalRowIdManager {
 	final private RecordFile file;
 	final private PageManager pageman;
 	final private FreePhysicalRowIdPageManager freeman;
-	final private int BLOCK_SIZE;
 	final short DATA_PER_PAGE ;
 
 	/**
@@ -38,7 +38,6 @@ final class PhysicalRowIdManager {
 		this.file = file;
 		this.pageman = pageManager;
 		this.freeman = freeman;
-		this.BLOCK_SIZE = Storage.BLOCK_SIZE;
 		DATA_PER_PAGE = (short) (BLOCK_SIZE - DataPage.O_DATA);
 	}
 
