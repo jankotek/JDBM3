@@ -355,9 +355,13 @@ class Serialization extends SerialClassInfo implements Serializer
     }
 
     static void serializeString(DataOutput out, String obj) throws IOException {
-        byte[] s = obj.getBytes(UTF8);
-        LongPacker.packInt(out, s.length);
-        out.write(s);
+        final int len = obj.length();
+        LongPacker.packInt(out,len);
+        for(int i=0; i<len;i++){
+            int c = (int)obj.charAt(i); //TODO investigate if c could be negative here
+            LongPacker.packInt(out,c);
+        }
+
     }
 
     private void serializeMap(int header, DataOutput out, Object obj,FastArrayList objectStack) throws IOException {
@@ -555,9 +559,11 @@ class Serialization extends SerialClassInfo implements Serializer
 
     static String deserializeString(DataInput buf) throws IOException {
     	int len  = LongPacker.unpackInt(buf);
-    	byte[] b=  new byte[len];
-    	buf.readFully(b);
-    	return new String(b,UTF8);
+    	char[] b=  new char[len];
+        for(int i=0;i<len;i++)
+            b[i] = (char) LongPacker.unpackInt(buf);
+
+    	return new String(b);
 	}
 
 
