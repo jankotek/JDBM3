@@ -183,7 +183,7 @@ final class HTreeDirectory<K,V>
         long child_recid = _children[hash];
         if (child_recid == 0) {
             // no bucket/page here yet, let's create a bucket
-            HTreeBucket bucket = new HTreeBucket(tree, _depth+1);
+            HTreeBucket bucket = new HTreeBucket(tree, (byte) (_depth+1));
 
             // insert (key,value) pair in bucket
             Object existing = bucket.addElement(key, value);

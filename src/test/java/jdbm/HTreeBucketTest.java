@@ -39,7 +39,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
 
         HTree tree = (HTree) recman.createHashMap("test");
 
-        HTreeBucket bucket = new HTreeBucket(tree, 0);
+        HTreeBucket bucket = new HTreeBucket(tree, (byte) 0);
 
         // add
         bucket.addElement("key", "value");

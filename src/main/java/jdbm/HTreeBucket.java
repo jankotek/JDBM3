@@ -54,23 +54,17 @@ final class HTreeBucket<K,V>
     /**
      * Depth of this bucket.
      */
-    private int _depth;
+    private byte _depth;
 
 
     /**
-     * Keys in this bucket.  Keys are ordered to match their respective
-     * value in <code>_values</code>.
+     * Keys and values in this bucket.  Keys are followed by values at KEYPOS+OVERFLOW_SIZE
      */
-    private K[] _keys;
+    private Object[] _keysAndValues;
 
     private byte size  = 0;
 
 
-    /**
-     * Values in this bucket.  Values are ordered to match their respective
-     * key in <code>_keys</code>.
-     */
-    private Object[] _values;
 
     private final HTree<K, V> tree;
 
@@ -87,7 +81,7 @@ final class HTreeBucket<K,V>
      * Construct a bucket with a given depth level.  Depth level is the
      * number of <code>HashDirectory</code> above this bucket.
      */
-    public HTreeBucket(HTree<K, V> tree, int level)
+    public HTreeBucket(HTree<K, V> tree, byte level)
     {
         this.tree = tree;
         if ( level > HTreeDirectory.MAX_DEPTH+1 ) {
@@ -96,8 +90,7 @@ final class HTreeBucket<K,V>
                             + "Depth=" + level );
         }
         _depth = level;
-        _keys = (K[]) new Object[ OVERFLOW_SIZE ];
-        _values = new Object[ OVERFLOW_SIZE];
+        _keysAndValues = new Object[ OVERFLOW_SIZE *2];
     }
 
 
@@ -145,7 +138,7 @@ final class HTreeBucket<K,V>
         //find entry
         byte existing = -1;
         for(byte i=0;i<size;i++){
-            if(key.equals(_keys[i])){
+            if(key.equals(_keysAndValues[i])){
                 existing = i;
                 break;
             }
@@ -153,18 +146,18 @@ final class HTreeBucket<K,V>
 
         if ( existing != -1 ) {
             // replace existing element
-            Object before = _values[existing];
+            Object before = _keysAndValues[existing+OVERFLOW_SIZE];
             if(before instanceof BTreeLazyRecord){
                 BTreeLazyRecord<V> rec = (BTreeLazyRecord<V>)before;
                 before = rec.get();
                 rec.delete();
             }
-            _values[existing] =  value ;
+            _keysAndValues[existing+OVERFLOW_SIZE] =  value ;
             return (V)before;
         } else {
             // add new (key, value) pair
-            _keys[size] = key;
-            _values[size] = value;
+            _keysAndValues[size] = key;
+            _keysAndValues[size+OVERFLOW_SIZE] = value;
             size++;
             return null;
         }
@@ -183,14 +176,14 @@ final class HTreeBucket<K,V>
         //find entry
         byte existing = -1;
         for(byte i=0;i<size ;i++){
-            if(key.equals(_keys[i])){
+            if(key.equals(_keysAndValues[i])){
                 existing = i;
                 break;
             }
         }
 
         if ( existing != -1 ) {
-            Object o  =  _values[existing];
+            Object o  =  _keysAndValues[existing+OVERFLOW_SIZE];
             if(o instanceof BTreeLazyRecord){
                 BTreeLazyRecord<V> rec = (BTreeLazyRecord<V>)o;
                 o = rec.get();
@@ -200,12 +193,12 @@ final class HTreeBucket<K,V>
 
             //move last element to existing
             size--;
-            _keys[existing] = _keys[size];
-            _values[existing] = _values[size];
+            _keysAndValues[existing] = _keysAndValues[size];
+            _keysAndValues[existing+OVERFLOW_SIZE] = _keysAndValues[size+OVERFLOW_SIZE];
 
             //and unset last element
-            _keys[size] = null;
-            _values[size] = null;
+            _keysAndValues[size] = null;
+            _keysAndValues[size+OVERFLOW_SIZE] = null;
 
 
             return (V)o;
@@ -225,14 +218,14 @@ final class HTreeBucket<K,V>
                 //find entry
         byte existing = -1;
         for(byte i=0;i<size;i++){
-            if(key.equals(_keys[i])){
+            if(key.equals(_keysAndValues[i])){
                 existing = i;
                 break;
             }
         }
 
         if ( existing != -1 ) {
-            Object o  =  _values[existing];
+            Object o  =  _keysAndValues[existing+OVERFLOW_SIZE];
             if(o instanceof BTreeLazyRecord)
                 return ((BTreeLazyRecord<V>)o).get();
             else
@@ -255,7 +248,7 @@ final class HTreeBucket<K,V>
     {
         ArrayList<K> ret = new ArrayList<K>();
         for(byte i=0;i<size;i++){
-            ret.add(_keys[i]);
+            ret.add((K) _keysAndValues[i]);
         }
         return ret;
     }
@@ -272,21 +265,21 @@ final class HTreeBucket<K,V>
     {
         ArrayList<V> ret = new ArrayList<V>();
         for(byte i=0;i<size;i++){
-            ret.add((V) _values[i]);
+            ret.add((V) _keysAndValues[i+OVERFLOW_SIZE]);
         }
         return ret;
 
     }
-    
+
 
 
     public void writeExternal( DataOutput out )
         throws IOException
     {
-        LongPacker.packInt(out, _depth);
+        out.write(_depth);
         out.write(size);
 
-        
+
         DataInputOutput out3 = tree.writeBufferCache.getAndSet(null);
         if(out3 == null)
             out3 = new DataInputOutput();
@@ -296,7 +289,7 @@ final class HTreeBucket<K,V>
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
         for(byte i = 0;i<size;i++){
             out3.reset();
-            keySerializer.serialize(out3, _keys[i]);
+            keySerializer.serialize(out3, _keysAndValues[i]);
             LongPacker.packInt(out,out3.getPos());
             out.write(out3.getBuf(),0,out3.getPos());
 
@@ -306,7 +299,7 @@ final class HTreeBucket<K,V>
         Serializer valSerializer = tree.valueSerializer!=null?tree.valueSerializer : tree.getRecordManager().defaultSerializer();
 
         for(byte i = 0;i<size;i++){
-            Object value = _values[i];
+            Object value = _keysAndValues[i+OVERFLOW_SIZE];
             if(value == null){
                 out.write(BTreeLazyRecord.NULL);
             }else if(value instanceof BTreeLazyRecord){
@@ -334,43 +327,32 @@ final class HTreeBucket<K,V>
 
 
     public void readExternal(DataInputOutput in) throws IOException, ClassNotFoundException {
-        _depth = LongPacker.unpackInt(in);
+        _depth = in.readByte();
         size = in.readByte();
 
         //read keys
         Serializer keySerializer = tree.keySerializer!=null?tree.keySerializer : tree.getRecordManager().defaultSerializer();
-        _keys = (K[]) new Object[OVERFLOW_SIZE];
+        _keysAndValues = (K[]) new Object[OVERFLOW_SIZE*2];
         for(byte i =0; i<size; i++){
             int expectedSize = LongPacker.unpackInt(in);
             K key = (K) BTreeLazyRecord.fastDeser(in, keySerializer, expectedSize);
-            _keys[i] = key;
+            _keysAndValues[i] = key;
         }
 
          //read values
-        _values = new Object[OVERFLOW_SIZE];
         Serializer<V> valSerializer =  tree.valueSerializer!=null ?  tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
         for(byte i = 0;i<size;i++){
             int header = in.readUnsignedByte();
             if(header == BTreeLazyRecord.NULL){
-                _values[i] = null;
+                _keysAndValues[i+OVERFLOW_SIZE] = null;
             }else if(header == BTreeLazyRecord.LAZY_RECORD){
                 long recid = LongPacker.unpackLong(in);
-                _values[i] = (new BTreeLazyRecord(tree.getRecordManager(),recid,valSerializer));
+                _keysAndValues[i+OVERFLOW_SIZE] = (new BTreeLazyRecord(tree.getRecordManager(),recid,valSerializer));
             }else{
-                _values[i] = BTreeLazyRecord.fastDeser(in,valSerializer,header);
+                _keysAndValues[i+OVERFLOW_SIZE] = BTreeLazyRecord.fastDeser(in,valSerializer,header);
             }
         }
     }
-
-    public String toString() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("HashBucket {depth=");
-        buf.append(_depth);
-        buf.append(", keys=");
-        buf.append(_keys);
-        buf.append(", values=");
-        buf.append(_values);
-        buf.append("}");
-        return buf.toString();
-    }
 }
+
+
