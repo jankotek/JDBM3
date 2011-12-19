@@ -61,7 +61,7 @@ class BTree<K,V>
     /**
      * Default page size (number of entries per node)
      */
-    public static final int DEFAULT_SIZE = 8;
+    public static final int DEFAULT_SIZE =32; //TODO Map.clean() fails if this is set to 8
 
 
     /**
