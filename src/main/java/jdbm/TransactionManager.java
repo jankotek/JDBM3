@@ -194,6 +194,7 @@ final class TransactionManager {
 
         }
         owner.sync();
+        ois.close();
         storage.deleteTransactionLog();
     }
 
