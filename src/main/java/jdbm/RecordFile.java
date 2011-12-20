@@ -65,11 +65,6 @@ final class RecordFile {
     /** A block of clean data to wipe clean pages. */
     static final byte[] CLEAN_DATA = new byte[Storage.BLOCK_SIZE];
 
-    /** if transactions are disabled, pages are automatically written from memory to file every N dirty records
-     * TODO there two instances of RecordFile (logic and physical), this way commit state may differ, we should propably merge commit for both files
-     */
-    private static final int AUTOCOMMIT_EVERY_N_PAGES = 1024;
-
 
 
     private Storage storage;
@@ -196,12 +191,6 @@ final class RecordFile {
         if (block.isDirty()) {
             // System.out.println( "Dirty: " + key + block );
             dirty.put(key, block);
-
-            //autocommit if transactions are disabled
-            if(transactionsDisabled && dirty.size()>=AUTOCOMMIT_EVERY_N_PAGES){
-                commit();
-            }
-
         } else {
             if (!transactionsDisabled && block.isInTransaction()) {
                 inTxn.put(key, block);
@@ -394,5 +383,9 @@ final class RecordFile {
   	    storage.sync();
     }
 
+
+    int getDirtyPageCount(){
+       return dirty.size();
+    }
 
 }

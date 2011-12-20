@@ -80,11 +80,13 @@ final class RecordManagerStorage
      * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
      */
     private final boolean readonly;
-    private final boolean disableTransactions;
-    /** cipher used for decription, may be null*/
+    private final boolean transactionDisabled;
+    /** cipher used for decryption, may be null*/
     private Cipher cipherOut;
-    /** cipher used for encription, may be null*/
+    /** cipher used for encryption, may be null*/
     private Cipher cipherIn;
+    
+    private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024;
 
 
     void checkCanWrite(){
@@ -150,9 +152,9 @@ final class RecordManagerStorage
 
 	private final String _filename;
 
-    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions)throws IOException
+    public RecordManagerStorage(String filename, boolean readonly, boolean transactionDisabled)throws IOException
     {
-        this(filename,readonly,disableTransactions,null,null);
+        this(filename,readonly,transactionDisabled,null,null);
     }
 
 
@@ -163,13 +165,13 @@ final class RecordManagerStorage
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public RecordManagerStorage(String filename, boolean readonly, boolean disableTransactions,
+    public RecordManagerStorage(String filename, boolean readonly, boolean transactionDisabled,
                                 Cipher cipherIn, Cipher cipherOut )
         throws IOException
     {
     	_filename = filename;
         this.readonly = readonly;
-        this.disableTransactions = disableTransactions;
+        this.transactionDisabled = transactionDisabled;
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
     	reopen();
@@ -177,7 +179,7 @@ final class RecordManagerStorage
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile( _filename + DBR, readonly,disableTransactions,cipherIn,cipherOut);
+        _physFile = new RecordFile( _filename + DBR, readonly,transactionDisabled,cipherIn,cipherOut);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
         		new FreePhysicalRowIdPageManager(_physFile, _physPageman));
@@ -185,7 +187,7 @@ final class RecordManagerStorage
         if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page
 
-        _logicFile = new RecordFile( _filename +IDR,readonly,disableTransactions,cipherIn,cipherOut);
+        _logicFile = new RecordFile( _filename +IDR,readonly,transactionDisabled,cipherIn,cipherOut);
         _logicPageman = new PageManager( _logicFile );
         _logicMgr = new LogicalRowIdManager( _logicFile, _logicPageman, 
         		new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -239,9 +241,13 @@ final class RecordManagerStorage
     public synchronized <A> long insert( A obj, Serializer<A> serializer )
         throws IOException
     {
-                
         checkIfClosed();
         checkCanWrite();
+
+        if(transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
     	if(bufferInUse){
     		//current reusable buffer is in use, have to fallback into creating new instances
             DataInputOutput buffer2 = new DataInputOutput();
@@ -255,6 +261,7 @@ final class RecordManagerStorage
         }finally{
         	bufferInUse = false;
         }
+
     }
 
 
@@ -268,6 +275,7 @@ final class RecordManagerStorage
 		if ( DEBUG ) {
 			System.out.println( "BaseRecordManager.insert() recid " + recid + " length " + buf.getPos() ) ;
 		}
+
 		return compressRecid(recid);
 	}
 
@@ -282,6 +290,11 @@ final class RecordManagerStorage
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
                                                 + logRowId );
         }
+
+        if(transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
 
         if ( DEBUG ) {
             System.out.println( "BaseRecordManager.delete() recid " + logRowId ) ;
@@ -305,6 +318,11 @@ final class RecordManagerStorage
             throw new IllegalArgumentException( "Argument 'recid' is invalid: "
                                                 + recid );
         }
+
+        if(transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
     	if(bufferInUse){
     		//current reusable buffer is in use, have to create new instances
             DataInputOutput buffer2 = new DataInputOutput();
@@ -530,6 +548,9 @@ final class RecordManagerStorage
     public synchronized void rollback()
         throws IOException
     {
+        if(transactionDisabled)
+            throw new IllegalAccessError("Transactions are disabled, can not rollback");
+        
         checkIfClosed();
         _physMgr.commit();
         _logicMgr.commit();
