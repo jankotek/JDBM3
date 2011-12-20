@@ -93,33 +93,6 @@ final class RecordManagerStorage
     }
 
 
-    /** if true, new records alwayes saved to end of file
-     * and free space is not reclaimed.
-     * This may speed up some operations which involves lot of
-     * updates and inserts (batch creation);
-     * You need to reopen store to apply effect
-     */
-    public boolean isAppendToEnd() {
-        return appendToEnd;
-    }
-    /** if true, new records alwayes saved to end of file
-     * and free space is not reclaimed.
-     * This may speed up some operations which involves lot of
-     * updates and inserts (batch creation);
-     *
-     * You need to reopen store to apply effect
-     */
-    public void setAppendToEnd(boolean appendToEnd) {
-        this.appendToEnd = appendToEnd;
-    }
-
-    /** if true, new records alwayes saved to end of file
-     * and free space is not reclaimed.
-     * This may speed up some operations which involves lot of
-     * updates and inserts (batch creation);
-      */
-    private boolean appendToEnd = false;
-
 
 
     /**
@@ -207,7 +180,7 @@ final class RecordManagerStorage
         _physFile = new RecordFile( _filename + DBR, readonly,disableTransactions,cipherIn,cipherOut);
         _physPageman = new PageManager( _physFile );
         _physMgr = new PhysicalRowIdManager( _physFile, _physPageman, 
-        		new FreePhysicalRowIdPageManager(_physFile, _physPageman,appendToEnd));
+        		new FreePhysicalRowIdPageManager(_physFile, _physPageman));
         
         if(Storage.BLOCK_SIZE >256*8)
         	throw new InternalError(); //too big page, slot number would not fit into page

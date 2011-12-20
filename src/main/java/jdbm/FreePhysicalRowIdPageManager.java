@@ -29,19 +29,15 @@ final class FreePhysicalRowIdPageManager {
 	// our page manager
 	protected PageManager _pageman;
 
-    /** if true, new records are always placed to end of file, new space is not reclaimed */
-    private boolean appendToEnd = false;
-	
 	private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
 	private final Utils.IntArrayList freeBlocksInTransactionSize = new Utils.IntArrayList();
 
 	/**
 	 * Creates a new instance using the indicated record file and page manager.
 	 */
-	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman, boolean append) throws IOException {
+	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman) throws IOException {
 		_file = file;
 		_pageman = pageman;
-        this.appendToEnd = append;
 
 	}
 
@@ -55,8 +51,7 @@ final class FreePhysicalRowIdPageManager {
 	 * record in bytes.
 	 */
 	long get(int size) throws IOException {
-                //never reclaim used space
-                if(appendToEnd) return 0;
+
 
                 //requested record is bigger than any previously found
                 if(lastMaxSize!=-1 && size>lastMaxSize)

@@ -91,7 +91,7 @@ final class RecordHeader {
 
     }
     
-    static int deconvertAvailSize(short converted){
+    static int deconvertAvailSize(final short converted){
         if(converted>=0)
             return converted;
         else{

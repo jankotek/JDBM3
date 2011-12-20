@@ -37,8 +37,7 @@ public class RecordManagerBuilder {
     private int mruCacheSize = 512;
 
     private String location = null;
-
-    private boolean batchInsert = false;
+;
     private boolean disableTransactions = false;
     private boolean readonly = false;
     private String password = null;
@@ -154,23 +153,6 @@ public class RecordManagerBuilder {
         return this;
     }
 
-    /**
-     * Enables  Batch Insert Mode. If this mode is activated,
-     * JDBM can handle huge inserts and updates faster.
-     * This is generally usefull when DB is populated with data at creation.
-     * <p/>
-     * In this mode JDBM disables a space-saving optimisations to make inserts faster.
-     * After batch insert you should run 'RecordStore.defrag()' to optimise and defragment
-     * file storage.
-     * <p/>
-     * Batch Insert Mode is disabled by default
-     *
-     * @return this builder
-     */
-    public RecordManagerBuilder enableBatchInsertMode(){
-        this.batchInsert = true;
-        return this;
-    }
 
     /**
      * Option to disable transaction (to increase performance at the cost of potential data loss).
@@ -242,10 +224,6 @@ public class RecordManagerBuilder {
         }catch(IOException e){
             throw new IOError(e);
         }
-
-
-        if(batchInsert)
-            ( (RecordManagerStorage) recman ).setAppendToEnd(true);
 
 
 

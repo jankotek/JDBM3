@@ -30,7 +30,7 @@ public class FreePhysicalRowIdPageManagerTest extends TestCaseWithTestFile {
 		RecordFile f = newRecordFile();
 		PageManager pm = new PageManager(f);
 		FreePhysicalRowIdPageManager freeMgr = new FreePhysicalRowIdPageManager(
-				f, pm,false);
+				f, pm);
 
 		pm.close();
 		f.close();
@@ -44,7 +44,7 @@ public class FreePhysicalRowIdPageManagerTest extends TestCaseWithTestFile {
 		RecordFile f = newRecordFile();
 		PageManager pm = new PageManager(f);
 		FreePhysicalRowIdPageManager freeMgr = new FreePhysicalRowIdPageManager(
-				f, pm,false);
+				f, pm);
 
 		// allocate 10,000 bytes - should fail on an empty file.
 		long loc = freeMgr.get(10000);
