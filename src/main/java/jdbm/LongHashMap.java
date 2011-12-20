@@ -45,8 +45,6 @@ class LongHashMap<V> implements  Serializable {
 
     private  int threshold;
 
-    private transient int modCount = 0;
-
     private static final int DEFAULT_SIZE = 16;
     
     private transient Entry<V> reuseAfterDelete = null;
@@ -55,8 +53,9 @@ class LongHashMap<V> implements  Serializable {
 
         Entry<V> next;
 
-        long key;
         V value;
+
+        long key;
         
         public boolean equals(Object object) {
             if (this == object) {
@@ -95,37 +94,28 @@ class LongHashMap<V> implements  Serializable {
     }
     
 
-    interface EntryType<RT,VT> {
-        RT get(Entry<VT> entry);
-    }
-
-    static class HashMapIterator<E,VT> implements Iterator<E> {
+    static class HashMapIterator<V> implements Iterator<V> {
         private int position = 0;
 
-        int expectedModCount;
-
-        final EntryType<E, VT> type;
 
         boolean canRemove = false;
 
-        Entry<VT> entry;
+        Entry<V> entry;
 
-        Entry<VT> lastEntry;
+        Entry<V> lastEntry;
 
-        final LongHashMap<VT> associatedMap;
+        final LongHashMap<V> associatedMap;
 
-        HashMapIterator(EntryType<E, VT> value, LongHashMap<VT> hm) {
+        HashMapIterator(LongHashMap<V> hm) {
             associatedMap = hm;
-            type = value;
-            expectedModCount = hm.modCount;
         }
 
         public boolean hasNext() {
             if (entry != null) {
                 return true;
             }
-            // BEGIN android-changed
-            Entry<VT>[] elementData = associatedMap.elementData;
+
+            Entry<V>[] elementData = associatedMap.elementData;
             int length = elementData.length;
             int newPosition = position;
             boolean result = false;
@@ -141,27 +131,16 @@ class LongHashMap<V> implements  Serializable {
 
             position = newPosition;
             return result;
-            // END android-changed
         }
 
-        void checkConcurrentMod() throws ConcurrentModificationException {
-            if (expectedModCount != associatedMap.modCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
+        public V next() {
 
-        public E next() {
-            // BEGIN android-changed
-            // inline checkConcurrentMod()
-            if (expectedModCount != associatedMap.modCount) {
-                throw new ConcurrentModificationException();
-            }
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
 
-            Entry<VT> result;
-            Entry<VT> _entry  = entry;
+            Entry<V> result;
+            Entry<V> _entry  = entry;
             if (_entry == null) {
                 result = lastEntry = associatedMap.elementData[position++];
                 entry = lastEntry.next;
@@ -173,18 +152,16 @@ class LongHashMap<V> implements  Serializable {
                 entry = _entry.next;
             }
             canRemove = true;
-            return type.get(result);
-            // END android-changed
+            return result.value;
         }
 
         public void remove() {
-            checkConcurrentMod();
             if (!canRemove) {
                 throw new IllegalStateException();
             }
 
             canRemove = false;
-            associatedMap.modCount++;
+
             if (lastEntry.next == entry) {
                 while (associatedMap.elementData[--position] == null) {
                     // Do nothing
@@ -195,7 +172,7 @@ class LongHashMap<V> implements  Serializable {
                 lastEntry.next = entry;
             }
             if(lastEntry!=null){
-            	Entry<VT> reuse = lastEntry;
+            	Entry<V> reuse = lastEntry;
             	lastEntry = null;
             	reuse.key = Long.MIN_VALUE;
             	reuse.value = null;
@@ -203,14 +180,13 @@ class LongHashMap<V> implements  Serializable {
             }
 
             associatedMap.elementCount--;
-            expectedModCount++;
         }
     }
 
 
 
     @SuppressWarnings("unchecked")
-    Entry<V>[] newElementArray(int s) {
+    private Entry<V>[] newElementArray(int s) {
         return new Entry[s];
     }
 
@@ -259,7 +235,6 @@ class LongHashMap<V> implements  Serializable {
         if (elementCount > 0) {
             elementCount = 0;
             Arrays.fill(elementData, null);
-            modCount++;
         }
     }
     // END android-changed
@@ -289,21 +264,21 @@ class LongHashMap<V> implements  Serializable {
      * @since Android 1.0
      */
     
-    public V get(long key) {
-
-        int hash = (int)(key);
-        int index = (hash & 0x7FFFFFFF) % elementData.length;
+    public V get(final long key) {
+        
+        final int hash = (int)key;
+        final int index = (hash & 0x7FFFFFFF) % elementData.length;
 
         //find non null entry
         Entry<V> m = elementData[index];
-        while (m != null && key != m.key) {
+        while (m != null) {
+            if(key == m.key)
+                return m.value;
             m = m.next;
         }
 
-        if (m != null) {
-            return m.value;
-        }
         return null;
+
     }
 
 
@@ -359,7 +334,6 @@ class LongHashMap<V> implements  Serializable {
         }
 
             if (entry == null) {
-                modCount++;
                 if (++elementCount > threshold) {
                     rehash();
                     index = (hash & 0x7FFFFFFF) % elementData.length;
@@ -422,7 +396,7 @@ class LongHashMap<V> implements  Serializable {
      * @since Android 1.0
      */
     
-    public V remove(long key) {
+    public V remove(final long key) {
         Entry<V> entry = removeEntry(key);
         if(entry == null)
         	return null;
@@ -434,31 +408,31 @@ class LongHashMap<V> implements  Serializable {
         return ret;
     }
 
-    Entry<V> removeEntry(long key) {
-        int index = 0;
-        Entry<V> entry;
+    Entry<V> removeEntry(final long key) {
         Entry<V> last = null;
 
-        int hash = (int)(key);
-        index = (hash & 0x7FFFFFFF) % elementData.length;
-        entry = elementData[index];
-         while (entry != null && !(/*((int)entry.key) == hash &&*/ key == entry.key)) {
-             last = entry;
-              entry = entry.next;
-         }
-         
-         if (entry == null) {
-             return null;
-         }
-         
-        if (last == null) {
-            elementData[index] = entry.next;
-        } else {
-            last.next = entry.next;
+        final int hash = (int)(key);
+        final int index = (hash & 0x7FFFFFFF) % elementData.length;
+        Entry<V> entry = elementData[index];
+
+        while(true){
+            if(entry==null){
+                return null;
+            }
+
+            if(key == entry.key){
+                if (last == null) {
+                    elementData[index] = entry.next;
+                } else {
+                    last.next = entry.next;
+                }
+                elementCount--;
+                return entry;
+            }
+
+            last = entry;
+            entry = entry.next;
         }
-        modCount++;
-        elementCount--;
-        return entry;
     }
 
     /**
@@ -476,12 +450,7 @@ class LongHashMap<V> implements  Serializable {
      * @returns iterator over values in map
      */
     public Iterator<V> valuesIterator() {
-        return new HashMapIterator<V, V>(
-                new EntryType<V,  V>() {
-                    public V get(Entry< V> entry) {
-                        return entry.value;
-                    }
-                }, LongHashMap.this);
+        return new HashMapIterator<V>(this);
 
     }
 
