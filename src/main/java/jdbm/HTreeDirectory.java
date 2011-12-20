@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -446,7 +447,12 @@ final class HTreeDirectory<K,V>
          */
         private Iterator<A> _iter;
 
-        A next;
+        private A next;
+
+        /** last item returned in next(), is used to remove() last item*/
+        private A last;
+        
+        private int expectedModCount;
 
         /**
          * Construct an iterator on this directory.
@@ -462,9 +468,11 @@ final class HTreeDirectory<K,V>
             _dir = HTreeDirectory.this;
             _child = -1;
             _iterateKeys = iterateKeys;
+            expectedModCount = tree.modCount;
 
             prepareNext();
-            next = next2();            
+            next = next2();
+
         }
 
 
@@ -474,7 +482,7 @@ final class HTreeDirectory<K,V>
          * Returns the next object.
          */
         public A next2()
-        {   
+        {
             A next = null;      
             if( _iter != null && _iter.hasNext() ) {
               next = _iter.next();
@@ -558,19 +566,26 @@ final class HTreeDirectory<K,V>
 		}
 
 
-
-
 		public A next() {
 			if(next == null) throw new NoSuchElementException();
-			A ret = next;
+            if(expectedModCount != tree.modCount)
+                throw new ConcurrentModificationException();
+			last = next;
 			next = next2();
-			return ret;
+			return last;
 		}
 
 
 		public void remove() {
-			throw new UnsupportedOperationException();
-			
+            if(last == null) throw new IllegalStateException();
+
+            if(expectedModCount != tree.modCount)
+                 throw new ConcurrentModificationException();
+
+            //TODO current delete behaviour may change page layout. INVESTIGATE if this can happen!
+            tree.remove(last);
+            last = null;
+            expectedModCount++;
 		}
     }
 

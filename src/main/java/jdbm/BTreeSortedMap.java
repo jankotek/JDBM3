@@ -34,7 +34,7 @@ class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTree
 	protected final K toKey;
 	
 	protected final boolean readonly;
-	
+
 	public BTreeSortedMap(BTree<K,V> tree, boolean readonly){
 		this(tree,readonly, null,null);
 	}
@@ -143,9 +143,13 @@ class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTree
 						
 						if(lastKey == null)
 							throw new IllegalStateException();
+                        try{
+                           br.remove(lastKey);
+                            lastKey = null;
+                        } catch (IOException e1) {
+                           throw new IOError(e1);
+                        }
 
-							BTreeSortedMap.this.remove(lastKey);
-							lastKey = null;
 					}};
 					
 				} catch (IOException e) {

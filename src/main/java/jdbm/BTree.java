@@ -61,7 +61,7 @@ class BTree<K,V>
     /**
      * Default page size (number of entries per node)
      */
-    public static final int DEFAULT_SIZE =32; //TODO Map.clean() fails if this is set to 8
+    public static final int DEFAULT_SIZE =8;
 
 
     /**
@@ -96,6 +96,8 @@ class BTree<K,V>
     /** indicates if values should be loaded during deserialization, set to true during defragmentation */
     boolean loadValues = true;
 
+    /** The number of structural modifications to the tree. This value is just for runtime, it is not persisted*/
+    transient int modCount = 0;
 
 
     public Serializer<K> getKeySerializer() {
@@ -283,6 +285,7 @@ class BTree<K,V>
 	            _height = 1;
 	            _entries = 1;
 	            _recman.update( _recid, this);
+                modCount++;
 	            //notifi listeners
 	            for(RecordListener<K,V> l : recordListeners){
 	            	l.recordInserted(key, value);
@@ -303,6 +306,7 @@ class BTree<K,V>
             }
             if ( insert._existing == null ) {
                 _entries++;
+                modCount++;
                 dirty = true;
             }
             if ( dirty ) {
@@ -359,6 +363,7 @@ class BTree<K,V>
 	        }
 	        if ( remove._value != null ) {
 	            _entries--;
+                modCount++;
 	            dirty = true;
 	        }
 	        if ( dirty ) {
@@ -461,7 +466,7 @@ class BTree<K,V>
         	lock.readLock().lock();
 	        BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
-	            return EmptyBrowser.INSTANCE;
+	            return EMPTY_BROWSER;
 	        }
 	        BTreeTupleBrowser<K,V> browser = rootPage.findFirst();
 	        return browser;
@@ -491,7 +496,7 @@ class BTree<K,V>
         	lock.readLock().lock();
 	    	BTreePage<K,V> rootPage = getRoot();
 	        if ( rootPage == null ) {
-	            return EmptyBrowser.INSTANCE;
+	            return EMPTY_BROWSER;
 	        }
 	        BTreeTupleBrowser<K,V> browser = rootPage.find( _height, key );
 	        return browser;
@@ -609,24 +614,20 @@ class BTree<K,V>
     /** PRIVATE INNER CLASS
      *  Browser returning no element.
      */
-    static class EmptyBrowser<K,V>
-    	implements BTreeTupleBrowser<K,V> {
+    private static final BTreeTupleBrowser EMPTY_BROWSER = new  BTreeTupleBrowser() {
 
-        @SuppressWarnings("unchecked")
-		static BTreeTupleBrowser INSTANCE = new EmptyBrowser();
-        
-        private EmptyBrowser(){}
-
-        public boolean getNext( BTreeTuple<K,V> tuple )
-        {
+        public boolean getNext( BTreeTuple tuple ){
             return false;
         }
 
-        public boolean getPrevious( BTreeTuple<K,V> tuple )
-        {
+        public boolean getPrevious( BTreeTuple tuple ){
             return false;
         }
-    }
+
+        public void remove(Object key) {
+            throw new IndexOutOfBoundsException();
+        }
+    };
     
     public BTreeSortedMap<K,V> asMap(){
     	return new BTreeSortedMap<K, V>(this,false);
@@ -674,6 +675,8 @@ class BTree<K,V>
 	        if (rootPage != null)
 	            rootPage.delete();
 	        _recman.delete(_recid);
+            _entries = 0;
+            modCount++;
     	} finally {
     		lock.writeLock().unlock();
     	}
@@ -729,7 +732,7 @@ class BTree<K,V>
          * @param tuple Tuple into which values are copied.
          * @return True if values have been copied in tuple, or false if there is no next tuple.
          */
-        public abstract boolean getNext(BTreeTuple<K, V> tuple)throws IOException;
+        boolean getNext(BTreeTuple<K, V> tuple)throws IOException;
 
         /**
          * Get the previous tuple.
@@ -737,7 +740,15 @@ class BTree<K,V>
          * @param tuple Tuple into which values are copied.
          * @return True if values have been copied in tuple, or false if there is no previous tuple.
          */
-        public abstract boolean getPrevious(BTreeTuple<K, V> tuple) throws IOException;
+        boolean getPrevious(BTreeTuple<K, V> tuple) throws IOException;
+
+        /***
+         * Remove an entry with given key, and increases browsers expectedModCount
+         * This method is here to support 'ConcurrentModificationException' on Map interface.
+         *
+         * @param key
+         */
+        void remove(K key) throws IOException;
 
     }
 }

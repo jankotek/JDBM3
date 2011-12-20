@@ -94,6 +94,9 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     private RecordManager2 recman;
     private long recid;
 
+    /** counts structural changes in tree at runtume. Is here to support fail-fast behaviour. */
+    int modCount;
+
     /** indicates if values should be loaded during deserialization, set to true during defragmentation */
     private boolean loadValues = true;
 
@@ -159,6 +162,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 		V oldVal = get(key);
                 getRoot().put(key, value);
                 if(oldVal == null){
+                    modCount++;
                         for(RecordListener<K,V> r : recordListeners)
                             r.recordInserted(key,value);
                 }else{
@@ -200,6 +204,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                            if(recordListeners.length>0)
                                    val = get(key);
                            getRoot().remove(key);
+                           modCount++;
                            if(val!=null)
                                 for(RecordListener r : recordListeners)
                                     r.recordRemoved(key,val);
@@ -223,8 +228,10 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     public synchronized void clear(){
         try{
             Iterator<K> keyIter = keys();
-            while(keyIter.hasNext())
-                remove(keyIter.next());
+            while(keyIter.hasNext()){
+                keyIter.next();
+                keyIter.remove();
+            }
         }catch(IOException e){
             throw new IOError(e);
         }
@@ -314,43 +321,19 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
                                 final Iterator<K> br = keys();
                                 return new Iterator<Entry<K,V>>(){
 
-                                    private Entry<K,V> next;
-                                    private K lastKey;
-                                    void ensureNext(){
-                                            if(br.hasNext()){
-                                                   K k = br.next();
-                                                   next = newEntry(k,get(k));
-                                            }else
-                                                   next = null;
-                                    }
-                                    {
-                                            ensureNext();
-                                    }
-
-
-
                                     public boolean hasNext() {
-                                            return next!=null;
+                                            return br.hasNext();
                                     }
 
                                     public java.util.Map.Entry<K, V> next() {
-                                            if(next == null)
-                                                    throw new NoSuchElementException();
-                                            Entry<K,V> ret = next;
-                                            lastKey = ret.getKey();
-                                            //move to next position
-                                            ensureNext();
-                                            return ret;
+                                        K k = br.next();
+                                        return newEntry(k,get(k));
                                     }
 
                                     public void remove() {
                                             if(readonly)
                                                     throw new UnsupportedOperationException("readonly");
-                                            if(lastKey == null)
-                                                    throw new IllegalStateException();
-
-                                                    HTree.this.remove(lastKey);
-                                                    lastKey = null;
+                                            br.remove();
                                     }};
 
                             } catch (IOException e) {
@@ -429,6 +412,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
     }
 
     static void defrag(Long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+        //TODO should modCount be increased after defrag, revert or commit?
         try{
         byte[] data = r1.fetchRaw(recid);
         r2.forceInsert(recid,data);

@@ -19,6 +19,7 @@ package jdbm;
 
 import java.io.*;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
@@ -1429,17 +1430,17 @@ final class BTreePage<K,V>
         implements BTree.BTreeTupleBrowser<K,V>
     {
 
-        /**
-         * Current page.
-         */
+        /** Current page. */
         private BTreePage<K,V> _page;
-
 
         /**
          * Current index in the page.  The index positionned on the next
          * tuple to return.
          */
         private byte _index;
+
+        
+        private int expectedModCount;
 
 
         /**
@@ -1452,11 +1453,19 @@ final class BTreePage<K,V>
         {
             _page = page;
             _index = index;
+            expectedModCount = page._btree.modCount;
         }
 
         public boolean getNext( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
+            if(expectedModCount!=_page._btree.modCount)
+                throw new ConcurrentModificationException();
+            if(_page==null){
+                //last record in iterator was deleted, so iterator is at end of page
+                return false;
+            }
+
             if ( _index < BTree.DEFAULT_SIZE ) {
                 if ( _page._keys[ _index ] == null ) {
                     // reached end of the tree.
@@ -1479,6 +1488,14 @@ final class BTreePage<K,V>
         public boolean getPrevious( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
+            if(expectedModCount!=_page._btree.modCount)
+                throw new ConcurrentModificationException();
+            
+            if(_page==null){
+                //deleted last record, but this situation is only supportedd on getNext
+                throw new InternalError();
+            }
+
             if ( _index == _page._first ) {
 
                 if ( _page._previous != 0 ) {
@@ -1497,6 +1514,30 @@ final class BTreePage<K,V>
                 tuple.value = (V) _page._values[ _index ];
 
             return true;
+
+        }
+
+        public void remove(K key) throws IOException {
+            if(expectedModCount!=_page._btree.modCount)
+                throw new ConcurrentModificationException();
+
+            _page._btree.remove(key);
+            expectedModCount++;
+
+            //An entry was removed and this may trigger tree rebalance,
+            //This would change current page layout, so find our position again
+            BTree.BTreeTupleBrowser b = _page._btree.browse(key);
+            //browser is positioned just before value which was currently deleted, so find if we have new value
+            if(b.getNext(new BTree.BTreeTuple(null,null))){
+                //next value value exists, copy its state
+                Browser b2 = (Browser)b ;            
+                this._page = b2._page;
+                this._index = b2._index;
+            }else{
+                this._page = null;
+                this._index = -1;
+            }
+    
 
         }
     }    

@@ -105,6 +105,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
             if(first == 0) first = recid;
             size++;
             recman.update(listrecid,this);
+            modCount++;
             return true;
         }catch(IOException e){
             throw new IOError(e);
@@ -170,13 +171,15 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         }
     }
 
-    private class Iter implements ListIterator<E> {
-        int index = 0;
+    private final class Iter implements ListIterator<E> {
 
-        long prev = 0;
-        long next = 0;
+        private int expectedModCount = modCount;
+        private int index = 0;
 
-        byte lastOper = 0;
+        private long prev = 0;
+        private long next = 0;
+
+        private byte lastOper = 0;
 
         public boolean hasNext() {
             return next!=0;
@@ -186,6 +189,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
         public E next() {
             if(next == 0) throw new NoSuchElementException();
+            checkForComodification();
 
             Entry<E> e = fetch(next);
 
@@ -201,6 +205,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         }
 
         public E previous() {
+            checkForComodification();
             Entry<E> e = fetch(prev);
             next = prev;
             prev = e.prev;
@@ -218,6 +223,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         }
 
         public void remove() {
+            checkForComodification();
             try{
             if(lastOper==1){
                 //last operation was next() so remove previous element
@@ -245,6 +251,8 @@ class LinkedList<E> extends AbstractSequentialList<E>{
                     last = next;
                 size--;
                 recman.update(listrecid,LinkedList.this);
+                modCount++;
+                expectedModCount++;
                 //update iterator
                 prev = p.prev;
 
@@ -274,6 +282,8 @@ class LinkedList<E> extends AbstractSequentialList<E>{
                     first = prev;
                 size--;
                 recman.update(listrecid,LinkedList.this);
+                modCount++;
+                expectedModCount++;
                 //update iterator
                 next = n.next;
 
@@ -285,6 +295,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         }
 
         public void set(E value) {
+            checkForComodification();
             try{
             if(lastOper==1){
                 //last operation was next(), so update previous item
@@ -307,9 +318,11 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         }
 
         public void add(E value) {
+            checkForComodification();
             //use more efficient method if possible
             if(next == 0){
                 LinkedList.this.add(value);
+                expectedModCount++;
                 return;
             }
             try{
@@ -336,12 +349,19 @@ class LinkedList<E> extends AbstractSequentialList<E>{
                 recman.update(listrecid,LinkedList.this);
 
                 //update iterator
+                expectedModCount++;
+                modCount++;
                 prev = recid;
 
             }catch(IOException e){
                 throw new IOError(e);
             }
 
+        }
+
+        final void checkForComodification() {
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
         }
     }
 
