@@ -251,7 +251,7 @@ class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
 
 
     public RecordManager2 getRecordManager() {
-        return getRoot().getRecordManager();
+        return recman;
     }
 
     /**

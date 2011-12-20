@@ -175,7 +175,7 @@ final class HTreeDirectory<K,V>
      * @return object which was previously associated with the given key,
      *          or <code>null</code> if no association existed.
      */
-    Object put(Object key, Object value)
+    Object put(final Object key, final Object value)
     throws IOException {
         if (value == null) {
             return remove(key);

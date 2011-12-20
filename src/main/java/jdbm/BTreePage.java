@@ -366,7 +366,7 @@ final class BTreePage<K,V>
      * @return Insertion result containing existing value OR a BPage if the key
      *         was inserted and provoked a BPage overflow.
      */
-    InsertResult<K,V> insert( int height, K key, V value, boolean replace )
+    InsertResult<K,V> insert(int height, K key, final V value, final boolean replace )
         throws IOException
     {
         InsertResult<K,V>  result;
@@ -389,7 +389,7 @@ final class BTreePage<K,V>
                 System.out.println( "Bpage.insert() Insert on leaf Bpage key=" + key
                                     + " value=" + value + " index="+index);
             }
-            if ( compare( key, _keys[ index ] ) == 0 ) {
+            if ( compare( _keys[ index ], key ) == 0 ) {
                 // key already exists
                 if ( DEBUG ) {
                     System.out.println( "Bpage.insert() Key already exists." ) ;
@@ -740,21 +740,24 @@ final class BTreePage<K,V>
      *
      * @return index of first children with equal or greater key.
      */
-    private byte findChildren( K key )
+    private byte findChildren(final  K key )
     {
         int left = _first;
         int right = BTree.DEFAULT_SIZE-1;
+        int middle;
 
         // binary search
-        while ( left < right )  {
-            int middle = ( left + right ) / 2;
+        while ( true )  {
+            middle = ( left + right ) / 2;
             if ( compare( _keys[ middle ], key ) < 0 ) {
                 left = middle+1;
             } else {
                 right = middle;
             }
+            if(left >= right){
+                return (byte) right;
+            }
         }
-        return (byte) right;
     }
 
 
@@ -891,7 +894,7 @@ final class BTreePage<K,V>
     }
 
     
-    private final int compare( K value1, K value2 )
+    private final int compare( final K value1, final K value2 )
     {
         if ( value1 == null ) {
             return 1;
