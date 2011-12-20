@@ -98,6 +98,7 @@ class BTree<K,V>
 
     /** The number of structural modifications to the tree. This value is just for runtime, it is not persisted*/
     transient int modCount = 0;
+    protected BTreePage.InsertResult<K, V> insertResultReuse;
 
 
     public Serializer<K> getKeySerializer() {
@@ -321,7 +322,12 @@ class BTree<K,V>
             }
 
             // insert might have returned an existing value
-            return insert._existing;
+            V ret = insert._existing;
+            //zero out tuple and put it for reuse
+            insert._existing = null;
+            insert._overflow = null;
+            this.insertResultReuse = insert;
+            return ret;
            }
         } finally {
         	lock.writeLock().unlock();

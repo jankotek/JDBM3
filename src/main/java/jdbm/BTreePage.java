@@ -377,7 +377,11 @@ final class BTreePage<K,V>
         height -= 1;
         if ( height == 0 )  {
 
-            result = new InsertResult<K,V>();
+            //reuse InsertResult instance to avoid GC trashing on massive inserts
+            result = _btree.insertResultReuse;
+            _btree.insertResultReuse = null;
+            if(result == null)
+                result = new InsertResult<K, V>();
 
             // inserting on a leaf BPage
             overflow = -1;
