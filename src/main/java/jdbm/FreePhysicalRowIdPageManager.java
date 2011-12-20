@@ -29,8 +29,6 @@ final class FreePhysicalRowIdPageManager {
 	// our page manager
 	protected PageManager _pageman;
 
-	private int blockSize;
-
     /** if true, new records are always placed to end of file, new space is not reclaimed */
     private boolean appendToEnd = false;
 	
@@ -43,8 +41,7 @@ final class FreePhysicalRowIdPageManager {
 	FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman, boolean append) throws IOException {
 		_file = file;
 		_pageman = pageman;
-		this.blockSize = Storage.BLOCK_SIZE;
-                this.appendToEnd = append;
+        this.appendToEnd = append;
 
 	}
 
@@ -71,7 +68,7 @@ final class FreePhysicalRowIdPageManager {
 
         int maxSize = -1;
 		for(long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current!=0; current = _pageman.getNext(current)){
-			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(current), blockSize);
+			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(current));
 			int slot = fp.getFirstLargerThan(size);
 			if (slot > 0) {
                                 //reset maximal size, as record has changed
@@ -124,7 +121,7 @@ final class FreePhysicalRowIdPageManager {
                 current = fromLast?_pageman.getPrev(current):_pageman.getNext(current)
                     ){
 		    	BlockIo curBlock = _file.get(current);
-	    		FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
+	    		FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock);
     			int slot = fp.getFirstFree();
 			    //iterate over free slots in page and fill them
 			    while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){
@@ -149,7 +146,7 @@ final class FreePhysicalRowIdPageManager {
 			//allocate new page
 			long freePage = _pageman.allocate(Magic.FREEPHYSIDS_PAGE);
 			BlockIo curBlock = _file.get(freePage);
-			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock, blockSize);
+			FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock);
 			int slot = fp.getFirstFree();
 			//iterate over free slots in page and fill them
 			while(slot!=-1 && rowidpos<freeBlocksInTransactionRowid.size){

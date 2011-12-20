@@ -28,7 +28,7 @@ final class FreePhysicalRowIdPage extends PageHeader {
 	// offsets
 	private static final short O_COUNT = PageHeader.SIZE; // short count
 	static final short O_FREE = O_COUNT + Magic.SZ_SHORT;
-	final short ELEMS_PER_PAGE;
+	static final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - O_FREE) / FreePhysicalRowId_SIZE);
 	
 
 
@@ -55,9 +55,8 @@ final class FreePhysicalRowIdPage extends PageHeader {
 	/**
 	 * Constructs a data page view from the indicated block.
 	 */
-	FreePhysicalRowIdPage(BlockIo block, int blockSize) {
+	FreePhysicalRowIdPage(BlockIo block) {
 		super(block);
-		ELEMS_PER_PAGE = (short) ((blockSize - O_FREE) / FreePhysicalRowId_SIZE);
 		 sizeCache = new int[ELEMS_PER_PAGE];
 		for(int i = 0;i<ELEMS_PER_PAGE;i++)
 			sizeCache[i] = -1;
@@ -67,12 +66,12 @@ final class FreePhysicalRowIdPage extends PageHeader {
 	/**
 	 * Factory method to create or return a data page for the indicated block.
 	 */
-	static FreePhysicalRowIdPage getFreePhysicalRowIdPageView(BlockIo block,int pageSize) {
+	static FreePhysicalRowIdPage getFreePhysicalRowIdPageView(BlockIo block) {
 		BlockView view = block.getView();
 		if (view != null && view instanceof FreePhysicalRowIdPage)
 			return (FreePhysicalRowIdPage) view;
 		else
-			return new FreePhysicalRowIdPage(block, pageSize);
+			return new FreePhysicalRowIdPage(block);
 	}
 
 	/** Returns the number of free rowids */
@@ -99,15 +98,10 @@ final class FreePhysicalRowIdPage extends PageHeader {
 		return slotToOffset(slot);
 	}
 
-	/** Returns true if a slot is allocated */
-	boolean isAllocated(int slot) {
-		short pos = slotToOffset(slot);
-		return FreePhysicalRowId_getSize(pos) != 0;
-	}
-
 	/** Returns true if a slot is free */
 	boolean isFree(int slot) {
-		return !isAllocated(slot);
+        short pos = slotToOffset(slot);
+   		return FreePhysicalRowId_getSize(pos) == 0;
 	}
 
 //	/** Returns the value of the indicated slot */

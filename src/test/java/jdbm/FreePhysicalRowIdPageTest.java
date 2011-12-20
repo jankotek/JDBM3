@@ -35,7 +35,7 @@ public class FreePhysicalRowIdPageTest extends TestCase {
   byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
+  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test);
     }
 
     /**
@@ -45,7 +45,7 @@ public class FreePhysicalRowIdPageTest extends TestCase {
   byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
+  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test);
 
   // we have a completely empty page.
   assertEquals("zero count", 0, page.getCount());
@@ -67,16 +67,16 @@ public class FreePhysicalRowIdPageTest extends TestCase {
   assertEquals("one left count", 1, page.getCount());
   assertTrue("isfree 0", page.isFree(0));
   assertTrue("isfree 1", page.isFree(1));
-  assertTrue("isalloc 2", page.isAllocated(2));
+  assertTrue("isalloc 2", !page.isFree(2));
 
   // now, create a new page over the data and check whether
   // it's all the same.
-  page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
+  page = new FreePhysicalRowIdPage(test);
 
   assertEquals("2: one left count", 1, page.getCount());
   assertTrue("2: isfree 0", page.isFree(0));
   assertTrue("2: isfree 1", page.isFree(1));
-  assertTrue("2: isalloc 2", page.isAllocated(2));
+  assertTrue("2: isalloc 2", !page.isFree(2));
 
   id = page.slotToOffset(2);
   assertEquals("block", 1, page.getLocationBlock(id));
@@ -90,7 +90,7 @@ public class FreePhysicalRowIdPageTest extends TestCase {
     	  byte[] data = new byte[Storage.BLOCK_SIZE];
     	  BlockIo test = new BlockIo(0, data);
     	  new PageHeader(test, Magic.FREEPHYSIDS_PAGE);
-    	  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test, Storage.BLOCK_SIZE);
+    	  FreePhysicalRowIdPage page = new FreePhysicalRowIdPage(test);
     	for(int slot = 0;slot<1e5;slot++){
     		short pos = page.slotToOffset(slot);
     		if(pos > 20000) return; //out of page size

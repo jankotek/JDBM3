@@ -26,7 +26,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
     // offsets
     private static final short O_COUNT = SIZE; // short count
     static final short O_FREE = (short)(O_COUNT + Magic.SZ_SHORT);
-    final short ELEMS_PER_PAGE;
+    static final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - O_FREE) / PhysicalRowId_SIZE);
 
     private int previousFoundFree = 0; // keeps track of the most recent found free slot so we can locate it again quickly 
     private int previousFoundAllocated = 0; // keeps track of the most recent found allocated slot so we can locate it again quickly
@@ -37,9 +37,9 @@ final class FreeLogicalRowIdPage extends PageHeader {
     /**
      *  Constructs a data page view from the indicated block.
      */
-    FreeLogicalRowIdPage(BlockIo block, int blockSize) {
+    FreeLogicalRowIdPage(BlockIo block) {
         super(block);
-        ELEMS_PER_PAGE = (short) ((blockSize - O_FREE) / PhysicalRowId_SIZE);
+        
     }
 
     /**
@@ -52,7 +52,7 @@ final class FreeLogicalRowIdPage extends PageHeader {
         if (view != null && view instanceof FreeLogicalRowIdPage)
             return (FreeLogicalRowIdPage) view;
         else
-            return new FreeLogicalRowIdPage(block,blockSize);
+            return new FreeLogicalRowIdPage(block);
     }
 
     /** Returns the number of free rowids on this page. */

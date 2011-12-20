@@ -35,7 +35,7 @@ public class FreeLogicalRowIdPageTest extends TestCase {
   byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREELOGIDS_PAGE);
-  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
+  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test);
     }
 
     /**
@@ -45,7 +45,7 @@ public class FreeLogicalRowIdPageTest extends TestCase {
   byte[] data = new byte[Storage.BLOCK_SIZE];
   BlockIo test = new BlockIo(0, data);
   new PageHeader(test, Magic.FREELOGIDS_PAGE);
-  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
+  FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test);
 
   // we have a completely empty page.
   assertEquals("zero count", 0, page.getCount());
@@ -70,7 +70,7 @@ public class FreeLogicalRowIdPageTest extends TestCase {
 
   // now, create a new page over the data and check whether
   // it's all the same.
-  page = new FreeLogicalRowIdPage(test, Storage.BLOCK_SIZE);
+  page = new FreeLogicalRowIdPage(test);
 
   assertEquals("2: one left count", 1, page.getCount());
   assertTrue("2: isfree 0", page.isFree(0));
