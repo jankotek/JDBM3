@@ -20,6 +20,7 @@ package jdbm;
 import javax.crypto.Cipher;
 import java.io.IOError;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -235,10 +236,19 @@ final class RecordFile {
         if (!transactionsDisabled) {
             txnMgr.start();
         }
+        
+        //sort block by IDs
+        long[] blockIds = new long[dirty.size()];
+        int c =0;
+        for (Iterator<BlockIo> i = dirty.valuesIterator(); i.hasNext();) {
+            blockIds[c] = i.next().getBlockId();
+            c++;
+        }
+        Arrays.sort(blockIds);
 
-        for (Iterator<BlockIo> i = dirty.valuesIterator(); i.hasNext(); ) {
-            BlockIo node =  i.next();
-            i.remove();
+        for (long blockid :blockIds) {
+            BlockIo node =  dirty.get(blockid);
+
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
 
@@ -251,6 +261,7 @@ final class RecordFile {
                 inTxn.put(node.getBlockId(), node);
             }
         }
+        dirty.clear();
         if (!transactionsDisabled) {
             txnMgr.commit();
         }

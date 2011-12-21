@@ -86,7 +86,7 @@ final class RecordManagerStorage
     /** cipher used for encryption, may be null*/
     private Cipher cipherIn;
     
-    private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024;
+    private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
 
 
     void checkCanWrite(){
