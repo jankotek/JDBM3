@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * when the H*tree is not fully expanded.   Keys in a non-leaf buckets
  * can have different hash codes.  Non-leaf buckets are limited to an
  * arbitrary size.  When this limit is reached, the H*tree should create
- * a new Directory page and distribute keys of the non-leaf buckets into
- * the newly created Directory.
+ * a new HTreeDirectory node and distribute keys of the non-leaf buckets into
+ * the newly created HTreeDirectory.
  *
  * A leaf bucket is a bucket which contains keys which all have
  * the same <code>hashCode()</code>.  Leaf buckets stand at the

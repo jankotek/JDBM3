@@ -57,7 +57,7 @@ final class HTreeDirectory<K,V>
 
 
     /**
-     * Record ids of children pages.
+     * Record ids of children nodes.
      */
     private long[] _children;
 
@@ -69,13 +69,13 @@ final class HTreeDirectory<K,V>
 
 
     /**
-     * PageManager used to persist changes in directory and buckets
+     * RecordManager used to persist changes in directory and buckets
      */
     private transient RecordManager2 _recman;
 
 
     /**
-     * This directory's record ID in the PageManager.  (transient)
+     * This directory's record ID in the RecordManager.  (transient)
      */
     private transient long _recid;
 
@@ -91,7 +91,7 @@ final class HTreeDirectory<K,V>
     /**
      * Construct a HashDirectory
      *
-     * @param depth Depth of this directory page.
+     * @param depth Depth of this directory node.
      */
     HTreeDirectory(HTree<K, V> tree, byte depth) {
         this.tree = tree;
@@ -147,7 +147,7 @@ final class HTreeDirectory<K,V>
         int hash = hashCode( key );
         long child_recid = _children[ hash ];
         if ( child_recid == 0 ) {
-            // not bucket/page --> not found
+            // not bucket/node --> not found
             return null;
         } else {
             Object node =  _recman.fetch( child_recid, tree.SERIALIZER );
@@ -183,7 +183,7 @@ final class HTreeDirectory<K,V>
         int hash = hashCode(key);
         long child_recid = _children[hash];
         if (child_recid == 0) {
-            // no bucket/page here yet, let's create a bucket
+            // no bucket/node here yet, let's create a bucket
             HTreeBucket bucket = new HTreeBucket(tree, (byte) (_depth+1));
 
             // insert (key,value) pair in bucket
@@ -256,7 +256,7 @@ final class HTreeDirectory<K,V>
         int hash = hashCode(key);
         long child_recid = _children[hash];
         if (child_recid == 0) {
-            // not bucket/page --> not found
+            // not bucket/node --> not found
             return null;
         } else {
             Object node =  _recman.fetch( child_recid,tree.SERIALIZER  );
@@ -520,7 +520,7 @@ final class HTreeDirectory<K,V>
                         return;
                     }
 
-                    // try next page
+                    // try next node
                     _dir = (HTreeDirectory) _dirStack.remove( _dirStack.size()-1 );
                     _child = ( (Integer) _childStack.remove( _childStack.size()-1 ) ).intValue();
                     continue;
@@ -582,7 +582,7 @@ final class HTreeDirectory<K,V>
             if(expectedModCount != tree.modCount)
                  throw new ConcurrentModificationException();
 
-            //TODO current delete behaviour may change page layout. INVESTIGATE if this can happen!
+            //TODO current delete behaviour may change node layout. INVESTIGATE if this can happen!
             tree.remove(last);
             last = null;
             expectedModCount++;

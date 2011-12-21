@@ -21,11 +21,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- *  Persistent hashtable implementation for PageManager.
+ *  Persistent HashMap implementation for RecordManager.
  *  Implemented as an H*Tree structure.
- *
- *  WARNING!  If this instance is used in a transactional context, it
- *            *must* be discarded after a rollback.
  *
  *  @author Alex Boisvert
  */
