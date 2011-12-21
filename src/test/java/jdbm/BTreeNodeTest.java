@@ -20,11 +20,11 @@ package jdbm;
 import java.io.IOException;
 
 /**
- *  This class contains all Unit tests for {@link Bpage}.
+ *  This class contains all Unit tests for {@link BTreeNode}.
  *
  *  @author Alex Boisvert
  */
-public class BTreePageTest extends TestCaseWithTestFile {
+public class BTreeNodeTest extends TestCaseWithTestFile {
 
 
 
@@ -46,18 +46,18 @@ public class BTreePageTest extends TestCaseWithTestFile {
 
         BTree tree = BTree.createInstance(recman);
 
-        BTreePage page = new BTreePage( tree, test, test );
+        BTreeNode node = new BTreeNode( tree, test, test );
 
         BTree.BTreeTupleBrowser browser;
         BTree.BTreeTuple tuple = new BTree.BTreeTuple();
 
         // test insertion
-        page.insert( 1, test2, test2, false );
-        page.insert( 1, test3, test3, false );
-        page.insert( 1, test1, test1, false );
+        node.insert( 1, test2, test2, false );
+        node.insert( 1, test3, test3, false );
+        node.insert( 1, test1, test1, false );
 
         // test binary search
-        browser = page.find( 1, test2 );
+        browser = node.find( 1, test2 );
         if ( browser.getNext( tuple ) == false ) {
             throw new IllegalStateException( "Browser didn't have 'test2'" );
         }
@@ -73,15 +73,5 @@ public class BTreePageTest extends TestCaseWithTestFile {
     }
 
 
-//    public void testFindCommonStringPrefix(){
-//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAAB","AAAAC"}));
-//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAAXXX","AAAAB","AAAAC"}));
-//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA",null}));
-//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAAA",null}));
-//    	assertEquals("AAAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAAA"}));
-//    	assertEquals("AAA",BPage.findCommonStringPrefix(new String[]{"AAAA","AAAA","AAA"}));
-//    	assertEquals("",BPage.findCommonStringPrefix(new String[]{"AAAA",null,"BBBB"}));
-//    	assertEquals(null,BPage.findCommonStringPrefix(new String[]{null,null,null}));
-//    }
 
 }

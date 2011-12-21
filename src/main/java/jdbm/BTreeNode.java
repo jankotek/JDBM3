@@ -18,29 +18,29 @@
 package jdbm;
 
 import java.io.*;
-import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
- * Page of a Btree.
+ * Node of a Btree.
  * <p>
- * The page contains a number of key-value pairs.  Keys are ordered to allow
- * dichotomic search.
+ * The node contains a number of key-value pairs.  Keys are ordered to allow
+ * dichotomic search. If value is too big, it is stored in separate record
+ * and only recid reference is stored
  * <p>
- * If the page is a leaf page, the keys and values are user-defined and
+ * If the node is a leaf node, the keys and values are user-defined and
  * represent entries inserted by the user.
  * <p>
- * If the page is non-leaf, each key represents the greatest key in the
- * underlying BPages and the values are recids pointing to the children BPages.
- * The only exception is the rightmost BPage, which is considered to have an
+ * If the node is non-leaf, each key represents the greatest key in the
+ * underlying BTreeNode and the values are recids pointing to the children BTreeNodes.
+ * The only exception is the rightmost BTreeNode, which is considered to have an
  * "infinite" key value, meaning that any insert will be to the left of this
  * pseudo-key
  *
  * @author Alex Boisvert
  */
-final class BTreePage<K,V>
-    implements Serializer<BTreePage<K,V>>
+final class BTreeNode<K,V>
+    implements Serializer<BTreeNode<K,V>>
 {
 
     private static final boolean DEBUG = false;
@@ -54,13 +54,13 @@ final class BTreePage<K,V>
 
 
     /**
-     * This BPage's record ID in the PageManager.
+     * This BTreeNode's record ID in the RecordManager.
      */
     protected transient long _recid;
 
 
     /**
-     * Flag indicating if this is a leaf BPage.
+     * Flag indicating if this is a leaf BTreeNode.
      */
     protected boolean _isLeaf;
 
@@ -72,36 +72,36 @@ final class BTreePage<K,V>
 
 
     /**
-     * Values associated with keys.  (Only valid if leaf BPage)
+     * Values associated with keys.  (Only valid if leaf node)
      */
     protected Object[] _values;
 
 
     /**
-     * Children pages (recids) associated with keys.  (Only valid if non-leaf BPage)
+     * Children nodes (recids) associated with keys.  (Only valid if non-leaf node)
      */
     protected long[] _children;
 
     
     /**
-     * Index of first used item at the page
+     * Index of first used item at the node
      */
     protected byte _first;
 
 
     /**
-     * Previous leaf BPage (only if this BPage is a leaf)
+     * Previous leaf node (only if this node is a leaf)
      */
     protected long _previous;
 
 
     /**
-     * Next leaf BPage (only if this BPage is a leaf)
+     * Next leaf node (only if this node is a leaf)
      */
     protected long _next;
 
     /**
-     * Return the B+Tree that is the owner of this {@link BTreePage}.
+     * Return the B+Tree that is the owner of this {@link BTreeNode}.
      */
     public BTree<K,V> getBTree() {
         return _btree;
@@ -110,17 +110,17 @@ final class BTreePage<K,V>
     /**
      * No-argument constructor used by serialization.
      */
-    public BTreePage()
+    public BTreeNode()
     {
         // empty
     }
 
 
     /**
-     * Root page overflow constructor
+     * Root node overflow constructor
      */
     @SuppressWarnings("unchecked")
-    BTreePage(BTree<K, V> btree, BTreePage<K,V> root, BTreePage<K,V> overflow)
+    BTreeNode(BTree<K, V> btree, BTreeNode<K,V> root, BTreeNode<K,V> overflow)
         throws IOException
     {
         _btree = btree;
@@ -142,10 +142,10 @@ final class BTreePage<K,V>
 
 
     /**
-     * Root page (first insert) constructor.
+     * Root node (first insert) constructor.
      */
     @SuppressWarnings("unchecked")
-    BTreePage(BTree<K, V> btree, K key, V value)
+    BTreeNode(BTree<K, V> btree, K key, V value)
         throws IOException
     {
         _btree = btree;
@@ -156,33 +156,33 @@ final class BTreePage<K,V>
 
         _keys = (K[]) new Object[BTree.DEFAULT_SIZE ];
         _keys[BTree.DEFAULT_SIZE-2 ] = key;
-        _keys[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BPage for now
+        _keys[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BTreeNode for now
 
-        _values = (V[]) new Object[BTree.DEFAULT_SIZE ];
+        _values = new Object[BTree.DEFAULT_SIZE ];
         _values[BTree.DEFAULT_SIZE-2 ] = value;
-        _values[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BPage for now
+        _values[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BTreeNode for now
 
         _recid = _btree._recman.insert( this, this );
     }
 
 
     /**
-     * Overflow page constructor.  Creates an empty BPage.
+     * Overflow node constructor.  Creates an empty BTreeNode.
      */
     @SuppressWarnings("unchecked")
-    BTreePage(BTree<K, V> btree, boolean isLeaf)
+    BTreeNode(BTree<K, V> btree, boolean isLeaf)
         throws IOException
     {
         _btree = btree;
 
         _isLeaf = isLeaf;
 
-        // page will initially be half-full
+        // node will initially be half-full
         _first = BTree.DEFAULT_SIZE/2;
 
         _keys = (K[]) new Object[BTree.DEFAULT_SIZE];
         if ( isLeaf ) {
-            _values = (V[]) new Object[BTree.DEFAULT_SIZE ];
+            _values = new Object[BTree.DEFAULT_SIZE ];
         } else {
             _children = new long[BTree.DEFAULT_SIZE ];
         }
@@ -192,7 +192,7 @@ final class BTreePage<K,V>
 
 
     /**
-     * Get largest key under this BPage.  Null is considered to be the
+     * Get largest key under this BTreeNode.  Null is considered to be the
      * greatest possible key.
      */
     K getLargestKey()
@@ -202,7 +202,7 @@ final class BTreePage<K,V>
 
 
     /**
-     * Return true if BPage is empty.
+     * Return true if BTreeNode is empty.
      */
     boolean isEmpty()
     {
@@ -215,7 +215,7 @@ final class BTreePage<K,V>
 
 
     /**
-     * Return true if BPage is full.
+     * Return true if BTreeNode is full.
      */
     boolean isFull() {
         return ( _first == 0 );
@@ -225,7 +225,7 @@ final class BTreePage<K,V>
     /**
      * Find the object associated with the given key.
      *
-     * @param height Height of the current BPage (zero is leaf page)
+     * @param height Height of the current BTreeNode (zero is leaf node)
      * @param key The key
      * @return TupleBrowser positionned just before the given key, or before
      *                      next greater key if key isn't found.
@@ -235,21 +235,14 @@ final class BTreePage<K,V>
     {
         byte index = findChildren( key );
 
-        /*
-        if ( DEBUG ) {
-            System.out.println( "BPage.get() current: " + this
-                                + " height: " + height);
-        }
-        */
-
         height -= 1;
 
         if ( height == 0 ) {
-            // leaf BPage
+            // leaf node
             return new Browser<K,V>( this, index );
         } else {
-            // non-leaf BPage
-            BTreePage<K,V> child = loadBPage(_children[index]);
+            // non-leaf node
+            BTreeNode<K,V> child = loadNode(_children[index]);
             return child.find( height, key );
         }
     }
@@ -258,7 +251,7 @@ final class BTreePage<K,V>
     /**
      * Find value associated with the given key.
      *
-     * @param height Height of the current BPage (zero is leaf page)
+     * @param height Height of the current BTreeNode (zero is leaf node)
      * @param key The key
      * @return TupleBrowser positionned just before the given key, or before
      *                      next greater key if key isn't found.
@@ -267,13 +260,6 @@ final class BTreePage<K,V>
         throws IOException
     {
         byte index = findChildren( key );
-
-        /*
-        if ( DEBUG ) {
-            System.out.println( "BPage.get() current: " + this
-                                + " height: " + height);
-        }
-        */
 
         height -= 1;
 
@@ -284,17 +270,17 @@ final class BTreePage<K,V>
 //          // check if we have an exact match
           if ( key2==null || compare(key, key2) != 0 )
               return null;
-            
+
+            // leaf node
             if(_values[index] instanceof BTreeLazyRecord)
                 return ((BTreeLazyRecord<V>)_values[index]).get();
             else
                 return (V) _values[index];
 
-            // leaf BPage
-            //return new Browser<K,V>( this, index );
+
         } else {
-            // non-leaf BPage
-            BTreePage<K,V> child = loadBPage(_children[index]);
+            // non-leaf node
+            BTreeNode<K,V> child = loadNode(_children[index]);
             return child.findValue( height, key );
         }
     }
@@ -310,32 +296,32 @@ final class BTreePage<K,V>
         if ( _isLeaf ) {
             return new Browser<K,V>( this, _first );
         } else {
-            BTreePage<K,V> child = loadBPage(_children[_first]);
+            BTreeNode<K,V> child = loadNode(_children[_first]);
             return child.findFirst();
         }
     }
 
     /** 
-     * Deletes this BPage and all children pages from the record manager
+     * Deletes this BTreeNode and all children nodes from the record manager
      */
     void delete() 
         throws IOException
     {
         if (_isLeaf){
             if (_next != 0){
-                BTreePage<K,V> nextBPage = loadBPage(_next);
-                if (nextBPage._previous == _recid){ // this consistency check can be removed in production code
-                    nextBPage._previous = _previous;
-                    _btree._recman.update(nextBPage._recid, nextBPage, nextBPage);
+                BTreeNode<K,V> nextNode = loadNode(_next);
+                if (nextNode._previous == _recid){ // this consistency check can be removed in production code
+                    nextNode._previous = _previous;
+                    _btree._recman.update(nextNode._recid, nextNode, nextNode);
                 } else {
                     throw new Error("Inconsistent data in BTree");
                 }
             }
             if (_previous != 0){
-                BTreePage<K,V> previousBPage = loadBPage(_previous);
-                if (previousBPage._next != _recid){ // this consistency check can be removed in production code
-                    previousBPage._next = _next;
-                    _btree._recman.update(previousBPage._recid, previousBPage, previousBPage);
+                BTreeNode<K,V> previousNode = loadNode(_previous);
+                if (previousNode._next != _recid){ // this consistency check can be removed in production code
+                    previousNode._next = _next;
+                    _btree._recman.update(previousNode._recid, previousNode, previousNode);
                 } else {
                     throw new Error("Inconsistent data in BTree");
                 }
@@ -345,8 +331,8 @@ final class BTreePage<K,V>
             int right =BTree.DEFAULT_SIZE-1;
 
             for (int i = left; i <= right; i++){
-                BTreePage<K,V> childBPage = loadBPage(_children[i]);
-                childBPage.delete();
+                BTreeNode<K,V> childNode = loadNode(_children[i]);
+                childNode.delete();
             }
         }
         
@@ -359,12 +345,12 @@ final class BTreePage<K,V>
      * Since the Btree does not support duplicate entries, the caller must
      * specify whether to replace the existing value.
      *
-     * @param height Height of the current BPage (zero is leaf page)
+     * @param height Height of the current BTreeNode (zero is leaf node)
      * @param key Insert key
      * @param value Insert value
      * @param replace Set to true to replace the existing value, if one exists.
-     * @return Insertion result containing existing value OR a BPage if the key
-     *         was inserted and provoked a BPage overflow.
+     * @return Insertion result containing existing value OR a BTreeNode if the key
+     *         was inserted and provoked a BTreeNode overflow.
      */
     InsertResult<K,V> insert(int height, K key, final V value, final boolean replace )
         throws IOException
@@ -383,16 +369,16 @@ final class BTreePage<K,V>
             if(result == null)
                 result = new InsertResult<K, V>();
 
-            // inserting on a leaf BPage
+            // inserting on a leaf BTreeNode
             overflow = -1;
             if ( DEBUG ) {
-                System.out.println( "Bpage.insert() Insert on leaf Bpage key=" + key
+                System.out.println( "BTreeNode.insert() Insert on leaf node key=" + key
                                     + " value=" + value + " index="+index);
             }
             if ( compare( _keys[ index ], key ) == 0 ) {
                 // key already exists
                 if ( DEBUG ) {
-                    System.out.println( "Bpage.insert() Key already exists." ) ;
+                    System.out.println( "BTreeNode.insert() Key already exists." ) ;
                 }
                 boolean isLazyRecord = _values[index] instanceof BTreeLazyRecord;
                 if(isLazyRecord)
@@ -410,8 +396,8 @@ final class BTreePage<K,V>
                 return result;
             }
         } else {
-            // non-leaf BPage
-            BTreePage<K,V> child = loadBPage(_children[index]);
+            // non-leaf BTreeNode
+            BTreeNode<K,V> child = loadNode(_children[index]);
             result = child.insert( height, key, value, replace );
 
             if ( result._existing != null ) {
@@ -424,10 +410,9 @@ final class BTreePage<K,V>
                 return result;
             }
 
-            // there was an overflow, we need to insert the overflow page
-            // on this BPage
+            // there was an overflow, we need to insert the overflow node on this BTreeNode
             if ( DEBUG ) {
-                System.out.println( "BPage.insert() Overflow page: " + result._overflow._recid );
+                System.out.println( "BTreeNode.insert() Overflow node: " + result._overflow._recid );
             }
             key = result._overflow.getLargestKey();
             overflow = result._overflow._recid;
@@ -439,8 +424,7 @@ final class BTreePage<K,V>
             result._overflow = null;
         }
 
-        // if we get here, we need to insert a new entry on the BPage
-        // before _children[ index ]
+        // if we get here, we need to insert a new entry on the BTreeNode before _children[ index ]
         if ( !isFull() ) {
             if ( height == 0 ) {
                 insertEntry( this, index-1, key, value );
@@ -451,36 +435,34 @@ final class BTreePage<K,V>
             return result;
         }
 
-        // page is full, we must divide the page
+        // node is full, we must divide the node
         final byte half = BTree.DEFAULT_SIZE >> 1;
-        BTreePage<K,V> newPage = new BTreePage<K,V>( _btree, _isLeaf );
+        BTreeNode<K,V> newNode = new BTreeNode<K,V>( _btree, _isLeaf );
         if ( index < half ) {
-            // move lower-half of entries to overflow BPage,
-            // including new entry
+            // move lower-half of entries to overflow node, including new entry
             if ( DEBUG ) {
-                System.out.println( "Bpage.insert() move lower-half of entries to overflow BPage, including new entry." ) ;
+                System.out.println( "BTreeNode.insert() move lower-half of entries to overflow BTreeNode, including new entry." ) ;
             }
             if ( height == 0 ) {
-                copyEntries( this, 0, newPage, half, index );
-                setEntry( newPage, half+index, key, value );
-                copyEntries( this, index, newPage, half+index+1, half-index-1 );
+                copyEntries( this, 0, newNode, half, index );
+                setEntry(newNode, half+index, key, value );
+                copyEntries( this, index, newNode, half+index+1, half-index-1 );
             } else {
-                copyChildren( this, 0, newPage, half, index );
-                setChild( newPage, half+index, key, overflow );
-                copyChildren( this, index, newPage, half+index+1, half-index-1 );
+                copyChildren( this, 0, newNode, half, index );
+                setChild(newNode, half+index, key, overflow );
+                copyChildren( this, index, newNode, half+index+1, half-index-1 );
             }
         } else {
-            // move lower-half of entries to overflow BPage,
-            // new entry stays on this BPage
+            // move lower-half of entries to overflow node, new entry stays on this node
             if ( DEBUG ) {
-                System.out.println( "Bpage.insert() move lower-half of entries to overflow BPage. New entry stays" ) ;
+                System.out.println( "BTreeNode.insert() move lower-half of entries to overflow BTreeNode. New entry stays" ) ;
             }
             if ( height == 0 ) {
-                copyEntries( this, 0, newPage, half, half );
+                copyEntries( this, 0, newNode, half, half );
                 copyEntries( this, half, this, half-1, index-half );
                 setEntry( this, index-1, key, value );
             } else {
-                copyChildren( this, 0, newPage, half, half );
+                copyChildren( this, 0, newNode, half, half );
                 copyChildren( this, half, this, half-1, index-half );
                 setChild( this, index-1, key, overflow );
             }
@@ -498,22 +480,22 @@ final class BTreePage<K,V>
         }
 
         if ( _isLeaf ) {
-            // link newly created BPage
-            newPage._previous = _previous;
-            newPage._next = _recid;
+            // link newly created node
+            newNode._previous = _previous;
+            newNode._next = _recid;
             if ( _previous != 0 ) {
-                BTreePage<K,V> previous = loadBPage( _previous );
-                previous._next = newPage._recid;
+                BTreeNode<K,V> previous = loadNode(_previous);
+                previous._next = newNode._recid;
                 _btree._recman.update( _previous, previous, this );
 
             }
-            _previous = newPage._recid;
+            _previous = newNode._recid;
         }
 
         _btree._recman.update( _recid, this, this );
-        _btree._recman.update( newPage._recid, newPage, this );
+        _btree._recman.update( newNode._recid, newNode, this );
 
-        result._overflow = newPage;
+        result._overflow = newNode;
         return result;
     }
 
@@ -521,7 +503,7 @@ final class BTreePage<K,V>
     /**
      * Remove the entry associated with the given key.
      *
-     * @param height Height of the current BPage (zero is leaf page)
+     * @param height Height of the current BTreeNode (zero is leaf node)
      * @param key Removal key
      * @return Remove result object
      */
@@ -550,12 +532,12 @@ final class BTreePage<K,V>
             }
             removeEntry( this, index );
 
-            // update this BPage
+            // update this node
             _btree._recman.update( _recid, this, this );
 
         } else {
-            // recurse into Btree to remove entry on a children page
-            BTreePage<K,V> child = loadBPage(_children[index]);
+            // recurse into Btree to remove entry on a children node
+            BTreeNode<K,V> child = loadNode(_children[index]);
             result = child.remove( height, key );
 
             // update children
@@ -568,11 +550,11 @@ final class BTreePage<K,V>
                     throw new IllegalStateException( "Error during underflow [1]" );
                 }
                 if ( index < _children.length-1 ) {
-                    // exists greater brother page
-                    BTreePage<K,V> brother = loadBPage(_children[index + 1]);
+                    // exists greater brother node
+                    BTreeNode<K,V> brother = loadNode(_children[index + 1]);
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
-                        // steal entries from "brother" page
+                        // steal entries from "brother" node
                         int steal = ( half - bfirst + 1 ) / 2;
                         brother._first += steal;
                         child._first -= steal;
@@ -595,15 +577,15 @@ final class BTreePage<K,V>
                         // update child's largest key
                         _keys[ index ] = child.getLargestKey();
 
-                        // no change in previous/next BPage
+                        // no change in previous/next node
 
-                        // update BPages
+                        // update nodes
                         _btree._recman.update( _recid, this, this );
                         _btree._recman.update( brother._recid, brother, this );
                         _btree._recman.update( child._recid, child, this );
 
                     } else {
-                        // move all entries from page "child" to "brother"
+                        // move all entries from node "child" to "brother"
                         if ( brother._first != half ) {
                             throw new IllegalStateException( "Error during underflow [2]" );
                         }
@@ -617,7 +599,7 @@ final class BTreePage<K,V>
                         _btree._recman.update( brother._recid, brother, this );
 
 
-                        // remove "child" from current BPage
+                        // remove "child" from current node
                         if ( _isLeaf ) {
                             copyEntries( this, _first, this, _first+1, index-_first );
                             setEntry( this, _first, null, null );
@@ -628,28 +610,28 @@ final class BTreePage<K,V>
                         _first += 1;
                         _btree._recman.update( _recid, this, this );
 
-                        // re-link previous and next BPages
+                        // re-link previous and next nodes
                         if ( child._previous != 0 ) {
-                            BTreePage<K,V> prev = loadBPage( child._previous );
+                            BTreeNode<K,V> prev = loadNode(child._previous);
                             prev._next = child._next;
                             _btree._recman.update( prev._recid, prev, this );
                         }
                         if ( child._next != 0 ) {
-                            BTreePage<K,V> next = loadBPage( child._next );
+                            BTreeNode<K,V> next = loadNode(child._next);
                             next._previous = child._previous;
                             _btree._recman.update( next._recid, next, this );
 
                         }
 
-                        // delete "child" BPage
+                        // delete "child" node
                         _btree._recman.delete( child._recid );
                     }
                 } else {
-                    // page "brother" is before "child"
-                    BTreePage<K,V> brother = loadBPage(_children[index - 1]);
+                    // node "brother" is before "child"
+                    BTreeNode<K,V> brother = loadNode(_children[index - 1]);
                     int bfirst = brother._first;
                     if ( bfirst < half ) {
-                        // steal entries from "brother" page
+                        // steal entries from "brother" node
                         int steal = ( half - bfirst + 1 ) / 2;
                         brother._first += steal;
                         child._first -= steal;
@@ -676,15 +658,15 @@ final class BTreePage<K,V>
                         // update brother's largest key
                         _keys[ index-1 ] = brother.getLargestKey();
 
-                        // no change in previous/next BPage
+                        // no change in previous/next node
 
-                        // update BPages
+                        // update nodes
                         _btree._recman.update( _recid, this, this );
                         _btree._recman.update( brother._recid, brother, this );
                         _btree._recman.update( child._recid, child, this );
 
                     } else {
-                        // move all entries from page "brother" to "child"
+                        // move all entries from node "brother" to "child"
                         if ( brother._first != half ) {
                             throw new IllegalStateException( "Error during underflow [3]" );
                         }
@@ -697,7 +679,7 @@ final class BTreePage<K,V>
                         }
                         _btree._recman.update( child._recid, child, this );
 
-                        // remove "brother" from current BPage
+                        // remove "brother" from current node
                         if ( _isLeaf ) {
                             copyEntries( this, _first, this, _first+1, index-1-_first );
                             setEntry( this, _first, null, null );
@@ -708,26 +690,26 @@ final class BTreePage<K,V>
                         _first += 1;
                         _btree._recman.update( _recid, this, this );
 
-                        // re-link previous and next BPages
+                        // re-link previous and next nodes
                         if ( brother._previous != 0 ) {
-                            BTreePage<K,V> prev = loadBPage( brother._previous );
+                            BTreeNode<K,V> prev = loadNode(brother._previous);
                             prev._next = brother._next;
                             _btree._recman.update( prev._recid, prev, this );
                         }
                         if ( brother._next != 0 ) {
-                            BTreePage<K,V> next = loadBPage( brother._next );
+                            BTreeNode<K,V> next = loadNode(brother._next);
                             next._previous = brother._previous;
                             _btree._recman.update( next._recid, next, this );
                         }
 
-                        // delete "brother" BPage
+                        // delete "brother" node
                         _btree._recman.delete( brother._recid );
                     }
                 }
             }
         }
 
-        // underflow if page is more than half-empty
+        // underflow if node is more than half-empty
         result._underflow = _first > half;
 
         return result;
@@ -764,18 +746,18 @@ final class BTreePage<K,V>
     /**
      * Insert entry at given position.
      */
-    private static <K,V> void insertEntry( BTreePage<K,V> page, int index,
+    private static <K,V> void insertEntry( BTreeNode<K,V> node, int index,
                                      K key, V value )
     {
-        K[] keys = page._keys;
-        Object[] values = page._values;
-        int start = page._first;
-        int count = index-page._first+1;
+        K[] keys = node._keys;
+        Object[] values = node._values;
+        int start = node._first;
+        int count = index- node._first+1;
 
         // shift entries to the left
         System.arraycopy( keys, start, keys, start-1, count );
         System.arraycopy( values, start, values, start-1, count );
-        page._first -= 1;
+        node._first -= 1;
         keys[ index ] = key;
         values[ index ] = value;
     }
@@ -784,18 +766,18 @@ final class BTreePage<K,V>
     /**
      * Insert child at given position.
      */
-    private static <K,V> void  insertChild( BTreePage<K,V> page, int index,
+    private static <K,V> void  insertChild( BTreeNode<K,V> node, int index,
                                      K key, long child )
     {
-        K[] keys = page._keys;
-        long[] children = page._children;
-        int start = page._first;
-        int count = index-page._first+1;
+        K[] keys = node._keys;
+        long[] children = node._children;
+        int start = node._first;
+        int count = index- node._first+1;
 
         // shift entries to the left
         System.arraycopy( keys, start, keys, start-1, count );
         System.arraycopy( children, start, children, start-1, count );
-        page._first -= 1;
+        node._first -= 1;
         keys[ index ] = key;
         children[ index ] = child;
     }
@@ -803,65 +785,47 @@ final class BTreePage<K,V>
     /**
      * Remove entry at given position.
      */
-    private static <K,V> void removeEntry( BTreePage<K,V> page, int index )
+    private static <K,V> void removeEntry( BTreeNode<K,V> node, int index )
     {
-        K[] keys = page._keys;
-        Object[] values = page._values;
-        int start = page._first;
-        int count = index-page._first;
+        K[] keys = node._keys;
+        Object[] values = node._values;
+        int start = node._first;
+        int count = index-node._first;
 
         System.arraycopy( keys, start, keys, start+1, count );
         keys[ start ] = null;
         System.arraycopy( values, start, values, start+1, count );
         values[ start ] = null;
-        page._first++;
+        node._first++;
     }
 
 
-    /**
-     * Remove child at given position.
-     */
-/*    
-    private static void removeChild( BPage page, int index )
-    {
-        Object[] keys = page._keys;
-        long[] children = page._children;
-        int start = page._first;
-        int count = index-page._first;
 
-        System.arraycopy( keys, start, keys, start+1, count );
-        keys[ start ] = null;
-        System.arraycopy( children, start, children, start+1, count );
-        children[ start ] = (long) -1;
-        page._first++;
-    }
-*/
-    
     /**
      * Set the entry at the given index.
      */
-    private static <K,V> void setEntry( BTreePage<K,V> page, int index, K key, V value )
+    private static <K,V> void setEntry( BTreeNode<K,V> node, int index, K key, V value )
     {
-        page._keys[ index ] = key;
-        page._values[ index ] = value;
+        node._keys[ index ] = key;
+        node._values[ index ] = value;
     }
 
 
     /**
-     * Set the child BPage recid at the given index.
+     * Set the child BTreeNode recid at the given index.
      */
-    private static <K,V> void setChild( BTreePage<K,V> page, int index, K key, long recid )
+    private static <K,V> void setChild( BTreeNode<K,V> node, int index, K key, long recid )
     {
-        page._keys[ index ] = key;
-        page._children[ index ] = recid;
+        node._keys[ index ] = key;
+        node._children[ index ] = recid;
     }
     
     
     /**
-     * Copy entries between two BPages
+     * Copy entries between two nodes
      */
-    private static <K,V> void copyEntries( BTreePage<K,V> source, int indexSource,
-                                     BTreePage<K,V> dest, int indexDest, int count )
+    private static <K,V> void copyEntries( BTreeNode<K,V> source, int indexSource,
+                                     BTreeNode<K,V> dest, int indexDest, int count )
     {
         System.arraycopy( source._keys, indexSource, dest._keys, indexDest, count);
         System.arraycopy( source._values, indexSource, dest._values, indexDest, count);
@@ -869,10 +833,10 @@ final class BTreePage<K,V>
 
 
     /**
-     * Copy child BPage recids between two BPages
+     * Copy child node recids between two nodes
      */
-    private static <K,V> void copyChildren( BTreePage<K,V> source, int indexSource,
-                                      BTreePage<K,V> dest, int indexDest, int count )
+    private static <K,V> void copyChildren( BTreeNode<K,V> source, int indexSource,
+                                      BTreeNode<K,V> dest, int indexDest, int count )
     {
         System.arraycopy( source._keys, indexSource, dest._keys, indexDest, count);
         System.arraycopy( source._children, indexSource, dest._children, indexDest, count);
@@ -882,12 +846,12 @@ final class BTreePage<K,V>
 
 
     /**
-     * Load the BPage at the given recid.
+     * Load the node at the given recid.
      */
-	private BTreePage<K,V> loadBPage( long recid )
+	private BTreeNode<K,V> loadNode(long recid)
         throws IOException
     {
-        BTreePage<K,V> child =  _btree._recman.fetch( recid, this );
+        BTreeNode<K,V> child =  _btree._recman.fetch( recid, this );
         child._recid = recid;
         child._btree = _btree;
         return child;
@@ -921,13 +885,13 @@ final class BTreePage<K,V>
         for ( int i=0; i<height; i++ ) {
            prefix += "    ";
         }
-        System.out.println( prefix + "-------------------------------------- BPage recid=" + _recid);
+        System.out.println( prefix + "-------------------------------------- BTreeNode recid=" + _recid);
         System.out.println( prefix + "first=" + _first );
         for ( int i=0; i<BTree.DEFAULT_SIZE; i++ ) {
             if ( _isLeaf ) {
-                System.out.println( prefix + "BPage [" + i + "] " + _keys[ i ] + " " + _values[ i ] );
+                System.out.println( prefix + "BTreeNode [" + i + "] " + _keys[ i ] + " " + _values[ i ] );
             } else {
-                System.out.println( prefix + "BPage [" + i + "] " + _keys[ i ] + " " + _children[ i ] );
+                System.out.println( prefix + "BTreeNode [" + i + "] " + _keys[ i ] + " " + _children[ i ] );
             }
         }
         System.out.println( prefix + "--------------------------------------" );
@@ -946,108 +910,69 @@ final class BTreePage<K,V>
         if ( height > 0 ) {
             for ( byte i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _keys[ i ] == null ) break;
-                BTreePage<K,V> child = loadBPage(_children[i]);
+                BTreeNode<K,V> child = loadNode(_children[i]);
                 child.dump( level );
                 child.dumpRecursive( height, level );
             }
         }
     }
 
-// 
-//   JAN KOTEK: assertConsistency was commented out, as it was not referenced from anywhere    
-//    /**
-//     * Assert the ordering of the keys on the BPage.  This is used for testing
-//     * purposes only.
-//     */
-//    private void assertConsistency()
-//    {
-//        for ( int i=_first; i<_btree._pageSize-1; i++ ) {
-//            if ( compare( (byte[]) _keys[ i ], (byte[]) _keys[ i+1 ] ) >= 0 ) {
-//                dump( 0 );
-//                throw new Error( "BPage not ordered" );
-//            }
-//        }
-//    }
-//
-//
-//    /**
-//     * Recursively assert the ordering of the BPage entries on this page
-//     * and sub-pages.  This is used for testing purposes only.
-//     */
-//    void assertConsistencyRecursive( int height ) 
-//        throws IOException 
-//    {
-//        assertConsistency();
-//        if ( --height > 0 ) {
-//            for ( int i=_first; i<_btree._pageSize; i++ ) {
-//                if ( _keys[ i ] == null ) break;
-//                BPage child = childBPage( i );
-//                if ( compare( (byte[]) _keys[ i ], child.getLargestKey() ) != 0 ) {
-//                    dump( 0 );
-//                    child.dump( 0 );
-//                    throw new Error( "Invalid child subordinate key" );
-//                }
-//                child.assertConsistencyRecursive( height );
-//            }
-//        }
-//    }
-
     /**
      * Deserialize the content of an object from a byte array.
      *
      */
     @SuppressWarnings("unchecked")
-    public BTreePage<K,V> deserialize( DataInput ois2 )
+    public BTreeNode<K,V> deserialize( DataInput ois2 )
         throws IOException
     {
        DataInputOutput ois = (DataInputOutput) ois2;
 
 
 
-      BTreePage<K,V> bpage = new BTreePage<K,V>();
+      BTreeNode<K,V> node = new BTreeNode<K,V>();
 
   	  switch(ois.readUnsignedByte()){
-  		case SerializationHeader.BPAGE_LEAF:bpage._isLeaf = true;break;
-  		case SerializationHeader.BPAGE_NONLEAF:bpage._isLeaf = false;break;
-  		default: throw new InternalError("wrong BPage header");
+  		case SerializationHeader.BTREE_NODE_LEAF:node._isLeaf = true;break;
+  		case SerializationHeader.BTREE_NODE_NONLEAF:node._isLeaf = false;break;
+  		default: throw new InternalError("wrong BTreeNode header");
   	  }
 
-      if ( bpage._isLeaf ) {
-          bpage._previous = LongPacker.unpackLong(ois);
-          bpage._next = LongPacker.unpackLong(ois);
+      if ( node._isLeaf ) {
+          node._previous = LongPacker.unpackLong(ois);
+          node._next = LongPacker.unpackLong(ois);
       }
 
 
-      bpage._first = ois.readByte();
+        node._first = ois.readByte();
         
-      if(!bpage._isLeaf){
-          bpage._children = new long[BTree.DEFAULT_SIZE ];
-          for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
-              bpage._children[ i ] = LongPacker.unpackLong(ois);
+      if(!node._isLeaf){
+          node._children = new long[BTree.DEFAULT_SIZE ];
+          for ( int i=node._first; i<BTree.DEFAULT_SIZE; i++ ) {
+              node._children[ i ] = LongPacker.unpackLong(ois);
           }
       }
         
       if(!_btree.loadValues)
-          return bpage;
+          return node;
 
       try {
 
-           bpage._keys = readKeys(ois,bpage._first);
+          node._keys = readKeys(ois,node._first);
 
       } catch ( ClassNotFoundException except ) {
           throw new IOException( except.getMessage() );
       }
 
-      if ( bpage._isLeaf ) {
+      if ( node._isLeaf ) {
 
           try {
-              readValues(ois, bpage);
+              readValues(ois, node);
           } catch ( ClassNotFoundException except ) {
               throw new IOException( except);
           }
       }
 
-      return bpage;
+      return node;
 
     }
 
@@ -1060,73 +985,73 @@ final class BTreePage<K,V>
      * @return a byte array representing the object's state
      *
      */
-    public void serialize(DataOutput oos, BTreePage<K,V> obj )
+    public void serialize(DataOutput oos, BTreeNode<K,V> obj )
         throws IOException
     {
 
 
-        // note:  It is assumed that BPage instance doing the serialization is the parent
-        // of the BPage object being serialized.
+        // note:  It is assumed that BTreeNode instance doing the serialization is the parent
+        // of the BTreeNode object being serialized.
 
-        BTreePage<K,V> bpage =  obj;
+        BTreeNode<K,V> node =  obj;
 
-        oos.writeByte( bpage._isLeaf?SerializationHeader.BPAGE_LEAF:SerializationHeader.BPAGE_NONLEAF );
-        if ( bpage._isLeaf ) {
-            LongPacker.packLong(oos, bpage._previous );
-            LongPacker.packLong(oos, bpage._next );
+        oos.writeByte( node._isLeaf?SerializationHeader.BTREE_NODE_LEAF :SerializationHeader.BTREE_NODE_NONLEAF);
+        if ( node._isLeaf ) {
+            LongPacker.packLong(oos, node._previous );
+            LongPacker.packLong(oos, node._next );
         }
 
-        oos.write(bpage._first);
+        oos.write(node._first);
 
-        if(!bpage._isLeaf){
-            for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
-            	LongPacker.packLong(oos,  bpage._children[ i ] );
+        if(!node._isLeaf){
+            for ( int i=node._first; i<BTree.DEFAULT_SIZE; i++ ) {
+            	LongPacker.packLong(oos,  node._children[ i ] );
             }
         }
 
-       	writeKeys(oos, bpage._keys,bpage._first);
+       	writeKeys(oos, node._keys,node._first);
 
-        if ( bpage._isLeaf ) {
-        	writeValues(oos, bpage);
+        if ( node._isLeaf ) {
+        	writeValues(oos, node);
         }
     }
 
 
-	private void readValues(DataInputOutput ois, BTreePage<K, V> bpage) throws IOException, ClassNotFoundException {
-		  bpage._values = new Object[BTree.DEFAULT_SIZE ];
+	private void readValues(DataInputOutput ois, BTreeNode<K, V> node) throws IOException, ClassNotFoundException {
+        node._values = new Object[BTree.DEFAULT_SIZE ];
                   Serializer<V> serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
-        	  for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
+        	  for ( int i=node._first; i<BTree.DEFAULT_SIZE; i++ ) {
                        int header = ois.readUnsignedByte();
                        if(header == BTreeLazyRecord.NULL){
-                           bpage._values[ i ] = null;
+                           node._values[ i ] = null;
                        }else if(header == BTreeLazyRecord.LAZY_RECORD){
                            long recid = LongPacker.unpackLong(ois);
-                           bpage._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
+                           node._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
                        }else{
-                           bpage._values[ i ] = BTreeLazyRecord.fastDeser(ois,serializer,header);
+                           node._values[ i ] = BTreeLazyRecord.fastDeser(ois,serializer,header);
                        }
                   }
 	}
 
 
-	private void writeValues(DataOutput oos, BTreePage<K, V> bpage) throws IOException {
+	private void writeValues(DataOutput oos, BTreeNode<K, V> node) throws IOException {
 
 
 
         DataInputOutput output = null;
         Serializer serializer =  _btree.valueSerializer!=null ?  _btree.valueSerializer :  _btree.getRecordManager().defaultSerializer();
-		for ( int i=bpage._first; i<BTree.DEFAULT_SIZE; i++ ) {
-                        if ( bpage._values[ i ] instanceof BTreeLazyRecord ) {
+		for ( int i=node._first; i<BTree.DEFAULT_SIZE; i++ ) {
+                        if ( node._values[ i ] instanceof BTreeLazyRecord ) {
                              oos.write(BTreeLazyRecord.LAZY_RECORD);
-                             LongPacker.packLong(oos,((BTreeLazyRecord) bpage._values[i]).recid);
-                        }else if ( bpage._values[ i ] != null ) {
+                             LongPacker.packLong(oos,((BTreeLazyRecord) node._values[i]).recid);
+                        }else if ( node._values[ i ] != null ) {
                             if(output == null){
                                 output = new DataInputOutput();
                             }else{
                                 output.reset();
                             }
 
-		                    serializer.serialize(output, (V)bpage._values[ i ] );
+		                    serializer.serialize(output, node._values[ i ] );
 
                             if(output.getPos()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                                 //write as separate record
@@ -1225,7 +1150,7 @@ final class BTreePage<K,V>
 			return (K[]) ret;
 
 		}else{
-			throw new InternalError("unknown bpage header type: "+type);
+			throw new InternalError("unknown BTreeNode header type: "+type);
 		}
 
 	}
@@ -1389,7 +1314,7 @@ final class BTreePage<K,V>
                 if(child == 0) continue;
                 byte[] data = r1.fetchRaw(child);
                 r2.forceInsert(child,data);
-                BTreePage t = deserialize(new DataInputOutput(data));
+                BTreeNode t = deserialize(new DataInputOutput(data));
                 t._btree =_btree;
                 t.defrag(r1,r2);
             }
@@ -1402,9 +1327,9 @@ final class BTreePage<K,V>
     static final class InsertResult<K,V> {
 
         /**
-         * Overflow page.
+         * Overflow node.
          */
-        BTreePage<K,V> _overflow;
+        BTreeNode<K,V> _overflow;
 
         /**
          * Existing value for the insertion key.
@@ -1419,7 +1344,7 @@ final class BTreePage<K,V>
     static final class RemoveResult<K,V> {
 
         /**
-         * Set to true if underlying pages underflowed
+         * Set to true if underlying nodes underflowed
          */
         boolean _underflow;
 
@@ -1431,17 +1356,17 @@ final class BTreePage<K,V>
 
 
     /** PRIVATE INNER CLASS
-     * Browser to traverse leaf BPages.
+     * Browser to traverse leaf nodes.
      */
     static final class Browser<K,V>
         implements BTree.BTreeTupleBrowser<K,V>
     {
 
-        /** Current page. */
-        private BTreePage<K,V> _page;
+        /** Current node. */
+        private BTreeNode<K,V> _node;
 
         /**
-         * Current index in the page.  The index positionned on the next
+         * Current index in the node.  The index positionned on the next
          * tuple to return.
          */
         private byte _index;
@@ -1453,41 +1378,41 @@ final class BTreePage<K,V>
         /**
          * Create a browser.
          *
-         * @param page Current page
+         * @param node Current node
          * @param index Position of the next tuple to return.
          */
-        Browser( BTreePage<K,V> page, byte index )
+        Browser( BTreeNode<K,V> node, byte index )
         {
-            _page = page;
+            _node = node;
             _index = index;
-            expectedModCount = page._btree.modCount;
+            expectedModCount = node._btree.modCount;
         }
 
         public boolean getNext( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
-            if(expectedModCount!=_page._btree.modCount)
+            if(expectedModCount!= _node._btree.modCount)
                 throw new ConcurrentModificationException();
-            if(_page==null){
-                //last record in iterator was deleted, so iterator is at end of page
+            if(_node ==null){
+                //last record in iterator was deleted, so iterator is at end of node
                 return false;
             }
 
             if ( _index < BTree.DEFAULT_SIZE ) {
-                if ( _page._keys[ _index ] == null ) {
+                if ( _node._keys[ _index ] == null ) {
                     // reached end of the tree.
                     return false;
                 }
-            } else if ( _page._next != 0 ) {
-                // move to next page
-                _page = _page.loadBPage( _page._next );
-                _index = _page._first;
+            } else if ( _node._next != 0 ) {
+                // move to next node
+                _node = _node.loadNode(_node._next);
+                _index = _node._first;
             }
-            tuple.key =  _page._keys[ _index ] ;
-            if(_page._values[ _index ] instanceof BTreeLazyRecord)
-                tuple.value =  ((BTreeLazyRecord<V>) _page._values[ _index ]).get() ;
+            tuple.key =  _node._keys[ _index ] ;
+            if(_node._values[ _index ] instanceof BTreeLazyRecord)
+                tuple.value =  ((BTreeLazyRecord<V>) _node._values[ _index ]).get() ;
             else
-                tuple.value = (V) _page._values[ _index ];
+                tuple.value = (V) _node._values[ _index ];
             _index++;
             return true;
         }
@@ -1495,18 +1420,18 @@ final class BTreePage<K,V>
         public boolean getPrevious( BTree.BTreeTuple<K,V> tuple )
             throws IOException
         {
-            if(expectedModCount!=_page._btree.modCount)
+            if(expectedModCount!= _node._btree.modCount)
                 throw new ConcurrentModificationException();
             
-            if(_page==null){
+            if(_node ==null){
                 //deleted last record, but this situation is only supportedd on getNext
                 throw new InternalError();
             }
 
-            if ( _index == _page._first ) {
+            if ( _index == _node._first ) {
 
-                if ( _page._previous != 0 ) {
-                    _page = _page.loadBPage( _page._previous );
+                if ( _node._previous != 0 ) {
+                    _node = _node.loadNode(_node._previous);
                     _index = BTree.DEFAULT_SIZE;
                 } else {
                     // reached beginning of the tree
@@ -1514,34 +1439,34 @@ final class BTreePage<K,V>
                 }
             }
             _index--;
-            tuple.key =  _page._keys[ _index ] ;
-            if(_page._values[ _index ] instanceof BTreeLazyRecord)
-                tuple.value =  ((BTreeLazyRecord<V>) _page._values[ _index ]).get() ;
+            tuple.key =  _node._keys[ _index ] ;
+            if(_node._values[ _index ] instanceof BTreeLazyRecord)
+                tuple.value =  ((BTreeLazyRecord<V>) _node._values[ _index ]).get() ;
             else
-                tuple.value = (V) _page._values[ _index ];
+                tuple.value = (V) _node._values[ _index ];
 
             return true;
 
         }
 
         public void remove(K key) throws IOException {
-            if(expectedModCount!=_page._btree.modCount)
+            if(expectedModCount!= _node._btree.modCount)
                 throw new ConcurrentModificationException();
 
-            _page._btree.remove(key);
+            _node._btree.remove(key);
             expectedModCount++;
 
             //An entry was removed and this may trigger tree rebalance,
-            //This would change current page layout, so find our position again
-            BTree.BTreeTupleBrowser b = _page._btree.browse(key);
+            //This would change current node layout, so find our position again
+            BTree.BTreeTupleBrowser b = _node._btree.browse(key);
             //browser is positioned just before value which was currently deleted, so find if we have new value
             if(b.getNext(new BTree.BTreeTuple(null,null))){
                 //next value value exists, copy its state
                 Browser b2 = (Browser)b ;            
-                this._page = b2._page;
+                this._node = b2._node;
                 this._index = b2._index;
             }else{
-                this._page = null;
+                this._node = null;
                 this._index = -1;
             }
     
@@ -1551,12 +1476,12 @@ final class BTreePage<K,V>
 
     /**
      * Used for debugging and testing only.  Recursively obtains the recids of
-     * all child BPages and adds them to the 'out' list.
+     * all child BTreeNodes and adds them to the 'out' list.
      * @param out
      * @param height
      * @throws IOException
      */
-    void dumpChildPageRecIDs(List out, int height)
+    void dumpChildNodeRecIDs(List out, int height)
     throws IOException
     {
         height -= 1;
@@ -1564,9 +1489,9 @@ final class BTreePage<K,V>
             for ( byte i=_first; i<BTree.DEFAULT_SIZE; i++ ) {
                 if ( _children[ i ] == 0 ) continue;
                 
-                BTreePage child = loadBPage(_children[i]);
+                BTreeNode child = loadNode(_children[i]);
                 out.add(new Long(child._recid));
-                child.dumpChildPageRecIDs( out, height );
+                child.dumpChildNodeRecIDs( out, height );
             }
         }
     }
@@ -1636,8 +1561,8 @@ final class BTreePage<K,V>
     }
 
 
-    BTreePage<K,V> loadLastChildPage() throws IOException {
-        return loadBPage(_children[BTree.DEFAULT_SIZE - 1]);
+    BTreeNode<K,V> loadLastChildNode() throws IOException {
+        return loadNode(_children[BTree.DEFAULT_SIZE - 1]);
     }
 
 

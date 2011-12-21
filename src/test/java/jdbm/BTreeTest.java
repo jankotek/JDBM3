@@ -385,7 +385,7 @@ public class BTreeTest
     /**
      *  Test deletion of btree from record manager. (kday)
      *  
-     *  After deletion, the BTree and all of it's BPage children (and their children)
+     *  After deletion, the BTree and all of it's BTreeNode children (and their children)
      *  should be removed from the recordmanager.
      */
     public void testDelete()
@@ -396,14 +396,14 @@ public class BTreeTest
         RecordManager2 recman = newRecordManager();
         BTree<String, Serializable> tree = BTree.createInstance( recman);
 
-        // put enough data into the tree so we definitely have multiple pages
+        // put enough data into the tree so we definitely have multiple nodes
         for (int count = 1; count <= 1000; count++){
             tree.insert("num" + count,new Integer(count),false);
             if (count % 100 == 0)
                 recman.commit();
         }
         List<Long> out = new ArrayList<Long>();
-        tree.dumpChildPageRecIDs(out);        
+        tree.dumpChildNodeRecIDs(out);
         assertTrue(out.size() > 0);
     }
 
@@ -515,7 +515,7 @@ public class BTreeTest
 
 
     /**
-     * Tests the corner case of deleting all nodes from the tree.  In this case, all BPages
+     * Tests the corner case of deleting all nodes from the tree.  In this case, all BTreeNodes
      * associated with the tree should be removed from the recman.
      * 
      * We are also going to test to make sure the recman file doesn't grow (leak) if we repeat the
@@ -526,7 +526,7 @@ public class BTreeTest
 
         
         // we are going to run this test without object cache enabled.  If it is turned on,
-        // we will have problems with using a different deserializer for BPages than the standard
+        // we will have problems with using a different deserializer for BTreeNodes than the standard
         // serializer.
 
         String recordManagerBasename = newTestFile();
@@ -543,7 +543,7 @@ public class BTreeTest
                     keys[count] = "num" + count;
                 }      
           
-                // put enough data into the tree so we definitely have multiple pages
+                // put enough data into the tree so we definitely have multiple nodes
                 for (int count = 0; count < 1000; count++){
                     tree.insert(keys[count],new Integer(count),false);
                     if (count % 100 == 0)
@@ -556,7 +556,6 @@ public class BTreeTest
 
                 
                 // now remove it all
-                
                 for (int count = 0; count < 1000; count++){
                     tree.remove(keys[count]);
                     if (count % 100 == 0)
@@ -564,7 +563,7 @@ public class BTreeTest
                 }
                 recman.commit();
                 
-                BTreePage root = tree.getRoot();
+                BTreeNode root = tree.getRoot();
                 assertNull(root);
                 
             } finally {

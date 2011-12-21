@@ -127,8 +127,8 @@ final class SerializationHeader {
 
     final static int BTREE				= 161;
 
-    static final int BPAGE_LEAF 			= 162;
-    static final int BPAGE_NONLEAF 		= 163;
+    static final int BTREE_NODE_LEAF = 162;
+    static final int BTREE_NODE_NONLEAF = 163;
     static final int HTREE_BUCKET 		= 164;
     static final int HTREE_DIRECTORY 	= 165;
     /** used for reference to already serialized object in object graph*/

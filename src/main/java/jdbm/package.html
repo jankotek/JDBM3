@@ -44,7 +44,7 @@
 	<h2>JDBM2 overview</h2>
 	JDBM2 has some helpfull features to make it easier to use. It also brings it closer to SQL and helps with data 
 	integrity checks and data queries. 
-	<p/><b>Low level page store</b><br/>
+	<p/><b>Low level node store</b><br/>
 	This is Key-Value database in its literal mean. Key is a record identifier number (recid) which points to a location in file. 
 	Since recid is a physical pointer, new key values must be assgned by store (wherever the free space is found).
 	Value can be any object, serializable to a byte[] array. Page store also provides transaction and cache.  
@@ -53,7 +53,7 @@
 	approach for persisting singletons. 
 	<p/><b>Primary maps</b><br/>	
 	{@link jdbm.PrimaryTreeMap} and {@link jdbm.PrimaryHashMap} implements <code>java.util.map</code> interface
-	from Java Collections. But they use page store for persistence. So you can create HashMap with bilions of items and worry only about the commits.
+	from Java Collections. But they use node store for persistence. So you can create HashMap with bilions of items and worry only about the commits.
 	<p/><b>Secondary maps</b><br/>	
 	Secondary maps (indexes) provide side information and associations for the primary map. For example, if there is a Person class persisted in the primary map, 
 	the secondary maps can provide fast lookup by name, address, age... The secondary maps are 'views' to the primary map and are readonly. 

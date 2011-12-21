@@ -43,7 +43,7 @@ public class BTreeLeadingValuePackTest extends TestCase {
 
 		//compress
 		for (int i = 0; i < groups.length; i++) {
-			BTreePage.leadingValuePackWrite(dos, groups[i], i > 0 ? groups[i - 1] : null, 0);
+			BTreeNode.leadingValuePackWrite(dos, groups[i], i > 0 ? groups[i - 1] : null, 0);
 		}
 		
 		byte[] results = baos.toByteArray();
@@ -53,7 +53,7 @@ public class BTreeLeadingValuePackTest extends TestCase {
 		
 		byte[] previous = null;
 		for(int i = 0;i < groups.length; i++){
-			previous = BTreePage.leadingValuePackRead(dis, previous, 0);
+			previous = BTreeNode.leadingValuePackRead(dis, previous, 0);
 			assertTrue(Arrays.equals(groups[i],previous));
 		}
 		

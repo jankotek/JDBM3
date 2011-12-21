@@ -26,26 +26,26 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * B+Tree persistent indexing data structure.  B+Trees are optimized for
  * block-based, random I/O storage because they store multiple keys on
- * one tree node (called <code>BPage</code>).  In addition, the leaf nodes
- * directly contain (inline) the values associated with the keys, allowing a
- * single (or sequential) disk read of all the values on the page.
+ * one tree node (called <code>BTreeNode</code>).  In addition, the leaf nodes
+ * directly contain (inline) small values associated with the keys, allowing a
+ * single (or sequential) disk read of all the values on the node.
  * <p>
  * B+Trees are n-airy, yeilding log(N) search cost.  They are self-balancing,
  * preventing search performance degradation when the size of the tree grows.
  * <p>
+ * TODO update paragraph
  * Keys and associated values must be <code>Serializable</code> objects. The
  * user is responsible to supply a serializable <code>Comparator</code> object
  * to be used for the ordering of entries, which are also called <code>Tuple</code>.
  * The B+Tree allows traversing the keys in forward and reverse order using a
  * TupleBrowser obtained from the browse() methods.
  * <p>
- * This implementation does not directly support duplicate keys, but it is
- * possible to handle duplicates by inlining or referencing an object collection
- * as a value.
+ * This implementation does not directly support duplicate keys. It is
+ * possible to handle duplicates by grouping values using an ArrayList as value.
  * <p>
  * There is no limit on key size or value size, but it is recommended to keep
- * both as small as possible to reduce disk I/O.   This is especially true for
- * the key size, which impacts all non-leaf <code>BPage</code> objects.
+ * keys as small as possible to reduce disk I/O. If value exceeds 32 bytes,
+ * it is stored in separate record and tree contains only recid reference to it.
  *
  * @author Alex Boisvert
  */
@@ -59,19 +59,19 @@ class BTree<K,V>
 
 
     /**
-     * Default page size (number of entries per node)
+     * Default node size (number of entries per node)
      */
     public static final int DEFAULT_SIZE =8;
 
 
     /**
-     * Page manager used to persist changes in BPages
+     * Record manager used to persist changes in BTreeNodes
      */
     protected transient RecordManager2 _recman;
 
 
     /**
-     * This BTree's record ID in the PageManager.
+     * This BTree's record ID in the RecordManager.
      */
     private transient long _recid;
 
@@ -98,7 +98,9 @@ class BTree<K,V>
 
     /** The number of structural modifications to the tree. This value is just for runtime, it is not persisted*/
     transient int modCount = 0;
-    protected BTreePage.InsertResult<K, V> insertResultReuse;
+
+    /** cached instance of an insert result, so we do not have to allocate new object on each insert*/
+    protected BTreeNode.InsertResult<K, V> insertResultReuse;
 
 
     public Serializer<K> getKeySerializer() {
@@ -121,14 +123,14 @@ class BTree<K,V>
 	}
 
 	/**
-     * Height of the B+Tree.  This is the number of BPages you have to traverse
-     * to get to a leaf BPage, starting from the root.
+     * Height of the B+Tree.  This is the number of BTreeNodes you have to traverse
+     * to get to a leaf BTreeNode, starting from the root.
      */
     private int _height;
 
 
     /**
-     * Recid of the root BPage
+     * Recid of the root BTreeNode
      */
     private transient long _root;
 
@@ -141,9 +143,9 @@ class BTree<K,V>
 
     
     /**
-     * Serializer used for BPages of this tree
+     * Serializer used for BTreeNodes of this tree
      */
-    private transient BTreePage<K,V> _bpageSerializer;
+    private transient BTreeNode<K,V> _nodeSerializer;
     
     
     /**
@@ -215,8 +217,8 @@ class BTree<K,V>
         btree._comparator = comparator;
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
-        btree._bpageSerializer = new BTreePage<K,V>();
-        btree._bpageSerializer._btree = btree;
+        btree._nodeSerializer = new BTreeNode<K,V>();
+        btree._nodeSerializer._btree = btree;
         btree._recid = recman.insert( btree, btree.getRecordManager().defaultSerializer() );
         return btree;
     }
@@ -235,8 +237,8 @@ class BTree<K,V>
         BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid);
         btree._recid = recid;
         btree._recman = recman;
-        btree._bpageSerializer = new BTreePage<K,V>();
-        btree._bpageSerializer._btree = btree;
+        btree._nodeSerializer = new BTreeNode<K,V>();
+        btree._nodeSerializer._btree = btree;
         return btree;
     }
     
@@ -274,15 +276,15 @@ class BTree<K,V>
         }
         try {
         	lock.writeLock().lock();
-	        BTreePage<K,V> rootPage = getRoot();
+	        BTreeNode<K,V> rootNode = getRoot();
 	
-	        if ( rootPage == null ) {
-	            // BTree is currently empty, create a new root BPage
+	        if ( rootNode == null ) {
+	            // BTree is currently empty, create a new root BTreeNode
 	            if (DEBUG) {
-	                System.out.println( "BTree.insert() new root BPage" );
+	                System.out.println( "BTree.insert() new root BTreeNode" );
 	            }
-	            rootPage = new BTreePage<K,V>( this, key, value );
-	            _root = rootPage._recid;
+	            rootNode = new BTreeNode<K,V>( this, key, value );
+	            _root = rootNode._recid;
 	            _height = 1;
 	            _entries = 1;
 	            _recman.update( _recid, this);
@@ -293,15 +295,15 @@ class BTree<K,V>
 	            }
 	            return null;
             } else {
-	        BTreePage.InsertResult<K,V> insert = rootPage.insert( _height, key, value, replace );
+	        BTreeNode.InsertResult<K,V> insert = rootNode.insert( _height, key, value, replace );
             boolean dirty = false;
             if ( insert._overflow != null ) {
-                // current root page overflowed, we replace with a new root page
+                // current root node overflowed, we replace with a new root node
                 if ( DEBUG ) {
-                    System.out.println( "BTree.insert() replace root BPage due to overflow" );
+                    System.out.println( "BTreeNode.insert() replace root BTreeNode due to overflow" );
                 }
-                rootPage = new BTreePage<K,V>( this, rootPage, insert._overflow );
-                _root = rootPage._recid;
+                rootNode = new BTreeNode<K,V>( this, rootNode, insert._overflow );
+                _root = rootNode._recid;
                 _height += 1;
                 dirty = true;
             }
@@ -350,13 +352,13 @@ class BTree<K,V>
         }
         try {
         	lock.writeLock().lock();
-	        BTreePage<K,V> rootPage = getRoot();
-	        if ( rootPage == null ) {
+	        BTreeNode<K,V> rootNode = getRoot();
+	        if ( rootNode == null ) {
 	            return null;
 	        }
 	        boolean dirty = false;
-	        BTreePage.RemoveResult<K,V> remove = rootPage.remove( _height, key );
-	        if ( remove._underflow && rootPage.isEmpty() ) {
+	        BTreeNode.RemoveResult<K,V> remove = rootNode.remove( _height, key );
+	        if ( remove._underflow && rootNode.isEmpty() ) {
 	            _height -= 1;
 	            dirty = true;
 	
@@ -364,7 +366,7 @@ class BTree<K,V>
 	            if ( _height == 0 ) {
 	                _root = 0;
 	            } else {
-	                _root = rootPage.loadLastChildPage()._recid;
+	                _root = rootNode.loadLastChildNode()._recid;
 	            }
 	        }
 	        if ( remove._value != null ) {
@@ -399,29 +401,15 @@ class BTree<K,V>
         }
         try {
         	lock.readLock().lock();
-	        BTreePage<K,V> rootPage = getRoot();
-	        if ( rootPage == null ) {
+	        BTreeNode<K,V> rootNode = getRoot();
+	        if ( rootNode == null ) {
 	            return null;
 	        }
 	
-	        return rootPage.findValue( _height, key );
+	        return rootNode.findValue( _height, key );
         } finally {
         	lock.readLock().unlock();
         }
-//        Tuple<K,V> tuple = new Tuple<K,V>( null, null );
-//        TupleBrowser<K,V> browser = rootPage.get( _height, key );
-//
-//        if ( browser.getNext( tuple ) ) {
-//            // get returns the matching key or the next ordered key, so we must
-//            // check if we have an exact match
-//            if ( _comparator.compare( key, tuple.getKey() ) != 0 ) {
-//                return null;
-//            } else {
-//                return tuple.getValue();
-//            }
-//        } else {
-//            return null;
-//        }
     }
 
 
@@ -470,12 +458,11 @@ class BTree<K,V>
     {
     	try {
         	lock.readLock().lock();
-	        BTreePage<K,V> rootPage = getRoot();
-	        if ( rootPage == null ) {
+	        BTreeNode<K,V> rootNode = getRoot();
+	        if ( rootNode == null ) {
 	            return EMPTY_BROWSER;
 	        }
-	        BTreeTupleBrowser<K,V> browser = rootPage.findFirst();
-	        return browser;
+	        return rootNode.findFirst();
     	} finally {
     		lock.readLock().unlock();
     	}
@@ -500,11 +487,11 @@ class BTree<K,V>
     {
     	try {
         	lock.readLock().lock();
-	    	BTreePage<K,V> rootPage = getRoot();
-	        if ( rootPage == null ) {
+	    	BTreeNode<K,V> rootNode = getRoot();
+	        if ( rootNode == null ) {
 	            return EMPTY_BROWSER;
 	        }
-	        BTreeTupleBrowser<K,V> browser = rootPage.find( _height, key );
+	        BTreeTupleBrowser<K,V> browser = rootNode.find( _height, key );
 	        return browser;
     	} finally {
     		lock.readLock().unlock();
@@ -531,15 +518,15 @@ class BTree<K,V>
 
 
     /**
-     * Return the root BPage, or null if it doesn't exist.
+     * Return the root BTreeNode, or null if it doesn't exist.
      */
-    BTreePage<K,V> getRoot()
+    BTreeNode<K,V> getRoot()
         throws IOException
     {
         if ( _root == 0 ) {
             return null;
         }
-        BTreePage<K,V> root = (BTreePage<K,V>) _recman.fetch( _root, _bpageSerializer );
+        BTreeNode<K,V> root = _recman.fetch( _root, _nodeSerializer );
         if (root != null) {
             root._recid = _root;
             root._btree = this;
@@ -582,10 +569,10 @@ class BTree<K,V>
             BTree t = (BTree) r1.defaultSerializer().deserialize(in);
             t.loadValues = false;
             t._recman = r1;
-            t._bpageSerializer = new BTreePage(t,false);
+            t._nodeSerializer = new BTreeNode(t,false);
 
 
-            BTreePage p = t.getRoot();
+            BTreeNode p = t.getRoot();
             if(p!=null){
                 r2.forceInsert(t._root,r1.fetchRaw(t._root));
                 p.defrag(r1,r2);
@@ -597,27 +584,7 @@ class BTree<K,V>
     }
 
 
-    /*
-    public void assert() throws IOException {
-        BPage root = getRoot();
-        if ( root != null ) {
-            root.assertRecursive( _height );
-        }
-    }
-    */
-
-
-    /*
-    public void dump() throws IOException {
-        BPage root = getRoot();
-        if ( root != null ) {
-            root.dumpRecursive( _height, 0 );
-        }
-    }
-    */
-
-
-    /** PRIVATE INNER CLASS
+    /**
      *  Browser returning no element.
      */
     private static final BTreeTupleBrowser EMPTY_BROWSER = new  BTreeTupleBrowser() {
@@ -670,16 +637,16 @@ class BTree<K,V>
     }
 
     /** 
-     * Deletes all BPages in this BTree, then deletes the tree from the record manager
+     * Deletes all BTreeNodes in this BTree, then deletes the tree from the record manager
      */
     public void delete()
         throws IOException
     {
     	try {
         	lock.writeLock().lock();
-	        BTreePage<K,V> rootPage = getRoot();
-	        if (rootPage != null)
-	            rootPage.delete();
+	        BTreeNode<K,V> rootNode = getRoot();
+	        if (rootNode != null)
+	            rootNode.delete();
 	        _recman.delete(_recid);
             _entries = 0;
             modCount++;
@@ -690,15 +657,15 @@ class BTree<K,V>
     
     /**
      * Used for debugging and testing only.  Populates the 'out' list with
-     * the recids of all child pages in the BTree.
+     * the recids of all child nodes in the BTree.
      * @param out
      * @throws IOException
      */
-    void dumpChildPageRecIDs(List<Long> out) throws IOException{
-        BTreePage<K,V> root = getRoot();
+    void dumpChildNodeRecIDs(List<Long> out) throws IOException{
+        BTreeNode<K,V> root = getRoot();
         if ( root != null ) {
             out.add(root._recid);
-            root.dumpChildPageRecIDs( out, _height);
+            root.dumpChildNodeRecIDs( out, _height);
         }
     }
 
