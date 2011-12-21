@@ -18,6 +18,8 @@ class StorageDisk implements Storage{
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
 
     private String fileName;
+    
+    private long lastPageNumber = Long.MIN_VALUE;
 
     public StorageDisk(String fileName) throws IOException {
         this.fileName = fileName;
@@ -66,8 +68,11 @@ class StorageDisk implements Storage{
 
         RandomAccessFile file = getRaf(offset);
 
-        file.seek(offset % MAX_FILE_SIZE);
+        if(lastPageNumber +1 != pageNumber)
+            file.seek(offset%MAX_FILE_SIZE);
+
         file.write(data);
+        lastPageNumber = pageNumber;
     }
 
     public void forceClose() throws IOException {
@@ -83,7 +88,8 @@ class StorageDisk implements Storage{
         long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
-        file.seek(offset%MAX_FILE_SIZE);
+        if(lastPageNumber +1 != pageNumber)
+            file.seek(offset%MAX_FILE_SIZE);
         int remaining = buffer.length;
         int pos = 0;
         while (remaining > 0) {
@@ -95,6 +101,7 @@ class StorageDisk implements Storage{
             remaining -= read;
             pos += read;
         }
+        lastPageNumber = pageNumber;
     }
 
 
