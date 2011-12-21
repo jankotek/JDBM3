@@ -1,10 +1,7 @@
 package jdbm;
 
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 
 /**
  *  An interface/abstract class to manage records, which are objects serialized to byte[] on background.
@@ -155,7 +152,7 @@ public interface RecordManager {
         throws IOException;
 
 
-    <K, V> PrimaryHashMap<K, V> loadHashMap(String name);
+    <K, V> Map<K, V> loadHashMap(String name);
 
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
@@ -166,7 +163,7 @@ public interface RecordManager {
      * @param name record name
      * @return
      */
-    <K, V> PrimaryHashMap<K, V> createHashMap(String name);
+    <K, V> Map<K, V> createHashMap(String name);
 
 
     /**
@@ -181,7 +178,7 @@ public interface RecordManager {
      * @param valueSerializer serializer to be used for Values
      * @return
      */
-    <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
+    <K, V> Map<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
     <K> Set<K> createHashSet(String name);
 
@@ -189,7 +186,7 @@ public interface RecordManager {
 
     <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
 
-    <K, V> PrimaryTreeMap<K, V> loadTreeMap(String name);
+    <K, V> SortedMap<K, V> loadTreeMap(String name);
 
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
@@ -200,7 +197,7 @@ public interface RecordManager {
      * @param name record name
      * @return
      */
-    <K extends Comparable, V> PrimaryTreeMap<K, V> createTreeMap(String name);
+    <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name);
 
     /**
      * Creates or load existing TreeMap which persists data into DB.
@@ -213,7 +210,7 @@ public interface RecordManager {
      * @param valueSerializer Serializer used for values. This may reduce disk space usage
      * @return
      */
-    <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
+    <K, V> SortedMap<K, V> createTreeMap(String name,
                                               Comparator<K> keyComparator, Serializer<K> keySerializer,Serializer<V> valueSerializer);
 
     <K> SortedSet<K> loadTreeSet(String name);

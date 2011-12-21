@@ -46,9 +46,9 @@ public class TestRollback
 
         recman.rollback();
 
-        assertTrue( tree.find( "Foo" ).equals( "Bar" ) );
-        assertTrue( tree.find( "Fo" ).equals( "Fum" ) );
-        assertTrue( tree.find( "Hello" ) == null );
+        assertTrue( tree.get( "Foo" ).equals( "Bar" ) );
+        assertTrue( tree.get( "Fo" ).equals( "Fum" ) );
+        assertTrue( tree.get( "Hello" ) == null );
     }		
 
     
@@ -70,9 +70,9 @@ public class TestRollback
         tree.put( "derek", "dick" );
         recman.rollback();
 
-        assertTrue( tree.find( "derek" ) == null );
-        assertTrue( tree.find( "goodnight" ).equals( "gracie" ) );
-        assertTrue( tree.find( "hello" ).equals( "world" ) );
+        assertTrue( tree.get( "derek" ) == null );
+        assertTrue( tree.get( "goodnight" ).equals( "gracie" ) );
+        assertTrue( tree.get( "hello" ).equals( "world" ) );
     }
 	    
     

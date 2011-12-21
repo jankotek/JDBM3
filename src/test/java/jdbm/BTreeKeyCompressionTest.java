@@ -3,6 +3,7 @@ package jdbm;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.SortedMap;
 
 public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 	
@@ -13,7 +14,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 		long init = Long.MAX_VALUE - size*2;
 		String file = newTestFile();
 		RecordManager recman = new RecordManagerStorage(file, false, false);
-		PrimaryTreeMap<Long, String> map = recman.createTreeMap("aa");
+		SortedMap<Long, String> map = recman.createTreeMap("aa");
 		for(long i = init; i<init+size;i++){
 			map.put(i, "");			
 		}
@@ -27,7 +28,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 	
 	public void testCornersLimitsLong() throws IOException{
 		RecordManager recman = newRecordManager();
-		PrimaryTreeMap<Long, String> map = recman.createTreeMap("aa");
+		SortedMap<Long, String> map = recman.createTreeMap("aa");
 		ArrayList<Long> ll = new ArrayList<Long>();
 		for(Long i = Long.MIN_VALUE;i<Long.MIN_VALUE+1000;i++){
 			map.put(i, "");
@@ -65,7 +66,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 	
 	public void testCornersLimitsInt() throws IOException{
 		RecordManager recman = newRecordManager();
-		PrimaryTreeMap<Integer, String> map = recman.createTreeMap("aa");
+		SortedMap<Integer, String> map = recman.createTreeMap("aa");
 		ArrayList<Integer> ll = new ArrayList<Integer>();
 		for(Integer i = Integer.MIN_VALUE;i<Integer.MIN_VALUE+1000;i++){
 			map.put(new Integer(i), "");
@@ -104,7 +105,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile{
 		long init = Long.MAX_VALUE - size*2;
 		String file = newTestFile();
 		RecordManager recman = new RecordManagerStorage(file, false, false);
-		PrimaryTreeMap<String, String> map = recman.createTreeMap("aa");
+		SortedMap<String, String> map = recman.createTreeMap("aa");
 		for(long i = init; i<init+size/10;i++){
 			map.put("aaaaa"+i, "");			
 		}

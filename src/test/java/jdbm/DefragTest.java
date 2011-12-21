@@ -40,7 +40,7 @@ public class DefragTest extends TestCaseWithTestFile{
 	public void testDefragBtree() throws IOException{
 		String file = newTestFile();
 		RecordManagerStorage m = new RecordManagerStorage(file, false, false);
-		PrimaryTreeMap t = m.createTreeMap("aa");
+		Map t = m.createTreeMap("aa");
 		TreeMap t2 = new TreeMap();
 		for(int i =0;i<10000;i ++ ){
 			t.put(i, ""+i);

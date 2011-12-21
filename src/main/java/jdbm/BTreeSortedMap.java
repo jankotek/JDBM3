@@ -17,15 +17,10 @@ package jdbm;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.util.AbstractSet;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.SortedMap;
+import java.util.*;
 
 
-class BTreeSortedMap<K,V> extends AbstractPrimaryMap<K,V> implements PrimaryTreeMap<K,V>{
+class BTreeSortedMap<K,V> extends AbstractMap<K,V> implements SortedMap<K,V>{
 	
 	protected final BTree<K,V> tree;
 	

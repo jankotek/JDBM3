@@ -17,6 +17,7 @@
 package jdbm;
 
 import java.io.*;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -215,7 +216,7 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     	Serializer<String> ser = new Serial();
 			
 		RecordManager recman = newRecordManager();
-		PrimaryTreeMap<Long,String> t =  recman.<Long,String>createTreeMap("test", null, null, ser);
+		Map<Long,String> t =  recman.<Long,String>createTreeMap("test", null, null, ser);
 		t.put(1l, "hopsa hejsa1");
 		t.put(2l, "hopsa hejsa2");
 		recman.commit();

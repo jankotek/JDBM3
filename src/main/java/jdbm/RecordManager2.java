@@ -41,7 +41,7 @@ import java.util.*;
         return (A) fetch(recid,defaultSerializer());
     }
 
-    public <K, V> PrimaryHashMap<K, V> loadHashMap(String name) {
+    public <K, V> Map<K, V> loadHashMap(String name) {
         try{
             long recid = assertNameExist(name);
             HTree tree = fetch(recid);
@@ -52,12 +52,12 @@ import java.util.*;
         }
     }
 
-    public <K, V> PrimaryHashMap<K, V> createHashMap(String name) {
+    public <K, V> Map<K, V> createHashMap(String name) {
         return createHashMap(name, null, null);
     }
 
 
-    public synchronized <K, V> PrimaryHashMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public synchronized <K, V> Map<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
 		try{
                     assertNameNotExist(name);
 
@@ -84,7 +84,7 @@ import java.util.*;
                 return new HTreeSet(createHashMap(name,keySerializer,null));
 	}
 
-    public <K, V> PrimaryTreeMap<K, V> loadTreeMap(String name) {
+    public <K, V> SortedMap<K, V> loadTreeMap(String name) {
         try{
             long recid = assertNameExist(name);
             return BTree.<K,V>load( this, recid ).asMap();
@@ -93,12 +93,12 @@ import java.util.*;
 	}
     }
 
-    public <K extends Comparable, V> PrimaryTreeMap<K, V> createTreeMap(String name) {
+    public <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name) {
 		return createTreeMap(name, null,null,null);
 	}
 
 
-    public synchronized <K, V> PrimaryTreeMap<K, V> createTreeMap(String name,
+    public synchronized <K, V> SortedMap<K, V> createTreeMap(String name,
                                                                   Comparator<K> keyComparator,
                                                                   Serializer<K> keySerializer,
                                                                   Serializer<V> valueSerializer) {
@@ -110,11 +110,11 @@ import java.util.*;
 			tree.setKeySerializer(keySerializer);
 			tree.setValueSerializer(valueSerializer);
                         setNamedObject( name, tree.getRecid() );
-			
+
 			return tree.asMap();
 		}catch(IOException  e){
 			throw new IOError(e);
-		}	
+		}
 	}
 
 

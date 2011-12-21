@@ -1,6 +1,7 @@
 package jdbm;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,21 +13,21 @@ public class HugeData {
 
         long startTime = System.currentTimeMillis();
         RecordManager recman = new RecordManagerBuilder("/tmp/large/db"+Math.random())
-                .disableTransactions().enableMRUCache()
-                //.disableDiskSync()
+                .disableTransactions()
+                .enableMRUCache()
                 .build();
 
-        Map<Long,Integer> map = recman.createTreeMap("test");
+//        Map<Long,Integer> map = recman.createHashMap("test");
+        List<Long> test = recman.createLinkedList("test");
 
         for(Long i=1L;i<1e10;i++){
             if(i%1e6==0) {
                 System.out.println(i);
-                recman.commit();
                 //Thread.sleep(1000000);
             }
-            map.put(i,i.hashCode());
+            test.add(i);
+//            map.put(i,i.hashCode());
         }
-        recman.commit();
 
         recman.close();
 

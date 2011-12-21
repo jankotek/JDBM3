@@ -26,8 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  *  @author Alex Boisvert
  */
-class HTree<K,V>  extends AbstractPrimaryMap<K,V> implements PrimaryHashMap<K,V>
-{
+class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
 
     final Serializer SERIALIZER = new Serializer<Object>() {
 
