@@ -29,16 +29,19 @@ final class PhysicalRowIdManager {
 	final private RecordFile file;
 	final private PageManager pageman;
 	final private FreePhysicalRowIdPageManager freeman;
-	final short DATA_PER_PAGE ;
+	static final private short DATA_PER_PAGE =  (short) (BLOCK_SIZE - DataPage.O_DATA);
+    //caches offset after last allocation. So we dont have to iterate throw page every allocation
+    private long cachedLastAllocatedRecordPage = Long.MIN_VALUE;
+    private short cachedLastAllocatedRecordOffset = Short.MIN_VALUE;
 
-	/**
+    /**
 	 * Creates a new rowid manager using the indicated record file. and page manager.
 	 */
 	PhysicalRowIdManager(RecordFile file, PageManager pageManager, FreePhysicalRowIdPageManager freeman) throws IOException {
 		this.file = file;
 		this.pageman = pageManager;
 		this.freeman = freeman;
-		DATA_PER_PAGE = (short) (BLOCK_SIZE - DataPage.O_DATA);
+
 	}
 
 	/**
@@ -150,14 +153,20 @@ final class PhysicalRowIdManager {
 	private long allocNew(int size, long start) throws IOException {
 		BlockIo curBlock;
 		DataPage curPage;
-		if (start == 0) {
+		if (start == 0 ||
+                //last page was completely filled?
+                cachedLastAllocatedRecordPage == start && cachedLastAllocatedRecordOffset == BLOCK_SIZE
+                ) {
 			// we need to create a new page.
 			start = pageman.allocate(Magic.USED_PAGE);
 			curBlock = file.get(start);
 			curPage = DataPage.getDataPageView(curBlock,BLOCK_SIZE);
 			curPage.setFirst(DataPage.O_DATA);
+            cachedLastAllocatedRecordOffset = DataPage.O_DATA;
+            cachedLastAllocatedRecordPage = curBlock.getBlockId();
 			RecordHeader.setAvailableSize(curBlock, DataPage.O_DATA, 0);
 			RecordHeader.setCurrentSize(curBlock, DataPage.O_DATA, 0);
+
 		} else {
 			curBlock = file.get(start);
 			curPage = DataPage.getDataPageView(curBlock,BLOCK_SIZE);
@@ -173,17 +182,24 @@ final class PhysicalRowIdManager {
 		}
 
 		short hdr = pos;
-        int availSize = RecordHeader.getAvailableSize(curBlock, hdr);
-		while (availSize != 0 && pos < BLOCK_SIZE) {
-			pos += availSize + RecordHeader.SIZE;
-			if (pos == BLOCK_SIZE) {
-				// Again, a filled page.
-				file.release(curBlock);
-				return allocNew(size, 0);
-			}
-			hdr = pos;
-            availSize = RecordHeader.getAvailableSize(curBlock, hdr);
-		}
+
+        if(cachedLastAllocatedRecordPage != curBlock.getBlockId()){
+            //position was not cached, have to find it again
+            int availSize = RecordHeader.getAvailableSize(curBlock, hdr);
+		    while (availSize != 0 && pos < BLOCK_SIZE) {
+			    pos += availSize + RecordHeader.SIZE;
+			    if (pos == BLOCK_SIZE) {
+				    // Again, a filled page.
+				    file.release(curBlock);
+				    return allocNew(size, 0);
+			    }
+			    hdr = pos;
+                availSize = RecordHeader.getAvailableSize(curBlock, hdr);
+		    }
+        }else{
+            hdr = cachedLastAllocatedRecordOffset;
+            pos = cachedLastAllocatedRecordOffset;
+        }
 
 		if (pos == RecordHeader.SIZE) {
 			// the last record exactly filled the page. Restart forcing
@@ -226,6 +242,9 @@ final class PhysicalRowIdManager {
 				curPage = DataPage.getDataPageView(curBlock, BLOCK_SIZE);
 				curPage.setFirst((short) (DataPage.O_DATA + neededLeft));
 				file.release(start, true);
+                cachedLastAllocatedRecordOffset = (short) (DataPage.O_DATA + neededLeft);
+                cachedLastAllocatedRecordPage = curBlock.getBlockId();
+
 			}
 		} else {
 			// just update the current page. If there's less than 16 bytes
@@ -236,6 +255,9 @@ final class PhysicalRowIdManager {
 			}
 			RecordHeader.setAvailableSize(curBlock, hdr, size);
 			file.release(start, true);
+            cachedLastAllocatedRecordOffset = (short) (hdr+ RecordHeader.SIZE + size);
+            cachedLastAllocatedRecordPage = curBlock.getBlockId();
+
 		}
 		return retval;
 
@@ -292,6 +314,10 @@ final class PhysicalRowIdManager {
 		}
 	}
 
+    void roolback() throws IOException {
+   		cachedLastAllocatedRecordPage = Long.MIN_VALUE;
+        cachedLastAllocatedRecordOffset = Short.MIN_VALUE;
+   	}
 
 
 	void commit() throws IOException {

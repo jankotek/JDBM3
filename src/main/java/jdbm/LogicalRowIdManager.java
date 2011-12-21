@@ -26,7 +26,7 @@ final class LogicalRowIdManager {
 	private final RecordFile file;
 	private final PageManager pageman;
 	private final FreeLogicalRowIdPageManager freeman;
-	final short ELEMS_PER_PAGE;
+	final short ELEMS_PER_PAGE = (short)((Storage.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);;
 
 	/**
 	 * Creates a log rowid manager using the indicated record file and page manager
@@ -35,7 +35,6 @@ final class LogicalRowIdManager {
 		this.file = file;
 		this.pageman = pageman;
 		this.freeman = freeman;
-		this.ELEMS_PER_PAGE = (short)((Storage.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
 	}
 
 	/**

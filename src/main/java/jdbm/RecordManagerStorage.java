@@ -552,8 +552,10 @@ final class RecordManagerStorage
             throw new IllegalAccessError("Transactions are disabled, can not rollback");
         
         checkIfClosed();
+        _physMgr.roolback();
+
         _physMgr.commit();
-        _logicMgr.commit();
+        _logicMgr.commit(); //TODO find why commit is here !!!
 
         _physPageman.rollback();
         _logicPageman.rollback();
