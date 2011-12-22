@@ -54,7 +54,7 @@ final class BTreeNode<K,V>
 
 
     /**
-     * This BTreeNode's record ID in the RecordManager.
+     * This BTreeNode's record ID in the DB.
      */
     protected transient long _recid;
 
@@ -137,7 +137,7 @@ final class BTreeNode<K,V>
         _children[ BTree.DEFAULT_SIZE-2 ] = overflow._recid;
         _children[ BTree.DEFAULT_SIZE-1 ] = root._recid;
 
-        _recid = _btree._recman.insert( this, this );
+        _recid = _btree._db.insert( this, this );
     }
 
 
@@ -162,7 +162,7 @@ final class BTreeNode<K,V>
         _values[BTree.DEFAULT_SIZE-2 ] = value;
         _values[BTree.DEFAULT_SIZE-1 ] = null;  // I am the root BTreeNode for now
 
-        _recid = _btree._recman.insert( this, this );
+        _recid = _btree._db.insert( this, this );
     }
 
 
@@ -187,7 +187,7 @@ final class BTreeNode<K,V>
             _children = new long[BTree.DEFAULT_SIZE ];
         }
 
-        _recid = _btree._recman.insert( this, this );
+        _recid = _btree._db.insert( this, this );
     }
 
 
@@ -312,7 +312,7 @@ final class BTreeNode<K,V>
                 BTreeNode<K,V> nextNode = loadNode(_next);
                 if (nextNode._previous == _recid){ // this consistency check can be removed in production code
                     nextNode._previous = _previous;
-                    _btree._recman.update(nextNode._recid, nextNode, nextNode);
+                    _btree._db.update(nextNode._recid, nextNode, nextNode);
                 } else {
                     throw new Error("Inconsistent data in BTree");
                 }
@@ -321,7 +321,7 @@ final class BTreeNode<K,V>
                 BTreeNode<K,V> previousNode = loadNode(_previous);
                 if (previousNode._next != _recid){ // this consistency check can be removed in production code
                     previousNode._next = _next;
-                    _btree._recman.update(previousNode._recid, previousNode, previousNode);
+                    _btree._db.update(previousNode._recid, previousNode, previousNode);
                 } else {
                     throw new Error("Inconsistent data in BTree");
                 }
@@ -336,7 +336,7 @@ final class BTreeNode<K,V>
             }
         }
         
-        _btree._recman.delete(_recid);
+        _btree._db.delete(_recid);
     }
     
     /**
@@ -390,7 +390,7 @@ final class BTreeNode<K,V>
                     if(isLazyRecord)
                         ((BTreeLazyRecord)_values [ index ]).delete();
                     _values [ index ] = value;
-                    _btree._recman.update( _recid, this, this );
+                    _btree._db.update( _recid, this, this );
                 }
                 // return the existing key
                 return result;
@@ -431,7 +431,7 @@ final class BTreeNode<K,V>
             } else {
                 insertChild( this, index-1, key, overflow );
             }
-            _btree._recman.update( _recid, this, this );
+            _btree._db.update( _recid, this, this );
             return result;
         }
 
@@ -486,14 +486,14 @@ final class BTreeNode<K,V>
             if ( _previous != 0 ) {
                 BTreeNode<K,V> previous = loadNode(_previous);
                 previous._next = newNode._recid;
-                _btree._recman.update( _previous, previous, this );
+                _btree._db.update( _previous, previous, this );
 
             }
             _previous = newNode._recid;
         }
 
-        _btree._recman.update( _recid, this, this );
-        _btree._recman.update( newNode._recid, newNode, this );
+        _btree._db.update( _recid, this, this );
+        _btree._db.update( newNode._recid, newNode, this );
 
         result._overflow = newNode;
         return result;
@@ -533,7 +533,7 @@ final class BTreeNode<K,V>
             removeEntry( this, index );
 
             // update this node
-            _btree._recman.update( _recid, this, this );
+            _btree._db.update( _recid, this, this );
 
         } else {
             // recurse into Btree to remove entry on a children node
@@ -542,7 +542,7 @@ final class BTreeNode<K,V>
 
             // update children
             _keys[ index ] = child.getLargestKey();
-            _btree._recman.update( _recid, this, this );
+            _btree._db.update( _recid, this, this );
 
             if ( result._underflow ) {
                 // underflow occured
@@ -580,9 +580,9 @@ final class BTreeNode<K,V>
                         // no change in previous/next node
 
                         // update nodes
-                        _btree._recman.update( _recid, this, this );
-                        _btree._recman.update( brother._recid, brother, this );
-                        _btree._recman.update( child._recid, child, this );
+                        _btree._db.update( _recid, this, this );
+                        _btree._db.update( brother._recid, brother, this );
+                        _btree._db.update( child._recid, child, this );
 
                     } else {
                         // move all entries from node "child" to "brother"
@@ -596,7 +596,7 @@ final class BTreeNode<K,V>
                         } else {
                             copyChildren( child, half+1, brother, 1, half-1 );
                         }
-                        _btree._recman.update( brother._recid, brother, this );
+                        _btree._db.update( brother._recid, brother, this );
 
 
                         // remove "child" from current node
@@ -608,23 +608,23 @@ final class BTreeNode<K,V>
                             setChild( this, _first, null, -1 );
                         }
                         _first += 1;
-                        _btree._recman.update( _recid, this, this );
+                        _btree._db.update( _recid, this, this );
 
                         // re-link previous and next nodes
                         if ( child._previous != 0 ) {
                             BTreeNode<K,V> prev = loadNode(child._previous);
                             prev._next = child._next;
-                            _btree._recman.update( prev._recid, prev, this );
+                            _btree._db.update( prev._recid, prev, this );
                         }
                         if ( child._next != 0 ) {
                             BTreeNode<K,V> next = loadNode(child._next);
                             next._previous = child._previous;
-                            _btree._recman.update( next._recid, next, this );
+                            _btree._db.update( next._recid, next, this );
 
                         }
 
                         // delete "child" node
-                        _btree._recman.delete( child._recid );
+                        _btree._db.delete( child._recid );
                     }
                 } else {
                     // node "brother" is before "child"
@@ -661,9 +661,9 @@ final class BTreeNode<K,V>
                         // no change in previous/next node
 
                         // update nodes
-                        _btree._recman.update( _recid, this, this );
-                        _btree._recman.update( brother._recid, brother, this );
-                        _btree._recman.update( child._recid, child, this );
+                        _btree._db.update( _recid, this, this );
+                        _btree._db.update( brother._recid, brother, this );
+                        _btree._db.update( child._recid, child, this );
 
                     } else {
                         // move all entries from node "brother" to "child"
@@ -677,7 +677,7 @@ final class BTreeNode<K,V>
                         } else {
                             copyChildren( brother, half, child, 1, half );
                         }
-                        _btree._recman.update( child._recid, child, this );
+                        _btree._db.update( child._recid, child, this );
 
                         // remove "brother" from current node
                         if ( _isLeaf ) {
@@ -688,22 +688,22 @@ final class BTreeNode<K,V>
                             setChild( this, _first, null, -1 );
                         }
                         _first += 1;
-                        _btree._recman.update( _recid, this, this );
+                        _btree._db.update( _recid, this, this );
 
                         // re-link previous and next nodes
                         if ( brother._previous != 0 ) {
                             BTreeNode<K,V> prev = loadNode(brother._previous);
                             prev._next = brother._next;
-                            _btree._recman.update( prev._recid, prev, this );
+                            _btree._db.update( prev._recid, prev, this );
                         }
                         if ( brother._next != 0 ) {
                             BTreeNode<K,V> next = loadNode(brother._next);
                             next._previous = brother._previous;
-                            _btree._recman.update( next._recid, next, this );
+                            _btree._db.update( next._recid, next, this );
                         }
 
                         // delete "brother" node
-                        _btree._recman.delete( brother._recid );
+                        _btree._db.delete( brother._recid );
                     }
                 }
             }
@@ -851,7 +851,7 @@ final class BTreeNode<K,V>
 	private BTreeNode<K,V> loadNode(long recid)
         throws IOException
     {
-        BTreeNode<K,V> child =  _btree._recman.fetch( recid, this );
+        BTreeNode<K,V> child =  _btree._db.fetch( recid, this );
         child._recid = recid;
         child._btree = _btree;
         return child;
@@ -1026,7 +1026,7 @@ final class BTreeNode<K,V>
                            node._values[ i ] = null;
                        }else if(header == BTreeLazyRecord.LAZY_RECORD){
                            long recid = LongPacker.unpackLong(ois);
-                           node._values[ i ] = new BTreeLazyRecord(_btree._recman,recid,serializer);
+                           node._values[ i ] = new BTreeLazyRecord(_btree._db,recid,serializer);
                        }else{
                            node._values[ i ] = BTreeLazyRecord.fastDeser(ois,serializer,header);
                        }
@@ -1055,7 +1055,7 @@ final class BTreeNode<K,V>
 
                             if(output.getPos()>BTreeLazyRecord.MAX_INTREE_RECORD_SIZE){
                                 //write as separate record
-                                long recid = _btree._recman.insert(output.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
+                                long recid = _btree._db.insert(output.toByteArray(),BTreeLazyRecord.FAKE_SERIALIZER);
                                 oos.write(BTreeLazyRecord.LAZY_RECORD);
                                 LongPacker.packLong(oos,recid);
                             }else{
@@ -1308,7 +1308,7 @@ final class BTreeNode<K,V>
 		
 	}
 
-    public void defrag(RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+    public void defrag(DBStore r1, DBStore r2) throws IOException {
         if(_children !=null)
             for(long child:_children){
                 if(child == 0) continue;

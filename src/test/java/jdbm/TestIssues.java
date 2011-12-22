@@ -12,34 +12,34 @@ public class TestIssues extends TestCaseWithTestFile{
     http://code.google.com/p/jdbm2/issues/detail?id=2
      */
     public void testHTreeClear() throws IOException {
-        final RecordManager2 recman = newRecordManager();
-        final HTree<String,String> tree = (HTree)recman.createHashMap("name");
+        final DBAbstract db = newRecordManager();
+        final HTree<String,String> tree = (HTree)db.createHashMap("name");
 
         for (int i = 0; i < 1001; i++) {
             tree.put(String.valueOf(i),String.valueOf(i));
         }
-        recman.commit();
+        db.commit();
         System.out.println("finished adding");
 
         tree.clear();
-        recman.commit();
+        db.commit();
         System.out.println("finished clearing");
         assertTrue(tree.isEmpty());
     }
 
 
     public void testBTreeClear() throws IOException {
-        final RecordManager recman = newRecordManager();
-        final Map<String,String> treeMap = recman.createTreeMap("test");
+        final DB db = newRecordManager();
+        final Map<String,String> treeMap = db.createTreeMap("test");
 
         for (int i = 0; i < 1001; i++) {
             treeMap.put(String.valueOf(i),String.valueOf(i));
         }
-        recman.commit();
+        db.commit();
         System.out.println("finished adding");
 
         treeMap.clear();
-        recman.commit();
+        db.commit();
         System.out.println("finished clearing");
         assertTrue(treeMap.isEmpty());
     }

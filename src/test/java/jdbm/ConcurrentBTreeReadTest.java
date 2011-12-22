@@ -51,7 +51,7 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
         
     }
     
-    private RecordManager2 recman;
+    private DBAbstract db;
     
     private BTree btree;
     
@@ -61,9 +61,9 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
     
     public void setUp() throws Exception {
         super.setUp();
-        recman = newRecordManager();
-        btree = BTree.createInstance(recman, (Comparator) Collections.reverseOrder());
-        System.err.println(recman.getClass());
+        db = newRecordManager();
+        btree = BTree.createInstance(db, (Comparator) Collections.reverseOrder());
+        System.err.println(db.getClass());
     }  
 
     
@@ -112,7 +112,7 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
     }
 
     private void commit() throws IOException {
-        recman.commit();
+        db.commit();
     }
 
     private void read() {

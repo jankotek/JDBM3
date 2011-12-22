@@ -211,12 +211,12 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
     public void testPersisted() throws Exception{
         Bean1 b1 = new Bean1("abc","dcd");
         String f = newTestFile();
-        RecordManager2 r1 = (RecordManager2) new RecordManagerBuilder(f).build();
+        DBAbstract r1 = (DBAbstract) new DBMaker(f).build();
         long recid = r1.insert(b1);
         r1.commit();
         r1.close();
 
-        RecordManager2 r2 = (RecordManager2) new RecordManagerBuilder(f).build();
+        DBAbstract r2 = (DBAbstract) new DBMaker(f).build();
 
         Bean1 b2 = (Bean1) r2.fetch(recid);
         r2.close();

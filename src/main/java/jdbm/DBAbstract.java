@@ -20,10 +20,10 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * An abstract class implementing most of RecordManager.
+ * An abstract class implementing most of DB.
  * It also has some JDBM package protected stuff (getNamedRecord)
  */
- abstract class RecordManager2 implements RecordManager {
+ abstract class DBAbstract implements DB {
 
 
     /**

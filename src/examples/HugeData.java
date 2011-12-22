@@ -15,22 +15,22 @@ public class HugeData {
 	public static void main(String[] args) throws IOException {
 
 		/** open db */
-        RecordManager recman = new RecordManagerBuilder("hugedata").build();
-        PrimaryTreeMap<Long, String> m = recman.createTreeMap("hugemap");
+        DB db = new DBMaker("hugedata").build();
+        PrimaryTreeMap<Long, String> m = db.createTreeMap("hugemap");
         
         /** insert 1e7 records */
         for(long i = 0;i<1e8;i++){
         	m.put(i, "aa"+i);        
         	if(i%1e5==0){
         		/** Commit periodically, otherwise program would run out of memory */         		 
-        		recman.commit();
+        		db.commit();
         		System.out.println(i);        		
         	}
         		
         }
         
-        recman.commit();
-        recman.close();
+        db.commit();
+        db.close();
         System.out.println("DONE");
         
 	}

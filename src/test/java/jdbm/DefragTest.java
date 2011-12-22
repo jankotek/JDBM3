@@ -8,18 +8,18 @@ public class DefragTest extends TestCaseWithTestFile{
 	
 	public void testDefrag1() throws IOException{
 		String file = newTestFile();
-		RecordManagerStorage m = new RecordManagerStorage(file, false, false);
+		DBStore m = new DBStore(file, false, false);
 		long loc = m.insert("123");
 		m.defrag();		
 		m.close();
-		m = new RecordManagerStorage(file, false,  false);
+		m = new DBStore(file, false,  false);
 		assertEquals(m.fetch(loc),"123");
 	}
 	
 	
 	public void testDefrag2() throws IOException{
 		String file = newTestFile();
-		RecordManagerStorage m = new RecordManagerStorage(file, false, false);
+		DBStore m = new DBStore(file, false, false);
 		TreeMap<Long,String> map = new TreeMap<Long, String>();
 		for(int i = 0;i<10000;i++){
 			long loc = m.insert(""+i);
@@ -28,7 +28,7 @@ public class DefragTest extends TestCaseWithTestFile{
 		
 		m.defrag();		
 		m.close();
-		m = new RecordManagerStorage(file, false, false);
+		m = new DBStore(file, false, false);
 		for(Long l : map.keySet()){
 			String val = map.get(l);
 			assertEquals(val,m.fetch(l));
@@ -39,7 +39,7 @@ public class DefragTest extends TestCaseWithTestFile{
 	
 	public void testDefragBtree() throws IOException{
 		String file = newTestFile();
-		RecordManagerStorage m = new RecordManagerStorage(file, false, false);
+		DBStore m = new DBStore(file, false, false);
 		Map t = m.createTreeMap("aa");
 		TreeMap t2 = new TreeMap();
 		for(int i =0;i<10000;i ++ ){
@@ -49,14 +49,14 @@ public class DefragTest extends TestCaseWithTestFile{
 					
 		m.defrag();		
 		m.close();
-		m = new RecordManagerStorage(file, false, false);
+		m = new DBStore(file, false, false);
 		t = m.loadTreeMap("aa");
 		assertEquals(t,t2);
 	}
 
         public void testDefragLinkedList() throws Exception{
             String file = newTestFile();
-            RecordManagerStorage r = new RecordManagerStorage(file, false, false);
+            DBStore r = new DBStore(file, false, false);
             List l = r.createLinkedList("test");
             Map<Long,Double> junk = new LinkedHashMap<Long,Double>();
 
@@ -73,7 +73,7 @@ public class DefragTest extends TestCaseWithTestFile{
             r.defrag();
 
             r.close();
-            r = new RecordManagerStorage(file, false, false);
+            r = new DBStore(file, false, false);
             assertEquals(oldRecCount,r.countRecords());
 
             //compare that list was unchanged

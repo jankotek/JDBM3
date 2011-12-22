@@ -35,9 +35,9 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
      */
     public void testBasics() throws IOException {
 
-        RecordManager recman = newRecordManager();
+        DB db = newRecordManager();
 
-        HTree tree = (HTree) recman.createHashMap("test");
+        HTree tree = (HTree) db.createHashMap("test");
 
         HTreeBucket bucket = new HTreeBucket(tree, (byte) 0);
 
@@ -64,7 +64,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
         s = (String)bucket.getValue("key");
         assertEquals(null, s);
 
-        recman.close();
+        db.close();
     }
 
     public static class LongSerializer implements Serializer<Long> {
@@ -86,13 +86,13 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
         Serializer<Long> ser = new LongSerializer();
 
 
-        RecordManager recman = newRecordManager();
-        Map<Long,Long> s = recman.createHashMap("test", ser, ser);
+        DB db = newRecordManager();
+        Map<Long,Long> s = db.createHashMap("test", ser, ser);
 
         s.put(new Long(1),new Long(2));
         s.put(new Long(4), new Long(5));
-        recman.commit();
-        recman.clearCache();
+        db.commit();
+        db.clearCache();
         assertTrue(s.size()==2);
         assertEquals(s.get(new Long(1)),new Long(2));
         assertEquals(s.get(new Long(4)),new Long(5));

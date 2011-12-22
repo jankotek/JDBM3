@@ -24,19 +24,19 @@ public class FileLockTest extends TestCaseWithTestFile {
 	public void testLock() throws IOException {
 		String file = newTestFile();
 		
-		RecordManager recman1 = new RecordManagerBuilder(file).build();
+		DB db1 = new DBMaker(file).build();
 		//now open same file second time, exception should be thrown
 		try{
-			RecordManager recman2 = new RecordManagerBuilder(file).build();
+			DB db2 = new DBMaker(file).build();
 			fail("Exception should be thrown if file was locked");
 		}catch(IOError e){
 			//expected
 		}
 				
-		recman1.close();
+		db1.close();
 		
 		//after close lock should be released, reopen
-		RecordManager recman3 = new RecordManagerBuilder(file).build();
-		recman3.close();
+		DB db3 = new DBMaker(file).build();
+		db3.close();
 	}
 }

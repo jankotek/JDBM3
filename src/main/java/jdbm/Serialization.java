@@ -50,8 +50,8 @@ class Serialization extends SerialClassInfo implements Serializer
 
     private static final String UTF8 = "UTF-8";
 
-    Serialization(RecordManager2 recman, long serialClassInfoRecid) throws IOException {
-        super(recman, serialClassInfoRecid);
+    Serialization(DBAbstract db, long serialClassInfoRecid) throws IOException {
+        super(db, serialClassInfoRecid);
     }
 
     public Serialization(ArrayList<ClassInfo> info) {

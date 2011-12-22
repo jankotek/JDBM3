@@ -31,7 +31,7 @@ import java.util.ListIterator;
  */
 public class LinkedListTest extends TestCaseWithTestFile {
 
-    RecordManager recman;
+    DB db;
 
 	LinkedList ll;
     
@@ -117,7 +117,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
 		for (int i = 0; i >= 150 && (i < 200); i++)
 			assertTrue("Failed to ad elements properly",
 					ll.get(i) == objArray[i - 100]);
-		List myList = recman.createLinkedList("testXX");
+		List myList = db.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -145,7 +145,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
      */
     public void test_addAllILjava_util_Collection_2() {
         // Regression for HARMONY-467
-        LinkedList obj = (LinkedList) recman.createLinkedList("testXX");
+        LinkedList obj = (LinkedList) db.createLinkedList("testXX");
         try {
             obj.addAll(-1, (Collection) null);
             fail("IndexOutOfBoundsException expected");
@@ -175,7 +175,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
 			assertTrue("Failed to add to existing list", ll.get(i + 100)
 					.equals(l.get(i)));
 		}
-		List myList = recman.createLinkedList("testXX");
+		List myList = db.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -305,7 +305,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
 			}
 			++n;
 		}
-		List myList = recman.createLinkedList("testXX");
+		List myList = db.createLinkedList("testXX");
 		myList.add(null);
 		myList.add("Blah");
 		myList.add(null);
@@ -414,7 +414,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
 		Object[] retArray;
 		retArray = ll.toArray(argArray);
 		assertTrue("Returned different array than passed", retArray == argArray);
-		List retList = recman.createLinkedList("testXX1");
+		List retList = db.createLinkedList("testXX1");
                 retList.addAll(Arrays.asList(retArray));
 		Iterator li = ll.iterator();
 		Iterator ri = retList.iterator();
@@ -433,7 +433,7 @@ public class LinkedListTest extends TestCaseWithTestFile {
 		assertTrue("Returned different array than passed", retArray == argArray);
 		retArray = ll.toArray(argArray);
 		assertTrue("Returned different array than passed", retArray == argArray);
-		retList = recman.createLinkedList("testXX2");
+		retList = db.createLinkedList("testXX2");
                 retList.addAll(Arrays.asList(retArray));
 		li = ll.iterator();
 		ri = retList.iterator();
@@ -470,12 +470,12 @@ public class LinkedListTest extends TestCaseWithTestFile {
 	 */
 	public void setUp() throws Exception {
         super.setUp();
-            this.recman = newRecordManager();
-		ll = (LinkedList) recman.createLinkedList("ll");
+            this.db = newRecordManager();
+		ll = (LinkedList) db.createLinkedList("ll");
 		for (int i = 0; i < objArray.length; i++) {
 			ll.add(objArray[i]);
         }
-        testList = (LinkedList<Object>) recman.createLinkedList("testList");
+        testList = (LinkedList<Object>) db.createLinkedList("testList");
         testObjOne = new Object();
         testObjTwo = new Object();
         testObjThree = new Object();

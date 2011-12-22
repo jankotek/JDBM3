@@ -49,9 +49,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author Alex Boisvert
  */
-class BTree<K,V>
-    implements  JdbmBase<K,V>
-{
+class BTree<K,V>{
 
 
     private static final boolean DEBUG = false;
@@ -67,11 +65,11 @@ class BTree<K,V>
     /**
      * Record manager used to persist changes in BTreeNodes
      */
-    protected transient RecordManager2 _recman;
+    protected transient DBAbstract _db;
 
 
     /**
-     * This BTree's record ID in the RecordManager.
+     * This BTree's record ID in the DB.
      */
     private transient long _recid;
 
@@ -167,26 +165,26 @@ class BTree<K,V>
     /**
      * Create a new persistent BTree, with 16 entries per node.
      *
-     * @param recman Record manager used for persistence.
+     * @param db Record manager used for persistence.
      * @param comparator Comparator used to order index entries
      */
-    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
+    public static <K,V> BTree<K,V> createInstance( DBAbstract db,
                                         Comparator<K> comparator)
         throws IOException
     {
-        return createInstance( recman, comparator, null, null);
+        return createInstance( db, comparator, null, null);
     }
     
     /**
      * Create a new persistent BTree, with 16 entries per node.
      *
-     * @param recman Record manager used for persistence.
+     * @param db Record manager used for persistence.
      */
     @SuppressWarnings("unchecked")
-	public static <K extends Comparable,V> BTree<K,V> createInstance( RecordManager2 recman)
+	public static <K extends Comparable,V> BTree<K,V> createInstance( DBAbstract db)
         throws IOException
     {
-    	BTree<K,V> ret = createInstance( recman, null, null, null);
+    	BTree<K,V> ret = createInstance( db, null, null, null);
         return ret;
     }
 
@@ -195,12 +193,12 @@ class BTree<K,V>
     /**
      * Create a new persistent BTree with the given number of entries per node.
      *
-     * @param recman Record manager used for persistence.
+     * @param db Record manager used for persistence.
      * @param comparator Comparator used to order index entries
      * @param keySerializer Serializer used to serialize index keys (optional)
      * @param valueSerializer Serializer used to serialize index values (optional)
      */
-    public static <K,V> BTree<K,V> createInstance( RecordManager2 recman,
+    public static <K,V> BTree<K,V> createInstance( DBAbstract db,
                                         Comparator<K> comparator,
                                         Serializer<K> keySerializer,
                                         Serializer<V> valueSerializer)
@@ -208,18 +206,18 @@ class BTree<K,V>
     {
         BTree<K,V> btree;
 
-        if ( recman == null ) {
-            throw new IllegalArgumentException( "Argument 'recman' is null" );
+        if ( db == null ) {
+            throw new IllegalArgumentException( "Argument 'db' is null" );
         }
 
         btree = new BTree<K,V>();
-        btree._recman = recman;
+        btree._db = db;
         btree._comparator = comparator;
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
         btree._nodeSerializer = new BTreeNode<K,V>();
         btree._nodeSerializer._btree = btree;
-        btree._recid = recman.insert( btree, btree.getRecordManager().defaultSerializer() );
+        btree._recid = db.insert( btree, btree.getRecordManager().defaultSerializer() );
         return btree;
     }
 
@@ -227,16 +225,16 @@ class BTree<K,V>
     /**
      * Load a persistent BTree.
      *
-     * @param recman RecordManager used to store the persistent btree
+     * @param db DB used to store the persistent btree
      * @param recid Record id of the BTree
      */
     @SuppressWarnings("unchecked")
-	public static <K,V> BTree<K,V> load( RecordManager2 recman, long recid )
+	public static <K,V> BTree<K,V> load( DBAbstract db, long recid )
         throws IOException
     {
-        BTree<K,V> btree = (BTree<K,V>) recman.fetch( recid);
+        BTree<K,V> btree = (BTree<K,V>) db.fetch( recid);
         btree._recid = recid;
-        btree._recman = recman;
+        btree._db = db;
         btree._nodeSerializer = new BTreeNode<K,V>();
         btree._nodeSerializer._btree = btree;
         return btree;
@@ -287,7 +285,7 @@ class BTree<K,V>
 	            _root = rootNode._recid;
 	            _height = 1;
 	            _entries = 1;
-	            _recman.update( _recid, this);
+	            _db.update( _recid, this);
                 modCount++;
 	            //notifi listeners
 	            for(RecordListener<K,V> l : recordListeners){
@@ -313,7 +311,7 @@ class BTree<K,V>
                 dirty = true;
             }
             if ( dirty ) {
-                _recman.update( _recid, this);
+                _db.update( _recid, this);
             }
             //notify listeners
             for(RecordListener<K,V> l : recordListeners){
@@ -362,7 +360,7 @@ class BTree<K,V>
 	            _height -= 1;
 	            dirty = true;
 	
-                _recman.delete(_root);
+                _db.delete(_root);
 	            if ( _height == 0 ) {
 	                _root = 0;
 	            } else {
@@ -375,7 +373,7 @@ class BTree<K,V>
 	            dirty = true;
 	        }
 	        if ( dirty ) {
-	            _recman.update( _recid, this);
+	            _db.update( _recid, this);
 	        }
 	        if(remove._value!=null)
 	        	for(RecordListener<K,V> l : recordListeners)
@@ -526,7 +524,7 @@ class BTree<K,V>
         if ( _root == 0 ) {
             return null;
         }
-        BTreeNode<K,V> root = _recman.fetch( _root, _nodeSerializer );
+        BTreeNode<K,V> root = _db.fetch( _root, _nodeSerializer );
         if (root != null) {
             root._recid = _root;
             root._btree = this;
@@ -561,14 +559,14 @@ class BTree<K,V>
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
     }
 
-    public static void defrag(long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+    public static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
         try{
             byte[] data = r1.fetchRaw(recid);
             r2.forceInsert(recid,data);
             DataInput in = new DataInputOutput(data);
             BTree t = (BTree) r1.defaultSerializer().deserialize(in);
             t.loadValues = false;
-            t._recman = r1;
+            t._db = r1;
             t._nodeSerializer = new BTreeNode(t,false);
 
 
@@ -627,8 +625,8 @@ class BTree<K,V>
 
 
 
-	public RecordManager2 getRecordManager() {
-		return _recman;
+	public DBAbstract getRecordManager() {
+		return _db;
 	}
 	
 
@@ -647,7 +645,7 @@ class BTree<K,V>
 	        BTreeNode<K,V> rootNode = getRoot();
 	        if (rootNode != null)
 	            rootNode.delete();
-	        _recman.delete(_recid);
+	        _db.delete(_recid);
             _entries = 0;
             modCount++;
     	} finally {

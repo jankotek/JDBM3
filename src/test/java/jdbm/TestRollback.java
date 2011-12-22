@@ -33,18 +33,18 @@ public class TestRollback
     {
 
         // Note: We start out with an empty file
-        RecordManager2 recman =  newRecordManager();
+        DBAbstract db =  newRecordManager();
 
-        HTree tree = (HTree) recman.createHashMap("test");
+        HTree tree = (HTree) db.createHashMap("test");
 
         tree.put( "Foo", "Bar" );
         tree.put( "Fo", "Fum" );
 
-        recman.commit();
+        db.commit();
 
         tree.put( "Hello", "World" );
 
-        recman.rollback();
+        db.rollback();
 
         assertTrue( tree.get( "Foo" ).equals( "Bar" ) );
         assertTrue( tree.get( "Fo" ).equals( "Fum" ) );
@@ -59,16 +59,16 @@ public class TestRollback
         throws Exception
     {
 
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
-        HTree tree = (HTree) recman.createHashMap("test");
+        HTree tree = (HTree) db.createHashMap("test");
 
         tree.put( "hello", "world" );
         tree.put( "goodnight", "gracie" );
-        recman.commit();
+        db.commit();
 
         tree.put( "derek", "dick" );
-        recman.rollback();
+        db.rollback();
 
         assertTrue( tree.get( "derek" ) == null );
         assertTrue( tree.get( "goodnight" ).equals( "gracie" ) );
@@ -84,18 +84,18 @@ public class TestRollback
     {
 
         // Note: We start out with an empty file
-        RecordManager2 recman =  newRecordManager();
+        DBAbstract db =  newRecordManager();
 
-        HTree<Object, Object> tree = (HTree<Object, Object>) recman.createHashMap("test");
+        HTree<Object, Object> tree = (HTree<Object, Object>) db.createHashMap("test");
 
         tree.put("Foo", "Bar");
         tree.put("Fo", "Fum");
 
-        recman.commit();
+        db.commit();
 
         tree.put("Hello", "World");
 
-        recman.rollback();
+        db.rollback();
 
         assertTrue( tree.get("Foo").equals( "Bar" ) );
         assertTrue( tree.get("Fo").equals( "Fum" ) );
@@ -109,31 +109,31 @@ public class TestRollback
     public void testRollback2b() 
         throws Exception
     {
-        RecordManager2 recman;
+        DBAbstract db;
         long root;
 
         // Note: We start out with an empty file
-        recman = newRecordManager();
+        db = newRecordManager();
 
-        root = recman.getNamedObject( "xyz" );
+        root = db.getNamedObject( "xyz" );
 
         BTree tree = null;
         if ( root == 0 ) {
             // create a new one
-            tree = BTree.createInstance( recman );
+            tree = BTree.createInstance( db );
             root = tree.getRecid();
-            recman.setNamedObject( "xyz", root );
-            recman.commit();
+            db.setNamedObject( "xyz", root );
+            db.commit();
         } else {
-            tree = BTree.load( recman, root );
+            tree = BTree.load( db, root );
         }
 
         tree.insert( "hello", "world",true );
         tree.insert( "goodnight", "gracie",true );
-        recman.commit();
+        db.commit();
 
         tree.insert( "derek", "dick",true );
-        recman.rollback();
+        db.rollback();
 
         assertTrue( tree.get("derek") == null );
         assertTrue( tree.get("goodnight").equals( "gracie" ) );

@@ -37,15 +37,15 @@ public class HTreeTest extends TestCaseWithTestFile {
      */
     public void testIterator() throws IOException {
         
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
-        HTree testTree = (HTree) recman.createHashMap("tree");
+        HTree testTree = (HTree) db.createHashMap("tree");
     
         int total = 10;
         for ( int i = 0; i < total; i++ ) {
             testTree.put( Long.valueOf("" + i), Long.valueOf("" + i) );
         }
-        recman.commit();
+        db.commit();
     
         Iterator fi = testTree.values().iterator();
         Object item;
@@ -56,12 +56,12 @@ public class HTreeTest extends TestCaseWithTestFile {
         }
         assertEquals( count, total );
 
-        recman.close();
+        db.close();
     }
 
     public void testRecordListener() throws IOException{
-        RecordManager2 recman = newRecordManager();
-        HTree<Integer,String> tree = (HTree) recman.createHashMap("test");
+        DBAbstract db = newRecordManager();
+        HTree<Integer,String> tree = (HTree) db.createHashMap("test");
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
         final List<SimpleEntry<Integer,String>> updNew = new ArrayList();

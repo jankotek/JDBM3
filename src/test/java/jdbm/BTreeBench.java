@@ -29,7 +29,7 @@ import java.util.Hashtable;
 public class BTreeBench extends TestCaseWithTestFile {
 
 
-	RecordManager2 recman;
+	DBAbstract db;
 
     /**
      * Test w/o compression or specialized key or value serializers.
@@ -37,14 +37,14 @@ public class BTreeBench extends TestCaseWithTestFile {
      * @throws IOException
      */
     public void test_001() throws IOException {
-    	recman = newRecordManager();
-        BTree<Long,Long> tree = BTree.createInstance(recman);
-        doTest( recman, tree, 5001 );
-        recman.close();
+    	db = newRecordManager();
+        BTree<Long,Long> tree = BTree.createInstance(db);
+        doTest( db, tree, 5001 );
+        db.close();
     }
     
     
-    public static void doTest( RecordManager recman, BTree<Long,Long> tree, int ITERATIONS )
+    public static void doTest( DB db, BTree<Long,Long> tree, int ITERATIONS )
     	throws IOException
     {
 
@@ -57,7 +57,7 @@ public class BTreeBench extends TestCaseWithTestFile {
             if ( ( i % 5000 ) == 0 ) {
                 long elapsed = System.currentTimeMillis() - beginTime;
                 System.out.println( "Iterations=" + i + " Objects=" + tree.size()+", elapsed="+elapsed+"ms" );
-                recman.commit();
+                db.commit();
             }
             if ( hash.get( random ) == null ) {
                 //System.out.println( "Insert " + random );

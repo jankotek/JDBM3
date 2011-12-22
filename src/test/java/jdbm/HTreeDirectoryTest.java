@@ -35,16 +35,16 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testBasics() throws IOException {
         System.out.println("testBasics");
 
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
-        HTree tree = (HTree) recman.createHashMap("test");
+        HTree tree = (HTree) db.createHashMap("test");
         HTreeDirectory dir = tree.getRoot();
 
         dir.put("key", "value");
         String s = (String)dir.get("key");
         assertEquals("value", s);
 
-        recman.close();
+        db.close();
     }
 
     /**
@@ -53,9 +53,9 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testMixed() throws IOException {
         System.out.println("testMixed");
 
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
-        HTree tree = (HTree) recman.createHashMap("test");
+        HTree tree = (HTree) db.createHashMap("test");
         HTreeDirectory dir = tree.getRoot();
 
         Hashtable hash = new Hashtable(); // use to compare results
@@ -67,20 +67,20 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
             dir.put("key"+i, "value"+i);
             hash.put("key"+i, "value"+i);
         }
-        recman.commit();
+        db.commit();
 
         for (int i=0; i<max; i++) {
             String s = (String)dir.get("key"+i);
             assertEquals("value"+i, s);
         }
-        recman.commit();
+        db.commit();
 
         // replace only even values
         for (int i=0; i<max; i+=2) {
             dir.put("key"+i, "value"+(i*2+1));
             hash.put("key"+i, "value"+(i*2+1));
         }
-        recman.commit();
+        db.commit();
 
         for (int i=0; i<max; i++) {
             if ((i%2) == 1) {
@@ -93,14 +93,14 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
                 assertEquals("value"+(i*2+1), s);
             }
         }
-        recman.commit();
+        db.commit();
 
         // remove odd numbers
         for (int i=1; i<max; i+=2) {
             dir.remove("key"+i);
             hash.remove("key"+i);
         }
-        recman.commit();
+        db.commit();
 
         for (int i=0; i<max; i++) {
             if ((i%2) == 1) {
@@ -113,10 +113,10 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
                 assertEquals("value"+(i*2+1), s);
             }
         }
-        recman.commit();
+        db.commit();
 
-        recman.close();
-        recman = null;
+        db.close();
+        db = null;
     }
 
     void checkEnumerations(Hashtable hash, HTreeDirectory dir)

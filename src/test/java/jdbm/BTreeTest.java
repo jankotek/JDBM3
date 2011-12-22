@@ -96,7 +96,7 @@ public class BTreeTest
      *  Basic tests
      */
     public void testBasics() throws IOException {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -114,8 +114,8 @@ public class BTreeTest
             System.out.println("BTreeTest.testBasics");
         }
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman, new ByteArrayComparator() );
+        db = newRecordManager();
+        tree = BTree.createInstance( db, new ByteArrayComparator() );
 
         tree.insert( test1, value1, false );
         tree.insert( test2, value2, false );
@@ -141,14 +141,14 @@ public class BTreeTest
             throw new Error( "Test3 shouldn't be found" );
         }
 
-        recman.close();
+        db.close();
     }
 
     /**
      *  Basic tests, just use the simple test possibilities of junit (cdaller)
      */
     public void testBasics2() throws IOException {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -165,8 +165,8 @@ public class BTreeTest
         if ( DEBUG )
             System.out.println("BTreeTest.testBasics2");
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman, new ByteArrayComparator() );
+        db = newRecordManager();
+        tree = BTree.createInstance( db, new ByteArrayComparator() );
 
         tree.insert( test1, value1, false);
         tree.insert( test2, value2, false);
@@ -176,19 +176,19 @@ public class BTreeTest
         assertEquals( 0, ByteArrayComparator.compareByteArray( value2, (byte[]) tree.get(test2) ) );
         assertEquals( null, (byte[]) tree.get(test3) );
 
-        recman.close();
+        db.close();
      }
 
 
     /**
-     *  Test what happens after the recmanager has been closed but the
+     *  Test what happens after the dbager has been closed but the
      *  btree is accessed. WHAT SHOULD HAPPEN???????????
      * (cdaller)
      */
     public void testClose()
         throws IOException
     {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
         byte[]         test, test0, test1, test2, test3;
         byte[]         value1, value2;
@@ -205,8 +205,8 @@ public class BTreeTest
         if ( DEBUG )
             System.out.println("BTreeTest.testClose");
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman, new ByteArrayComparator() );
+        db = newRecordManager();
+        tree = BTree.createInstance( db, new ByteArrayComparator() );
 
         tree.insert( test1, value1, false );
         tree.insert( test2, value2, false );
@@ -216,7 +216,7 @@ public class BTreeTest
         assertEquals( 0, ByteArrayComparator.compareByteArray(value2, (byte[]) tree.get(test2)) );
         assertEquals( null, (byte[]) tree.get(test3) );
 
-        recman.close();
+        db.close();
 
         try {
             tree.browse();
@@ -270,14 +270,14 @@ public class BTreeTest
     public void testInsert()
         throws IOException
     {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
 
         if ( DEBUG )
             System.out.println("BTreeTest.testInsert");
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman);
+        db = newRecordManager();
+        tree = BTree.createInstance( db);
 
         // insert differnt objects and retrieve them
         tree.insert("test1", "value1",false);
@@ -302,7 +302,7 @@ public class BTreeTest
         ObjectTT btree_obj = (ObjectTT)tree.get("myownobject");
         assertEquals(expected_obj, btree_obj);
 
-        recman.close();
+        db.close();
     }
 
 
@@ -312,15 +312,15 @@ public class BTreeTest
     public void testRemove()
         throws IOException
     {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
 
         if ( DEBUG ) {
             System.out.println( "BTreeTest.testRemove" );
         }
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman);
+        db = newRecordManager();
+        tree = BTree.createInstance( db);
 
         tree.insert("test1", "value1",false);
         tree.insert("test2","value2",false);
@@ -350,7 +350,7 @@ public class BTreeTest
 
         assertEquals( 0, tree.size() );
 
-        recman.close();
+        db.close();
     }
 
     /**
@@ -359,14 +359,14 @@ public class BTreeTest
     public void testFind()
         throws IOException
     {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
 
         if ( DEBUG )
             System.out.println("BTreeTest.testFind");
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman);
+        db = newRecordManager();
+        tree = BTree.createInstance( db);
 
         tree.insert("test1", "value1",false);
         tree.insert("test2","value2",false);
@@ -380,7 +380,7 @@ public class BTreeTest
 
         assertEquals(null,(String)tree.get("someoneelse"));
 
-        recman.close();
+        db.close();
     }
     /**
      *  Test deletion of btree from record manager. (kday)
@@ -393,14 +393,14 @@ public class BTreeTest
     {
         if ( DEBUG )
             System.out.println("BTreeTest.testFind");
-        RecordManager2 recman = newRecordManager();
-        BTree<String, Serializable> tree = BTree.createInstance( recman);
+        DBAbstract db = newRecordManager();
+        BTree<String, Serializable> tree = BTree.createInstance( db);
 
         // put enough data into the tree so we definitely have multiple nodes
         for (int count = 1; count <= 1000; count++){
             tree.insert("num" + count,new Integer(count),false);
             if (count % 100 == 0)
-                recman.commit();
+                db.commit();
         }
         List<Long> out = new ArrayList<Long>();
         tree.dumpChildNodeRecIDs(out);
@@ -415,16 +415,16 @@ public class BTreeTest
         throws IOException
     {
 
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
 
         if ( DEBUG )
             System.out.println("BTreeTest.testLargeDataAmount");
 
-        recman = newRecordManager();
-        // recman = new jdbm.recman.BaseRecordManager( "test" );
+        db = newRecordManager();
+        // db = new jdbm.db.BaseRecordManager( "test" );
         
-        tree = BTree.createInstance( recman);
+        tree = BTree.createInstance( db);
         // tree.setSplitPoint( 4 );
 
         int iterations = 10000;
@@ -453,12 +453,12 @@ public class BTreeTest
 
          assertEquals(0,tree.size());
 
-         recman.close();
+         db.close();
    }
     
     public void testRecordListener() throws IOException{
-        RecordManager2 recman = newRecordManager();
-        BTree<Integer,String> tree = BTree.createInstance( recman);
+        DBAbstract db = newRecordManager();
+        BTree<Integer,String> tree = BTree.createInstance( db);
         final List<SimpleEntry<Integer,String>> dels = new ArrayList();
         final List<SimpleEntry<Integer,String>> ins = new ArrayList();
         final List<SimpleEntry<Integer,String>> updNew = new ArrayList();
@@ -516,9 +516,9 @@ public class BTreeTest
 
     /**
      * Tests the corner case of deleting all nodes from the tree.  In this case, all BTreeNodes
-     * associated with the tree should be removed from the recman.
+     * associated with the tree should be removed from the db.
      * 
-     * We are also going to test to make sure the recman file doesn't grow (leak) if we repeat the
+     * We are also going to test to make sure the db file doesn't grow (leak) if we repeat the
      * process a number of times.
      * @throws Exception
      */
@@ -532,12 +532,12 @@ public class BTreeTest
         String recordManagerBasename = newTestFile();
         String recordManagerDBname = recordManagerBasename+".d.0";
         
-        long previousRecmanSize = 0;
+        long previousdbSize = 0;
         for (int i = 0; i < 5; i++){
-            RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(recordManagerBasename).disableCache().build();
+            DBAbstract db = (DBAbstract) new DBMaker(recordManagerBasename).disableCache().build();
       
             try{
-                BTree<String, Serializable> tree = BTree.createInstance( recman);
+                BTree<String, Serializable> tree = BTree.createInstance( db);
                 String[] keys = new String[1000];
                 for (int count = 0; count < 1000; count++){
                     keys[count] = "num" + count;
@@ -547,31 +547,31 @@ public class BTreeTest
                 for (int count = 0; count < 1000; count++){
                     tree.insert(keys[count],new Integer(count),false);
                     if (count % 100 == 0)
-                        recman.commit();
+                        db.commit();
                 }
-                recman.commit();
+                db.commit();
                 
-                long currentRecmanSize = new File(recordManagerDBname).length();
-                assertTrue("file size too small "+ currentRecmanSize, currentRecmanSize > 0);
+                long currentdbSize = new File(recordManagerDBname).length();
+                assertTrue("file size too small "+ currentdbSize, currentdbSize > 0);
 
                 
                 // now remove it all
                 for (int count = 0; count < 1000; count++){
                     tree.remove(keys[count]);
                     if (count % 100 == 0)
-                        recman.commit();
+                        db.commit();
                 }
-                recman.commit();
+                db.commit();
                 
                 BTreeNode root = tree.getRoot();
                 assertNull(root);
                 
             } finally {
-                recman.close();
-                long currentRecmanSize = new File(recordManagerDBname).length();
-                assertTrue("file size too small "+ currentRecmanSize, currentRecmanSize > 0);
-                if (previousRecmanSize != 0){
-                    assertTrue(currentRecmanSize == previousRecmanSize);
+                db.close();
+                long currentdbSize = new File(recordManagerDBname).length();
+                assertTrue("file size too small "+ currentdbSize, currentdbSize > 0);
+                if (previousdbSize != 0){
+                    assertTrue(currentdbSize == previousdbSize);
                 }
             }
         }
@@ -587,14 +587,14 @@ public class BTreeTest
   public void testMultithreadAccess()
     throws IOException
   {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          tree;
 
         if ( DEBUG )
             System.out.println("BTreeTest.testMultithreadAccess");
 
-        recman = newRecordManager();
-        tree = BTree.createInstance( recman);
+        db = newRecordManager();
+        tree = BTree.createInstance( db);
 
         TestThread[] thread_pool = new TestThread[THREAD_NUMBER];
         String name;
@@ -636,7 +636,7 @@ public class BTreeTest
         } catch( InterruptedException ignore ) {
             ignore.printStackTrace();
         }
-        recman.close();
+        db.close();
     }
 
 

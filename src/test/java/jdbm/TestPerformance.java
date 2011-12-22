@@ -46,7 +46,7 @@ public class TestPerformance extends TestCase {
     public void testInserts() throws Exception {
 
 
-        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
+        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
 
         int inserts = 0;
         long start = System.currentTimeMillis();
@@ -55,19 +55,19 @@ public class TestPerformance extends TestCase {
             long stop = 0;
             while (true) {
 
-                recman.insert(UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
+                db.insert(UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
                         (byte) rnd.nextInt()));
                 inserts++;
                 
                 if ((inserts % 1000) == 0) {
-                	recman.commit();
+                	db.commit();
                     stop = System.currentTimeMillis();
                     if (stop - start >= DURATION)
                         break;
 
                 }
             }
-            recman.close();
+            db.close();
             System.out.println("Inserts: " + inserts + " in "
                                + (stop - start) + " millisecs");
         } catch (Throwable e) {
@@ -80,19 +80,19 @@ public class TestPerformance extends TestCase {
      *  Create a database, return array of rowids.
      */
     private long[] makeRows() throws Exception {
-        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder( testfile).disableTransactions().build();
+        DBAbstract db = (DBAbstract) new DBMaker( testfile).disableTransactions().build();
         long[] retval = new long[RECORDS];
         System.out.print("Creating test database");
         long start = System.currentTimeMillis();
         try {
             for (int i = 0; i < RECORDS; i++) {
-                retval[i] = recman.insert(UtilTT
+                retval[i] = db.insert(UtilTT
                                        .makeRecord(rnd.nextInt(MAXSIZE),
                                                (byte) rnd.nextInt()));
                 if ((i % 100) == 0)
                     System.out.print(".");
             }
-            recman.close();
+            db.close();
         } catch (Throwable e) {
             e.printStackTrace();
             fail("unexpected exception during db creation: " + e);
@@ -109,7 +109,7 @@ public class TestPerformance extends TestCase {
     public void testFetches() throws Exception {
         long[] rowids = makeRows();
 
-        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
+        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
 
         int fetches = 0;
         long start = System.currentTimeMillis();
@@ -117,7 +117,7 @@ public class TestPerformance extends TestCase {
 
             long stop = 0;
             while (true) {
-                recman.fetch( rowids[ rnd.nextInt( RECORDS ) ] );
+                db.fetch( rowids[ rnd.nextInt( RECORDS ) ] );
                 fetches++;
                 if ((fetches % 25) == 0) {
                     stop = System.currentTimeMillis();
@@ -125,7 +125,7 @@ public class TestPerformance extends TestCase {
                         break;
                 }
             }
-            recman.close();
+            db.close();
             System.out.println("Fetches: " + fetches + " in "
                                + (stop - start) + " millisecs");
         } catch (Throwable e) {
@@ -140,7 +140,7 @@ public class TestPerformance extends TestCase {
     public void testUpdates() throws Exception {
         long[] rowids = makeRows();
 
-        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
+        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
 
         int updates = 0;
         long start = System.currentTimeMillis();
@@ -149,7 +149,7 @@ public class TestPerformance extends TestCase {
             long stop = 0;
             while (true) {
 
-                recman.update(rowids[rnd.nextInt(RECORDS)],
+                db.update(rowids[rnd.nextInt(RECORDS)],
                            UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
                                    (byte) rnd.nextInt()));
                 updates++;
@@ -159,7 +159,7 @@ public class TestPerformance extends TestCase {
                         break;
                 }
             }
-            recman.close();
+            db.close();
             System.out.println("Updates: " + updates + " in "
                                + (stop - start) + " millisecs");
         } catch (Throwable e) {
@@ -175,7 +175,7 @@ public class TestPerformance extends TestCase {
 
         long[] rowids = makeRows();
 
-        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder( testfile).build();
+        DBAbstract db = (DBAbstract) new DBMaker( testfile).build();
 
         int deletes = 0;
         long start = System.currentTimeMillis();
@@ -184,7 +184,7 @@ public class TestPerformance extends TestCase {
             long stop = 0;
             // This can be done better...
             for (int i = 0; i < RECORDS; i++) {
-                recman.delete(rowids[i]);
+                db.delete(rowids[i]);
                 deletes++;
                 if ((deletes % 25) == 0) {
                     stop = System.currentTimeMillis();
@@ -192,7 +192,7 @@ public class TestPerformance extends TestCase {
                         break;
                 }
             }
-            recman.close();
+            db.close();
             System.out.println("Deletes: " + deletes + " in "
                                + (stop - start) + " millisecs");
         } catch (Throwable e) {

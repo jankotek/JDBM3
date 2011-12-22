@@ -79,7 +79,7 @@ public class TestStress extends TestCaseWithTestFile {
     public void testBasics() throws Exception {        
 
         String file = newTestFile();
-        RecordManagerStorage recman = new RecordManagerStorage(file, false, false);
+        DBStore db = new DBStore(file, false, false);
 
         // as this code is meant to test data structure calculcations
         // and stuff like that, we may want to disable transactions
@@ -104,9 +104,9 @@ public class TestStress extends TestCaseWithTestFile {
                 if ((i % (ROUNDS / 5)) == 0) {
                     System.out.print(" (reopened at round "
                     + i/RPPROMILLE + ")");
-                    recman.close();
-                    recman = new RecordManagerStorage(file, false, false);
-                    //        recman.disableTransactions();
+                    db.close();
+                    db = new DBStore(file, false, false);
+                    //        db.disableTransactions();
                 }
 
                 // generate a random number and assign ranges to operations:
@@ -127,7 +127,7 @@ public class TestStress extends TestCaseWithTestFile {
                     d[slot] = new RecordData(0, rnd.nextInt(MAXSIZE),
                     (byte) rnd.nextInt());
                     d[slot].rowid =
-                        recman.insert(UtilTT.makeRecord(d[slot].size,
+                        db.insert(UtilTT.makeRecord(d[slot].size,
                                 d[slot].b));
                     recordCount++;
                     inserts++;
@@ -140,7 +140,7 @@ public class TestStress extends TestCaseWithTestFile {
                     }
 
                     slot = getRandomAllocatedSlot(d);
-                    recman.delete(d[slot].rowid);
+                    db.delete(d[slot].rowid);
                     d[slot] = null;
                     recordCount--;
                     deletes++;
@@ -155,7 +155,7 @@ public class TestStress extends TestCaseWithTestFile {
                     slot = getRandomAllocatedSlot(d);
                     d[slot].size = rnd.nextInt(MAXSIZE);
                     d[slot].b = (byte) rnd.nextInt();
-                    recman.update(d[slot].rowid,
+                    db.update(d[slot].rowid,
                     UtilTT.makeRecord(d[slot].size,
                             d[slot].b));
                     updates++;
@@ -166,7 +166,7 @@ public class TestStress extends TestCaseWithTestFile {
                     int root = rnd.nextInt(FileHeader.NROOTS);
                     if(root>10){ //DONT do this for reserved roots
                     	roots[root] = rnd.nextLong();
-                    	recman.setRoot(root, roots[root]);
+                    	db.setRoot(root, roots[root]);
                     	rootsets++;
                     }
                 }
@@ -179,7 +179,7 @@ public class TestStress extends TestCaseWithTestFile {
 
                     int root = getRandomAllocatedRoot();
                     if(root>10){ //DONT do this for reserved roots
-                    	assertEquals("root", roots[root], recman.getRoot(root));
+                    	assertEquals("root", roots[root], db.getRoot(root));
                     	rootgets++;
                     }
                 }
@@ -191,14 +191,14 @@ public class TestStress extends TestCaseWithTestFile {
                     }
 
                     slot = getRandomAllocatedSlot(d);
-                    byte[] data = (byte[]) recman.fetch(d[slot].rowid);
+                    byte[] data = (byte[]) db.fetch(d[slot].rowid);
                     assertTrue("fetch round=" + i + ", slot=" + slot
                     + ", " + d[slot],
                     UtilTT.checkRecord(data, d[slot].size, d[slot].b));
                     fetches++;
                 }
             }
-            recman.close();
+            db.close();
         } catch (Throwable e) {
             e.printStackTrace();
             throw new RuntimeException("aborting test at slot " + slot + ": ", e);

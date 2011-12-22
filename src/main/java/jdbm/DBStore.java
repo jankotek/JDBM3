@@ -45,8 +45,8 @@ import java.util.zip.ZipOutputStream;
  * @author Alex Boisvert
  * @author Cees de Groot
  */
-final class RecordManagerStorage
-    extends RecordManager2
+final class DBStore
+    extends DBAbstract
 {
 
 	private static final String IDR = ".i";
@@ -152,7 +152,7 @@ final class RecordManagerStorage
 
 	private final String _filename;
 
-    public RecordManagerStorage(String filename, boolean readonly, boolean transactionDisabled)throws IOException
+    public DBStore(String filename, boolean readonly, boolean transactionDisabled)throws IOException
     {
         this(filename,readonly,transactionDisabled,null,null);
     }
@@ -165,8 +165,8 @@ final class RecordManagerStorage
      *  @throws IOException when the file cannot be opened or is not
      *          a valid file content-wise.
      */
-    public RecordManagerStorage(String filename, boolean readonly, boolean transactionDisabled,
-                                Cipher cipherIn, Cipher cipherOut )
+    public DBStore(String filename, boolean readonly, boolean transactionDisabled,
+                   Cipher cipherIn, Cipher cipherOut)
         throws IOException
     {
     	_filename = filename;
@@ -638,14 +638,14 @@ final class RecordManagerStorage
 
 
     /**
-     * Check if RecordManager has been closed.  If so, throw an
+     * Check if DB has been closed.  If so, throw an
      * IllegalStateException.
      */
     private void checkIfClosed()
         throws IllegalStateException
     {
         if ( _physFile == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+            throw new IllegalStateException( "DB has been closed" );
         }
     }
 
@@ -768,7 +768,7 @@ final class RecordManagerStorage
 		commit();
 		final String filename2 = _filename+"_defrag"+System.currentTimeMillis();
 		final String filename1 = _filename;
-		RecordManagerStorage recman2 = new RecordManagerStorage(filename2, false, true,cipherIn, cipherOut);
+		DBStore db2 = new DBStore(filename2, false, true,cipherIn, cipherOut);
 
                 //recreate logical file with original page layout
                 {
@@ -783,28 +783,28 @@ final class RecordManagerStorage
                         logicalPages.put(pageid, Utils.EMPTY_STRING);
                     }
 
-                    //fill second recman with logical pages
+                    //fill second db with logical pages
                     long pageCounter = 0;
                     for(
-                      long pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
+                      long pageid = db2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
                       pageid<=maxpageid;
-                      pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE)
+                      pageid = db2._logicPageman.allocate(Magic.TRANSLATION_PAGE)
                     ){
                         pageCounter++;
                         if(pageCounter%1000==0)
-                            recman2.commit();
+                            db2.commit();
                     }
 
-                    //free pages which are not actually logical in second recman
-                    for(long pageid = recman2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                    //free pages which are not actually logical in second db
+                    for(long pageid = db2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
                         pageid<=maxpageid;
                         pageid += Storage.BLOCK_SIZE
                     ){
                         if(logicalPages.get(pageid)==null){
-                            recman2._logicPageman.free(Magic.TRANSLATION_PAGE,Magic.TRANSLATION_PAGE);
+                            db2._logicPageman.free(Magic.TRANSLATION_PAGE,Magic.TRANSLATION_PAGE);
                             pageCounter++;
                             if(pageCounter%1000==0)
-                               recman2.commit();
+                               db2.commit();
                         }
                     }
                     logicalPages = null;
@@ -817,11 +817,11 @@ final class RecordManagerStorage
                 for(Long namedRecid : new TreeSet<Long>(getNameDirectory().values()) ){
                     Object obj = fetch(namedRecid);
                     if(obj instanceof LinkedList){
-                        LinkedList.defrag(namedRecid, this, recman2);
+                        LinkedList.defrag(namedRecid, this, db2);
                     }else if(obj instanceof HTree){
-                        HTree.defrag(namedRecid, this, recman2);
+                        HTree.defrag(namedRecid, this, db2);
                     }else if(obj instanceof BTree){
-                        BTree.defrag(namedRecid, this, recman2);
+                        BTree.defrag(namedRecid, this, db2);
                     }
 
 
@@ -843,37 +843,37 @@ final class RecordManagerStorage
                         //write to new file
                         final long logicalRowId = Location.toLong(pageid,(short)pos);
 
-                        //read from logical location in second recman,
+                        //read from logical location in second db,
                         //check if record was already inserted as part of collections
-                        if( recman2._logicPageman.getLast(Magic.TRANSLATION_PAGE)>=pageid &&
-                                recman2._logicMgr.fetch(logicalRowId)!=0){
-                            //yes, this record already exists in second recman
+                        if( db2._logicPageman.getLast(Magic.TRANSLATION_PAGE)>=pageid &&
+                                db2._logicMgr.fetch(logicalRowId)!=0){
+                            //yes, this record already exists in second db
                             continue;
                         }
 
-                        //get physical location in this recman
+                        //get physical location in this db
                         long physRowId = Location.toLong(
                                 xlatPage.getLocationBlock((short)pos),
                                 xlatPage.getLocationOffset((short)pos));
                         if(physRowId == 0)
                             continue;
 
-                        //read from physical location at this recman
+                        //read from physical location at this db
                         DataInputOutput b = new DataInputOutput();
                         _physMgr.fetch(b, physRowId);
                         byte[] bb = b.toByteArray();
 
                         //force insert into other file, without decompressing logical id to external form
-                        long physLoc = recman2._physMgr.insert(bb, 0, bb.length);
-                        recman2._logicMgr.forceInsert(logicalRowId, physLoc);
+                        long physLoc = db2._physMgr.insert(bb, 0, bb.length);
+                        db2._logicMgr.forceInsert(logicalRowId, physLoc);
 
 			        }
 			        _logicFile.release(io);
-                    recman2.commit();
+                    db2.commit();
 		        }
-		recman2.setRoot(NAME_DIRECTORY_ROOT,getRoot(NAME_DIRECTORY_ROOT));
+		db2.setRoot(NAME_DIRECTORY_ROOT,getRoot(NAME_DIRECTORY_ROOT));
 
-		recman2.close();
+		db2.close();
 		close();
 
 		List<File> filesToDelete = new ArrayList<File>();

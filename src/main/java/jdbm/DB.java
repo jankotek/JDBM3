@@ -12,17 +12,17 @@ import java.util.*;
  *  to be able to get  back to them.  Data blocks can be as long as you wish,
  *  and may have lengths different from the original when updating.
  *  <p>
- *  RecordManager is responsible for handling transactions.
+ *  DB is responsible for handling transactions.
  *  JDBM2 supports only single transaction for data store.
  *  See <code>commit</code> and <code>roolback</code> methods for more details.
  *  <p>
- *  RecordManager is also factory for primary Maps.
+ *  DB is also factory for primary Maps.
  *  <p>
  * @author Jan Kotek
  * @author Alex Boisvert
  * @author Cees de Groot
  */
-public interface RecordManager {
+public interface DB {
 
     /**
      *  Closes the record manager and release resources.
@@ -65,7 +65,7 @@ public interface RecordManager {
     /**
      * Rollback (cancel) all changes since beginning of transaction.
      * JDBM supports only single transaction.
-     * This operations affects all maps created by this RecordManager.
+     * This operations affects all maps created by this DB.
      */
     void rollback()
         throws IOException;
@@ -144,10 +144,4 @@ public interface RecordManager {
 
     <K> List<K> loadLinkedList(String name);
 
-
-    /**
-     * Copy data from RecordManager into zip db.
-     * @param zipFile
-     */
-    void copyToZipStore(String zipFile);
 }

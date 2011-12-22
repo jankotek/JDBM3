@@ -15,7 +15,6 @@
  ******************************************************************************/
 package jdbm;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class HTreeMapTest extends MapInterfaceTest<Integer,String>{
@@ -24,7 +23,7 @@ public class HTreeMapTest extends MapInterfaceTest<Integer,String>{
 		super(name, false,false,true,true,true,true);
 	}
 	
-	RecordManager2 r;
+	DBAbstract r;
 	
 	public void setUp() throws Exception{
 		r = TestCaseWithTestFile.newRecordManager();		

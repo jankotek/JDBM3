@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *  This class contains all Unit tests for {@link RecordManager2}.
+ *  This class contains all Unit tests for {@link DBAbstract}.
  */
-public class RecordManagerTest extends TestCaseWithTestFile {
+public class DBTest extends TestCaseWithTestFile {
 
 
     /**
@@ -32,10 +32,10 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     public void testCtor()
         throws Exception
     {
-        RecordManager recman;
+        DB db;
 
-        recman = newRecordManager();
-        recman.close();
+        db = newRecordManager();
+        db.close();
     }
 
     /**
@@ -45,38 +45,38 @@ public class RecordManagerTest extends TestCaseWithTestFile {
         throws Exception
     {
 
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
         // insert a 10,000 byte record.
         byte[] data = UtilTT.makeRecord(10000, (byte) 1);
-        long rowid = recman.insert(data);
+        long rowid = db.insert(data);
         assertTrue("check data1",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 10000, (byte) 1) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 10000, (byte) 1) );
 
         // update it as a 20,000 byte record.
         data = UtilTT.makeRecord(20000, (byte) 2);
-        recman.update(rowid, data);
+        db.update(rowid, data);
         assertTrue("check data2",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 20000, (byte) 2) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 20000, (byte) 2) );
 
         // insert a third record.
         data = UtilTT.makeRecord(20, (byte) 3);
-        long rowid2 = recman.insert(data);
+        long rowid2 = db.insert(data);
         assertTrue("check data3",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid2), 20, (byte) 3) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid2), 20, (byte) 3) );
 
         // now, grow the first record again
         data = UtilTT.makeRecord(30000, (byte) 4);
-        recman.update(rowid, data);
+        db.update(rowid, data);
         assertTrue("check data4",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 30000, (byte) 4) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 30000, (byte) 4) );
 
 
         // delete the record
-        recman.delete(rowid);
+        db.delete(rowid);
 
         // close the file
-        recman.close();
+        db.close();
     }
     
 
@@ -89,39 +89,39 @@ public class RecordManagerTest extends TestCaseWithTestFile {
         throws Exception
     {
 
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
         // insert a 1500 byte record.
         byte[] data = UtilTT.makeRecord(1500, (byte) 1);
-        long rowid = recman.insert(data);
+        long rowid = db.insert(data);
         assertTrue("check data1",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 1500, (byte) 1) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 1500, (byte) 1) );
 
 
         // delete the record
-        recman.delete(rowid);
+        db.delete(rowid);
 
         // insert a 0 byte record. Should have the same rowid.
         data = UtilTT.makeRecord(0, (byte) 2);
-        long rowid2 = recman.insert(data);
+        long rowid2 = db.insert(data);
         assertEquals("old and new rowid", rowid, rowid2);
         assertTrue("check data2",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid2), 0, (byte) 2) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid2), 0, (byte) 2) );
 
         // now make the record a bit bigger
         data = UtilTT.makeRecord(10000, (byte) 3);
-        recman.update(rowid, data);
+        db.update(rowid, data);
         assertTrue("check data3",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 10000, (byte) 3) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 10000, (byte) 3) );
 
         // .. and again
         data = UtilTT.makeRecord(30000, (byte) 4);
-        recman.update(rowid, data);
+        db.update(rowid, data);
         assertTrue("check data3",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid), 30000, (byte) 4) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid), 30000, (byte) 4) );
 
         // close the file
-        recman.close();
+        db.close();
     }
 
     /**
@@ -134,60 +134,60 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     {
 
         // Note: We start out with an empty file
-        RecordManager2 recman = newRecordManager();
+        DBAbstract db = newRecordManager();
 
-        recman.insert(""); //first insert an empty record, to make sure serializer is initialized
-        recman.commit();
+        db.insert(""); //first insert an empty record, to make sure serializer is initialized
+        db.commit();
         // insert a 150000 byte record.
         byte[] data1 = UtilTT.makeRecord(150000, (byte) 1);
-        long rowid1 = recman.insert(data1);
+        long rowid1 = db.insert(data1);
         assertTrue("check data1",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid1), 150000, (byte) 1) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid1), 150000, (byte) 1) );
 
         // rollback transaction, should revert to previous state
-        recman.rollback();
+        db.rollback();
 
         // insert same 150000 byte record.
         byte[] data2 = UtilTT.makeRecord(150000, (byte) 1);
-        long rowid2 = recman.insert(data2);
+        long rowid2 = db.insert(data2);
         assertTrue("check data2",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid2), 150000, (byte) 1) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid2), 150000, (byte) 1) );
 
         assertEquals("old and new rowid", rowid1, rowid2);
 
-        recman.commit();
+        db.commit();
 
         // insert a 150000 byte record.
         data1 = UtilTT.makeRecord(150000, (byte) 2);
-        rowid1 = recman.insert(data1);
+        rowid1 = db.insert(data1);
         assertTrue("check data1",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid1), 150000, (byte) 2) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid1), 150000, (byte) 2) );
 
         // rollback transaction, should revert to previous state
-        recman.rollback();
+        db.rollback();
 
         // insert same 150000 byte record.
         data2 = UtilTT.makeRecord(150000, (byte) 2);
-        rowid2 = recman.insert(data2);
+        rowid2 = db.insert(data2);
         assertTrue("check data2",
-               UtilTT.checkRecord((byte[]) recman.fetch(rowid2), 150000, (byte) 2) );
+               UtilTT.checkRecord((byte[]) db.fetch(rowid2), 150000, (byte) 2) );
 
         assertEquals("old and new rowid", rowid1, rowid2);
 
         // close the file
-        recman.close();
+        db.close();
     }
 
     
     public void testNonExistingRecid() throws IOException{
-    	RecordManager2 recman = newRecordManager();
+    	DBAbstract db = newRecordManager();
     	
-    	Object obj = recman.fetch(6666666);
+    	Object obj = db.fetch(6666666);
     	assertTrue(obj == null);
     	
     	try{
-    		recman.update(6666666, obj);
-    		recman.commit();
+    		db.update(6666666, obj);
+    		db.commit();
     		fail();
     	}catch(IOException expected){
 
@@ -212,26 +212,26 @@ public class RecordManagerTest extends TestCaseWithTestFile {
         i.set(0);
     	Serializer<String> ser = new Serial();
 			
-		RecordManager recman = newRecordManager();
-		Map<Long,String> t =  recman.<Long,String>createTreeMap("test", null, null, ser);
+		DB db = newRecordManager();
+		Map<Long,String> t =  db.<Long,String>createTreeMap("test", null, null, ser);
 		t.put(1l, "hopsa hejsa1");
 		t.put(2l, "hopsa hejsa2");
-		recman.commit();
+		db.commit();
 		assertEquals(t.get(2l),"hopsa hejsa2");
 		assertTrue(i.intValue()>0);
     }
 
     public void testCountRecid() throws Exception{
-        RecordManagerStorage recman = newBaseRecordManager();
-        recman.insert(""); //first insert an empty record, to make sure serializer is initialized
-        long baseCount = recman.countRecords();
+        DBStore db = newBaseRecordManager();
+        db.insert(""); //first insert an empty record, to make sure serializer is initialized
+        long baseCount = db.countRecords();
         for(int i = 1;i<3000;i++){
             Object val = "qjiodjqwoidjqwiodoi";
 
-            recman.insert(val);
-            if(i%1000==0) recman.commit();
+            db.insert(val);
+            if(i%1000==0) db.commit();
 
-            assertEquals(recman.countRecords(),i+baseCount);
+            assertEquals(db.countRecords(),i+baseCount);
         }
 
     }

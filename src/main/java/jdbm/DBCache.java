@@ -23,19 +23,19 @@ import java.lang.ref.WeakReference;
 import java.util.Iterator;
 
 /**
- *  A RecordManager wrapping and caching another RecordManager.
+ *  A DB wrapping and caching another DB.
  *
  * @author Alex Boisvert
  * @author Cees de Groot
  */
-class RecordManagerCache
-    extends RecordManager2
+class DBCache
+    extends DBAbstract
 {
 
     /**
-     * Wrapped RecordManager
+     * Wrapped DB
      */
-    protected RecordManager2 _recman;
+    protected DBAbstract _db;
 
 
     /** Cached object hashtable */
@@ -88,21 +88,21 @@ class RecordManagerCache
 
 
     /**
-     * Construct a CacheRecordManager wrapping another RecordManager and
+     * Construct a CacheRecordManager wrapping another DB and
      * using a given cache policy.
      *
-     * @param recman Wrapped RecordManager
+     * @param db Wrapped DB
      * @param maxRecords maximal number of records in MRU cache
      * @param enableReferenceCache if cache using WeakReference or SoftReference should be enabled
      * @param useSoftReference if reference cache is enabled, decides beetween Soft or Weak reference
      */
-    public RecordManagerCache(RecordManager2 recman, int maxRecords, boolean enableReferenceCache, boolean useSoftReference)
+    public DBCache(DBAbstract db, int maxRecords, boolean enableReferenceCache, boolean useSoftReference)
     {
-        if ( recman == null ) {
-            throw new IllegalArgumentException( "Argument 'recman' is null" );
+        if ( db == null ) {
+            throw new IllegalArgumentException( "Argument 'db' is null" );
         }
         _hash = new LongHashMap<CacheEntry>(maxRecords);
-        _recman = recman;
+        _db = db;
         _max = maxRecords;
         _enableReferenceCache = enableReferenceCache;
         _useSoftReference = useSoftReference;
@@ -123,11 +123,11 @@ class RecordManagerCache
     public synchronized <A> long insert( A obj, Serializer<A> serializer )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
-        long recid = _recman.insert( obj, serializer );
+        long recid = _db.insert( obj, serializer );
         
         //DONT use cache for inserts, it usually hurts performance on batch inserts
 //        if(_softCache) synchronized(_softHash) {
@@ -140,7 +140,7 @@ class RecordManagerCache
 
     public synchronized <A> A fetch( long recid, Serializer<A> serializer, boolean disableCache ) throws IOException{
         if(disableCache)
-             return _recman.fetch(recid, serializer,disableCache);
+             return _db.fetch(recid, serializer,disableCache);
         else
             return fetch(recid,serializer);
      }
@@ -150,11 +150,11 @@ class RecordManagerCache
     public synchronized void delete( long recid )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
-        _recman.delete( recid );
+        _db.delete( recid );
         CacheEntry entry = _hash.get(recid);
         if (entry != null) {
             removeEntry(entry);
@@ -173,8 +173,8 @@ class RecordManagerCache
                                      Serializer<A> serializer )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
         if(_enableReferenceCache) synchronized(_softHash) {
         	//soft cache can not contain dirty objects
@@ -198,8 +198,8 @@ class RecordManagerCache
     public synchronized <A> A fetch( long recid, Serializer<A> serializer )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
         if(_enableReferenceCache) synchronized(_softHash){
@@ -214,7 +214,7 @@ class RecordManagerCache
 
         CacheEntry entry =  cacheGet( recid );
         if ( entry == null ) {
-        	A value = _recman.fetch( recid, serializer );
+        	A value = _db.fetch( recid, serializer );
         	if(!_enableReferenceCache)
         	    cachePut(recid,value, serializer,false);
         	else{ //put record into soft cache
@@ -235,13 +235,13 @@ class RecordManagerCache
     public synchronized void close()
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
         updateCacheEntries();
-        _recman.close();
-        _recman = null;
+        _db.close();
+        _db = null;
         _hash = null;
         _softHash = null;
         if(_enableReferenceCache)
@@ -253,21 +253,21 @@ class RecordManagerCache
     public synchronized void commit()
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
         updateCacheEntries();
-        _recman.commit();
+        _db.commit();
     }
 
     public synchronized void rollback()
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
-        _recman.rollback();
+        _db.rollback();
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
@@ -284,43 +284,40 @@ class RecordManagerCache
         _last = null;
     }
 
-    public void copyToZipStore(String zipFile) {
-        _recman.copyToZipStore(zipFile);
-    }
 
 
     public synchronized long getNamedObject( String name )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
-        return _recman.getNamedObject( name );
+        return _db.getNamedObject( name );
     }
 
 
     public synchronized void setNamedObject( String name, long recid )
         throws IOException
     {
-        if ( _recman == null ) {
-            throw new IllegalStateException( "RecordManager has been closed" );
+        if ( _db == null ) {
+            throw new IllegalStateException( "DB has been closed" );
         }
 
-        _recman.setNamedObject( name, recid );
+        _db.setNamedObject( name, recid );
     }
 
     public Serializer defaultSerializer() {
-        return _recman.defaultSerializer();
+        return _db.defaultSerializer();
     }
 
     public String calculateStatistics(){
-        return _recman.calculateStatistics();
+        return _db.calculateStatistics();
     }
 
 
     /**
-     * Update all dirty cache objects to the underlying RecordManager.
+     * Update all dirty cache objects to the underlying DB.
      */
     protected void updateCacheEntries()
         throws IOException
@@ -329,7 +326,7 @@ class RecordManagerCache
     	while(iter.hasNext()){
     		CacheEntry entry = iter.next();
             if ( entry._isDirty ) {
-                _recman.update( entry._recid, entry._obj, entry._serializer );
+                _db.update( entry._recid, entry._obj, entry._serializer );
                 entry._isDirty = false;
             }
     	}
@@ -429,7 +426,7 @@ class RecordManagerCache
         	return new CacheEntry(-1,null,null,false);
 
         if(entry._isDirty)
-        	_recman.update( entry._recid, entry._obj, entry._serializer );
+        	_db.update( entry._recid, entry._obj, entry._serializer );
         removeEntry(entry);
         _hash.remove(entry._recid);
 
@@ -515,11 +512,11 @@ class RecordManagerCache
     protected static final class SoftRunnable  implements Runnable{
 
 		private ReferenceQueue<ReferenceCacheEntry> entryQueue;
-		private WeakReference<RecordManagerCache> recman2;
+		private WeakReference<DBCache> db2;
 		
-		public SoftRunnable(RecordManagerCache recman,
+		public SoftRunnable(DBCache db,
 				ReferenceQueue<ReferenceCacheEntry> entryQueue) {
-			this.recman2 = new WeakReference<RecordManagerCache>(recman);
+			this.db2 = new WeakReference<DBCache>(db);
 			this.entryQueue = entryQueue;
 		}
 
@@ -527,17 +524,17 @@ class RecordManagerCache
 			while(true)try{
 
 				//collect next item from cache,
-				//limit 10000 ms is to keep periodically checking if recman was GCed 
+				//limit 10000 ms is to keep periodically checking if db was GCed
 				SoftCacheEntry e = (SoftCacheEntry) entryQueue.remove(10000);
 
-				//check if  recman was GCed, cancel in that case
-				RecordManagerCache recman = recman2.get();
-				if(recman == null) 
+				//check if  db was GCed, cancel in that case
+				DBCache db = db2.get();
+				if(db == null)
 					return;
 				if(e!=null){
-					synchronized(recman._softHash){
+					synchronized(db._softHash){
 						while(e!=null){
-							recman._softHash.remove(e._recid);
+							db._softHash.remove(e._recid);
 							e = (SoftCacheEntry) entryQueue.poll();
 						}
 					}
@@ -577,7 +574,7 @@ class RecordManagerCache
 
 	public void defrag() throws IOException {
 		commit();
-		_recman.defrag();		
+		_db.defrag();
 	}
   
 

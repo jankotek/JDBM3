@@ -13,12 +13,12 @@ public class HelloWorld {
 
 		/** create (or open existing) database */
 		String fileName = "helloWorld";
-		RecordManager recMan = new RecordManagerBuilder(fileName).build();
+		DB db = new DBMaker(fileName).build();
 		
 		/** Creates TreeMap which stores data in database.  
 		 *  Constructor method takes recordName (something like SQL table name)*/
 		String recordName = "firstTreeMap";
-		PrimaryTreeMap<Integer,String> treeMap = recMan.createTreeMap(recordName);
+		PrimaryTreeMap<Integer,String> treeMap = db.createTreeMap(recordName);
 
 		/** add some stuff to map*/
 		treeMap.put(1, "One");
@@ -29,7 +29,7 @@ public class HelloWorld {
 		// > [1, 2, 3]
 		
 		/** Map changes are not persisted yet, commit them (save to disk) */
-		recMan.commit();
+		db.commit();
 
 		System.out.println(treeMap.keySet());
 		// > [1, 2, 3]
@@ -41,14 +41,14 @@ public class HelloWorld {
 		// > [1, 3]
 		
 		/** Did not like change. Roolback to last commit (undo record remove). */
-		recMan.rollback();
+		db.rollback();
 		
 		/** Key 2 was recovered */
 		System.out.println(treeMap.keySet());
 		// > [1, 2, 3]
 		
 		/** close record manager */
-		recMan.close();
+		db.close();
 
 	}
 }

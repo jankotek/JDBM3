@@ -91,7 +91,7 @@ final class RecordFile {
         else
             this.storage = new StorageDisk(fileName);
         if(this.storage.isReadonly() && !readonly)
-            throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on RecordManagerBuilder");
+            throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
         if(!readonly){
             txnMgr = new TransactionManager(this,storage,cipherIn,cipherOut);
         }else{

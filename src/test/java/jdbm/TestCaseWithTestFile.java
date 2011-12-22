@@ -58,12 +58,12 @@ abstract class TestCaseWithTestFile extends TestCase {
 		return new RecordFile(newTestFile());
 	}
 
-	static public RecordManager2 newRecordManager() throws IOException{
-		return (RecordManager2) new RecordManagerBuilder(newTestFile()).build();
+	static public DBAbstract newRecordManager() throws IOException{
+		return (DBAbstract) new DBMaker(newTestFile()).build();
 	}
 
-        static public RecordManagerStorage newBaseRecordManager() throws IOException{
-            return (RecordManagerStorage) new RecordManagerBuilder(newTestFile()).disableCache().build();
+        static public DBStore newBaseRecordManager() throws IOException{
+            return (DBStore) new DBMaker(newTestFile()).disableCache().build();
         }
 
 

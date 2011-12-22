@@ -323,7 +323,7 @@ class BTreeSortedMap<K,V> extends AbstractMap<K,V> implements SortedMap<K,V>{
 		tree.addRecordListener(listener);
 	}
 
-	public RecordManager2 getRecordManager() {
+	public DBAbstract getRecordManager() {
 		return tree.getRecordManager();
 	}
 

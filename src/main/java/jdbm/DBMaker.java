@@ -23,15 +23,12 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOError;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.AlgorithmParameters;
 import java.security.spec.KeySpec;
-import java.util.Arrays;
 
 /**
  *
  */
-public class RecordManagerBuilder {
+public class DBMaker {
 
     private String cacheType = "auto";
     private int mruCacheSize = 512;
@@ -44,11 +41,11 @@ public class RecordManagerBuilder {
 
 
     /**
-     * Creates new RecordManagerBuilder and sets location where database is located.
+     * Creates new DBMaker and sets location where database is located.
      *
      * @param location on disk where db is located
      */
-    public RecordManagerBuilder(String location){
+    public DBMaker(String location){
         this.location = location;
     }
 
@@ -60,7 +57,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder enableWeakCache(){
+    public DBMaker enableWeakCache(){
         cacheType = "weak";
         return this;
     }
@@ -72,7 +69,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder enableSoftCache(){
+    public DBMaker enableSoftCache(){
         cacheType = "soft";
         return this;
     }
@@ -86,7 +83,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder enableMRUCache(){
+    public DBMaker enableMRUCache(){
         cacheType = "mru";
         return this;
     }
@@ -97,7 +94,7 @@ public class RecordManagerBuilder {
      * @param cacheSize number of instances which will be kept in cache. Recommended size is 512
      * @return this builder
      */
-    public RecordManagerBuilder enableMRUCache(int cacheSize){
+    public DBMaker enableMRUCache(int cacheSize){
         if(cacheSize<0) throw new IllegalArgumentException("Cache size is smaller than zero");
         cacheType = "mru";
         this.mruCacheSize = cacheSize;
@@ -114,7 +111,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder enableAutoCache(){
+    public DBMaker enableAutoCache(){
         cacheType = "auto";
         return this;
     }
@@ -125,19 +122,19 @@ public class RecordManagerBuilder {
      * @param password
      * @return this builder
      */
-    public RecordManagerBuilder enableEncryption(String password){
+    public DBMaker enableEncryption(String password){
         this.password = password;
         return this;
     }
 
 
     /**
-     * Make RecordManager readonly.
+     * Make DB readonly.
      * Update/delete/insert operation will throw 'UnsupportedOperationException'
      *
      * @return this builder
      */
-    public RecordManagerBuilder readonly(){
+    public DBMaker readonly(){
         readonly = true;
         return this;
     }
@@ -148,7 +145,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder disableCache(){
+    public DBMaker disableCache(){
         cacheType = "none";
         return this;
     }
@@ -168,7 +165,7 @@ public class RecordManagerBuilder {
      *
      * @return this builder
      */
-    public RecordManagerBuilder disableTransactions(){
+    public DBMaker disableTransactions(){
         this.disableTransactions = true;
         return this;
     }
@@ -177,10 +174,10 @@ public class RecordManagerBuilder {
     /**
      * Opens database with settings earlier specified in this builder.
      *
-     * @return new RecordManager
+     * @return new DB
      * @throws java.io.IOError if db could not be opened
      */
-    public RecordManager build(){
+    public DB build(){
 
         Cipher cipherIn = null;
         Cipher cipherOut = null;
@@ -217,10 +214,10 @@ public class RecordManagerBuilder {
             throw new IOError(e);
         }
 
-        RecordManager2 recman = null;
+        DBAbstract db = null;
 
         try{
-            recman = new RecordManagerStorage(location,readonly,disableTransactions,cipherIn,cipherOut);
+            db = new DBStore(location,readonly,disableTransactions,cipherIn,cipherOut);
         }catch(IOException e){
             throw new IOError(e);
         }
@@ -241,11 +238,11 @@ public class RecordManagerBuilder {
         }
 
         if("mru".equals(cacheType2)){
-            recman = new RecordManagerCache( recman,mruCacheSize,false,true);
+            db = new DBCache( db,mruCacheSize,false,true);
         }else if("soft".equals(cacheType2)){
-             recman = new RecordManagerCache(recman, 0,true,true);
+             db = new DBCache(db, 0,true,true);
         }else if("weak".equals(cacheType2)){
-             recman = new RecordManagerCache(recman, 0,true,false);
+             db = new DBCache(db, 0,true,false);
 
         }else if("none".equals(cacheType2)){
             //do nothing
@@ -254,7 +251,7 @@ public class RecordManagerBuilder {
         }
 
 
-         return recman;
+         return db;
     }
 
 }

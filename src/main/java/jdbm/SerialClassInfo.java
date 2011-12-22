@@ -51,13 +51,13 @@ abstract class SerialClassInfo {
         this.registered = registered;
     }
 
-    public SerialClassInfo(RecordManager2 recman, long serialClassInfoRecid) throws IOException {
-        this.recman = recman;
-        if(recman!=null){
+    public SerialClassInfo(DBAbstract db, long serialClassInfoRecid) throws IOException {
+        this.db = db;
+        if(db!=null){
             this.serialClassInfoRecid = serialClassInfoRecid;
-            this.registered = recman.fetch(serialClassInfoRecid,serializer);
+            this.registered = db.fetch(serialClassInfoRecid,serializer);
         }else{
-            //recman can be null for unit testing
+            //db can be null for unit testing
             this.registered = new ArrayList<ClassInfo>();
         }
     }
@@ -150,7 +150,7 @@ abstract class SerialClassInfo {
 
     private ArrayList<ClassInfo> registered;
 
-    private RecordManager2 recman = null;
+    private DBAbstract db = null;
 
 
 
@@ -173,8 +173,8 @@ abstract class SerialClassInfo {
         ClassInfo i = new ClassInfo(clazz.getName(),fields);
         registered.add(i);
 
-        if(recman!=null)
-            recman.update(serialClassInfoRecid,registered,serializer);
+        if(db!=null)
+            db.update(serialClassInfoRecid,registered,serializer);
 
     }
 
@@ -281,7 +281,7 @@ abstract class SerialClassInfo {
                 //field does not exists in class definition stored in db,
                 //propably new field was added so add field descriptor
                 fieldId = classInfo.addFieldInfo(new FieldInfo(f));
-                recman.update(serialClassInfoRecid,registered,serializer);
+                db.update(serialClassInfoRecid,registered,serializer);
             }
             LongPacker.packInt(out,fieldId);
             //and write value

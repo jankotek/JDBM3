@@ -12,17 +12,17 @@ public class TestInsertUpdate extends TestCaseWithTestFile {
          */
         @Test
         public void testInsertUpdateWithCustomSerializer () throws IOException {
-        RecordManager recman = newRecordManager();
+        DB db = newRecordManager();
         Serializer<Long> serializer = new HTreeBucketTest.LongSerializer();
                 
-        Map<Long, Long> map = recman.createHashMap("custom", serializer, serializer);
+        Map<Long, Long> map = db.createHashMap("custom", serializer, serializer);
         
         map.put(new Long(1), new Long(1));
         map.put(new Long(2), new Long(2));
-        recman.commit();
+        db.commit();
         map.put(new Long(2), new Long(3));
-        recman.commit(); 
-                recman.close();
+        db.commit();
+                db.close();
         }
 
 }

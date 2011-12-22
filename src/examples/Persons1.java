@@ -73,9 +73,9 @@ public class Persons1 {
 		
 	public static void main(String[] args) throws IOException {
 		//init Record Manager and dao
-		RecordManager recman = new RecordManagerBuilder("persons1").build();
+		DB db = new DBMaker("persons1").build();
 
-		PrimaryTreeMap<String,Person> personsByName = recman.createTreeMap("personsByName");
+		PrimaryTreeMap<String,Person> personsByName = db.createTreeMap("personsByName");
 
 		SecondaryTreeMap<String, String, Person> personsByTown = 
 				personsByName.secondaryTreeMap("personsByTown", 

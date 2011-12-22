@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- *  Persistent HashMap implementation for RecordManager.
+ *  Persistent HashMap implementation for DB.
  *  Implemented as an H*Tree structure.
  *
  *  @author Alex Boisvert
@@ -87,7 +87,7 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
     protected Serializer<V> valueSerializer;
     protected boolean readonly = false;
     private long rootRecid;
-    private RecordManager2 recman;
+    private DBAbstract db;
     private long recid;
 
     /** counts structural changes in tree at runtume. Is here to support fail-fast behaviour. */
@@ -113,19 +113,19 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
     /**
      * Create a persistent hashtable.
      */
-    public HTree( RecordManager2 recman, long recid, Serializer<K> keySerializer, Serializer<V> valueSerializer )
+    public HTree( DBAbstract db, long recid, Serializer<K> keySerializer, Serializer<V> valueSerializer )
         throws IOException
     {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        this.recman = recman;
+        this.db = db;
         this.recid = recid;
 
         //create new root record
-        this.rootRecid = recman.insert(null);
+        this.rootRecid = db.insert(null);
         HTreeDirectory<K,V> root = new HTreeDirectory<K,V>( this, (byte) 0 );
-        root.setPersistenceContext(recman, rootRecid);
-        this.rootRecid = recman.insert( root, this.SERIALIZER );
+        root.setPersistenceContext(db, rootRecid);
+        this.rootRecid = db.insert( root, this.SERIALIZER );
     }
 
 
@@ -140,8 +140,8 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
         this.valueSerializer = valueSerializer;
     }
 
-    void setPersistenceContext(RecordManager2 recman, long recid){
-        this.recman = recman;
+    void setPersistenceContext(DBAbstract db, long recid){
+        this.db = db;
         this.recid = recid;
     }
 
@@ -246,8 +246,8 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
 
 
 
-    public RecordManager2 getRecordManager() {
-        return recman;
+    public DBAbstract getRecordManager() {
+        return db;
     }
 
     /**
@@ -381,8 +381,8 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
 
     public HTreeDirectory<K, V> getRoot() {
         try{
-            HTreeDirectory<K, V> root = (HTreeDirectory<K,V>) recman.fetch( rootRecid, this.SERIALIZER  );
-            root.setPersistenceContext( recman, rootRecid );
+            HTreeDirectory<K, V> root = (HTreeDirectory<K,V>) db.fetch( rootRecid, this.SERIALIZER  );
+            root.setPersistenceContext( db, rootRecid );
             return root;
         }catch (IOException e){
            throw new IOError(e);
@@ -407,14 +407,14 @@ class HTree<K,V> extends AbstractMap<K,V> implements Map<K,V> {
         return recid;
     }
 
-    static void defrag(Long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException {
+    static void defrag(Long recid, DBStore r1, DBStore r2) throws IOException {
         //TODO should modCount be increased after defrag, revert or commit?
         try{
         byte[] data = r1.fetchRaw(recid);
         r2.forceInsert(recid,data);
         DataInput in = new DataInputStream(new ByteArrayInputStream(data));
         HTree t = (HTree) r1.defaultSerializer().deserialize(in);
-        t.recman = r1;
+        t.db = r1;
         t.loadValues = false;
 
         HTreeDirectory d = t.getRoot();

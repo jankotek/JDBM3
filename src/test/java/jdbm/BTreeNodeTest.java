@@ -32,7 +32,7 @@ public class BTreeNodeTest extends TestCaseWithTestFile {
      *  Basic tests
      */
     public void testBasics() throws IOException {
-        RecordManager2 recman;
+        DBAbstract db;
         String test, test1, test2, test3;
 
         test = "test";
@@ -40,11 +40,11 @@ public class BTreeNodeTest extends TestCaseWithTestFile {
         test2 = "test2";
         test3 = "test3";
 
-        recman = newRecordManager();
+        db = newRecordManager();
 
 
 
-        BTree tree = BTree.createInstance(recman);
+        BTree tree = BTree.createInstance(db);
 
         BTreeNode node = new BTreeNode( tree, test, test );
 
@@ -68,8 +68,8 @@ public class BTreeNodeTest extends TestCaseWithTestFile {
             throw new IllegalStateException( "Tuple value is not 'test2'" );
         }
 
-        recman.close();
-        recman = null;
+        db.close();
+        db = null;
     }
 
 

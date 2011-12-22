@@ -30,7 +30,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
 
 
-    private RecordManager2 recman;
+    private DBAbstract db;
     private long listrecid = 0;
 
     private int size = 0;
@@ -49,8 +49,8 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         this.valueSerializer = valueSerializer;
     }
 
-    LinkedList(RecordManager2 recman, long listrecid, Serializer<E> valueSerializer){
-        this.recman = recman;
+    LinkedList(DBAbstract db, long listrecid, Serializer<E> valueSerializer){
+        this.db = db;
         this.listrecid = listrecid;
         if(valueSerializer!=null && !(valueSerializer instanceof Serializable))
             throw new IllegalArgumentException("Serializer does not implement Serializable");
@@ -58,8 +58,8 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
     }
 
-    void setPersistenceContext(RecordManager2 recman, long listrecid){
-        this.recman = recman;
+    void setPersistenceContext(DBAbstract db, long listrecid){
+        this.db = db;
         this.listrecid = listrecid;
     }
 
@@ -90,21 +90,21 @@ class LinkedList<E> extends AbstractSequentialList<E>{
     public boolean add(Object value){
         try{
             Entry e = new Entry(last,0,value);
-            long recid = recman.insert(e,entrySerializer);
+            long recid = db.insert(e,entrySerializer);
 
             //update old last Entry to point to new record
             if(last!=0){
-                Entry oldLast = recman.fetch(last,entrySerializer);
+                Entry oldLast = db.fetch(last,entrySerializer);
                 if(oldLast.next!=0) throw new Error();
                 oldLast.next = recid;
-                recman.update(last,oldLast,entrySerializer);
+                db.update(last,oldLast,entrySerializer);
             }
 
             //update linked list
             last = recid;
             if(first == 0) first = recid;
             size++;
-            recman.update(listrecid,this);
+            db.update(listrecid,this);
             modCount++;
             return true;
         }catch(IOException e){
@@ -115,7 +115,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
     private Entry<E> fetch(long recid){
         try{
-            return recman.fetch(recid,entrySerializer);
+            return db.fetch(recid,entrySerializer);
         }catch(IOException e){
             throw new IOError(e);
         }
@@ -145,7 +145,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
             if(valueSerializer!=null)
                 valueSerializer.serialize(out,(E)e.value);
             else
-                recman.defaultSerializer().serialize(out,e.value);
+                db.defaultSerializer().serialize(out,e.value);
         }
 
         public Entry<E> deserialize(DataInput in) throws IOException, ClassNotFoundException {
@@ -153,7 +153,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
             long next = LongPacker.unpackLong(in);
             Object value = null;
             if(loadValues)
-               value = valueSerializer == null ? recman.defaultSerializer().deserialize(in) : valueSerializer.deserialize(in);
+               value = valueSerializer == null ? db.defaultSerializer().deserialize(in) : valueSerializer.deserialize(in);
             return  new LinkedList.Entry(prev, next,value);
         }
     };
@@ -229,28 +229,28 @@ class LinkedList<E> extends AbstractSequentialList<E>{
                 //last operation was next() so remove previous element
                 lastOper = 0;
 
-                Entry<E> p = recman.fetch(prev,entrySerializer);
+                Entry<E> p = db.fetch(prev,entrySerializer);
                 //update entry before previous
                 if(p.prev!=0){
-                    Entry<E> pp = recman.fetch(p.prev,entrySerializer);
+                    Entry<E> pp = db.fetch(p.prev,entrySerializer);
                     pp.next = p.next;
-                    recman.update(p.prev,pp,entrySerializer);
+                    db.update(p.prev,pp,entrySerializer);
                 }
                 //update entry after next
                 if(p.next!=0){
-                    Entry<E> pn = recman.fetch(p.next,entrySerializer);
+                    Entry<E> pn = db.fetch(p.next,entrySerializer);
                     pn.prev = p.prev;
-                    recman.update(p.next,pn,entrySerializer);
+                    db.update(p.next,pn,entrySerializer);
                 }
-                //remove old record from recman
-                recman.delete(prev);
+                //remove old record from db
+                db.delete(prev);
                 //update list
                 if(first == prev)
                     first = next;
                 if(last == prev)
                     last = next;
                 size--;
-                recman.update(listrecid,LinkedList.this);
+                db.update(listrecid,LinkedList.this);
                 modCount++;
                 expectedModCount++;
                 //update iterator
@@ -260,28 +260,28 @@ class LinkedList<E> extends AbstractSequentialList<E>{
                 //last operation was prev() so remove next element
                 lastOper = 0;
 
-                Entry<E> n = recman.fetch(next,entrySerializer);
+                Entry<E> n = db.fetch(next,entrySerializer);
                 //update entry before next
                 if(n.prev!=0){
-                    Entry<E> pp = recman.fetch(n.prev,entrySerializer);
+                    Entry<E> pp = db.fetch(n.prev,entrySerializer);
                     pp.next = n.next;
-                    recman.update(n.prev,pp,entrySerializer);
+                    db.update(n.prev,pp,entrySerializer);
                 }
                 //update entry after previous
                 if(n.next!=0){
-                    Entry<E> pn = recman.fetch(n.next,entrySerializer);
+                    Entry<E> pn = db.fetch(n.next,entrySerializer);
                     pn.prev = n.prev;
-                    recman.update(n.next,pn,entrySerializer);
+                    db.update(n.next,pn,entrySerializer);
                 }
-                //remove old record from recman
-                recman.delete(next);
+                //remove old record from db
+                db.delete(next);
                 //update list
                 if(last == next)
                     last = prev;
                 if(first == next)
                     first = prev;
                 size--;
-                recman.update(listrecid,LinkedList.this);
+                db.update(listrecid,LinkedList.this);
                 modCount++;
                 expectedModCount++;
                 //update iterator
@@ -300,15 +300,15 @@ class LinkedList<E> extends AbstractSequentialList<E>{
             if(lastOper==1){
                 //last operation was next(), so update previous item
                 lastOper = 0;
-                Entry<E> n = recman.fetch(prev,entrySerializer);
+                Entry<E> n = db.fetch(prev,entrySerializer);
                 n.value = value;
-                recman.update(prev,n,entrySerializer);
+                db.update(prev,n,entrySerializer);
             }else if(lastOper == -1){
                 //last operation was prev() so update next item
                 lastOper = 0;
-                Entry<E> n = recman.fetch(next,entrySerializer);
+                Entry<E> n = db.fetch(next,entrySerializer);
                 n.value = value;
-                recman.update(next,n,entrySerializer);
+                db.update(next,n,entrySerializer);
             }else
                 throw new IllegalStateException();
             }catch(IOException e){
@@ -328,25 +328,25 @@ class LinkedList<E> extends AbstractSequentialList<E>{
             try{
                 //insert new entry
                 Entry<E> e = new Entry<E>(prev,next,value);
-                long recid = recman.insert(e,entrySerializer);
+                long recid = db.insert(e,entrySerializer);
 
                 //update previous entry
                 if(prev!=0){
-                    Entry<E> p = recman.fetch(prev,entrySerializer);
+                    Entry<E> p = db.fetch(prev,entrySerializer);
                     if(p.next!=next) throw new Error();
                     p.next = recid;
-                    recman.update(prev,p,entrySerializer);
+                    db.update(prev,p,entrySerializer);
                 }
 
                 //update next entry
                 Entry<E> n = fetch(next);
                 if(n.prev!=prev) throw new Error();
                 n.prev = recid;
-                recman.update(next,n,entrySerializer);
+                db.update(next,n,entrySerializer);
 
                 //update List
                 size++;
-                recman.update(listrecid,LinkedList.this);
+                db.update(listrecid,LinkedList.this);
 
                 //update iterator
                 expectedModCount++;
@@ -366,9 +366,9 @@ class LinkedList<E> extends AbstractSequentialList<E>{
     }
 
     /**
-     * Copyes collection from one Recman to other, while keeping logical recids unchanged
+     * Copyes collection from one db to other, while keeping logical recids unchanged
      */
-    static void defrag(long recid, RecordManagerStorage r1, RecordManagerStorage r2) throws IOException{
+    static void defrag(long recid, DBStore r1, DBStore r2) throws IOException{
         try{
         byte[] data = r1.fetchRaw(recid);
         r2.forceInsert(recid,data);

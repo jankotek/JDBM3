@@ -39,8 +39,8 @@ import java.io.IOException;
  * stream header
  *   at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:845)
  *   at java.io.ObjectInputStream.<init>(ObjectInputStream.java:168)
- *   at jdbm.recman.RecordManager.byteArrayToObject(RecordManager.java:296)
- *   at jdbm.recman.RecordManager.fetchObject(RecordManager.java:239)
+ *   at jdbm.db.DB.byteArrayToObject(DB.java:296)
+ *   at jdbm.db.DB.fetchObject(DB.java:239)
  *   at jdbm.helper.ObjectCache.fetchObject(ObjectCache.java:104)
  *   at jdbm.btree.BPage.loadBPage(BPage.java:670)
  *   at jdbm.btree.BPage.remove(BPage.java:492)
@@ -64,18 +64,18 @@ public class StreamCorrupted
     public void testStreamCorrupted()
         throws IOException
     {
-        RecordManager2 recman;
+        DBAbstract db;
         BTree          btree;
         int            iterations;
 
         iterations = 100; // 23 works :-(((((
 
         // open database
-        recman = newRecordManager();
+        db = newRecordManager();
 
         // create a new B+Tree data structure
-        btree = BTree.createInstance(recman);
-        recman.setNamedObject( "testbtree", btree.getRecid() );
+        btree = BTree.createInstance(db);
+        db.setNamedObject( "testbtree", btree.getRecid() );
 
         // action:
 
@@ -90,8 +90,8 @@ public class StreamCorrupted
         }
 
         // close database
-        recman.close();
-        recman = null;
+        db.close();
+        db = null;
     }
 
 

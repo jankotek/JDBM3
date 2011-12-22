@@ -31,18 +31,18 @@ public class TestInsertPerf extends TestCaseWithTestFile
 
 
         long           start, finish;
-        RecordManager2 recman = newRecordManager();
-        BTree btree = BTree.createInstance(recman);
+        DBAbstract db = newRecordManager();
+        BTree btree = BTree.createInstance(db);
         
         // Note:  One can use specialized serializers for better performance / database size
-        // btree = BTree.createInstance( recman, new LongComparator(),
+        // btree = BTree.createInstance( db, new LongComparator(),
         //                               LongSerializer.INSTANCE, IntegerSerializer.INSTANCE );
 
         start = System.currentTimeMillis();
         for (int i = 0; i < _numberOfObjects; i++) {
             btree.insert( new Long( i ), new Integer( i ), false );
         }
-        recman.commit();
+        db.commit();
         finish = System.currentTimeMillis();
         
         System.out.println( "It took " + (finish - start) + " ms to insert "

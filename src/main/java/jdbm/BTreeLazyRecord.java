@@ -9,12 +9,12 @@ import java.io.*;
 class BTreeLazyRecord<E> {
     
     private E value = null;
-    private RecordManager2 recman;
+    private DBAbstract db;
     private Serializer<E> serializer;
     final long recid;
 
-    BTreeLazyRecord(RecordManager2 recman, long recid, Serializer<E> serializer){
-        this.recman = recman;
+    BTreeLazyRecord(DBAbstract db, long recid, Serializer<E> serializer){
+        this.db = db;
         this.recid = recid;
         this.serializer = serializer;
     }
@@ -23,7 +23,7 @@ class BTreeLazyRecord<E> {
     E get(){
         if(value!=null) return value;
         try {
-            value = recman.fetch(recid,serializer);
+            value = db.fetch(recid,serializer);
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -32,13 +32,13 @@ class BTreeLazyRecord<E> {
 
     void delete(){
         try {
-            recman.delete(recid);
+            db.delete(recid);
         } catch (IOException e) {
             throw new IOError(e);
         }
         value = null;
         serializer = null;
-        recman = null;
+        db = null;
     }
 
     /**

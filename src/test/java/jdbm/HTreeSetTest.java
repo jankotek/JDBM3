@@ -29,7 +29,7 @@ import java.util.Set;
 public class HTreeSetTest extends TestCaseWithTestFile {
 
 	Set hs;
-        RecordManager recman;
+        DB db;
 
 	static Object[] objArray;
 	{
@@ -43,7 +43,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_Constructor() {
 		// Test for method java.util.HashSet()
-		Set hs2 = recman.createHashSet("secondHashSet", null);
+		Set hs2 = db.createHashSet("secondHashSet", null);
 		assertEquals("Created incorrect HashSet", 0, hs2.size());
 	}
 
@@ -93,7 +93,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void test_isEmpty() {
 		// Test for method boolean java.util.HashSet.isEmpty()
-		assertTrue("Empty set returned false", recman.createHashSet("secondHashSet", null).isEmpty());
+		assertTrue("Empty set returned false", db.createHashSet("secondHashSet", null).isEmpty());
 		assertTrue("Non-empty set returned true", !hs.isEmpty());
 	}
 
@@ -142,8 +142,8 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 */
 	public void setUp() throws Exception {
                 super.setUp();
-                recman = newRecordManager();
-		hs = recman.createHashSet("testHashSet", null);
+                db = newRecordManager();
+		hs = db.createHashSet("testHashSet", null);
 		for (int i = 0; i < objArray.length; i++)
 			hs.add(objArray[i]);
 	}
@@ -153,7 +153,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
 	 * method is called after a test is executed.
 	 */
 	public void tearDown() throws Exception {
-            recman.close();
+            db.close();
             super.tearDown();
 	}
 	
