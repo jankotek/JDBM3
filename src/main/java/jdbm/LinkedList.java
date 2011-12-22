@@ -377,7 +377,6 @@ class LinkedList<E> extends AbstractSequentialList<E>{
         LinkedList l = (LinkedList) r1.defaultSerializer().deserialize(in);
         l.loadValues = false;
         long current = l.first;
-        long counter = 1;
         while(current!=0){
             data = r1.fetchRaw(current);
             in.reset(data);
@@ -385,9 +384,6 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
             Entry e = (Entry) l.entrySerializer.deserialize(in);
             current = e.next;
-            if(counter++ %10000 == 0){
-                r2.commit(); //make commit sometimes, so we wont run out of memory
-            }
         }
         }catch(ClassNotFoundException e){
             throw new IOError(e);

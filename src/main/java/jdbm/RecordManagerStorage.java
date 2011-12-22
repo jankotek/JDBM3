@@ -784,7 +784,7 @@ final class RecordManagerStorage
                     }
 
                     //fill second recman with logical pages
-                    long pageCounter = 0; 
+                    long pageCounter = 0;
                     for(
                       long pageid = recman2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
                       pageid<=maxpageid;
@@ -934,6 +934,10 @@ final class RecordManagerStorage
 	 */
 	void forceInsert(long logicalRowId, byte[] data) throws IOException {
                 logicalRowId = decompressRecid(logicalRowId);
+        if(transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
 		long physLoc = _physMgr.insert(data, 0, data.length);
 		_logicMgr.forceInsert(logicalRowId, physLoc);
 	}
