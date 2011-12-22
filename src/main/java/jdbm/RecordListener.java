@@ -19,14 +19,16 @@ import java.io.IOException;
 
 /**
  * An listener notifed when record is inserted, updated or removed.
- * On TreeSet, HashSet and LinkedList this listener always returns null value.
+ *
+ * NOTE: this class was used in JDBM2 to support secondary indexes
+ *   JDBM3 does not have a secondary indexes, so this class is not publicly exposed.
  * 
  * @author Jan Kotek
  *
  * @param <K> key type
  * @param <V> value type
  */
-public interface RecordListener<K,V> {
+interface RecordListener<K,V> {
 	
 	void recordInserted(K key, V value)throws IOException;
 	
