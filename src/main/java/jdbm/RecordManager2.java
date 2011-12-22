@@ -26,6 +26,63 @@ import java.util.*;
  abstract class RecordManager2 implements RecordManager {
 
 
+    /**
+     *  Inserts a new record using a custom serializer.
+     *
+     *  @param obj the object for the new record.
+     *  @param serializer a custom serializer
+     *  @return the rowid for the new record.
+     *  @throws java.io.IOException when one of the underlying I/O operations fails.
+     */
+    abstract <A> long insert(A obj, Serializer<A> serializer) throws IOException;
+
+    /**
+     *  Deletes a record.
+     *
+     *  @param recid the rowid for the record that should be deleted.
+     *  @throws java.io.IOException when one of the underlying I/O operations fails.
+     */
+    abstract void delete(long recid) throws IOException;
+
+
+    /**
+     *  Updates a record using a custom serializer.
+     *  If given recid does not exist, IOException will be thrown before/during commit (cache).
+     *
+     *
+     *  @param recid the recid for the record that is to be updated.
+     *  @param obj the new object for the record.
+     *  @param serializer a custom serializer
+     *  @throws java.io.IOException when one of the underlying I/O operations fails
+     */
+    abstract <A> void update(long recid, A obj, Serializer<A> serializer)
+        throws IOException;
+
+
+    /**
+     *  Fetches a record using a custom serializer.
+     *
+     *  @param recid the recid for the record that must be fetched.
+     *  @param serializer a custom serializer
+     *  @return the object contained in the record, null if given recid does not exist
+     *  @throws java.io.IOException when one of the underlying I/O operations fails.
+     */
+    abstract <A> A fetch(long recid, Serializer<A> serializer)
+        throws IOException;
+
+    /**
+     *  Fetches a record using a custom serializer and optionaly disabled cache
+     *
+     *  @param recid the recid for the record that must be fetched.
+     *  @param serializer a custom serializer
+     *  @param disableCache true to disable any caching mechanism
+     *  @return the object contained in the record, null if given recid does not exist
+     *  @throws java.io.IOException when one of the underlying I/O operations fails.
+     */
+    abstract <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache)
+        throws IOException;
+
+
 
     public long insert(Object obj) throws IOException{
         return insert(obj,defaultSerializer());

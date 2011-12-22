@@ -51,7 +51,7 @@ abstract class SerialClassInfo {
         this.registered = registered;
     }
 
-    public SerialClassInfo(RecordManager recman, long serialClassInfoRecid) throws IOException {
+    public SerialClassInfo(RecordManager2 recman, long serialClassInfoRecid) throws IOException {
         this.recman = recman;
         if(recman!=null){
             this.serialClassInfoRecid = serialClassInfoRecid;
@@ -150,7 +150,7 @@ abstract class SerialClassInfo {
 
     private ArrayList<ClassInfo> registered;
 
-    private RecordManager recman = null;
+    private RecordManager2 recman = null;
 
 
 

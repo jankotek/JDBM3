@@ -9,11 +9,11 @@ import java.io.*;
 class BTreeLazyRecord<E> {
     
     private E value = null;
-    private RecordManager recman;
+    private RecordManager2 recman;
     private Serializer<E> serializer;
     final long recid;
 
-    BTreeLazyRecord(RecordManager recman, long recid, Serializer<E> serializer){
+    BTreeLazyRecord(RecordManager2 recman, long recid, Serializer<E> serializer){
         this.recman = recman;
         this.recid = recid;
         this.serializer = serializer;

@@ -44,9 +44,9 @@ public class TestPerformance extends TestCase {
      *  Test insert performance
      */
     public void testInserts() throws Exception {
-        RecordManager recman;
 
-        recman = new RecordManagerBuilder(testfile).build();
+
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
 
         int inserts = 0;
         long start = System.currentTimeMillis();
@@ -80,7 +80,7 @@ public class TestPerformance extends TestCase {
      *  Create a database, return array of rowids.
      */
     private long[] makeRows() throws Exception {
-        RecordManager recman = new RecordManagerBuilder( testfile).disableTransactions().build();
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder( testfile).disableTransactions().build();
         long[] retval = new long[RECORDS];
         System.out.print("Creating test database");
         long start = System.currentTimeMillis();
@@ -109,7 +109,7 @@ public class TestPerformance extends TestCase {
     public void testFetches() throws Exception {
         long[] rowids = makeRows();
 
-        RecordManager recman = new RecordManagerBuilder(testfile).build();
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
 
         int fetches = 0;
         long start = System.currentTimeMillis();
@@ -140,7 +140,7 @@ public class TestPerformance extends TestCase {
     public void testUpdates() throws Exception {
         long[] rowids = makeRows();
 
-        RecordManager recman =  new RecordManagerBuilder(testfile).build();
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder(testfile).build();
 
         int updates = 0;
         long start = System.currentTimeMillis();
@@ -175,7 +175,7 @@ public class TestPerformance extends TestCase {
 
         long[] rowids = makeRows();
 
-        RecordManager recman =  new RecordManagerBuilder( testfile).build();
+        RecordManager2 recman = (RecordManager2) new RecordManagerBuilder( testfile).build();
 
         int deletes = 0;
         long start = System.currentTimeMillis();

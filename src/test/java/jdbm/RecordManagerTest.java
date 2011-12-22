@@ -44,9 +44,8 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     public void testBasics()
         throws Exception
     {
-        RecordManager recman;
 
-        recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
         // insert a 10,000 byte record.
         byte[] data = UtilTT.makeRecord(10000, (byte) 1);
@@ -89,9 +88,8 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     public void testDeleteAndReuse() 
         throws Exception
     {
-        RecordManager recman;
 
-        recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
         // insert a 1500 byte record.
         byte[] data = UtilTT.makeRecord(1500, (byte) 1);
@@ -134,10 +132,9 @@ public class RecordManagerTest extends TestCaseWithTestFile {
     public void testRollback() 
         throws Exception
     {
-        RecordManager recman;
 
         // Note: We start out with an empty file
-        recman = newRecordManager();
+        RecordManager2 recman = newRecordManager();
 
         recman.insert(""); //first insert an empty record, to make sure serializer is initialized
         recman.commit();
@@ -183,7 +180,7 @@ public class RecordManagerTest extends TestCaseWithTestFile {
 
     
     public void testNonExistingRecid() throws IOException{
-    	RecordManager recman = newRecordManager();
+    	RecordManager2 recman = newRecordManager();
     	
     	Object obj = recman.fetch(6666666);
     	assertTrue(obj == null);
