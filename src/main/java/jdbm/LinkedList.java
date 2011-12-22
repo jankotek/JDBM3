@@ -58,7 +58,7 @@ class LinkedList<E> extends AbstractSequentialList<E>{
 
     }
 
-    void setRecmanAndListRedic(RecordManager2 recman, long listrecid){
+    void setPersistenceContext(RecordManager2 recman, long listrecid){
         this.recman = recman;
         this.listrecid = listrecid;
     }

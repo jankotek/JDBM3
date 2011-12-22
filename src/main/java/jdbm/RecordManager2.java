@@ -158,7 +158,7 @@ import java.util.*;
             long recid = assertNameExist(name);
 
             LinkedList<K> list = (LinkedList<K>) fetch(recid);
-            list.setRecmanAndListRedic(this, recid);
+            list.setPersistenceContext(this, recid);
             return list;
         }catch (IOException e){
             throw new IOError(e);
