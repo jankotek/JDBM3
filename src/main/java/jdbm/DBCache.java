@@ -16,6 +16,7 @@
 
 package jdbm;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -233,7 +234,6 @@ class DBCache
 
 
     public synchronized void close()
-        throws IOException
     {
         if ( _db == null ) {
             throw new IllegalStateException( "DB has been closed" );
@@ -251,7 +251,6 @@ class DBCache
 
 
     public synchronized void commit()
-        throws IOException
     {
         if ( _db == null ) {
             throw new IllegalStateException( "DB has been closed" );
@@ -261,7 +260,6 @@ class DBCache
     }
 
     public synchronized void rollback()
-        throws IOException
     {
         if ( _db == null ) {
             throw new IllegalStateException( "DB has been closed" );
@@ -319,9 +317,8 @@ class DBCache
     /**
      * Update all dirty cache objects to the underlying DB.
      */
-    protected void updateCacheEntries()
-        throws IOException
-    {
+    protected void updateCacheEntries(){
+        try{
     	Iterator<CacheEntry> iter = _hash.valuesIterator();
     	while(iter.hasNext()){
     		CacheEntry entry = iter.next();
@@ -330,6 +327,10 @@ class DBCache
                 entry._isDirty = false;
             }
     	}
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
     }
     
     
@@ -420,13 +421,17 @@ class DBCache
      *
      * @return recyclable CacheEntry
      */
-    protected CacheEntry purgeEntry() throws IOException {
+    protected CacheEntry purgeEntry(){
         CacheEntry entry = _first;
         if(entry == null)
         	return new CacheEntry(-1,null,null,false);
 
-        if(entry._isDirty)
+        if(entry._isDirty)try{
         	_db.update( entry._recid, entry._obj, entry._serializer );
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
         removeEntry(entry);
         _hash.remove(entry._recid);
 
@@ -552,7 +557,8 @@ class DBCache
     }
 
 
-	public void clearCache() throws IOException {
+	public void clearCache(){
+
         // discard all cache entries since we don't know which entries
         // where part of the transaction
 		while(_hash.size()>0)
@@ -568,11 +574,11 @@ class DBCache
     	}
         _first = null;
         _last = null;
-		
+
 	}
 
 
-	public void defrag() throws IOException {
+	public void defrag(){
 		commit();
 		_db.defrag();
 	}

@@ -1,6 +1,5 @@
 package jdbm;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -28,32 +27,25 @@ public interface DB {
      *  Closes the record manager and release resources.
      *  Record manager can not be used after it was closed
      *
-     *  @throws java.io.IOException when one of the underlying I/O operations fails.
      */
-    void close()
-        throws IOException;
+    void close();
 
     /**
      * Empty cache. This may be usefull if you need to release memory.
-     *
-     * @throws java.io.IOException
      */
-    void clearCache() throws IOException;
+    void clearCache();
 
     /**
      * Defragments storage, so it consumes less space.
      * This commits any uncommited data.
-     *
-     * @throws java.io.IOException
      */
-    void defrag() throws IOException;
+    void defrag();
 
     /**
      * Commit (make persistent) all changes since beginning of transaction.
      * JDBM supports only single transaction.
      */
-    void commit()
-        throws IOException;
+    void commit();
 
     /**
      * This calculates some database statistics.
@@ -65,10 +57,9 @@ public interface DB {
     /**
      * Rollback (cancel) all changes since beginning of transaction.
      * JDBM supports only single transaction.
-     * This operations affects all maps created by this DB.
+     * This operations affects all maps created or loaded by this DB.
      */
-    void rollback()
-        throws IOException;
+    void rollback();
 
 
     <K, V> Map<K, V> loadHashMap(String name);

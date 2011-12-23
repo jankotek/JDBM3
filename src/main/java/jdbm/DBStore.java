@@ -211,21 +211,23 @@ final class DBStore
      *  @throws IOException when one of the underlying I/O operations fails.
      */
     public synchronized void close()
-        throws IOException
     {
         checkIfClosed();
+        try{
+            _physPageman.close();
+            _physPageman = null;
 
-        _physPageman.close();
-        _physPageman = null;
-
-        _physFile.close();
-        _physFile = null;
+            _physFile.close();
+            _physFile = null;
         
-        _logicPageman.close();
-        _logicPageman = null;
+            _logicPageman.close();
+            _logicPageman = null;
         
-        _logicFile.close();
-        _logicFile = null;
+            _logicFile.close();
+            _logicFile = null;
+        }catch(IOException e){
+            throw new IOError(e);
+        }
     }
 
 
@@ -531,8 +533,8 @@ final class DBStore
 
 
     public synchronized void commit()
-        throws IOException
     {
+        try{
         checkIfClosed();
         checkCanWrite();
         /** flush free phys rows into pages*/
@@ -542,15 +544,18 @@ final class DBStore
         /**commit pages */
         _physPageman.commit();
         _logicPageman.commit();
+        }catch(IOException e){
+            throw new IOError(e);
+        }
     }
 
 
     public synchronized void rollback()
-        throws IOException
     {
         if(transactionDisabled)
             throw new IllegalAccessError("Transactions are disabled, can not rollback");
-        
+
+        try{
         checkIfClosed();
         _physMgr.roolback();
 
@@ -560,6 +565,10 @@ final class DBStore
         _physPageman.rollback();
         _logicPageman.rollback();
         defaultSerializer = null;
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
     }
 
     public void copyToZipStore(String zipFile) {
@@ -650,7 +659,7 @@ final class DBStore
     }
 
 
-	public synchronized void clearCache() throws IOException {
+	public synchronized void clearCache(){
 		//no cache		
 	}
 
@@ -761,8 +770,9 @@ final class DBStore
         }
     }
 
-	public synchronized void defrag() throws IOException {
+	public synchronized void defrag(){
 
+        try{
 		checkIfClosed();
                 checkCanWrite();
 		commit();
@@ -924,6 +934,10 @@ final class DBStore
 
 
 		reopen();
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
 	}
 
 	/**

@@ -189,7 +189,7 @@ public class DBTest extends TestCaseWithTestFile {
     		db.update(6666666, obj);
     		db.commit();
     		fail();
-    	}catch(IOException expected){
+    	}catch(IOError expected){
 
     	}
     }
