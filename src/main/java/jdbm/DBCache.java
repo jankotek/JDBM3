@@ -444,7 +444,7 @@ class DBCache
 
 
     @SuppressWarnings("unchecked")
-    protected static final class CacheEntry
+    static final class CacheEntry
     {
 
         protected long _recid;
@@ -467,14 +467,14 @@ class DBCache
         
     }
 
-    protected interface ReferenceCacheEntry {
+    interface ReferenceCacheEntry {
         long getRecid();
         void clear();
         Object get();
     }
 
     @SuppressWarnings("unchecked")
-    protected static final class SoftCacheEntry extends SoftReference implements ReferenceCacheEntry
+    static final class SoftCacheEntry extends SoftReference implements ReferenceCacheEntry
     {
         protected final long _recid;
 
@@ -490,7 +490,7 @@ class DBCache
     }
 
     @SuppressWarnings("unchecked")
-    protected static final class WeakCacheEntry extends WeakReference implements ReferenceCacheEntry
+    static final class WeakCacheEntry extends WeakReference implements ReferenceCacheEntry
     {
         protected final long _recid;
 
@@ -514,7 +514,7 @@ class DBCache
      * @author Jan Kotek
      *
      */
-    protected static final class SoftRunnable  implements Runnable{
+    static final class SoftRunnable  implements Runnable{
 
 		private ReferenceQueue<ReferenceCacheEntry> entryQueue;
 		private WeakReference<DBCache> db2;

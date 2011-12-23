@@ -44,6 +44,27 @@
           <source>1.5</source>          
         </configuration>
       </plugin>
+
+        <plugin>
+            <groupId>com.pyx4me</groupId>
+            <artifactId>proguard-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                   <phase>package</phase>
+                   <goals><goal>proguard</goal></goals>
+               </execution>
+            </executions>
+            <configuration>
+                <options>
+                    <option>-allowaccessmodification</option>
+                    <option>-keep public class * { public *; public static *; }</option>
+                </options>
+                <libs>
+                    <lib>${java.home}/lib/rt.jar</lib>
+                    <lib>${java.home}/lib/jce.jar</lib>
+                </libs>
+            </configuration>
+        </plugin>
       </plugins>
   </build>
 

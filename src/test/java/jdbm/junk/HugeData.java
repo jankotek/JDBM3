@@ -1,4 +1,7 @@
-package jdbm;
+package jdbm.junk;
+
+import jdbm.DB;
+import jdbm.DBMaker;
 
 import java.io.IOException;
 import java.util.List;

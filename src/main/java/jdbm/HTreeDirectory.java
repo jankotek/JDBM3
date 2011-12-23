@@ -418,7 +418,7 @@ final class HTreeDirectory<K,V>
     /**
      * Utility class to enumerate keys/values in a HTree
      */
-    public class HDIterator<A> implements Iterator<A>
+     class HDIterator<A> implements Iterator<A>
     {
 
         /**

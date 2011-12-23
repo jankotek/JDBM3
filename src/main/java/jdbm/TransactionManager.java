@@ -128,7 +128,7 @@ final class TransactionManager {
     private void synchronizeLogFromMemory() throws IOException {
         close();
 
-        TreeSet<BlockIo> blockList = new TreeSet<BlockIo>( new BlockIoComparator() );
+        TreeSet<BlockIo> blockList = new TreeSet<BlockIo>( BLOCK_IO_COMPARTOR );
 
         int numBlocks = 0;
         int writtenBlocks = 0;
@@ -334,8 +334,7 @@ final class TransactionManager {
      *  to write for this transaction.  The BlockIo objects are ordered by
      *  their blockIds.
      */
-    public static class BlockIoComparator
-        implements Comparator<BlockIo>
+    private static final Comparator<BlockIo> BLOCK_IO_COMPARTOR = new  Comparator<BlockIo>()
     {
 
         public int compare( BlockIo block1, BlockIo block2 ) {
@@ -351,6 +350,6 @@ final class TransactionManager {
             }
         }
 
-    } // class BlockIOComparator
+    };
 
 }

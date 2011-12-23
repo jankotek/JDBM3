@@ -1,7 +1,5 @@
 package jdbm;
 
-import sun.reflect.ReflectionFactory;
-
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
@@ -66,7 +64,7 @@ abstract class SerialClassInfo {
      * Stores info about single class stored in JDBM.
      * Roughly corresponds to 'java.io.ObjectStreamClass'
      */
-    public static class ClassInfo{
+    static class ClassInfo{
 
         private final String name;
         private final List<FieldInfo> fields = new ArrayList<FieldInfo>();
@@ -117,7 +115,7 @@ abstract class SerialClassInfo {
      * Stores info about single field stored in JDBM.
      * Roughly corresponds to 'java.io.ObjectFieldClass'
      */
-    public static class FieldInfo{
+    static class FieldInfo{
 
         private final String name;
         private final boolean primitive;
@@ -324,8 +322,9 @@ abstract class SerialClassInfo {
     private static <T> T createInstance(Class<T> clazz, Class<? super T> parent) {
 
         try {
-            ReflectionFactory rf =
-                  ReflectionFactory.getReflectionFactory();
+            //TODO dependecy on nonpublic JVM API
+            sun.reflect.ReflectionFactory rf =
+                    sun.reflect.ReflectionFactory.getReflectionFactory();
             Constructor objDef = parent.getDeclaredConstructor();
             Constructor intConstr = rf.newConstructorForSerialization(
                 clazz, objDef
