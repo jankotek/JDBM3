@@ -1,6 +1,7 @@
 package jdbm;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 
@@ -66,8 +67,8 @@ class StorageDisk implements Storage {
     }
 
 
-    public void write(long pageNumber, byte[] data) throws IOException {
-        if (data.length != BLOCK_SIZE) throw new IllegalArgumentException();
+    public void write(long pageNumber, ByteBuffer data) throws IOException {
+        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
         long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
@@ -75,7 +76,7 @@ class StorageDisk implements Storage {
         if (lastPageNumber + 1 != pageNumber)
             file.seek(offset % MAX_FILE_SIZE);
 
-        file.write(data);
+        file.write(data.array());
         lastPageNumber = pageNumber;
     }
 
@@ -87,19 +88,19 @@ class StorageDisk implements Storage {
         rafs = null;
     }
 
-    public void read(long pageNumber, byte[] buffer) throws IOException {
-        if (buffer.length != BLOCK_SIZE) throw new IllegalArgumentException();
+    public void read(long pageNumber, ByteBuffer buffer) throws IOException {
+        if (buffer.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
         long offset = pageNumber * BLOCK_SIZE;
 
         RandomAccessFile file = getRaf(offset);
         if (lastPageNumber + 1 != pageNumber)
             file.seek(offset % MAX_FILE_SIZE);
-        int remaining = buffer.length;
+        int remaining = buffer.capacity();
         int pos = 0;
         while (remaining > 0) {
-            int read = file.read(buffer, pos, remaining);
+            int read = file.read(buffer.array(), pos, remaining);
             if (read == -1) {
-                System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer, pos, remaining);
+                System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer.array(), pos, remaining);
                 break;
             }
             remaining -= read;

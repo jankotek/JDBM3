@@ -1,6 +1,7 @@
 package jdbm;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 /**
  *
@@ -12,9 +13,9 @@ interface Storage {
      */
     int BLOCK_SIZE = 2048;
 
-    void write(long pageNumber, byte[] data) throws IOException;
+    void write(long pageNumber, ByteBuffer data) throws IOException;
 
-    void read(long pageNumber, byte[] data) throws IOException;
+    void read(long pageNumber, ByteBuffer data) throws IOException;
 
     void forceClose() throws IOException;
 

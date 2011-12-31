@@ -1,6 +1,7 @@
 package jdbm;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 /**
@@ -12,23 +13,23 @@ class StorageMemory implements Storage {
     private ArrayList<byte[]> pages = new ArrayList<byte[]>();
 
 
-    public void read(long pageNumber, byte[] data) throws IOException {
-        if (data.length != BLOCK_SIZE) throw new IllegalArgumentException();
+    public void read(long pageNumber, ByteBuffer data) throws IOException {
+        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
         if (pages.size() <= pageNumber || pages.get((int) pageNumber) == null) {
             //out of bounds, so just return empty data
-            System.arraycopy(RecordFile.CLEAN_DATA, 0, data, 0, data.length);
+            System.arraycopy(RecordFile.CLEAN_DATA, 0, data, 0, data.capacity());
             return;
         }
 
         byte[] data2 = pages.get((int) pageNumber);
-        System.arraycopy(data2, 0, data, 0, data.length);
+        System.arraycopy(data2, 0, data, 0, data.capacity());
     }
 
-    public void write(long pageNumber, byte[] data) throws IOException {
-        if (data.length != BLOCK_SIZE) throw new IllegalArgumentException();
+    public void write(long pageNumber, ByteBuffer data) throws IOException {
+        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
 
-        byte[] data2 = new byte[data.length];
-        System.arraycopy(data, 0, data2, 0, data.length);
+        byte[] data2 = new byte[data.capacity()];
+        System.arraycopy(data, 0, data2, 0, data.capacity());
 
         pages.ensureCapacity((int) (pageNumber + 1));
         pages.set((int) pageNumber, data2);

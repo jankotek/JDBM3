@@ -1,6 +1,7 @@
 package jdbm;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -24,16 +25,16 @@ class StorageZip implements Storage {
 
     }
 
-    public void write(long pageNumber, byte[] data) throws IOException {
+    public void write(long pageNumber, ByteBuffer data) throws IOException {
         throw new UnsupportedOperationException("readonly");
     }
 
-    public void read(long pageNumber, byte[] data) throws IOException {
-        if (data.length != BLOCK_SIZE) throw new IllegalArgumentException();
+    public void read(long pageNumber, ByteBuffer data) throws IOException {
+        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
 
         ZipEntry e = z.getEntry(zip2 + pageNumber);
         InputStream i = z.getInputStream(e);
-        new DataInputStream(i).readFully(data);
+        new DataInputStream(i).readFully(data.array());
         i.close();
     }
 

@@ -18,6 +18,7 @@
 package jdbm;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * This class manages the linked lists of pages that make up a file.
@@ -78,7 +79,7 @@ final class PageManager {
 
         // Clean data.
         System.arraycopy(RecordFile.CLEAN_DATA, 0,
-                buf.getData(), 0,
+                buf.getData().array(), 0,
                 Storage.BLOCK_SIZE);
         pageHdr.setType(type);
         pageHdr.setPrev(oldLast);
@@ -240,7 +241,7 @@ final class PageManager {
     /**
      * PageManager pernamently locks zero block, and we need this for backups
      */
-    byte[] getHeaderBufData() {
+    ByteBuffer getHeaderBufData() {
         return headerBuf.getData();
     }
 

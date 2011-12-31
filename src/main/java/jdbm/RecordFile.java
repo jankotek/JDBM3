@@ -20,6 +20,7 @@ package jdbm;
 import javax.crypto.Cipher;
 import java.io.IOError;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -149,10 +150,10 @@ final class RecordFile {
             storage.read(blockid, node.getData());
         } else {
             //decrypt if needed
-            byte[] b = new byte[Storage.BLOCK_SIZE];
+            ByteBuffer b = ByteBuffer.allocate(Storage.BLOCK_SIZE);
             storage.read(blockid, b);
-            if (!Utils.allZeros(b)) try {
-                cipherOut.doFinal(b, 0, Storage.BLOCK_SIZE, node.getData());
+            if (!Utils.allZeros(b.array())) try {
+                cipherOut.doFinal(b.array(), 0, Storage.BLOCK_SIZE, node.getData().array());
             } catch (Exception e) {
                 throw new IOError(e);
             }
@@ -374,7 +375,7 @@ final class RecordFile {
      * synchronization code.
      */
     void synch(BlockIo node) throws IOException {
-        byte[] data = node.getData();
+        ByteBuffer data = node.getData();
         if (data != null) {
             storage.write(node.getBlockId(), Utils.encrypt(cipherIn, data));
         }

@@ -541,13 +541,13 @@ final class DBStore
             {
                 String file = zip2 + IDR + 0;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, _logicPageman.getHeaderBufData()));
+                z.write(Utils.encrypt(cipherIn, _logicPageman.getHeaderBufData().array()));
                 z.closeEntry();
             }
             {
                 String file = zip2 + DBR + 0;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, _physPageman.getHeaderBufData()));
+                z.write(Utils.encrypt(cipherIn, _physPageman.getHeaderBufData().array()));
                 z.closeEntry();
             }
 
@@ -559,7 +559,7 @@ final class DBStore
                 BlockIo block = _logicFile.get(pageid);
                 String file = zip2 + IDR + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, block.getData().array()));
                 z.closeEntry();
                 _logicFile.release(block);
             }
@@ -570,7 +570,7 @@ final class DBStore
                 BlockIo block = _logicFile.get(pageid);
                 String file = zip2 + IDR + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, block.getData().array()));
                 z.closeEntry();
                 _logicFile.release(block);
             }
@@ -582,7 +582,7 @@ final class DBStore
                 BlockIo block = _physFile.get(pageid);
                 String file = zip2 + DBR + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, block.getData().array()));
                 z.closeEntry();
                 _physFile.release(block);
             }
@@ -593,7 +593,7 @@ final class DBStore
                 BlockIo block = _physFile.get(pageid);
                 String file = zip2 + DBR + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, block.getData().array()));
                 z.closeEntry();
                 _physFile.release(block);
             }

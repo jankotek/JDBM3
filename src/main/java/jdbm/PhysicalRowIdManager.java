@@ -18,6 +18,7 @@ package jdbm;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import static jdbm.Storage.*;
 
@@ -115,9 +116,9 @@ final class PhysicalRowIdManager {
             if (leftToRead < toCopy) {
                 toCopy = leftToRead;
             }
-            byte[] blockData = block.getData();
+            ByteBuffer blockData = block.getData();
             int finish = dataOffset + toCopy;
-            out.write(blockData, dataOffset, finish - dataOffset);
+            out.write(blockData.array(), dataOffset, finish - dataOffset);
 
             // Go to the next block
             leftToRead -= toCopy;
@@ -299,7 +300,7 @@ final class PhysicalRowIdManager {
             if (leftToWrite < toCopy) {
                 toCopy = leftToWrite;
             }
-            System.arraycopy(data, offsetInBuffer, block.getData(), dataOffset, toCopy);
+            System.arraycopy(data, offsetInBuffer, block.getData().array(), dataOffset, toCopy);
 
             // Go to the next block
             leftToWrite -= toCopy;

@@ -6,6 +6,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.ShortBufferException;
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
@@ -78,6 +79,10 @@ class Utils {
         return ret;
     }
 
+    public static ByteBuffer encrypt(Cipher cipherIn, ByteBuffer b) {
+        return ByteBuffer.wrap(encrypt(cipherIn,b.array()));
+    }
+    
     public static byte[] encrypt(Cipher cipherIn, byte[] b) {
         if (cipherIn == null)
             return b;
@@ -99,6 +104,8 @@ class Utils {
             return o1.compareTo(o2);
         }
     };
+
+
 
     /**
      * Growable long[]

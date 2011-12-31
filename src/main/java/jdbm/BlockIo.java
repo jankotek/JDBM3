@@ -19,6 +19,7 @@ package jdbm;
 
 import javax.crypto.Cipher;
 import java.io.*;
+import java.nio.ByteBuffer;
 
 /**
  * This class wraps a page-sized byte array and provides methods
@@ -33,7 +34,7 @@ final class BlockIo {
 
     private long blockId;
 
-    private byte[] data; // work area
+    private ByteBuffer data; // work area
     transient private BlockView view = null;
     private boolean dirty = false;
     private int transactionCount = 0;
@@ -51,13 +52,13 @@ final class BlockIo {
      */
     BlockIo(long blockId, byte[] data) {
         this.blockId = blockId;
-        this.data = data;
+        this.data = ByteBuffer.wrap(data);
     }
 
     /**
      * Returns the underlying array
      */
-    byte[] getData() {
+    ByteBuffer getData() {
         return data;
     }
 
@@ -147,14 +148,14 @@ final class BlockIo {
      * Reads a byte from the indicated position
      */
     public byte readByte(int pos) {
-        return data[pos];
+        return data.get(pos);
     }
 
     /**
      * Writes a byte to the indicated position
      */
     public void writeByte(int pos, byte value) {
-        data[pos] = value;
+        data.put(pos,value);
         setDirty();
     }
 
@@ -162,17 +163,14 @@ final class BlockIo {
      * Reads a short from the indicated position
      */
     public short readShort(int pos) {
-        return (short)
-                (((short) (data[pos + 0] & 0xff) << 8) |
-                        ((short) (data[pos + 1] & 0xff) << 0));
+        return data.getShort(pos);
     }
 
     /**
      * Writes a short to the indicated position
      */
     public void writeShort(int pos, short value) {
-        data[pos + 0] = (byte) (0xff & (value >> 8));
-        data[pos + 1] = (byte) (0xff & (value >> 0));
+        data.putShort(pos,value);
         setDirty();
     }
 
@@ -180,21 +178,14 @@ final class BlockIo {
      * Reads an int from the indicated position
      */
     public int readInt(int pos) {
-        return
-                (((int) (data[pos + 0] & 0xff) << 24) |
-                        ((int) (data[pos + 1] & 0xff) << 16) |
-                        ((int) (data[pos + 2] & 0xff) << 8) |
-                        ((int) (data[pos + 3] & 0xff) << 0));
+        return data.getInt(pos);
     }
 
     /**
      * Writes an int to the indicated position
      */
     public void writeInt(int pos, int value) {
-        data[pos + 0] = (byte) (0xff & (value >> 24));
-        data[pos + 1] = (byte) (0xff & (value >> 16));
-        data[pos + 2] = (byte) (0xff & (value >> 8));
-        data[pos + 3] = (byte) (0xff & (value >> 0));
+        data.putInt(pos,value);
         setDirty();
     }
 
@@ -202,29 +193,14 @@ final class BlockIo {
      * Reads a long from the indicated position
      */
     public long readLong(int pos) {
-        return
-                (((long) (data[pos + 0] & 0xff) << 56) |
-                        ((long) (data[pos + 1] & 0xff) << 48) |
-                        ((long) (data[pos + 2] & 0xff) << 40) |
-                        ((long) (data[pos + 3] & 0xff) << 32) |
-                        ((long) (data[pos + 4] & 0xff) << 24) |
-                        ((long) (data[pos + 5] & 0xff) << 16) |
-                        ((long) (data[pos + 6] & 0xff) << 8) |
-                        ((long) (data[pos + 7] & 0xff) << 0));
+        return data.getLong(pos);
     }
 
     /**
      * Writes a long to the indicated position
      */
     public void writeLong(int pos, long value) {
-        data[pos + 0] = (byte) (0xff & (value >> 56));
-        data[pos + 1] = (byte) (0xff & (value >> 48));
-        data[pos + 2] = (byte) (0xff & (value >> 40));
-        data[pos + 3] = (byte) (0xff & (value >> 32));
-        data[pos + 4] = (byte) (0xff & (value >> 24));
-        data[pos + 5] = (byte) (0xff & (value >> 16));
-        data[pos + 6] = (byte) (0xff & (value >> 8));
-        data[pos + 7] = (byte) (0xff & (value >> 0));
+        data.putLong(pos,value);
         setDirty();
     }
 
@@ -234,12 +210,12 @@ final class BlockIo {
      */
     public long readSixByteLong(int pos) {
         return
-                (((long) (data[pos + 0] & 0xff) << 40) |
-                        ((long) (data[pos + 1] & 0xff) << 32) |
-                        ((long) (data[pos + 2] & 0xff) << 24) |
-                        ((long) (data[pos + 3] & 0xff) << 16) |
-                        ((long) (data[pos + 4] & 0xff) << 8) |
-                        ((long) (data[pos + 5] & 0xff) << 0));
+                (((long) (data.get(pos + 0) & 0xff) << 40) |
+                        ((long) (data.get(pos + 1) & 0xff) << 32) |
+                        ((long) (data.get(pos + 2) & 0xff) << 24) |
+                        ((long) (data.get(pos + 3) & 0xff) << 16) |
+                        ((long) (data.get(pos + 4) & 0xff) << 8) |
+                        ((long) (data.get(pos + 5) & 0xff) << 0));
 
     }
 
@@ -250,12 +226,12 @@ final class BlockIo {
 //    	if(value >> (6*8)!=0)
 //    		throw new IllegalArgumentException("does not fit");
 
-        data[pos + 0] = (byte) (0xff & (value >> 40));
-        data[pos + 1] = (byte) (0xff & (value >> 32));
-        data[pos + 2] = (byte) (0xff & (value >> 24));
-        data[pos + 3] = (byte) (0xff & (value >> 16));
-        data[pos + 4] = (byte) (0xff & (value >> 8));
-        data[pos + 5] = (byte) (0xff & (value >> 0));
+        data.put(pos + 0,(byte) (0xff & (value >> 40)));
+        data.put(pos + 1, (byte) (0xff & (value >> 32)));
+        data.put(pos + 2, (byte) (0xff & (value >> 24)));
+        data.put(pos + 3, (byte) (0xff & (value >> 16)));
+        data.put(pos + 4, (byte) (0xff & (value >> 8)));
+        data.put(pos + 5, (byte) (0xff & (value >> 0)));
         setDirty();
     }
 
@@ -275,9 +251,9 @@ final class BlockIo {
         byte[] data2 = new byte[Storage.BLOCK_SIZE];
         in.readFully(data2);
         if (cipherOut == null || Utils.allZeros(data2))
-            data = data2;
+            data = ByteBuffer.wrap(data2);
         else try {
-            data = cipherOut.doFinal(data2);
+            data = ByteBuffer.wrap(cipherOut.doFinal(data2));
         } catch (Exception e) {
             throw new IOError(e);
         }
@@ -286,24 +262,9 @@ final class BlockIo {
     // implement externalizable interface
     public void writeExternal(DataOutput out, Cipher cipherIn) throws IOException {
         LongPacker.packLong(out, blockId);
-        out.write(Utils.encrypt(cipherIn, data));
+        out.write(Utils.encrypt(cipherIn, data.array()));
     }
 
-    static final int UNSIGNED_SHORT_MAX = 256 * 256 - 1;
 
-
-    public void writeUnsignedShort(int pos, int value) {
-        if (value > UNSIGNED_SHORT_MAX || value < 0)
-            throw new IllegalArgumentException("Out of range: " + value);
-        data[pos + 0] = (byte) (0xff & (value >> 8));
-        data[pos + 1] = (byte) (0xff & (value >> 0));
-        setDirty();
-    }
-
-    public int readUnsignedshort(int pos) {
-        return
-                (((int) (data[pos + 0] & 0xff) << 8) |
-                        ((int) (data[pos + 1] & 0xff) << 0));
-    }
 
 }
