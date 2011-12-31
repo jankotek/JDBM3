@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.TreeSet;
 
 /**
- *  This class manages the transaction log that belongs to every
- *  {@link RecordFile}. The transaction log is either clean, or
- *  in progress. In the latter case, the transaction manager
- *  takes care of a roll forward.
+ * This class manages the transaction log that belongs to every
+ * {@link RecordFile}. The transaction log is either clean, or
+ * in progress. In the latter case, the transaction manager
+ * takes care of a roll forward.
  */
 // TODO: Handle the case where we are recovering lg9 and lg0, were we
 // should start with lg9 instead of lg0!
@@ -41,13 +41,13 @@ final class TransactionManager {
     // streams for transaction log.
     private DataOutputStream oos;
 
-    /** 
+    /**
      * By default, we keep 10 transactions in the log file before
      * synchronizing it with the main database file.
      */
     static final int DEFAULT_TXNS_IN_LOG = 1;
 
-    /** 
+    /**
      * Maximum number of transactions before the log file is
      * synchronized with the main database file.
      */
@@ -67,10 +67,10 @@ final class TransactionManager {
     private Cipher cipherOut;
 
     /**
-     *  Instantiates a transaction manager instance. If recovery
-     *  needs to be performed, it is done.
+     * Instantiates a transaction manager instance. If recovery
+     * needs to be performed, it is done.
      *
-     * @param owner the RecordFile instance that owns this transaction mgr.
+     * @param owner     the RecordFile instance that owns this transaction mgr.
      * @param storage
      * @param cipherIn
      * @param cipherOut
@@ -87,14 +87,13 @@ final class TransactionManager {
 
     /**
      * Synchronize log file data with the main database file.
-     * <p>
+     * <p/>
      * After this call, the main database file is guaranteed to be
      * consistent and guaranteed to be the only file needed for
      * backup purposes.
      */
     public void synchronizeLog()
-        throws IOException
-    {
+            throws IOException {
         synchronizeLogFromMemory();
     }
 
@@ -103,32 +102,32 @@ final class TransactionManager {
      * Set the maximum number of transactions to record in
      * the log (and keep in memory) before the log is
      * synchronized with the main database file.
-     * <p>
+     * <p/>
      * This method must be called while there are no
      * pending transactions in the log.
      */
-    public void setMaximumTransactionsInLog( int maxTxns )
-        throws IOException
-    {
-        if ( maxTxns <= 0 ) {
-            throw new IllegalArgumentException( 
-                "Argument 'maxTxns' must be greater than 0." );
+    public void setMaximumTransactionsInLog(int maxTxns)
+            throws IOException {
+        if (maxTxns <= 0) {
+            throw new IllegalArgumentException(
+                    "Argument 'maxTxns' must be greater than 0.");
         }
-        if ( curTxn != -1 ) {
-            throw new IllegalStateException( 
-                "Cannot change setting while transactions are pending in the log" );
+        if (curTxn != -1) {
+            throw new IllegalStateException(
+                    "Cannot change setting while transactions are pending in the log");
         }
         _maxTxns = maxTxns;
-        txns = new ArrayList[ maxTxns ];
+        txns = new ArrayList[maxTxns];
     }
 
 
-
-    /** Synchs in-core transactions to data file and opens a fresh log */
+    /**
+     * Synchs in-core transactions to data file and opens a fresh log
+     */
     private void synchronizeLogFromMemory() throws IOException {
         close();
 
-        TreeSet<BlockIo> blockList = new TreeSet<BlockIo>( BLOCK_IO_COMPARTOR );
+        TreeSet<BlockIo> blockList = new TreeSet<BlockIo>(BLOCK_IO_COMPARTOR);
 
         int numBlocks = 0;
         int writtenBlocks = 0;
@@ -139,12 +138,11 @@ final class TransactionManager {
             // block if necessary, thus avoiding writing the same block twice
             for (Iterator<BlockIo> k = txns[i].iterator(); k.hasNext(); ) {
                 BlockIo block = k.next();
-                if ( blockList.contains( block ) ) {
+                if (blockList.contains(block)) {
                     block.decrementTransactionCount();
-                }
-                else {
+                } else {
                     writtenBlocks++;
-                    boolean result = blockList.add( block );
+                    boolean result = blockList.add(block);
                 }
                 numBlocks++;
             }
@@ -159,7 +157,9 @@ final class TransactionManager {
     }
 
 
-    /** Opens the log file */
+    /**
+     * Opens the log file
+     */
     private void open() throws IOException {
 
         oos = storage.openTransactionLog();
@@ -168,22 +168,24 @@ final class TransactionManager {
         curTxn = -1;
     }
 
-    /** Startup recovery on all files */
+    /**
+     * Startup recovery on all files
+     */
     private void recover() throws IOException {
 
         DataInputStream ois = storage.readTransactionLog();
 
         // if transaction log is empty, or does not exist
-        if(ois == null) return;
+        if (ois == null) return;
 
         while (true) {
             ArrayList<BlockIo> blocks = null;
             try {
                 int size = LongPacker.unpackInt(ois);
                 blocks = new ArrayList<BlockIo>(size);
-                for(int i =0; i<size;i++){
+                for (int i = 0; i < size; i++) {
                     BlockIo b = new BlockIo();
-                    b.readExternal(ois,cipherOut);
+                    b.readExternal(ois, cipherOut);
                     blocks.add(b);
                 }
             } catch (IOException e) {
@@ -198,11 +200,13 @@ final class TransactionManager {
         storage.deleteTransactionLog();
     }
 
-    /** Synchronizes the indicated blocks with the owner. */
+    /**
+     * Synchronizes the indicated blocks with the owner.
+     */
     private void synchronizeBlocks(Iterable<BlockIo> blocks, boolean fromCore)
-    throws IOException {
+            throws IOException {
         // write block vector elements to the data file.
-        for(BlockIo cur:blocks){
+        for (BlockIo cur : blocks) {
             owner.synch(cur);
             if (fromCore) {
                 cur.decrementTransactionCount();
@@ -214,19 +218,23 @@ final class TransactionManager {
     }
 
 
-    /** Set clean flag on the blocks. */
+    /**
+     * Set clean flag on the blocks.
+     */
     private void setClean(ArrayList<BlockIo> blocks)
-    throws IOException {
+            throws IOException {
         for (BlockIo cur : blocks) {
             cur.setClean();
         }
     }
 
-    /** Discards the indicated blocks and notify the owner. */
+    /**
+     * Discards the indicated blocks and notify the owner.
+     */
     private void discardBlocks(ArrayList<BlockIo> blocks)
-    throws IOException {
-        for (BlockIo cur:blocks) {
-            
+            throws IOException {
+        for (BlockIo cur : blocks) {
+
             cur.decrementTransactionCount();
             if (!cur.isInTransaction()) {
                 owner.releaseFromTransaction(cur, false);
@@ -235,9 +243,9 @@ final class TransactionManager {
     }
 
     /**
-     *  Starts a transaction. This can block if all slots have been filled
-     *  with full transactions, waiting for the synchronization thread to
-     *  clean out slots.
+     * Starts a transaction. This can block if all slots have been filled
+     * with full transactions, waiting for the synchronization thread to
+     * clean out slots.
      */
     void start() throws IOException {
         curTxn++;
@@ -249,7 +257,7 @@ final class TransactionManager {
     }
 
     /**
-     *  Indicates the block is part of the transaction.
+     * Indicates the block is part of the transaction.
      */
     void add(BlockIo block) throws IOException {
         block.incrementTransactionCount();
@@ -257,13 +265,13 @@ final class TransactionManager {
     }
 
     /**
-     *  Commits the transaction to the log file.
+     * Commits the transaction to the log file.
      */
     void commit() throws IOException {
         ArrayList<BlockIo> blocks = txns[curTxn];
-        LongPacker.packInt(oos,blocks.size());
-        for(BlockIo block:blocks){
-            block.writeExternal(oos,cipherIn);
+        LongPacker.packInt(oos, blocks.size());
+        for (BlockIo block : blocks) {
+            block.writeExternal(oos, cipherIn);
         }
 
 
@@ -277,14 +285,16 @@ final class TransactionManager {
 //        oos = new DataOutputStream(new BufferedOutputStream(fos));
     }
 
-    /** Flushes and syncs */
+    /**
+     * Flushes and syncs
+     */
     private void sync() throws IOException {
         oos.flush();
     }
 
     /**
-     *  Shutdowns the transaction manager. Resynchronizes outstanding
-     *  logs.
+     * Shutdowns the transaction manager. Resynchronizes outstanding
+     * logs.
      */
     void shutdown() throws IOException {
         synchronizeLogFromMemory();
@@ -292,7 +302,7 @@ final class TransactionManager {
     }
 
     /**
-     *  Closes open files.
+     * Closes open files.
      */
     private void close() throws IOException {
         sync();
@@ -317,7 +327,7 @@ final class TransactionManager {
     void synchronizeLogFromDisk() throws IOException {
         close();
 
-        for ( int i=0; i < _maxTxns; i++ ) {
+        for (int i = 0; i < _maxTxns; i++) {
             if (txns[i] == null)
                 continue;
             discardBlocks(txns[i]);
@@ -329,23 +339,21 @@ final class TransactionManager {
     }
 
 
-    /** INNER CLASS.
-     *  Comparator class for use by the tree set used to store the blocks
-     *  to write for this transaction.  The BlockIo objects are ordered by
-     *  their blockIds.
+    /**
+     * INNER CLASS.
+     * Comparator class for use by the tree set used to store the blocks
+     * to write for this transaction.  The BlockIo objects are ordered by
+     * their blockIds.
      */
-    private static final Comparator<BlockIo> BLOCK_IO_COMPARTOR = new  Comparator<BlockIo>()
-    {
+    private static final Comparator<BlockIo> BLOCK_IO_COMPARTOR = new Comparator<BlockIo>() {
 
-        public int compare( BlockIo block1, BlockIo block2 ) {
+        public int compare(BlockIo block1, BlockIo block2) {
 
-            if ( block1.getBlockId() == block2.getBlockId() ) {
-            	return 0;
-            }
-            else if ( block1.getBlockId() < block2.getBlockId() ) {
+            if (block1.getBlockId() == block2.getBlockId()) {
+                return 0;
+            } else if (block1.getBlockId() < block2.getBlockId()) {
                 return -1;
-            }
-            else {
+            } else {
                 return 1;
             }
         }

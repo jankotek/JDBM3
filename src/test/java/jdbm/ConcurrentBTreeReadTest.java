@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,23 +22,27 @@ import java.util.Comparator;
 import java.util.Random;
 
 public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
-    
 
-	public static class Dummy implements Serializable {
-        
+
+    public static class Dummy implements Serializable {
+
         private static final long serialVersionUID = -5567451291089724793L;
         private long key;
         @SuppressWarnings("unused")
         private byte space[] = new byte[1024];
-        
-	    public Dummy() {}
-	    public Dummy(long key) { this.key = key; }
-        
+
+        public Dummy() {
+        }
+
+        public Dummy(long key) {
+            this.key = key;
+        }
+
         @Override
         public int hashCode() {
-            return (int)key;
+            return (int) key;
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof Dummy))
@@ -48,41 +52,39 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
                 return false;
             return true;
         }
-        
+
     }
-    
+
     private DBAbstract db;
-    
+
     private BTree btree;
-    
+
     private int entries = 20000;
 
     private int readers = 5;
-    
+
     public void setUp() throws Exception {
         super.setUp();
         db = newRecordManager();
         btree = BTree.createInstance(db, (Comparator) Collections.reverseOrder());
         System.err.println(db.getClass());
-    }  
+    }
 
-    
-    
-    
+
     public void testConcurrent() throws Exception {
         Runnable read = new Runnable() {
 
             public void run() {
                 read();
             }
-            
+
         };
         Thread t[] = new Thread[readers];
         int c = 0;
-        for (int i = 0; i < entries; i++) { 
-            btree.insert((long)i, new Dummy(i), false);
+        for (int i = 0; i < entries; i++) {
+            btree.insert((long) i, new Dummy(i), false);
             if (i % 1000 == 0) {
-		        System.err.println("count " + i);
+                System.err.println("count " + i);
                 commit();
             }
         }
@@ -90,20 +92,26 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
         commit();
         System.gc();
         Thread.sleep(1000);
-        
-        for (int i = 0; i < readers; i++) { t[c++] = new Thread(read); }
-        
+
+        for (int i = 0; i < readers; i++) {
+            t[c++] = new Thread(read);
+        }
+
         System.err.println("start readers");
         long start = System.currentTimeMillis();
-        for (int i = 0; i < t.length; i++) { t[i].start(); }
-        for (int i = 0; i < t.length; i++) { t[i].join(); }
+        for (int i = 0; i < t.length; i++) {
+            t[i].start();
+        }
+        for (int i = 0; i < t.length; i++) {
+            t[i].join();
+        }
         long end = System.currentTimeMillis();
         System.err.println("done " + (end - start) + "ms");
     }
-    
+
     private Object fetch(Long id) throws IOException {
         try {
-	        return btree.get(id);
+            return btree.get(id);
         } catch (IOException e) {
             System.out.println("ERR " + id);
             e.printStackTrace();
@@ -119,14 +127,14 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
         Random r = new Random();
         for (int i = 0; i < entries; i++) {
             try {
-                fetch((long)r.nextInt(entries));
+                fetch((long) r.nextInt(entries));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         System.err.println("done read");
     }
-    
+
 }
 
  	  	 

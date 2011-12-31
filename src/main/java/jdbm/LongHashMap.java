@@ -24,29 +24,29 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Hash Map which uses primitive long as key. 
+ * Hash Map which uses primitive long as key.
  * Main advantage is new instanceof of Long does not have to be created for each lookup.
- * <p>
+ * <p/>
  * This code comes from Android, which in turns comes from Apache Harmony.
- * This class was modified to use primitive longs and stripped down to consume less space. 
- * <p>
+ * This class was modified to use primitive longs and stripped down to consume less space.
+ * <p/>
  * Author of JDBM modifications: Jan Kotek
- * <p>
- * Note: This map have weakened hash function, this works well for JDBM, but may be wrong for many other applications.  
+ * <p/>
+ * Note: This map have weakened hash function, this works well for JDBM, but may be wrong for many other applications.
  */
-class LongHashMap<V> implements  Serializable {
+class LongHashMap<V> implements Serializable {
     private static final long serialVersionUID = 362499999763181265L;
 
     private int elementCount;
 
-    private  Entry<V>[] elementData;
+    private Entry<V>[] elementData;
 
     private final float loadFactor;
 
-    private  int threshold;
+    private int threshold;
 
     private static final int DEFAULT_SIZE = 16;
-    
+
     private transient Entry<V> reuseAfterDelete = null;
 
     static final class Entry<V> {
@@ -56,43 +56,40 @@ class LongHashMap<V> implements  Serializable {
         V value;
 
         long key;
-        
+
         public boolean equals(Object object) {
             if (this == object) {
                 return true;
             }
             if (object instanceof Entry) {
                 Entry<?> entry = (Entry) object;
-                return ( key == entry.key)
+                return (key == entry.key)
                         && (value == null ? entry.value == null : value
-                                .equals(entry.value));
+                        .equals(entry.value));
             }
             return false;
         }
 
 
-        
         public int hashCode() {
-            return (int)(key)
+            return (int) (key)
                     ^ (value == null ? 0 : value.hashCode());
         }
 
-        
-        
+
         public String toString() {
             return key + "=" + value;
         }
-        
 
-        
+
         Entry(long theKey) {
-        	this.key = theKey;
-        	this.value = null;
+            this.key = theKey;
+            this.value = null;
         }
 
 
     }
-    
+
 
     static class HashMapIterator<V> implements Iterator<V> {
         private int position = 0;
@@ -140,7 +137,7 @@ class LongHashMap<V> implements  Serializable {
             }
 
             Entry<V> result;
-            Entry<V> _entry  = entry;
+            Entry<V> _entry = entry;
             if (_entry == null) {
                 result = lastEntry = associatedMap.elementData[position++];
                 entry = lastEntry.next;
@@ -171,18 +168,17 @@ class LongHashMap<V> implements  Serializable {
             } else {
                 lastEntry.next = entry;
             }
-            if(lastEntry!=null){
-            	Entry<V> reuse = lastEntry;
-            	lastEntry = null;
-            	reuse.key = Long.MIN_VALUE;
-            	reuse.value = null;
-            	associatedMap.reuseAfterDelete = reuse;
+            if (lastEntry != null) {
+                Entry<V> reuse = lastEntry;
+                lastEntry = null;
+                reuse.key = Long.MIN_VALUE;
+                reuse.value = null;
+                associatedMap.reuseAfterDelete = reuse;
             }
 
             associatedMap.elementCount--;
         }
     }
-
 
 
     @SuppressWarnings("unchecked")
@@ -192,7 +188,7 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Constructs a new empty {@code HashMap} instance.
-     * 
+     *
      * @since Android 1.0
      */
     public LongHashMap() {
@@ -201,11 +197,9 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Constructs a new {@code HashMap} instance with the specified capacity.
-     * 
-     * @param capacity
-     *            the initial capacity of this hash map.
-     * @throws IllegalArgumentException
-     *                when the capacity is less than zero.
+     *
+     * @param capacity the initial capacity of this hash map.
+     * @throws IllegalArgumentException when the capacity is less than zero.
      * @since Android 1.0
      */
     public LongHashMap(int capacity) {
@@ -220,17 +214,16 @@ class LongHashMap<V> implements  Serializable {
     }
 
 
-
-
     // BEGIN android-changed
+
     /**
      * Removes all mappings from this hash map, leaving it empty.
-     * 
+     *
      * @see #isEmpty
      * @see #size
      * @since Android 1.0
      */
-    
+
     public void clear() {
         if (elementCount > 0) {
             elementCount = 0;
@@ -241,38 +234,35 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Returns a shallow copy of this map.
-     * 
+     *
      * @return a shallow copy of this map.
      * @since Android 1.0
      */
-    
+
 
     private void computeMaxSize() {
         threshold = (int) (elementData.length * loadFactor);
     }
 
 
-
-
     /**
      * Returns the value of the mapping with the specified key.
-     * 
-     * @param key
-     *            the key.
+     *
+     * @param key the key.
      * @return the value of the mapping with the specified key, or {@code null}
      *         if no mapping for the specified key is found.
      * @since Android 1.0
      */
-    
+
     public V get(final long key) {
-        
-        final int hash = (int)key;
+
+        final int hash = (int) key;
         final int index = (hash & 0x7FFFFFFF) % elementData.length;
 
         //find non null entry
         Entry<V> m = elementData[index];
         while (m != null) {
-            if(key == m.key)
+            if (key == m.key)
                 return m.value;
             m = m.next;
         }
@@ -284,13 +274,13 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Returns whether this map is empty.
-     * 
+     *
      * @return {@code true} if this map has no elements, {@code false}
      *         otherwise.
      * @see #size()
      * @since Android 1.0
      */
-    
+
     public boolean isEmpty() {
         return elementCount == 0;
     }
@@ -298,7 +288,7 @@ class LongHashMap<V> implements  Serializable {
     /**
      * @return iterator over keys
      */
-    
+
 //      public Iterator<K> keyIterator(){
 //                 return new HashMapIterator<K, K, V>(
 //                            new MapEntry.Type<K, K, V>() {
@@ -311,20 +301,18 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Maps the specified key to the specified value.
-     * 
-     * @param key
-     *            the key.
-     * @param value
-     *            the value.
+     *
+     * @param key   the key.
+     * @param value the value.
      * @return the value of any previous mapping with the specified key or
      *         {@code null} if there was no such mapping.
      * @since Android 1.0
      */
-    
+
 
     public V put(long key, V value) {
 
-        int hash =(int)(key);
+        int hash = (int) (key);
         int index = (hash & 0x7FFFFFFF) % elementData.length;
 
         //find non null entry
@@ -333,13 +321,13 @@ class LongHashMap<V> implements  Serializable {
             entry = entry.next;
         }
 
-            if (entry == null) {
-                if (++elementCount > threshold) {
-                    rehash();
-                    index = (hash & 0x7FFFFFFF) % elementData.length;
-                }
-                entry = createHashedEntry(key, index);
+        if (entry == null) {
+            if (++elementCount > threshold) {
+                rehash();
+                index = (hash & 0x7FFFFFFF) % elementData.length;
             }
+            entry = createHashedEntry(key, index);
+        }
 
 
         V result = entry.value;
@@ -349,13 +337,13 @@ class LongHashMap<V> implements  Serializable {
 
 
     Entry<V> createHashedEntry(long key, int index) {
-        Entry<V> entry = reuseAfterDelete; 
-        if(entry == null) {
-        	entry = new Entry<V>(key);
-        }else{
-        	reuseAfterDelete = null;
-        	entry.key = key;
-        	entry.value = null;
+        Entry<V> entry = reuseAfterDelete;
+        if (entry == null) {
+            entry = new Entry<V>(key);
+        } else {
+            reuseAfterDelete = null;
+            entry.key = key;
+            entry.value = null;
         }
 
         entry.next = elementData[index];
@@ -371,7 +359,7 @@ class LongHashMap<V> implements  Serializable {
         for (int i = 0; i < elementData.length; i++) {
             Entry<V> entry = elementData[i];
             while (entry != null) {
-                int index = ((int)entry.key & 0x7FFFFFFF) % length;
+                int index = ((int) entry.key & 0x7FFFFFFF) % length;
                 Entry<V> next = entry.next;
                 entry.next = newData[index];
                 newData[index] = entry;
@@ -388,39 +376,38 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Removes the mapping with the specified key from this map.
-     * 
-     * @param key
-     *            the key of the mapping to remove.
+     *
+     * @param key the key of the mapping to remove.
      * @return the value of the removed mapping or {@code null} if no mapping
      *         for the specified key was found.
      * @since Android 1.0
      */
-    
+
     public V remove(final long key) {
         Entry<V> entry = removeEntry(key);
-        if(entry == null)
-        	return null;
+        if (entry == null)
+            return null;
         V ret = entry.value;
         entry.value = null;
         entry.key = Long.MIN_VALUE;
         reuseAfterDelete = entry;
-        
+
         return ret;
     }
 
     Entry<V> removeEntry(final long key) {
         Entry<V> last = null;
 
-        final int hash = (int)(key);
+        final int hash = (int) (key);
         final int index = (hash & 0x7FFFFFFF) % elementData.length;
         Entry<V> entry = elementData[index];
 
-        while(true){
-            if(entry==null){
+        while (true) {
+            if (entry == null) {
                 return null;
             }
 
-            if(key == entry.key){
+            if (key == entry.key) {
                 if (last == null) {
                     elementData[index] = entry.next;
                 } else {
@@ -437,11 +424,11 @@ class LongHashMap<V> implements  Serializable {
 
     /**
      * Returns the number of elements in this map.
-     * 
+     *
      * @return the number of elements in this map.
      * @since Android 1.0
      */
-    
+
     public int size() {
         return elementCount;
     }

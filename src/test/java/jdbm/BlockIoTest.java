@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- *  This class contains all Unit tests for {@link BlockIo}.
+ * This class contains all Unit tests for {@link BlockIo}.
  */
 public class BlockIoTest extends TestCase {
 
@@ -36,48 +36,48 @@ public class BlockIoTest extends TestCase {
 
 
     /**
-     *  Test writing
+     * Test writing
      */
     public void testWrite() throws Exception {
-  byte[] data = new byte[100];
-  BlockIo test = new BlockIo(0, data);
-  test.writeShort(0, SHORT_VALUE);
-  test.writeLong(2, LONG_VALUE);
-  test.writeInt(10, INT_VALUE);
-  test.writeLong(14, LONG_VALUE2);
-  
-  DataInputStream is = 
-      new DataInputStream(new ByteArrayInputStream(data));
-  assertEquals("short", SHORT_VALUE, is.readShort());
-  assertEquals("long", LONG_VALUE, is.readLong());
-  assertEquals("int", INT_VALUE, is.readInt());
-   assertEquals("long", LONG_VALUE2, is.readLong());
-        
+        byte[] data = new byte[100];
+        BlockIo test = new BlockIo(0, data);
+        test.writeShort(0, SHORT_VALUE);
+        test.writeLong(2, LONG_VALUE);
+        test.writeInt(10, INT_VALUE);
+        test.writeLong(14, LONG_VALUE2);
+
+        DataInputStream is =
+                new DataInputStream(new ByteArrayInputStream(data));
+        assertEquals("short", SHORT_VALUE, is.readShort());
+        assertEquals("long", LONG_VALUE, is.readLong());
+        assertEquals("int", INT_VALUE, is.readInt());
+        assertEquals("long", LONG_VALUE2, is.readLong());
+
         assertEquals("short", SHORT_VALUE, test.readShort(0));
         assertEquals("long", LONG_VALUE, test.readLong(2));
         assertEquals("int", INT_VALUE, test.readInt(10));
-         assertEquals("long", LONG_VALUE2, test.readLong(14));
-        
+        assertEquals("long", LONG_VALUE2, test.readLong(14));
+
     }
 
     /**
-     *  Test reading
+     * Test reading
      */
     public void testRead() throws Exception {
-  ByteArrayOutputStream bos = new ByteArrayOutputStream(100);
-  DataOutputStream os = new DataOutputStream(bos);
-  os.writeShort(SHORT_VALUE);
-  os.writeLong(LONG_VALUE);
-  os.writeInt(INT_VALUE);
-  os.writeLong(LONG_VALUE2);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(100);
+        DataOutputStream os = new DataOutputStream(bos);
+        os.writeShort(SHORT_VALUE);
+        os.writeLong(LONG_VALUE);
+        os.writeInt(INT_VALUE);
+        os.writeLong(LONG_VALUE2);
 
-  byte[] data = bos.toByteArray();
-  BlockIo test = new BlockIo(0, data);
-  assertEquals("short", SHORT_VALUE, test.readShort(0));
-  assertEquals("long", LONG_VALUE, test.readLong(2));
-  assertEquals("int", INT_VALUE, test.readInt(10));
-  assertEquals("long", LONG_VALUE2, test.readLong(14));
+        byte[] data = bos.toByteArray();
+        BlockIo test = new BlockIo(0, data);
+        assertEquals("short", SHORT_VALUE, test.readShort(0));
+        assertEquals("long", LONG_VALUE, test.readLong(2));
+        assertEquals("int", INT_VALUE, test.readInt(10));
+        assertEquals("long", LONG_VALUE2, test.readLong(14));
     }
-    
+
 
 }

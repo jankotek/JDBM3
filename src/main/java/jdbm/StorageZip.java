@@ -18,10 +18,10 @@ class StorageZip implements Storage {
     private ZipFile z;
 
     StorageZip(String zipFile) throws IOException {
-        zip = zipFile.substring(0,zipFile.indexOf("!/")); //TODO does not work on windows
+        zip = zipFile.substring(0, zipFile.indexOf("!/")); //TODO does not work on windows
         z = new ZipFile(zip);
-        zip2 = zipFile.substring(zipFile.indexOf("!/")+2);
-        
+        zip2 = zipFile.substring(zipFile.indexOf("!/") + 2);
+
     }
 
     public void write(long pageNumber, byte[] data) throws IOException {
@@ -29,17 +29,17 @@ class StorageZip implements Storage {
     }
 
     public void read(long pageNumber, byte[] data) throws IOException {
-        if(data.length!=BLOCK_SIZE) throw new IllegalArgumentException();
+        if (data.length != BLOCK_SIZE) throw new IllegalArgumentException();
 
-        ZipEntry e = z.getEntry(zip2+pageNumber);
+        ZipEntry e = z.getEntry(zip2 + pageNumber);
         InputStream i = z.getInputStream(e);
         new DataInputStream(i).readFully(data);
         i.close();
     }
 
     public void forceClose() throws IOException {
-       z.close();
-       z = null;
+        z.close();
+        z = null;
     }
 
     public DataInputStream readTransactionLog() {
@@ -58,5 +58,7 @@ class StorageZip implements Storage {
         throw new UnsupportedOperationException("readonly");
     }
 
-    public boolean isReadonly(){return true;}
+    public boolean isReadonly() {
+        return true;
+    }
 }

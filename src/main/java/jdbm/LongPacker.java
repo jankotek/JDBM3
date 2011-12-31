@@ -39,13 +39,12 @@ public final class LongPacker {
             throw new IllegalArgumentException("negative value: v=" + value);
         }
 
-        while((value & ~0x7FL) != 0){
+        while ((value & ~0x7FL) != 0) {
             os.write((((int) value & 0x7F) | 0x80));
             value >>>= 7;
         }
         os.write((byte) value);
     }
-
 
 
     /**
@@ -58,14 +57,14 @@ public final class LongPacker {
     static public long unpackLong(DataInput is) throws IOException {
 
         long result = 0;
-      	for (int offset = 0; offset < 64; offset += 7) {
-      		long b = is.readUnsignedByte();
-      		result |= (b & 0x7F) << offset;
-      		if ((b & 0x80) == 0) {
-      			return result;
-      		}
-      	}
-      	throw new Error("Malformed long.");
+        for (int offset = 0; offset < 64; offset += 7) {
+            long b = is.readUnsignedByte();
+            result |= (b & 0x7F) << offset;
+            if ((b & 0x80) == 0) {
+                return result;
+            }
+        }
+        throw new Error("Malformed long.");
     }
 
 
@@ -78,14 +77,14 @@ public final class LongPacker {
      * @throws IOException
      */
 
-    static public void packInt(DataOutput os,  int value) throws IOException {
+    static public void packInt(DataOutput os, int value) throws IOException {
 
         if (value < 0) {
             throw new IllegalArgumentException("negative value: v=" + value);
         }
 
         while ((value & ~0x7F) != 0) {
-            os.write( ((value & 0x7F) | 0x80));
+            os.write(((value & 0x7F) | 0x80));
             value >>>= 7;
         }
 

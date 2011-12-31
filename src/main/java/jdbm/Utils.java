@@ -13,7 +13,9 @@ import java.util.*;
  */
 class Utils {
 
-    /** empty string is used as dummy value to represent null values in HashSet and TreeSet */
+    /**
+     * empty string is used as dummy value to represent null values in HashSet and TreeSet
+     */
     static final String EMPTY_STRING = "";
 
 
@@ -24,28 +26,28 @@ class Utils {
         /**
          * Throws IllegalArgumentExcpetion if given class does not have public no-argument constructor
          */
-        private void assertHasPublicNoArgConstructor(Class clazz){
+        private void assertHasPublicNoArgConstructor(Class clazz) {
 
-            if(classesWithConstructors.contains(clazz.toString()))
+            if (classesWithConstructors.contains(clazz.toString()))
                 return;
-            try{
+            try {
                 Constructor t = clazz.getConstructor();
                 Object o = t.newInstance();
                 classesWithConstructors.add(clazz.getName());
                 return;
-            }catch(Throwable e){
+            } catch (Throwable e) {
                 //e.printStackTrace();
             }
-            throw new IllegalArgumentException(("Class does not have public noarg constructor: "+clazz.getName()));
+            throw new IllegalArgumentException(("Class does not have public noarg constructor: " + clazz.getName()));
         }
 
 
         public void serialize(DataOutput out, Object obj) throws IOException {
-            if(obj == null)
+            if (obj == null)
                 out.writeUTF(EMPTY_STRING);
-            else if (obj == java.util.Collections.reverseOrder()){
+            else if (obj == java.util.Collections.reverseOrder()) {
                 out.writeUTF("!!REVERSED!!");
-            }else{
+            } else {
                 assertHasPublicNoArgConstructor(obj.getClass());
                 out.writeUTF(obj.getClass().getName());
             }
@@ -53,15 +55,15 @@ class Utils {
 
         public Object deserialize(DataInput in) throws IOException, ClassNotFoundException {
             String className = in.readUTF();
-            if("".equals(className))
+            if ("".equals(className))
                 return null;
-            if("!!REVERSED!!".equals(className))
+            if ("!!REVERSED!!".equals(className))
                 return java.util.Collections.reverseOrder();
             try {
                 Class clazz = Utils.class.getClassLoader().loadClass(className);
                 return clazz.getConstructor().newInstance();
             } catch (Exception e) {
-                throw new Error("An error when creating an instance of: "+className,e);
+                throw new Error("An error when creating an instance of: " + className, e);
             }
 
         }
@@ -69,15 +71,15 @@ class Utils {
 
     public static Storage storageFab(String fileName) throws IOException {
         Storage ret = null;
-        if(fileName.contains("!/"))
-            ret =  new StorageZip(fileName);
+        if (fileName.contains("!/"))
+            ret = new StorageZip(fileName);
         else
             ret = new StorageDisk(fileName);
         return ret;
     }
 
     public static byte[] encrypt(Cipher cipherIn, byte[] b) {
-        if(cipherIn == null)
+        if (cipherIn == null)
             return b;
 
         try {
@@ -89,92 +91,93 @@ class Utils {
     }
 
 
-    /*** Compares comparables. Default comparator for most of java types*/
-    static final Comparator COMPARABLE_COMPARATOR =  new Comparator<Comparable>(){
-	public int compare(Comparable o1, Comparable o2) {
+    /**
+     * Compares comparables. Default comparator for most of java types
+     */
+    static final Comparator COMPARABLE_COMPARATOR = new Comparator<Comparable>() {
+        public int compare(Comparable o1, Comparable o2) {
             return o1.compareTo(o2);
         }
     };
 
-/**
- * Growable long[]
- */
-static final  class LongArrayList {
-    int size = 0;
-    long[] data = new long[32];
+    /**
+     * Growable long[]
+     */
+    static final class LongArrayList {
+        int size = 0;
+        long[] data = new long[32];
 
-    void add(long l){
-        if(data.length==size){
-            //grow
-            data = Arrays.copyOf(data, size * 2);
+        void add(long l) {
+            if (data.length == size) {
+                //grow
+                data = Arrays.copyOf(data, size * 2);
+            }
+            data[size] = l;
+            size++;
         }
-        data[size] = l;
-        size++;
-    }
 
 
-    void removeLast() {
-        size--;
-        data[size] = 0;
-    }
-
-    public void clear() {
-        if(data.length>32*8)
-            data = new long[32];
-        else
-            Arrays.fill(data,0L);
-        size = 0;
-    }
-}
-
-/**
- * Growable int[]
- */
-static final  class IntArrayList {
-    int size = 0;
-    int[] data = new int[32];
-
-    void add(int l){
-        if(data.length==size){
-            //grow
-            data = Arrays.copyOf(data, size * 2);
+        void removeLast() {
+            size--;
+            data[size] = 0;
         }
-        data[size] = l;
-        size++;
+
+        public void clear() {
+            if (data.length > 32 * 8)
+                data = new long[32];
+            else
+                Arrays.fill(data, 0L);
+            size = 0;
+        }
+    }
+
+    /**
+     * Growable int[]
+     */
+    static final class IntArrayList {
+        int size = 0;
+        int[] data = new int[32];
+
+        void add(int l) {
+            if (data.length == size) {
+                //grow
+                data = Arrays.copyOf(data, size * 2);
+            }
+            data[size] = l;
+            size++;
+        }
+
+
+        void removeLast() {
+            size--;
+            data[size] = 0;
+        }
+
+        public void clear() {
+            if (data.length > 32 * 8)
+                data = new int[32];
+            else
+                Arrays.fill(data, 0);
+            size = 0;
+        }
     }
 
 
-    void removeLast() {
-        size--;
-        data[size] = 0;
-    }
-
-    public void clear() {
-        if(data.length>32*8)
-            data = new int[32];
+    static String formatSpaceUsage(long size) {
+        if (size < 1e4)
+            return size + "B";
+        else if (size < 1e7)
+            return "" + Math.round(1D * size / 1024D) + "KB";
+        else if (size < 1e10)
+            return "" + Math.round(1D * size / 1e6) + "MB";
         else
-            Arrays.fill(data,0);
-        size = 0;
-    }
-}
-
-
-    static String formatSpaceUsage(long size){
-        if(size<1e4)
-            return size+"B";
-        else if(size<1e7)
-            return ""+Math.round(1D*size/1024D)+"KB";
-        else if(size<1e10)
-            return ""+Math.round(1D*size/1e6)+"MB";
-        else
-            return ""+Math.round(1D*size/1e9)+"GB";
+            return "" + Math.round(1D * size / 1e9) + "GB";
     }
 
 
-
-    static boolean allZeros(byte[] b){
-        for(int i = 0;i<b.length;i++){
-            if(b[i]!=0)return false;
+    static boolean allZeros(byte[] b) {
+        for (int i = 0; i < b.length; i++) {
+            if (b[i] != 0) return false;
         }
         return true;
     }
@@ -212,9 +215,6 @@ static final  class IntArrayList {
 //           }
 //
 //    }
-
-
-
 
 
 }

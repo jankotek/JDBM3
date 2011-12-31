@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class ObjectInputStream2 extends DataInputStream implements ObjectInput {
 
 
-    public ObjectInputStream2(InputStream in){
+    public ObjectInputStream2(InputStream in) {
         super(in);
     }
 

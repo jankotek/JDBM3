@@ -4,11 +4,11 @@ import java.io.*;
 import java.util.ArrayList;
 
 /**
-* An alternative to <code>java.io.ObjectOutputStream</code> which uses more efficient serialization
+ * An alternative to <code>java.io.ObjectOutputStream</code> which uses more efficient serialization
  */
 public class ObjectOutputStream2 extends DataOutputStream implements ObjectOutput {
 
-    public ObjectOutputStream2(OutputStream out){
+    public ObjectOutputStream2(OutputStream out) {
         super(out);
     }
 
@@ -18,7 +18,7 @@ public class ObjectOutputStream2 extends DataOutputStream implements ObjectOutpu
 
         byte[] data = ser.serialize(obj);
         //write class info first
-        SerialClassInfo.serializer.serialize(this,registered);
+        SerialClassInfo.serializer.serialize(this, registered);
         //and write data
         write(data);
     }

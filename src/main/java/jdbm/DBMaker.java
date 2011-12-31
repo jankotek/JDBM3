@@ -34,7 +34,7 @@ public class DBMaker {
     private int mruCacheSize = 512;
 
     private String location = null;
-;
+    ;
     private boolean disableTransactions = false;
     private boolean readonly = false;
     private String password = null;
@@ -45,7 +45,7 @@ public class DBMaker {
      *
      * @param location on disk where db is located
      */
-    public DBMaker(String location){
+    public DBMaker(String location) {
         this.location = location;
     }
 
@@ -57,7 +57,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker enableWeakCache(){
+    public DBMaker enableWeakCache() {
         cacheType = "weak";
         return this;
     }
@@ -69,7 +69,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker enableSoftCache(){
+    public DBMaker enableSoftCache() {
         cacheType = "soft";
         return this;
     }
@@ -83,7 +83,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker enableMRUCache(){
+    public DBMaker enableMRUCache() {
         cacheType = "mru";
         return this;
     }
@@ -94,8 +94,8 @@ public class DBMaker {
      * @param cacheSize number of instances which will be kept in cache. Recommended size is 512
      * @return this builder
      */
-    public DBMaker enableMRUCache(int cacheSize){
-        if(cacheSize<0) throw new IllegalArgumentException("Cache size is smaller than zero");
+    public DBMaker enableMRUCache(int cacheSize) {
+        if (cacheSize < 0) throw new IllegalArgumentException("Cache size is smaller than zero");
         cacheType = "mru";
         this.mruCacheSize = cacheSize;
         return this;
@@ -111,7 +111,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker enableAutoCache(){
+    public DBMaker enableAutoCache() {
         cacheType = "auto";
         return this;
     }
@@ -119,10 +119,11 @@ public class DBMaker {
     /**
      * Enabled storage encryption using AES cipher
      * Storage can not be read, unless the key is provided next time it is opened
+     *
      * @param password
      * @return this builder
      */
-    public DBMaker enableEncryption(String password){
+    public DBMaker enableEncryption(String password) {
         this.password = password;
         return this;
     }
@@ -134,7 +135,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker readonly(){
+    public DBMaker readonly() {
         readonly = true;
         return this;
     }
@@ -145,7 +146,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker disableCache(){
+    public DBMaker disableCache() {
         cacheType = "none";
         return this;
     }
@@ -155,17 +156,17 @@ public class DBMaker {
      * Option to disable transaction (to increase performance at the cost of potential data loss).
      * Transactions are enabled by default
      * <p/>
-     *  Switches off transactioning for the record manager. This means
-     *  that a) a transaction log is not kept, and b) writes aren't
-     *  synch'ed after every update. This is useful when batch inserting
-     *  into a new database.
-     *  <p>
-     *  Only call this method directly after opening the file, otherwise
-     *  the results will be undefined.
+     * Switches off transactioning for the record manager. This means
+     * that a) a transaction log is not kept, and b) writes aren't
+     * synch'ed after every update. This is useful when batch inserting
+     * into a new database.
+     * <p/>
+     * Only call this method directly after opening the file, otherwise
+     * the results will be undefined.
      *
      * @return this builder
      */
-    public DBMaker disableTransactions(){
+    public DBMaker disableTransactions() {
         this.disableTransactions = true;
         return this;
     }
@@ -177,15 +178,15 @@ public class DBMaker {
      * @return new DB
      * @throws java.io.IOError if db could not be opened
      */
-    public DB build(){
+    public DB build() {
 
         Cipher cipherIn = null;
         Cipher cipherOut = null;
-        if(password!=null)try{
+        if (password != null) try {
             //initialize ciphers
             //this code comes from stack owerflow
             //http://stackoverflow.com/questions/992019/java-256bit-aes-encryption/992413#992413
-            byte[] salt = new byte[]{3,-34,123,53,78,121,-12,-1,45,-12,-48,89,11,100,99,8};
+            byte[] salt = new byte[]{3, -34, 123, 53, 78, 121, -12, -1, 45, -12, -48, 89, 11, 100, 99, 8};
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
             KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1024, 256);
             SecretKey tmp = factory.generateSecret(spec);
@@ -195,7 +196,7 @@ public class DBMaker {
             IvParameterSpec params = new IvParameterSpec(salt);
 
             cipherIn = Cipher.getInstance(transform);
-            cipherIn.init(Cipher.ENCRYPT_MODE, secret,params);
+            cipherIn.init(Cipher.ENCRYPT_MODE, secret, params);
 
             cipherOut = Cipher.getInstance(transform);
             cipherOut.init(Cipher.DECRYPT_MODE, secret, params);
@@ -203,55 +204,54 @@ public class DBMaker {
             //sanity check, try with page size
             byte[] data = new byte[Storage.BLOCK_SIZE];
             byte[] encData = cipherIn.doFinal(data);
-            if(encData.length!=Storage.BLOCK_SIZE)
+            if (encData.length != Storage.BLOCK_SIZE)
                 throw new Error("Block size changed after encryption, make sure you use '/NoPadding'");
             byte[] data2 = cipherOut.doFinal(encData);
-            for(int i=0;i<data.length;i++){
-                if(data[i]!=data2[i]) throw new Error();
+            for (int i = 0; i < data.length; i++) {
+                if (data[i] != data2[i]) throw new Error();
             }
 
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new IOError(e);
         }
 
         DBAbstract db = null;
 
-        try{
-            db = new DBStore(location,readonly,disableTransactions,cipherIn,cipherOut);
-        }catch(IOException e){
+        try {
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut);
+        } catch (IOException e) {
             throw new IOError(e);
         }
 
 
-
         String cacheType2 = cacheType;
-        if("auto".equals(cacheType)){
-            try{
-                    //disable SOFT if available memory is bellow 50 MB
-                    if(Runtime.getRuntime().maxMemory()<=1024*1024*50)
-                            cacheType2 = "mru";
-                    else
-                            cacheType2 = "soft";
-            }catch(Exception e){
+        if ("auto".equals(cacheType)) {
+            try {
+                //disable SOFT if available memory is bellow 50 MB
+                if (Runtime.getRuntime().maxMemory() <= 1024 * 1024 * 50)
                     cacheType2 = "mru";
+                else
+                    cacheType2 = "soft";
+            } catch (Exception e) {
+                cacheType2 = "mru";
             }
         }
 
-        if("mru".equals(cacheType2)){
-            db = new DBCache( db,mruCacheSize,false,true);
-        }else if("soft".equals(cacheType2)){
-             db = new DBCache(db, 0,true,true);
-        }else if("weak".equals(cacheType2)){
-             db = new DBCache(db, 0,true,false);
+        if ("mru".equals(cacheType2)) {
+            db = new DBCache(db, mruCacheSize, false, true);
+        } else if ("soft".equals(cacheType2)) {
+            db = new DBCache(db, 0, true, true);
+        } else if ("weak".equals(cacheType2)) {
+            db = new DBCache(db, 0, true, false);
 
-        }else if("none".equals(cacheType2)){
+        } else if ("none".equals(cacheType2)) {
             //do nothing
-        }else{
-            throw new IllegalArgumentException("Unknown cache type: "+cacheType2);
+        } else {
+            throw new IllegalArgumentException("Unknown cache type: " + cacheType2);
         }
 
 
-         return db;
+        return db;
     }
 
 }

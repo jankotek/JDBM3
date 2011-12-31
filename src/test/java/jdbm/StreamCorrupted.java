@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,7 @@ import java.io.IOException;
 
 /**
  * Contributed test case for BTree by Christof Dallermassl (cdaller iicm.edu):
- *
+ * <p/>
  * -= quote from original message posted on jdbm-general =-
  * <pre>
  *
@@ -50,23 +50,20 @@ import java.io.IOException;
  *
  * </pre>
  *
- *  @author <a href="mailto:cdaller iicm.edu">Christof Dallermassl</a>
+ * @author <a href="mailto:cdaller iicm.edu">Christof Dallermassl</a>
  */
 public class StreamCorrupted
-    extends TestCaseWithTestFile
-{
-
+        extends TestCaseWithTestFile {
 
 
     /**
-     *  Basic tests
+     * Basic tests
      */
     public void testStreamCorrupted()
-        throws IOException
-    {
+            throws IOException {
         DBAbstract db;
-        BTree          btree;
-        int            iterations;
+        BTree btree;
+        int iterations;
 
         iterations = 100; // 23 works :-(((((
 
@@ -75,18 +72,18 @@ public class StreamCorrupted
 
         // create a new B+Tree data structure
         btree = BTree.createInstance(db);
-        db.setNamedObject( "testbtree", btree.getRecid() );
+        db.setNamedObject("testbtree", btree.getRecid());
 
         // action:
 
         // insert data
-        for( int count = 0; count < iterations; count++ ) {
-            btree.insert( "num" + count, new Integer( count ), true );
+        for (int count = 0; count < iterations; count++) {
+            btree.insert("num" + count, new Integer(count), true);
         }
 
         // delete data
-        for( int count = 0; count < iterations; count++ ) {
-            btree.remove( "num" + count );
+        for (int count = 0; count < iterations; count++) {
+            btree.remove("num" + count);
         }
 
         // close database

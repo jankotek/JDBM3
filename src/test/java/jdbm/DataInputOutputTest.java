@@ -5,9 +5,9 @@ import junit.framework.TestCase;
 import java.io.IOException;
 
 public class DataInputOutputTest extends TestCase {
-    
+
     final DataInputOutput d = new DataInputOutput();
-    
+
     public void testInt() throws IOException {
         int i = 123129049;
         d.writeInt(i);
@@ -21,9 +21,9 @@ public class DataInputOutputTest extends TestCase {
         d.reset();
         assertEquals(i, d.readLong());
     }
-    
-    
-    public void testBooelean() throws IOException {        
+
+
+    public void testBooelean() throws IOException {
         d.writeBoolean(true);
         d.reset();
         assertEquals(true, d.readBoolean());
@@ -31,13 +31,13 @@ public class DataInputOutputTest extends TestCase {
         d.writeBoolean(false);
         d.reset();
         assertEquals(false, d.readBoolean());
-        
+
     }
-    
+
 
     public void testByte() throws IOException {
-        
-        for(int i = Byte.MIN_VALUE; i<=Byte.MAX_VALUE;i++){
+
+        for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; i++) {
             d.writeByte(i);
             d.reset();
             assertEquals(i, d.readByte());
@@ -48,7 +48,7 @@ public class DataInputOutputTest extends TestCase {
 
     public void testUnsignedByte() throws IOException {
 
-        for(int i =0; i<=255;i++){
+        for (int i = 0; i <= 255; i++) {
             d.write(i);
             d.reset();
             assertEquals(i, d.readUnsignedByte());
@@ -59,14 +59,13 @@ public class DataInputOutputTest extends TestCase {
 
     public void testLongPacker() throws IOException {
 
-        for(int i =0; i<1e7;i++){
-            LongPacker.packInt(d,i);
+        for (int i = 0; i < 1e7; i++) {
+            LongPacker.packInt(d, i);
             d.reset();
             assertEquals(i, LongPacker.unpackInt(d));
             d.reset();
         }
     }
-
 
 
 }

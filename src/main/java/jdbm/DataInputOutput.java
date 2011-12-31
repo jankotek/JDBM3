@@ -6,34 +6,35 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * Utility class which implements DataInput and DataOutput on top of byte[] buffer 
+ * Utility class which implements DataInput and DataOutput on top of byte[] buffer
  * with minomal overhead
  */
-class DataInputOutput implements DataInput,DataOutput{
-    
+class DataInputOutput implements DataInput, DataOutput {
+
     private int pos = 0;
     private int count = 0;
     private byte[] buf;
 
-    
-    public DataInputOutput(){
+
+    public DataInputOutput() {
         buf = new byte[8];
     }
+
     public DataInputOutput(byte[] data) {
-        buf= data;
+        buf = data;
         count = data.length;
     }
 
-    public byte[] getBuf(){
-            return buf;
+    public byte[] getBuf() {
+        return buf;
     }
-    
-    public int getPos(){
+
+    public int getPos() {
         return pos;
     }
 
 
-    public void reset(){
+    public void reset() {
         pos = 0;
         count = 0;
     }
@@ -49,36 +50,34 @@ class DataInputOutput implements DataInput,DataOutput{
         buf = b;
         count = b.length;
     }
-    
+
     public byte[] toByteArray() {
         byte[] d = new byte[pos];
-        System.arraycopy(buf,0,d,0,pos);
+        System.arraycopy(buf, 0, d, 0, pos);
         return d;
     }
 
     public int available() {
-        return count-pos;
+        return count - pos;
     }
 
 
-
-    
     public void readFully(byte[] b) throws IOException {
-        readFully(b,0,b.length);
+        readFully(b, 0, b.length);
     }
 
     public void readFully(byte[] b, int off, int len) throws IOException {
-        System.arraycopy(buf,pos,b,off,len);
-        pos+=len;
+        System.arraycopy(buf, pos, b, off, len);
+        pos += len;
     }
 
     public int skipBytes(int n) throws IOException {
-        pos+=n;
+        pos += n;
         return n;
     }
 
     public boolean readBoolean() throws IOException {
-        return buf[pos++]==1;
+        return buf[pos++] == 1;
     }
 
     public byte readByte() throws IOException {
@@ -91,14 +90,14 @@ class DataInputOutput implements DataInput,DataOutput{
 
     public short readShort() throws IOException {
         return (short)
-            (((short) (buf[pos++] & 0xff) << 8) |
-             ((short) (buf[pos++] & 0xff) << 0));
+                (((short) (buf[pos++] & 0xff) << 8) |
+                        ((short) (buf[pos++] & 0xff) << 0));
 
     }
 
     public int readUnsignedShort() throws IOException {
-        return (((int)(buf[pos++] & 0xff) <<  8) |
-            ((int)(buf[pos++] & 0xff) <<  0));
+        return (((int) (buf[pos++] & 0xff) << 8) |
+                ((int) (buf[pos++] & 0xff) << 0));
     }
 
     public char readChar() throws IOException {
@@ -107,23 +106,23 @@ class DataInputOutput implements DataInput,DataOutput{
 
     public int readInt() throws IOException {
         return
-            (((buf[pos++] & 0xff) << 24) |
-             ((buf[pos++] & 0xff) << 16) |
-             ((buf[pos++] & 0xff) <<  8) |
-             ((buf[pos++] & 0xff) <<  0));
+                (((buf[pos++] & 0xff) << 24) |
+                        ((buf[pos++] & 0xff) << 16) |
+                        ((buf[pos++] & 0xff) << 8) |
+                        ((buf[pos++] & 0xff) << 0));
 
     }
 
     public long readLong() throws IOException {
         return
-            (((long)(buf[pos++] & 0xff) << 56) |
-             ((long)(buf[pos++] & 0xff) << 48) |
-             ((long)(buf[pos++] & 0xff) << 40) |
-             ((long)(buf[pos++] & 0xff) << 32) |
-             ((long)(buf[pos++] & 0xff) << 24) |
-             ((long)(buf[pos++] & 0xff) << 16) |
-             ((long)(buf[pos++] & 0xff) <<  8) |
-             ((long)(buf[pos++] & 0xff) <<  0));
+                (((long) (buf[pos++] & 0xff) << 56) |
+                        ((long) (buf[pos++] & 0xff) << 48) |
+                        ((long) (buf[pos++] & 0xff) << 40) |
+                        ((long) (buf[pos++] & 0xff) << 32) |
+                        ((long) (buf[pos++] & 0xff) << 24) |
+                        ((long) (buf[pos++] & 0xff) << 16) |
+                        ((long) (buf[pos++] & 0xff) << 8) |
+                        ((long) (buf[pos++] & 0xff) << 0));
 
     }
 
@@ -142,35 +141,36 @@ class DataInputOutput implements DataInput,DataOutput{
     public String readUTF() throws IOException {
         return Serialization.deserializeString(this);
     }
-    
-    /** make sure there will be enought space in buffer to write N bytes*/
+
+    /**
+     * make sure there will be enought space in buffer to write N bytes
+     */
     private void ensureAvail(int n) {
-        if(pos+n>=buf.length){
-            int newSize = Math.max(pos+n,buf.length*2);
-            buf = Arrays.copyOf(buf,newSize);
+        if (pos + n >= buf.length) {
+            int newSize = Math.max(pos + n, buf.length * 2);
+            buf = Arrays.copyOf(buf, newSize);
         }
     }
 
-    
 
     public void write(int b) throws IOException {
         ensureAvail(1);
         buf[pos++] = (byte) b;
     }
 
-    public void write(byte[] b) throws IOException {        
-        write(b,0,b.length);
+    public void write(byte[] b) throws IOException {
+        write(b, 0, b.length);
     }
 
     public void write(byte[] b, int off, int len) throws IOException {
         ensureAvail(len);
-        System.arraycopy(b,off,buf,pos,len);
-        pos+=len;
+        System.arraycopy(b, off, buf, pos, len);
+        pos += len;
     }
 
     public void writeBoolean(boolean v) throws IOException {
         ensureAvail(1);
-        buf[pos++] = (byte) (v?1:0);
+        buf[pos++] = (byte) (v ? 1 : 0);
     }
 
     public void writeByte(int v) throws IOException {
@@ -180,8 +180,8 @@ class DataInputOutput implements DataInput,DataOutput{
 
     public void writeShort(int v) throws IOException {
         ensureAvail(2);
-        buf[pos++] = (byte)(0xff & (v >> 8));
-        buf[pos++] = (byte)(0xff & (v >> 0));
+        buf[pos++] = (byte) (0xff & (v >> 8));
+        buf[pos++] = (byte) (0xff & (v >> 0));
 
     }
 
@@ -191,23 +191,23 @@ class DataInputOutput implements DataInput,DataOutput{
 
     public void writeInt(int v) throws IOException {
         ensureAvail(4);
-        buf[pos++] = (byte)(0xff & (v >> 24));
-        buf[pos++] = (byte)(0xff & (v >> 16));
-        buf[pos++] = (byte)(0xff & (v >>  8));
-        buf[pos++] = (byte)(0xff & (v >>  0));
+        buf[pos++] = (byte) (0xff & (v >> 24));
+        buf[pos++] = (byte) (0xff & (v >> 16));
+        buf[pos++] = (byte) (0xff & (v >> 8));
+        buf[pos++] = (byte) (0xff & (v >> 0));
 
     }
 
     public void writeLong(long v) throws IOException {
         ensureAvail(8);
-        buf[pos++] = (byte)(0xff & (v >> 56));
-        buf[pos++] = (byte)(0xff & (v >> 48));
-        buf[pos++] = (byte)(0xff & (v >> 40));
-        buf[pos++] = (byte)(0xff & (v >> 32));
-        buf[pos++] = (byte)(0xff & (v >> 24));
-        buf[pos++] = (byte)(0xff & (v >> 16));
-        buf[pos++] = (byte)(0xff & (v >>  8));
-        buf[pos++] = (byte)(0xff & (v >>  0));
+        buf[pos++] = (byte) (0xff & (v >> 56));
+        buf[pos++] = (byte) (0xff & (v >> 48));
+        buf[pos++] = (byte) (0xff & (v >> 40));
+        buf[pos++] = (byte) (0xff & (v >> 32));
+        buf[pos++] = (byte) (0xff & (v >> 24));
+        buf[pos++] = (byte) (0xff & (v >> 16));
+        buf[pos++] = (byte) (0xff & (v >> 8));
+        buf[pos++] = (byte) (0xff & (v >> 0));
     }
 
     public void writeFloat(float v) throws IOException {
@@ -229,7 +229,7 @@ class DataInputOutput implements DataInput,DataOutput{
     }
 
     public void writeUTF(String s) throws IOException {
-        Serialization.serializeString(this,s);
+        Serialization.serializeString(this, s);
     }
 
 }

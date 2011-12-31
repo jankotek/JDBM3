@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@ package jdbm;
 import java.util.Random;
 
 /**
- *  This class contains stress tests for this package.
+ * This class contains stress tests for this package.
  */
 public class TestStress extends TestCaseWithTestFile {
 
@@ -74,9 +74,9 @@ public class TestStress extends TestCaseWithTestFile {
     }
 
     /**
-     *  Test basics
+     * Test basics
      */
-    public void testBasics() throws Exception {        
+    public void testBasics() throws Exception {
 
         String file = newTestFile();
         DBStore db = new DBStore(file, false, false);
@@ -97,13 +97,13 @@ public class TestStress extends TestCaseWithTestFile {
             for (int i = 0; i < ROUNDS; i++) {
                 if ((i % RPPROMILLE) == 0)
                     System.out.print("\rComplete: "
-                        + i/RPPROMILLE + "/1000th");
+                            + i / RPPROMILLE + "/1000th");
 
                 // close and re-open a couple of times during the
                 // test, in order to check flushing etcetera.
                 if ((i % (ROUNDS / 5)) == 0) {
                     System.out.print(" (reopened at round "
-                    + i/RPPROMILLE + ")");
+                            + i / RPPROMILLE + ")");
                     db.close();
                     db = new DBStore(file, false, false);
                     //        db.disableTransactions();
@@ -125,14 +125,13 @@ public class TestStress extends TestCaseWithTestFile {
                         slot++;
 
                     d[slot] = new RecordData(0, rnd.nextInt(MAXSIZE),
-                    (byte) rnd.nextInt());
+                            (byte) rnd.nextInt());
                     d[slot].rowid =
-                        db.insert(UtilTT.makeRecord(d[slot].size,
-                                d[slot].b));
+                            db.insert(UtilTT.makeRecord(d[slot].size,
+                                    d[slot].b));
                     recordCount++;
                     inserts++;
-                }
-                else if (op == 20) {
+                } else if (op == 20) {
                     // DELETE RECORD
                     if (recordCount == 0) {
                         i -= 1;
@@ -144,8 +143,7 @@ public class TestStress extends TestCaseWithTestFile {
                     d[slot] = null;
                     recordCount--;
                     deletes++;
-                }
-                else if (op <= 50) {
+                } else if (op <= 50) {
                     // UPDATE RECORD
                     if (recordCount == 0) {
                         i -= 1;
@@ -156,21 +154,19 @@ public class TestStress extends TestCaseWithTestFile {
                     d[slot].size = rnd.nextInt(MAXSIZE);
                     d[slot].b = (byte) rnd.nextInt();
                     db.update(d[slot].rowid,
-                    UtilTT.makeRecord(d[slot].size,
-                            d[slot].b));
+                            UtilTT.makeRecord(d[slot].size,
+                                    d[slot].b));
                     updates++;
-                }
-                else if (op == 51) {
-                	
+                } else if (op == 51) {
+
                     // SET ROOT
                     int root = rnd.nextInt(FileHeader.NROOTS);
-                    if(root>10){ //DONT do this for reserved roots
-                    	roots[root] = rnd.nextLong();
-                    	db.setRoot(root, roots[root]);
-                    	rootsets++;
+                    if (root > 10) { //DONT do this for reserved roots
+                        roots[root] = rnd.nextLong();
+                        db.setRoot(root, roots[root]);
+                        rootsets++;
                     }
-                }
-                else if (op == 52) {
+                } else if (op == 52) {
                     // GET ROOT
                     if (rootCount == 0) {
                         i -= 1;
@@ -178,12 +174,11 @@ public class TestStress extends TestCaseWithTestFile {
                     }
 
                     int root = getRandomAllocatedRoot();
-                    if(root>10){ //DONT do this for reserved roots
-                    	assertEquals("root", roots[root], db.getRoot(root));
-                    	rootgets++;
+                    if (root > 10) { //DONT do this for reserved roots
+                        assertEquals("root", roots[root], db.getRoot(root));
+                        rootgets++;
                     }
-                }
-                else {
+                } else {
                     // FETCH RECORD
                     if (recordCount == 0) {
                         i -= 1;
@@ -193,8 +188,8 @@ public class TestStress extends TestCaseWithTestFile {
                     slot = getRandomAllocatedSlot(d);
                     byte[] data = (byte[]) db.fetch(d[slot].rowid);
                     assertTrue("fetch round=" + i + ", slot=" + slot
-                    + ", " + d[slot],
-                    UtilTT.checkRecord(data, d[slot].size, d[slot].b));
+                            + ", " + d[slot],
+                            UtilTT.checkRecord(data, d[slot].size, d[slot].b));
                     fetches++;
                 }
             }
@@ -212,8 +207,8 @@ public class TestStress extends TestCaseWithTestFile {
             System.out.println("rootset : " + rootsets);
             int totalSize = 0;
             for (int i = 0; i < RECORDS; i++)
-            if (d[i] != null)
-                totalSize += d[i].size;
+                if (d[i] != null)
+                    totalSize += d[i].size;
             System.out.println("total outstanding size: " + totalSize);
 
             //System.out.println("---");

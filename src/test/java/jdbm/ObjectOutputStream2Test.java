@@ -18,10 +18,10 @@ public class ObjectOutputStream2Test extends TestCase {
 
     public void testSimple() throws ClassNotFoundException, IOException {
 
-        Bean1 b = new Bean1("qwe","rty");
+        Bean1 b = new Bean1("qwe", "rty");
         Bean1 b2 = neser(b);
 
-        assertEquals(b,b2);
+        assertEquals(b, b2);
 
     }
 }

@@ -3,20 +3,21 @@ package jdbm;
 import java.util.*;
 
 /**
- *  An interface/abstract class to manage records, which are objects serialized to byte[] on background.
- *  <p>
- *  The set of record operations is simple: fetch, insert, update and delete.
- *  Each record is identified using a "rowid" and contains a byte[] data block serialized to object.
- *  Rowids are returned on inserts and you can store them someplace safe
- *  to be able to get  back to them.  Data blocks can be as long as you wish,
- *  and may have lengths different from the original when updating.
- *  <p>
- *  DB is responsible for handling transactions.
- *  JDBM2 supports only single transaction for data store.
- *  See <code>commit</code> and <code>roolback</code> methods for more details.
- *  <p>
- *  DB is also factory for primary Maps.
- *  <p>
+ * An interface/abstract class to manage records, which are objects serialized to byte[] on background.
+ * <p/>
+ * The set of record operations is simple: fetch, insert, update and delete.
+ * Each record is identified using a "rowid" and contains a byte[] data block serialized to object.
+ * Rowids are returned on inserts and you can store them someplace safe
+ * to be able to get  back to them.  Data blocks can be as long as you wish,
+ * and may have lengths different from the original when updating.
+ * <p/>
+ * DB is responsible for handling transactions.
+ * JDBM2 supports only single transaction for data store.
+ * See <code>commit</code> and <code>roolback</code> methods for more details.
+ * <p/>
+ * DB is also factory for primary Maps.
+ * <p/>
+ *
  * @author Jan Kotek
  * @author Alex Boisvert
  * @author Cees de Groot
@@ -24,9 +25,8 @@ import java.util.*;
 public interface DB {
 
     /**
-     *  Closes the record manager and release resources.
-     *  Record manager can not be used after it was closed
-     *
+     * Closes the record manager and release resources.
+     * Record manager can not be used after it was closed
      */
     void close();
 
@@ -50,6 +50,7 @@ public interface DB {
     /**
      * This calculates some database statistics.
      * Mostly what collections are presents and how much space is used.
+     *
      * @return statistics contained in string
      */
     String calculateStatistics();
@@ -67,9 +68,8 @@ public interface DB {
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
      *
-     *
-     * @param <K> Key type
-     * @param <V> Value type
+     * @param <K>  Key type
+     * @param <V>  Value type
      * @param name record name
      * @return
      */
@@ -81,10 +81,10 @@ public interface DB {
      * Map will use custom serializers for Keys and Values.
      * Leave keySerializer null to use default serializer for keys
      *
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keySerializer serializer to be used for Keys, leave null to use default serializer
+     * @param <K>             Key type
+     * @param <V>             Value type
+     * @param name            record name
+     * @param keySerializer   serializer to be used for Keys, leave null to use default serializer
      * @param valueSerializer serializer to be used for Values
      * @return
      */
@@ -101,9 +101,8 @@ public interface DB {
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
      *
-     *
-     * @param <K> Key type
-     * @param <V> Value type
+     * @param <K>  Key type
+     * @param <V>  Value type
      * @param name record name
      * @return
      */
@@ -112,16 +111,16 @@ public interface DB {
     /**
      * Creates or load existing TreeMap which persists data into DB.
      *
-     * @param <K> Key type
-     * @param <V> Value type
-     * @param name record name
-     * @param keyComparator Comparator used to sort keys
-     * @param keySerializer Serializer used for keys. This may reduce disk space usage     *
+     * @param <K>             Key type
+     * @param <V>             Value type
+     * @param name            record name
+     * @param keyComparator   Comparator used to sort keys
+     * @param keySerializer   Serializer used for keys. This may reduce disk space usage     *
      * @param valueSerializer Serializer used for values. This may reduce disk space usage
      * @return
      */
     <K, V> SortedMap<K, V> createTreeMap(String name,
-                                              Comparator<K> keyComparator, Serializer<K> keySerializer,Serializer<V> valueSerializer);
+                                         Comparator<K> keyComparator, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
     <K> SortedSet<K> loadTreeSet(String name);
 

@@ -24,13 +24,15 @@ import java.util.*;
  * and removing) are supported. The elements can be any objects which are
  * comparable to each other either using their natural order or a specified
  * Comparator.
- * 
+ * <p/>
  * This code originally comes from Apache Harmony, was adapted by Jan Kotek for JDBM
  */
 class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
 
 
-    /** Keys are this set's elements. Values are always Boolean.TRUE */
+    /**
+     * Keys are this set's elements. Values are always Boolean.TRUE
+     */
     private SortedMap<E, Object> backingMap;
 
     BTreeSet(SortedMap<E, Object> map) {
@@ -90,14 +92,12 @@ class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
     }
 
 
-
-
     public SortedSet<E> subSet(E start, E end) {
         Comparator<? super E> c = backingMap.comparator();
         int compare = (c == null) ? ((Comparable<E>) start).compareTo(end) : c
                 .compare(start, end);
         if (compare <= 0) {
-            return new BTreeSet<E>(backingMap.subMap(start,end));
+            return new BTreeSet<E>(backingMap.subMap(start, end));
         }
         throw new IllegalArgumentException();
     }
@@ -125,8 +125,6 @@ class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
         }
         return new BTreeSet<E>(backingMap.tailMap(start));
     }
-
-
 
 
 }

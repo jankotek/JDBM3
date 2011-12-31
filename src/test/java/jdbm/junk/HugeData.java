@@ -14,7 +14,7 @@ public class HugeData {
     static public void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
-        DB db = new DBMaker("/tmp/large/db"+Math.random())
+        DB db = new DBMaker("/tmp/large/db" + Math.random())
                 .disableTransactions()
                 .enableMRUCache()
                 .build();
@@ -22,8 +22,8 @@ public class HugeData {
 //        Map<Long,Integer> map = db.createHashMap("test");
         List<Long> test = db.createLinkedList("test");
 
-        for(Long i=1L;i<1e10;i++){
-            if(i%1e6==0) {
+        for (Long i = 1L; i < 1e10; i++) {
+            if (i % 1e6 == 0) {
                 System.out.println(i);
                 //Thread.sleep(1000000);
             }
@@ -33,6 +33,6 @@ public class HugeData {
 
         db.close();
 
-        System.out.println("Finished, total time: "+(System.currentTimeMillis()-startTime)/1000);
+        System.out.println("Finished, total time: " + (System.currentTimeMillis() - startTime) / 1000);
     }
 }

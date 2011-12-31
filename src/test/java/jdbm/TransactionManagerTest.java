@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,16 +19,16 @@ package jdbm;
 import java.io.File;
 
 /**
- *  This class contains all Unit tests for {@link TransactionManager}.
- *  TODO sort out this testcase
+ * This class contains all Unit tests for {@link TransactionManager}.
+ * TODO sort out this testcase
  */
 public class TransactionManagerTest extends TestCaseWithTestFile {
 
 
     String file = newTestFile();
-    
+
     /**
-     *  Test constructor. Oops - can only be done indirectly :-)
+     * Test constructor. Oops - can only be done indirectly :-)
      */
     public void testCtor() throws Exception {
         RecordFile file2 = new RecordFile(file);
@@ -37,7 +37,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
     }
 
     /**
-     *  Test recovery
+     * Test recovery
      */
     public void XtestRecovery() throws Exception {
         RecordFile file1 = new RecordFile(file);
@@ -70,7 +70,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
     }
 
     /**
-     *  Test background synching
+     * Test background synching
      */
     public void XtestSynching() throws Exception {
         RecordFile file1 = new RecordFile(file);
@@ -87,7 +87,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // The data file now has the first slotfull
         assertDataSizeEquals("len1", TransactionManager.DEFAULT_TXNS_IN_LOG *
-                             Storage.BLOCK_SIZE + 6);
+                Storage.BLOCK_SIZE + 6);
         assertLogSizeNotZero("len1");
 
         // Leave the old record file in flux, and open it again.
@@ -103,20 +103,20 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
     //  Helpers
 
     void assertDataSizeEquals(String msg, long size) {
-        assertEquals(msg + " data size", size ,
-                     new File(file
-                              + ".t").length());
+        assertEquals(msg + " data size", size,
+                new File(file
+                        + ".t").length());
     }
 
     void assertLogSizeEquals(String msg, long size) {
         assertEquals(msg + " log size", size,
-                     new File(file
-                              + StorageDisk.transaction_log_file_extension).length());
+                new File(file
+                        + StorageDisk.transaction_log_file_extension).length());
     }
 
     void assertLogSizeNotZero(String msg) {
         assertTrue(msg + " log size",
-               new File(file
+                new File(file
                         + StorageDisk.transaction_log_file_extension).length() != 0);
     }
 

@@ -10,38 +10,39 @@ import java.util.Map;
  */
 class HTreeSet<E> extends AbstractSet<E> {
 
-    private Map<E,Object> map;
+    private Map<E, Object> map;
 
-    HTreeSet(Map map){
+    HTreeSet(Map map) {
         this.map = map;
     }
 
     public Iterator<E> iterator() {
-	return map.keySet().iterator();
+        return map.keySet().iterator();
     }
 
     public int size() {
-	return map.size();
+        return map.size();
     }
 
 
     public boolean isEmpty() {
-	return map.isEmpty();
+        return map.isEmpty();
     }
 
     public boolean contains(Object o) {
-	return map.containsKey(o);
+        return map.containsKey(o);
     }
 
     public boolean add(E e) {
-	return map.put(e, Utils.EMPTY_STRING)==null;
+        return map.put(e, Utils.EMPTY_STRING) == null;
     }
 
     public boolean remove(Object o) {
-	return map.remove(o)== Utils.EMPTY_STRING;
+        return map.remove(o) == Utils.EMPTY_STRING;
     }
+
     public void clear() {
-	map.clear();
+        map.clear();
     }
 
 }

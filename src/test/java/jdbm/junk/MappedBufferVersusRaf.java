@@ -17,29 +17,29 @@ public class MappedBufferVersusRaf {
     public static final int BUFFER_SIZE = 2048;
 
     public static void main(String[] args) throws IOException {
-        
-        File f = File.createTempFile("mapped","mapped");
+
+        File f = File.createTempFile("mapped", "mapped");
         f.deleteOnExit();
-        
+
         byte[] buffer = new byte[BUFFER_SIZE];
-        
+
         OutputStream o = new BufferedOutputStream(new FileOutputStream(f));
 
-        for(int i = 0;i< FILE_SIZE;i+=BUFFER_SIZE){
+        for (int i = 0; i < FILE_SIZE; i += BUFFER_SIZE) {
             o.write(buffer);
         }
         o.close();
-        
+
         System.out.println("File filled");
-        
-        
+
+
         //open as RAF and read file randomly
         long t = System.currentTimeMillis();
-        RandomAccessFile raf = new RandomAccessFile(f,"r");
+        RandomAccessFile raf = new RandomAccessFile(f, "r");
         Random r = new Random(0);
         ByteBuffer byteBuf = ByteBuffer.wrap(buffer);
-        for(int i=0;i<NUNBER_OF_READS;i++){
-            long pos = r.nextInt(FILE_SIZE-BUFFER_SIZE);
+        for (int i = 0; i < NUNBER_OF_READS; i++) {
+            long pos = r.nextInt(FILE_SIZE - BUFFER_SIZE);
             raf.seek(pos);
             raf.readFully(buffer);
 
@@ -48,29 +48,28 @@ public class MappedBufferVersusRaf {
             byteBuf.getLong(100);
             byteBuf.getLong(500);
         }
-        System.out.println("RAF took "+(System.currentTimeMillis()-t));
+        System.out.println("RAF took " + (System.currentTimeMillis() - t));
 
         //previous test was not so good, so try to map entire file into memory
         t = System.currentTimeMillis();
         FileChannel channel = raf.getChannel();
         r = new Random(0);
-        MappedByteBuffer byteBuf3 = channel.map(FileChannel.MapMode.READ_ONLY,0,raf.length());
+        MappedByteBuffer byteBuf3 = channel.map(FileChannel.MapMode.READ_ONLY, 0, raf.length());
 
         byteBuf3.load();
 
 
-        for(int i=0;i< NUNBER_OF_READS;i++){
-            int pos = r.nextInt(FILE_SIZE-BUFFER_SIZE);
+        for (int i = 0; i < NUNBER_OF_READS; i++) {
+            int pos = r.nextInt(FILE_SIZE - BUFFER_SIZE);
 
             //read some random numbers just as JDBM does
-            byteBuf3.getLong(pos+10);
-            byteBuf3.getLong(pos+100);
-            byteBuf3.getLong(pos+500);
+            byteBuf3.getLong(pos + 10);
+            byteBuf3.getLong(pos + 100);
+            byteBuf3.getLong(pos + 500);
         }
-        System.out.println("MappedByteBuffer took "+(System.currentTimeMillis()-t));
+        System.out.println("MappedByteBuffer took " + (System.currentTimeMillis() - t));
 
-        
-        
+
     }
-        
+
 }

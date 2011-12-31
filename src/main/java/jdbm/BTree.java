@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,37 +29,36 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * one tree node (called <code>BTreeNode</code>).  In addition, the leaf nodes
  * directly contain (inline) small values associated with the keys, allowing a
  * single (or sequential) disk read of all the values on the node.
- * <p>
+ * <p/>
  * B+Trees are n-airy, yeilding log(N) search cost.  They are self-balancing,
  * preventing search performance degradation when the size of the tree grows.
- * <p>
+ * <p/>
  * TODO update paragraph
  * Keys and associated values must be <code>Serializable</code> objects. The
  * user is responsible to supply a serializable <code>Comparator</code> object
  * to be used for the ordering of entries, which are also called <code>Tuple</code>.
  * The B+Tree allows traversing the keys in forward and reverse order using a
  * TupleBrowser obtained from the browse() methods.
- * <p>
+ * <p/>
  * This implementation does not directly support duplicate keys. It is
  * possible to handle duplicates by grouping values using an ArrayList as value.
- * <p>
+ * <p/>
  * There is no limit on key size or value size, but it is recommended to keep
  * keys as small as possible to reduce disk I/O. If value exceeds 32 bytes,
  * it is stored in separate record and tree contains only recid reference to it.
  *
  * @author Alex Boisvert
  */
-class BTree<K,V>{
+class BTree<K, V> {
 
 
     private static final boolean DEBUG = false;
 
 
-
     /**
      * Default node size (number of entries per node)
      */
-    public static final int DEFAULT_SIZE =8;
+    public static final int DEFAULT_SIZE = 8;
 
 
     /**
@@ -91,36 +90,42 @@ class BTree<K,V>{
      */
     protected Serializer<V> valueSerializer;
 
-    /** indicates if values should be loaded during deserialization, set to true during defragmentation */
+    /**
+     * indicates if values should be loaded during deserialization, set to true during defragmentation
+     */
     boolean loadValues = true;
 
-    /** The number of structural modifications to the tree. This value is just for runtime, it is not persisted*/
+    /**
+     * The number of structural modifications to the tree. This value is just for runtime, it is not persisted
+     */
     transient int modCount = 0;
 
-    /** cached instance of an insert result, so we do not have to allocate new object on each insert*/
+    /**
+     * cached instance of an insert result, so we do not have to allocate new object on each insert
+     */
     protected BTreeNode.InsertResult<K, V> insertResultReuse;
 
 
     public Serializer<K> getKeySerializer() {
-		return keySerializer;
-	}
+        return keySerializer;
+    }
 
 
-	public void setKeySerializer(Serializer<K> keySerializer) {
-		this.keySerializer = keySerializer;
-	}
+    public void setKeySerializer(Serializer<K> keySerializer) {
+        this.keySerializer = keySerializer;
+    }
 
 
-	public Serializer<V> getValueSerializer() {
-		return valueSerializer;
-	}
+    public Serializer<V> getValueSerializer() {
+        return valueSerializer;
+    }
 
 
-	public void setValueSerializer(Serializer<V> valueSerializer) {
-		this.valueSerializer = valueSerializer;
-	}
+    public void setValueSerializer(Serializer<V> valueSerializer) {
+        this.valueSerializer = valueSerializer;
+    }
 
-	/**
+    /**
      * Height of the B+Tree.  This is the number of BTreeNodes you have to traverse
      * to get to a leaf BTreeNode, starting from the root.
      */
@@ -133,31 +138,29 @@ class BTree<K,V>{
     private transient long _root;
 
 
-
     /**
      * Total number of entries in the BTree
      */
     protected volatile int _entries;
 
-    
+
     /**
      * Serializer used for BTreeNodes of this tree
      */
-    private transient BTreeNode<K,V> _nodeSerializer;
-    
-    
+    private transient BTreeNode<K, V> _nodeSerializer;
+
+
     /**
      * Listeners which are notified about changes in records
      */
-    protected RecordListener[] recordListeners =new  RecordListener[0];
-    
+    protected RecordListener[] recordListeners = new RecordListener[0];
+
     protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * No-argument constructor used by serialization.
      */
-    public BTree()
-    {
+    public BTree() {
         // empty
     }
 
@@ -165,59 +168,55 @@ class BTree<K,V>{
     /**
      * Create a new persistent BTree, with 16 entries per node.
      *
-     * @param db Record manager used for persistence.
+     * @param db         Record manager used for persistence.
      * @param comparator Comparator used to order index entries
      */
-    public static <K,V> BTree<K,V> createInstance( DBAbstract db,
-                                        Comparator<K> comparator)
-        throws IOException
-    {
-        return createInstance( db, comparator, null, null);
+    public static <K, V> BTree<K, V> createInstance(DBAbstract db,
+                                                    Comparator<K> comparator)
+            throws IOException {
+        return createInstance(db, comparator, null, null);
     }
-    
+
     /**
      * Create a new persistent BTree, with 16 entries per node.
      *
      * @param db Record manager used for persistence.
      */
     @SuppressWarnings("unchecked")
-	public static <K extends Comparable,V> BTree<K,V> createInstance( DBAbstract db)
-        throws IOException
-    {
-    	BTree<K,V> ret = createInstance( db, null, null, null);
+    public static <K extends Comparable, V> BTree<K, V> createInstance(DBAbstract db)
+            throws IOException {
+        BTree<K, V> ret = createInstance(db, null, null, null);
         return ret;
     }
-
 
 
     /**
      * Create a new persistent BTree with the given number of entries per node.
      *
-     * @param db Record manager used for persistence.
-     * @param comparator Comparator used to order index entries
-     * @param keySerializer Serializer used to serialize index keys (optional)
+     * @param db              Record manager used for persistence.
+     * @param comparator      Comparator used to order index entries
+     * @param keySerializer   Serializer used to serialize index keys (optional)
      * @param valueSerializer Serializer used to serialize index values (optional)
      */
-    public static <K,V> BTree<K,V> createInstance( DBAbstract db,
-                                        Comparator<K> comparator,
-                                        Serializer<K> keySerializer,
-                                        Serializer<V> valueSerializer)
-        throws IOException
-    {
-        BTree<K,V> btree;
+    public static <K, V> BTree<K, V> createInstance(DBAbstract db,
+                                                    Comparator<K> comparator,
+                                                    Serializer<K> keySerializer,
+                                                    Serializer<V> valueSerializer)
+            throws IOException {
+        BTree<K, V> btree;
 
-        if ( db == null ) {
-            throw new IllegalArgumentException( "Argument 'db' is null" );
+        if (db == null) {
+            throw new IllegalArgumentException("Argument 'db' is null");
         }
 
-        btree = new BTree<K,V>();
+        btree = new BTree<K, V>();
         btree._db = db;
         btree._comparator = comparator;
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
-        btree._nodeSerializer = new BTreeNode<K,V>();
+        btree._nodeSerializer = new BTreeNode<K, V>();
         btree._nodeSerializer._btree = btree;
-        btree._recid = db.insert( btree, btree.getRecordManager().defaultSerializer() );
+        btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer());
         return btree;
     }
 
@@ -225,112 +224,111 @@ class BTree<K,V>{
     /**
      * Load a persistent BTree.
      *
-     * @param db DB used to store the persistent btree
+     * @param db    DB used to store the persistent btree
      * @param recid Record id of the BTree
      */
     @SuppressWarnings("unchecked")
-	public static <K,V> BTree<K,V> load( DBAbstract db, long recid )
-        throws IOException
-    {
-        BTree<K,V> btree = (BTree<K,V>) db.fetch( recid);
+    public static <K, V> BTree<K, V> load(DBAbstract db, long recid)
+            throws IOException {
+        BTree<K, V> btree = (BTree<K, V>) db.fetch(recid);
         btree._recid = recid;
         btree._db = db;
-        btree._nodeSerializer = new BTreeNode<K,V>();
+        btree._nodeSerializer = new BTreeNode<K, V>();
         btree._nodeSerializer._btree = btree;
         return btree;
     }
-    
+
     /**
      * Get the {@link ReadWriteLock} associated with this BTree.
      * This should be used with browsing operations to ensure
      * consistency.
+     *
      * @return
      */
     public ReadWriteLock getLock() {
-		return lock;
-	}
+        return lock;
+    }
 
     /**
      * Insert an entry in the BTree.
-     * <p>
+     * <p/>
      * The BTree cannot store duplicate entries.  An existing entry can be
      * replaced using the <code>replace</code> flag.   If an entry with the
      * same key already exists in the BTree, its value is returned.
      *
-     * @param key Insert key
-     * @param value Insert value
+     * @param key     Insert key
+     * @param value   Insert value
      * @param replace Set to true to replace an existing key-value pair.
      * @return Existing value, if any.
      */
     public V insert(final K key, final V value,
-                                       final boolean replace )
-        throws IOException
-    {
-        if ( key == null ) {
-            throw new IllegalArgumentException( "Argument 'key' is null" );
+                    final boolean replace)
+            throws IOException {
+        if (key == null) {
+            throw new IllegalArgumentException("Argument 'key' is null");
         }
-        if ( value == null ) {
-            throw new IllegalArgumentException( "Argument 'value' is null" );
+        if (value == null) {
+            throw new IllegalArgumentException("Argument 'value' is null");
         }
         try {
-        	lock.writeLock().lock();
-	        BTreeNode<K,V> rootNode = getRoot();
-	
-	        if ( rootNode == null ) {
-	            // BTree is currently empty, create a new root BTreeNode
-	            if (DEBUG) {
-	                System.out.println( "BTree.insert() new root BTreeNode" );
-	            }
-	            rootNode = new BTreeNode<K,V>( this, key, value );
-	            _root = rootNode._recid;
-	            _height = 1;
-	            _entries = 1;
-	            _db.update( _recid, this);
-                modCount++;
-	            //notifi listeners
-	            for(RecordListener<K,V> l : recordListeners){
-	            	l.recordInserted(key, value);
-	            }
-	            return null;
-            } else {
-	        BTreeNode.InsertResult<K,V> insert = rootNode.insert( _height, key, value, replace );
-            boolean dirty = false;
-            if ( insert._overflow != null ) {
-                // current root node overflowed, we replace with a new root node
-                if ( DEBUG ) {
-                    System.out.println( "BTreeNode.insert() replace root BTreeNode due to overflow" );
-                }
-                rootNode = new BTreeNode<K,V>( this, rootNode, insert._overflow );
-                _root = rootNode._recid;
-                _height += 1;
-                dirty = true;
-            }
-            if ( insert._existing == null ) {
-                _entries++;
-                modCount++;
-                dirty = true;
-            }
-            if ( dirty ) {
-                _db.update( _recid, this);
-            }
-            //notify listeners
-            for(RecordListener<K,V> l : recordListeners){
-            	if(insert._existing==null)
-            		l.recordInserted(key, value);
-            	else
-            		l.recordUpdated(key, insert._existing, value);
-            }
+            lock.writeLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
 
-            // insert might have returned an existing value
-            V ret = insert._existing;
-            //zero out tuple and put it for reuse
-            insert._existing = null;
-            insert._overflow = null;
-            this.insertResultReuse = insert;
-            return ret;
-           }
+            if (rootNode == null) {
+                // BTree is currently empty, create a new root BTreeNode
+                if (DEBUG) {
+                    System.out.println("BTree.insert() new root BTreeNode");
+                }
+                rootNode = new BTreeNode<K, V>(this, key, value);
+                _root = rootNode._recid;
+                _height = 1;
+                _entries = 1;
+                _db.update(_recid, this);
+                modCount++;
+                //notifi listeners
+                for (RecordListener<K, V> l : recordListeners) {
+                    l.recordInserted(key, value);
+                }
+                return null;
+            } else {
+                BTreeNode.InsertResult<K, V> insert = rootNode.insert(_height, key, value, replace);
+                boolean dirty = false;
+                if (insert._overflow != null) {
+                    // current root node overflowed, we replace with a new root node
+                    if (DEBUG) {
+                        System.out.println("BTreeNode.insert() replace root BTreeNode due to overflow");
+                    }
+                    rootNode = new BTreeNode<K, V>(this, rootNode, insert._overflow);
+                    _root = rootNode._recid;
+                    _height += 1;
+                    dirty = true;
+                }
+                if (insert._existing == null) {
+                    _entries++;
+                    modCount++;
+                    dirty = true;
+                }
+                if (dirty) {
+                    _db.update(_recid, this);
+                }
+                //notify listeners
+                for (RecordListener<K, V> l : recordListeners) {
+                    if (insert._existing == null)
+                        l.recordInserted(key, value);
+                    else
+                        l.recordUpdated(key, insert._existing, value);
+                }
+
+                // insert might have returned an existing value
+                V ret = insert._existing;
+                //zero out tuple and put it for reuse
+                insert._existing = null;
+                insert._overflow = null;
+                this.insertResultReuse = insert;
+                return ret;
+            }
         } finally {
-        	lock.writeLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -342,45 +340,44 @@ class BTree<K,V>{
      * @return Value associated with the key, or null if no entry with given
      *         key existed in the BTree.
      */
-    public V remove( K key )
-        throws IOException
-    {
-        if ( key == null ) {
-            throw new IllegalArgumentException( "Argument 'key' is null" );
+    public V remove(K key)
+            throws IOException {
+        if (key == null) {
+            throw new IllegalArgumentException("Argument 'key' is null");
         }
         try {
-        	lock.writeLock().lock();
-	        BTreeNode<K,V> rootNode = getRoot();
-	        if ( rootNode == null ) {
-	            return null;
-	        }
-	        boolean dirty = false;
-	        BTreeNode.RemoveResult<K,V> remove = rootNode.remove( _height, key );
-	        if ( remove._underflow && rootNode.isEmpty() ) {
-	            _height -= 1;
-	            dirty = true;
-	
+            lock.writeLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
+            if (rootNode == null) {
+                return null;
+            }
+            boolean dirty = false;
+            BTreeNode.RemoveResult<K, V> remove = rootNode.remove(_height, key);
+            if (remove._underflow && rootNode.isEmpty()) {
+                _height -= 1;
+                dirty = true;
+
                 _db.delete(_root);
-	            if ( _height == 0 ) {
-	                _root = 0;
-	            } else {
-	                _root = rootNode.loadLastChildNode()._recid;
-	            }
-	        }
-	        if ( remove._value != null ) {
-	            _entries--;
+                if (_height == 0) {
+                    _root = 0;
+                } else {
+                    _root = rootNode.loadLastChildNode()._recid;
+                }
+            }
+            if (remove._value != null) {
+                _entries--;
                 modCount++;
-	            dirty = true;
-	        }
-	        if ( dirty ) {
-	            _db.update( _recid, this);
-	        }
-	        if(remove._value!=null)
-	        	for(RecordListener<K,V> l : recordListeners)
-	        		l.recordRemoved(key,remove._value);
-	        return remove._value;
+                dirty = true;
+            }
+            if (dirty) {
+                _db.update(_recid, this);
+            }
+            if (remove._value != null)
+                for (RecordListener<K, V> l : recordListeners)
+                    l.recordRemoved(key, remove._value);
+            return remove._value;
         } finally {
-        	lock.writeLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -392,21 +389,20 @@ class BTree<K,V>{
      * @return Value associated with the key, or null if not found.
      */
     public V get(K key)
-        throws IOException
-    {
-        if ( key == null ) {
-            throw new IllegalArgumentException( "Argument 'key' is null" );
+            throws IOException {
+        if (key == null) {
+            throw new IllegalArgumentException("Argument 'key' is null");
         }
         try {
-        	lock.readLock().lock();
-	        BTreeNode<K,V> rootNode = getRoot();
-	        if ( rootNode == null ) {
-	            return null;
-	        }
-	
-	        return rootNode.findValue( _height, key );
+            lock.readLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
+            if (rootNode == null) {
+                return null;
+            }
+
+            return rootNode.findValue(_height, key);
         } finally {
-        	lock.readLock().unlock();
+            lock.readLock().unlock();
         }
     }
 
@@ -419,21 +415,20 @@ class BTree<K,V>{
      * @return Value associated with the key, or a greater entry, or null if no
      *         greater entry was found.
      */
-    public BTreeTuple<K,V> findGreaterOrEqual( K key )
-        throws IOException
-    {
-        BTreeTuple<K,V> tuple;
-        BTreeTupleBrowser<K,V> browser;
+    public BTreeTuple<K, V> findGreaterOrEqual(K key)
+            throws IOException {
+        BTreeTuple<K, V> tuple;
+        BTreeTupleBrowser<K, V> browser;
 
-        if ( key == null ) {
+        if (key == null) {
             // there can't be a key greater than or equal to "null"
             // because null is considered an infinite key.
             return null;
         }
 
-        tuple = new BTreeTuple<K,V>( null, null );
-        browser = browse( key );
-        if ( browser.getNext( tuple ) ) {
+        tuple = new BTreeTuple<K, V>(null, null);
+        browser = browse(key);
+        if (browser.getNext(tuple)) {
             return tuple;
         } else {
             return null;
@@ -451,19 +446,18 @@ class BTree<K,V>{
      * @return Browser positionned at the beginning of the BTree.
      */
     @SuppressWarnings("unchecked")
-	public BTreeTupleBrowser<K,V> browse()
-        throws IOException
-    {
-    	try {
-        	lock.readLock().lock();
-	        BTreeNode<K,V> rootNode = getRoot();
-	        if ( rootNode == null ) {
-	            return EMPTY_BROWSER;
-	        }
-	        return rootNode.findFirst();
-    	} finally {
-    		lock.readLock().unlock();
-    	}
+    public BTreeTupleBrowser<K, V> browse()
+            throws IOException {
+        try {
+            lock.readLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
+            if (rootNode == null) {
+                return EMPTY_BROWSER;
+            }
+            return rootNode.findFirst();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
 
@@ -480,28 +474,26 @@ class BTree<K,V>{
      * @return Browser positionned just before the given key.
      */
     @SuppressWarnings("unchecked")
-	public BTreeTupleBrowser<K,V> browse( K key )
-        throws IOException
-    {
-    	try {
-        	lock.readLock().lock();
-	    	BTreeNode<K,V> rootNode = getRoot();
-	        if ( rootNode == null ) {
-	            return EMPTY_BROWSER;
-	        }
-	        BTreeTupleBrowser<K,V> browser = rootNode.find( _height, key );
-	        return browser;
-    	} finally {
-    		lock.readLock().unlock();
-    	}
+    public BTreeTupleBrowser<K, V> browse(K key)
+            throws IOException {
+        try {
+            lock.readLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
+            if (rootNode == null) {
+                return EMPTY_BROWSER;
+            }
+            BTreeTupleBrowser<K, V> browser = rootNode.find(_height, key);
+            return browser;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
 
     /**
      * Return the number of entries (size) of the BTree.
      */
-    public int size()
-    {
+    public int size() {
         return _entries;
     }
 
@@ -509,8 +501,7 @@ class BTree<K,V>{
     /**
      * Return the persistent record identifier of the BTree.
      */
-    public long getRecid()
-    {
+    public long getRecid() {
         return _recid;
     }
 
@@ -518,13 +509,12 @@ class BTree<K,V>{
     /**
      * Return the root BTreeNode, or null if it doesn't exist.
      */
-    BTreeNode<K,V> getRoot()
-        throws IOException
-    {
-        if ( _root == 0 ) {
+    BTreeNode<K, V> getRoot()
+            throws IOException {
+        if (_root == 0) {
             return null;
         }
-        BTreeNode<K,V> root = _db.fetch( _root, _nodeSerializer );
+        BTreeNode<K, V> root = _db.fetch(_root, _nodeSerializer);
         if (root != null) {
             root._recid = _root;
             root._btree = this;
@@ -533,65 +523,63 @@ class BTree<K,V>{
     }
 
 
-	static BTree readExternal( DataInput in)
-        throws IOException, ClassNotFoundException
-    {
+    static BTree readExternal(DataInput in)
+            throws IOException, ClassNotFoundException {
         BTree tree = new BTree();
         tree._height = in.readInt();
         tree._root = in.readLong();
         tree._entries = in.readInt();
-        tree._comparator = (Comparator)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
-        tree.keySerializer = (Serializer)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
-        tree.valueSerializer = (Serializer)Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree._comparator = (Comparator) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree.keySerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree.valueSerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
         return tree;
     }
 
 
-    public void writeExternal( DataOutput out )
-        throws IOException
-    {
-        out.writeInt( _height );
-        out.writeLong( _root );
-        out.writeInt( _entries );
+    public void writeExternal(DataOutput out)
+            throws IOException {
+        out.writeInt(_height);
+        out.writeLong(_root);
+        out.writeInt(_entries);
 
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,_comparator);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,keySerializer);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out,valueSerializer);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, _comparator);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, keySerializer);
+        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
     }
 
     public static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
-        try{
+        try {
             byte[] data = r1.fetchRaw(recid);
-            r2.forceInsert(recid,data);
+            r2.forceInsert(recid, data);
             DataInput in = new DataInputOutput(data);
             BTree t = (BTree) r1.defaultSerializer().deserialize(in);
             t.loadValues = false;
             t._db = r1;
-            t._nodeSerializer = new BTreeNode(t,false);
+            t._nodeSerializer = new BTreeNode(t, false);
 
 
             BTreeNode p = t.getRoot();
-            if(p!=null){
-                r2.forceInsert(t._root,r1.fetchRaw(t._root));
-                p.defrag(r1,r2);
+            if (p != null) {
+                r2.forceInsert(t._root, r1.fetchRaw(t._root));
+                p.defrag(r1, r2);
             }
 
-        }catch(ClassNotFoundException e){
+        } catch (ClassNotFoundException e) {
             throw new IOError(e);
         }
     }
 
 
     /**
-     *  Browser returning no element.
+     * Browser returning no element.
      */
-    private static final BTreeTupleBrowser EMPTY_BROWSER = new  BTreeTupleBrowser() {
+    private static final BTreeTupleBrowser EMPTY_BROWSER = new BTreeTupleBrowser() {
 
-        public boolean getNext( BTreeTuple tuple ){
+        public boolean getNext(BTreeTuple tuple) {
             return false;
         }
 
-        public boolean getPrevious( BTreeTuple tuple ){
+        public boolean getPrevious(BTreeTuple tuple) {
             return false;
         }
 
@@ -599,71 +587,72 @@ class BTree<K,V>{
             throw new IndexOutOfBoundsException();
         }
     };
-    
-    public BTreeSortedMap<K,V> asMap(){
-    	return new BTreeSortedMap<K, V>(this,false);
+
+    public BTreeSortedMap<K, V> asMap() {
+        return new BTreeSortedMap<K, V>(this, false);
     }
-    
+
     /**
      * add RecordListener which is notified about record changes
+     *
      * @param listener
      */
-    public void addRecordListener(RecordListener<K,V> listener){
+    public void addRecordListener(RecordListener<K, V> listener) {
         recordListeners = Arrays.copyOf(recordListeners, recordListeners.length + 1);
-    	recordListeners[recordListeners.length-1]=listener;
+        recordListeners[recordListeners.length - 1] = listener;
     }
 
     /**
      * remove RecordListener which is notified about record changes
+     *
      * @param listener
      */
-    public void removeRecordListener(RecordListener<K,V> listener){
+    public void removeRecordListener(RecordListener<K, V> listener) {
         List l = Arrays.asList(recordListeners);
         l.remove(listener);
-    	recordListeners = (RecordListener[]) l.toArray(new RecordListener[1]);
+        recordListeners = (RecordListener[]) l.toArray(new RecordListener[1]);
     }
 
 
+    public DBAbstract getRecordManager() {
+        return _db;
+    }
 
-	public DBAbstract getRecordManager() {
-		return _db;
-	}
-	
 
     public Comparator<K> getComparator() {
         return _comparator;
     }
 
-    /** 
+    /**
      * Deletes all BTreeNodes in this BTree, then deletes the tree from the record manager
      */
     public void delete()
-        throws IOException
-    {
-    	try {
-        	lock.writeLock().lock();
-	        BTreeNode<K,V> rootNode = getRoot();
-	        if (rootNode != null)
-	            rootNode.delete();
-	        _db.delete(_recid);
+            throws IOException {
+        try {
+            lock.writeLock().lock();
+            BTreeNode<K, V> rootNode = getRoot();
+            if (rootNode != null)
+                rootNode.delete();
+            _db.delete(_recid);
             _entries = 0;
             modCount++;
-    	} finally {
-    		lock.writeLock().unlock();
-    	}
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
-    
+
     /**
      * Used for debugging and testing only.  Populates the 'out' list with
      * the recids of all child nodes in the BTree.
+     *
      * @param out
      * @throws IOException
      */
-    void dumpChildNodeRecIDs(List<Long> out) throws IOException{
-        BTreeNode<K,V> root = getRoot();
-        if ( root != null ) {
+    void dumpChildNodeRecIDs(List<Long> out) throws IOException {
+        BTreeNode<K, V> root = getRoot();
+        if (root != null) {
             out.add(root._recid);
-            root.dumpChildNodeRecIDs( out, _height);
+            root.dumpChildNodeRecIDs(out, _height);
         }
     }
 
@@ -672,7 +661,7 @@ class BTree<K,V>{
      *
      * @author Alex Boisvert
      */
-    static final class BTreeTuple<K,V> {
+    static final class BTreeTuple<K, V> {
 
         K key;
 
@@ -695,7 +684,7 @@ class BTree<K,V>{
      *
      * @author Alex Boisvert
      */
-    static interface BTreeTupleBrowser<K,V> {
+    static interface BTreeTupleBrowser<K, V> {
 
         /**
          * Get the next tuple.
@@ -703,7 +692,7 @@ class BTree<K,V>{
          * @param tuple Tuple into which values are copied.
          * @return True if values have been copied in tuple, or false if there is no next tuple.
          */
-        boolean getNext(BTreeTuple<K, V> tuple)throws IOException;
+        boolean getNext(BTreeTuple<K, V> tuple) throws IOException;
 
         /**
          * Get the previous tuple.
@@ -713,7 +702,7 @@ class BTree<K,V>{
          */
         boolean getPrevious(BTreeTuple<K, V> tuple) throws IOException;
 
-        /***
+        /**
          * Remove an entry with given key, and increases browsers expectedModCount
          * This method is here to support 'ConcurrentModificationException' on Map interface.
          *

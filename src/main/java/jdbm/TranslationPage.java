@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,29 +18,29 @@
 package jdbm;
 
 /**
- *  Class describing a page that holds translations from physical rowids
- *  to logical rowids. In fact, the page just holds physical rowids - the
- *  page's block is the block for the logical rowid, the offset serve
- *  as offset for the rowids.
+ * Class describing a page that holds translations from physical rowids
+ * to logical rowids. In fact, the page just holds physical rowids - the
+ * page's block is the block for the logical rowid, the offset serve
+ * as offset for the rowids.
  */
 final class TranslationPage extends PageHeader {
     // offsets
     static final short O_TRANS = PageHeader.SIZE; // short count
-    
-    
+
+
 //    // slots we returned.
 //    final PhysicalRowId[] slots = new PhysicalRowId[ELEMS_PER_PAGE];
 
     /**
-     *  Constructs a data page view from the indicated block.
+     * Constructs a data page view from the indicated block.
      */
     TranslationPage(BlockIo block) {
         super(block);
     }
 
     /**
-     *  Factory method to create or return a data page for the
-     *  indicated block.
+     * Factory method to create or return a data page for the
+     * indicated block.
      */
     static TranslationPage getTranslationPageView(BlockIo block) {
         BlockView view = block.getView();

@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2010 Cees De Groot, Alex Boisvert, Jan Kotek
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,20 +24,20 @@ import junit.framework.TestSuite;
  */
 public class LocationTest extends TestCase {
 
-	public LocationTest(String name) {
-		super(name);
-	}
+    public LocationTest(String name) {
+        super(name);
+    }
 
-	/**
-	 * Basic tests
-	 */
-	public void testBasics() {
+    /**
+     * Basic tests
+     */
+    public void testBasics() {
 
-		long loc = Location.toLong(10, (short) 20);
+        long loc = Location.toLong(10, (short) 20);
 
-		assertEquals("block2", 10, Location.getBlock(loc));
-		assertEquals("offset2", 20, Location.getOffset(loc));
+        assertEquals("block2", 10, Location.getBlock(loc));
+        assertEquals("offset2", 20, Location.getOffset(loc));
 
-	}
+    }
 
 }
