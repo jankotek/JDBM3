@@ -37,10 +37,7 @@ import java.util.Iterator;
 final class RecordFile {
     final TransactionManager txnMgr;
 
-    // Todo: reorganize in hashes and fifos as necessary.
-    // free -> inUse -> dirty -> inTxn -> free
-    // free is a cache, thus a FIFO. The rest are hashes.
-    private final LongHashMap<BlockIo> free = new LongHashMap<BlockIo>();
+
     /**
      * Blocks currently locked for read/update ops. When released the block goes
      * to the dirty or clean list, depending on a flag.  The file header block is
@@ -130,13 +127,6 @@ final class RecordFile {
             return node;
         }
 
-        BlockIo cur = free.get(blockid);
-        if (cur != null) {
-            node = cur;
-            free.remove(blockid);
-            inUse.put(blockid, node);
-            return node;
-        }
 
         // sanity check: can't be on in use list
         if (inUse.get(blockid) != null) {
@@ -198,8 +188,6 @@ final class RecordFile {
         } else {
             if (!transactionsDisabled && block.isInTransaction()) {
                 inTxn.put(key, block);
-            } else {
-                free.put(key, block);
             }
         }
     }
@@ -257,7 +245,6 @@ final class RecordFile {
 
                 storage.write(node.getBlockId(), Utils.encrypt(cipherIn, node.getData()));
                 node.setClean();
-                free.put(node.getBlockId(), node);
             } else {
                 txnMgr.add(node);
                 inTxn.put(node.getBlockId(), node);
@@ -356,14 +343,7 @@ final class RecordFile {
     private BlockIo getNewNode(long blockid)
             throws IOException {
 
-        BlockIo retval = null;
-        if (!free.isEmpty()) {
-            Iterator<BlockIo> it = free.valuesIterator();
-            retval = it.next();
-            it.remove();
-        }
-        if (retval == null)
-            retval = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
+        BlockIo retval = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
 
         retval.setBlockId(blockid);
         retval.setView(null);
@@ -384,15 +364,10 @@ final class RecordFile {
     /**
      * Releases a node from the transaction list, if it was sitting
      * there.
-     *
-     * @param recycle true if block data can be reused
      */
-    void releaseFromTransaction(BlockIo node, boolean recycle)
+    void releaseFromTransaction(BlockIo node)
             throws IOException {
-        long key = node.getBlockId();
-        if ((inTxn.remove(key) != null) && recycle) {
-            free.put(key, node);
-        }
+        inTxn.remove(node.getBlockId());
     }
 
     /**

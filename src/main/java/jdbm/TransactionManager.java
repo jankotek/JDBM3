@@ -211,7 +211,7 @@ final class TransactionManager {
             if (fromCore) {
                 cur.decrementTransactionCount();
                 if (!cur.isInTransaction()) {
-                    owner.releaseFromTransaction(cur, true);
+                    owner.releaseFromTransaction(cur);
                 }
             }
         }
@@ -237,7 +237,7 @@ final class TransactionManager {
 
             cur.decrementTransactionCount();
             if (!cur.isInTransaction()) {
-                owner.releaseFromTransaction(cur, false);
+                owner.releaseFromTransaction(cur);
             }
         }
     }
