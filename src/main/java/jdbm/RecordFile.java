@@ -93,7 +93,7 @@ final class RecordFile {
             this.storage = new StorageDisk(fileName);
         if (this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
-        if (!readonly) {
+        if (!readonly && !transactionDisabled) {
             txnMgr = new TransactionManager(this, storage, cipherIn, cipherOut);
         } else {
             txnMgr = null;
@@ -299,7 +299,10 @@ final class RecordFile {
         if (!dirty.isEmpty()) {
             commit();
         }
-        txnMgr.shutdown();
+
+        if(!transactionsDisabled){
+            txnMgr.shutdown();
+        }
 
         if (!inTxn.isEmpty()) {
             showList(inTxn.valuesIterator());
@@ -327,7 +330,9 @@ final class RecordFile {
      * Used for testing purposed only.
      */
     void forceClose() throws IOException {
-        txnMgr.forceClose();
+        if(!transactionsDisabled){
+            txnMgr.forceClose();
+        }
         storage.forceClose();
     }
 

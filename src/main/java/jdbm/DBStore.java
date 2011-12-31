@@ -89,9 +89,6 @@ final class DBStore
      */
     private Cipher cipherIn;
 
-    private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
-
-
     void checkCanWrite() {
         if (readonly)
             throw new UnsupportedOperationException("Could not write, store is opened as read-only");
@@ -237,10 +234,6 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
-        if (transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
-            commit();
-        }
-
         if (bufferInUse) {
             //current reusable buffer is in use, have to fallback into creating new instances
             DataInputOutput buffer2 = new DataInputOutput();
@@ -283,10 +276,6 @@ final class DBStore
                     + logRowId);
         }
 
-        if (transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
-            commit();
-        }
-
 
         if (DEBUG) {
             System.out.println("BaseRecordManager.delete() recid " + logRowId);
@@ -307,10 +296,6 @@ final class DBStore
         if (recid <= 0) {
             throw new IllegalArgumentException("Argument 'recid' is invalid: "
                     + recid);
-        }
-
-        if (transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
-            commit();
         }
 
         if (bufferInUse) {
@@ -921,9 +906,6 @@ final class DBStore
      */
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
         logicalRowId = decompressRecid(logicalRowId);
-        if (transactionDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
-            commit();
-        }
 
         long physLoc = _physMgr.insert(data, 0, data.length);
         _logicMgr.forceInsert(logicalRowId, physLoc);
