@@ -29,13 +29,14 @@ class StorageZip implements Storage {
         throw new UnsupportedOperationException("readonly");
     }
 
-    public void read(long pageNumber, ByteBuffer data) throws IOException {
-        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
+    public ByteBuffer read(long pageNumber) throws IOException {
+        ByteBuffer data = ByteBuffer.allocate(BLOCK_SIZE);
 
         ZipEntry e = z.getEntry(zip2 + pageNumber);
         InputStream i = z.getInputStream(e);
         new DataInputStream(i).readFully(data.array());
         i.close();
+        return data;
     }
 
     public void forceClose() throws IOException {

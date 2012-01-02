@@ -133,17 +133,14 @@ final class RecordFile {
             throw new Error("double get for block " + blockid);
         }
 
-        // get a new node and read it from the file
-        node = getNewNode(blockid);
-
+        //read node from file
         if (cipherOut == null) {
-            storage.read(blockid, node.getData());
+            node = new BlockIo(blockid,storage.read(blockid));
         } else {
             //decrypt if needed
-            ByteBuffer b = ByteBuffer.allocate(Storage.BLOCK_SIZE);
-            storage.read(blockid, b);
+            ByteBuffer b = storage.read(blockid);
             if (!Utils.allZeros(b.array())) try {
-                cipherOut.doFinal(b.array(), 0, Storage.BLOCK_SIZE, node.getData().array());
+                cipherOut.doFinal(b.array(), 0, Storage.BLOCK_SIZE, node.getByteArray());
             } catch (Exception e) {
                 throw new IOError(e);
             }
@@ -200,9 +197,6 @@ final class RecordFile {
     void discard(BlockIo block) {
         long key = block.getBlockId();
         inUse.remove(key);
-
-        // note: block not added to free list on purpose, because
-        //       it's considered invalid
     }
 
     /**
@@ -242,8 +236,10 @@ final class RecordFile {
 
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
-
-                storage.write(node.getBlockId(), Utils.encrypt(cipherIn, node.getData()));
+                if(cipherIn !=null)                    
+                    storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, node.getData())));
+                else
+                   storage.write(node.getBlockId(),node.getData());
                 node.setClean();
             } else {
                 txnMgr.add(node);
@@ -335,21 +331,6 @@ final class RecordFile {
         }
     }
 
-
-    /**
-     * Returns a new node. The node is retrieved (and removed)
-     * from the released list or created new.
-     */
-    private BlockIo getNewNode(long blockid)
-            throws IOException {
-
-        BlockIo retval = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
-
-        retval.setBlockId(blockid);
-        retval.setView(null);
-        return retval;
-    }
-
     /**
      * Synchs a node to disk. This is called by the transaction manager's
      * synchronization code.
@@ -357,7 +338,10 @@ final class RecordFile {
     void synch(BlockIo node) throws IOException {
         ByteBuffer data = node.getData();
         if (data != null) {
-            storage.write(node.getBlockId(), Utils.encrypt(cipherIn, data));
+            if(cipherIn!=null)
+                storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, data)));
+            else
+                storage.write(node.getBlockId(),  data);
         }
     }
 
@@ -375,11 +359,6 @@ final class RecordFile {
      */
     void sync() throws IOException {
         storage.sync();
-    }
-
-
-    int getDirtyPageCount() {
-        return dirty.size();
     }
 
 }

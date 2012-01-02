@@ -116,9 +116,8 @@ final class PhysicalRowIdManager {
             if (leftToRead < toCopy) {
                 toCopy = leftToRead;
             }
-            ByteBuffer blockData = block.getData();
             int finish = dataOffset + toCopy;
-            out.write(blockData.array(), dataOffset, finish - dataOffset);
+            out.write(block.getByteArray(), dataOffset, finish - dataOffset);
 
             // Go to the next block
             leftToRead -= toCopy;
@@ -300,7 +299,8 @@ final class PhysicalRowIdManager {
             if (leftToWrite < toCopy) {
                 toCopy = leftToWrite;
             }
-            System.arraycopy(data, offsetInBuffer, block.getData().array(), dataOffset, toCopy);
+            block.writeByteArray(data,offsetInBuffer,dataOffset,toCopy);
+            System.arraycopy(data, offsetInBuffer, block.getByteArray(), dataOffset, toCopy);
 
             // Go to the next block
             leftToWrite -= toCopy;

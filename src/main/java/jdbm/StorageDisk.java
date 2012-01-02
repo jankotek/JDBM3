@@ -88,10 +88,11 @@ class StorageDisk implements Storage {
         rafs = null;
     }
 
-    public void read(long pageNumber, ByteBuffer buffer) throws IOException {
-        if (buffer.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
+    public ByteBuffer read(long pageNumber) throws IOException {
+        
         long offset = pageNumber * BLOCK_SIZE;
-
+        ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
+        
         RandomAccessFile file = getRaf(offset);
         if (lastPageNumber + 1 != pageNumber)
             file.seek(offset % MAX_FILE_SIZE);
@@ -107,6 +108,7 @@ class StorageDisk implements Storage {
             pos += read;
         }
         lastPageNumber = pageNumber;
+        return buffer.asReadOnlyBuffer(); //TODO remove readonly
     }
 
 

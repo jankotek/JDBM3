@@ -55,6 +55,11 @@ final class BlockIo {
         this.data = ByteBuffer.wrap(data);
     }
 
+    public BlockIo(long blockid, ByteBuffer data) {
+        this.blockId = blockid;
+        this.data = data;
+    }
+
     /**
      * Returns the underlying array
      */
@@ -97,6 +102,15 @@ final class BlockIo {
      */
     void setDirty() {
         dirty = true;
+        
+        if(data.isReadOnly()){
+            // make copy if needed, so we can write into buffer
+            ByteBuffer old = data;
+            data = ByteBuffer.allocate(Storage.BLOCK_SIZE);
+            old.rewind();
+            old.get(data.array(),0,Storage.BLOCK_SIZE);
+            data.rewind();
+        }
     }
 
     /**
@@ -155,8 +169,8 @@ final class BlockIo {
      * Writes a byte to the indicated position
      */
     public void writeByte(int pos, byte value) {
-        data.put(pos,value);
         setDirty();
+        data.put(pos,value);
     }
 
     /**
@@ -170,8 +184,8 @@ final class BlockIo {
      * Writes a short to the indicated position
      */
     public void writeShort(int pos, short value) {
-        data.putShort(pos,value);
         setDirty();
+        data.putShort(pos,value);
     }
 
     /**
@@ -185,8 +199,8 @@ final class BlockIo {
      * Writes an int to the indicated position
      */
     public void writeInt(int pos, int value) {
-        data.putInt(pos,value);
         setDirty();
+        data.putInt(pos,value);
     }
 
     /**
@@ -200,8 +214,8 @@ final class BlockIo {
      * Writes a long to the indicated position
      */
     public void writeLong(int pos, long value) {
-        data.putLong(pos,value);
         setDirty();
+        data.putLong(pos,value);
     }
 
 
@@ -225,14 +239,14 @@ final class BlockIo {
     public void writeSixByteLong(int pos, long value) {
 //    	if(value >> (6*8)!=0)
 //    		throw new IllegalArgumentException("does not fit");
-
+        setDirty();
         data.put(pos + 0,(byte) (0xff & (value >> 40)));
         data.put(pos + 1, (byte) (0xff & (value >> 32)));
         data.put(pos + 2, (byte) (0xff & (value >> 24)));
         data.put(pos + 3, (byte) (0xff & (value >> 16)));
         data.put(pos + 4, (byte) (0xff & (value >> 8)));
         data.put(pos + 5, (byte) (0xff & (value >> 0)));
-        setDirty();
+
     }
 
 
@@ -266,5 +280,19 @@ final class BlockIo {
     }
 
 
+    public byte[] getByteArray() {
+        if ( data.hasArray())
+            return data.array();
+        byte[] d= new byte[Storage.BLOCK_SIZE];
+        data.rewind();
+        data.get(d,0,Storage.BLOCK_SIZE);
+        return d;
+    }
 
+    public void writeByteArray(byte[] buf, int srcOffset, int offset, int lenght) {
+        setDirty();
+        data.rewind();
+        data.position(offset);
+        data.put(buf,srcOffset,lenght);
+    }
 }

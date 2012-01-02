@@ -79,8 +79,14 @@ class Utils {
         return ret;
     }
 
-    public static ByteBuffer encrypt(Cipher cipherIn, ByteBuffer b) {
-        return ByteBuffer.wrap(encrypt(cipherIn,b.array()));
+
+    public static byte[] encrypt(Cipher cipherIn, ByteBuffer b) {
+        if(cipherIn==null && b.hasArray())
+            return b.array();
+        byte[] bb = new byte[Storage.BLOCK_SIZE];
+        b.rewind();
+        b.get(bb,0,Storage.BLOCK_SIZE);
+        return encrypt(cipherIn,bb);
     }
     
     public static byte[] encrypt(Cipher cipherIn, byte[] b) {

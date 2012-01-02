@@ -15,7 +15,7 @@ interface Storage {
 
     void write(long pageNumber, ByteBuffer data) throws IOException;
 
-    void read(long pageNumber, ByteBuffer data) throws IOException;
+    ByteBuffer read(long pageNumber) throws IOException;
 
     void forceClose() throws IOException;
 
