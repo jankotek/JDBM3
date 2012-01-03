@@ -96,7 +96,7 @@ class StorageDisk implements Storage {
         RandomAccessFile file = getRaf(offset);
         if (lastPageNumber + 1 != pageNumber)
             file.seek(offset % MAX_FILE_SIZE);
-        int remaining = buffer.capacity();
+        int remaining = buffer.limit();
         int pos = 0;
         while (remaining > 0) {
             int read = file.read(buffer.array(), pos, remaining);
@@ -108,7 +108,7 @@ class StorageDisk implements Storage {
             pos += read;
         }
         lastPageNumber = pageNumber;
-        return buffer.asReadOnlyBuffer(); //TODO remove readonly
+        return buffer;
     }
 
 

@@ -88,7 +88,7 @@ final class RecordFile {
         if (fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
         else
-            this.storage = new StorageDisk(fileName);
+            this.storage = new StorageDiskMapped(fileName);
         if (this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
         if (!readonly && !transactionDisabled) {
