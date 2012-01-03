@@ -289,10 +289,10 @@ final class BlockIo {
         return d;
     }
 
-    public void writeByteArray(byte[] buf, int srcOffset, int offset, int lenght) {
+    public void writeByteArray(byte[] buf, int srcOffset, int offset, int length) {
         setDirty();
         data.rewind();
         data.position(offset);
-        data.put(buf,srcOffset,lenght);
+        data.put(buf,srcOffset,length);
     }
 }

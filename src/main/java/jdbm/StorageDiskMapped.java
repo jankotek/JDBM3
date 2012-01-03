@@ -1,5 +1,7 @@
 package jdbm;
 
+import sun.misc.Cleaner;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -24,10 +26,14 @@ public class StorageDiskMapped implements Storage {
     private IdentityHashMap<FileChannel, MappedByteBuffer> buffers = new IdentityHashMap<FileChannel, MappedByteBuffer>();
 
     private String fileName;
+    private boolean transactionsDisabled;
+    private boolean readonly;
 
 
-    public StorageDiskMapped(String fileName) throws IOException {
+    public StorageDiskMapped(String fileName, boolean readonly, boolean transactionsDisabled) throws IOException {
         this.fileName = fileName;
+        this.transactionsDisabled = transactionsDisabled;
+        this.readonly = readonly;
         //make sure first file can be opened
         //lock it
         try {
@@ -60,6 +66,13 @@ public class StorageDiskMapped implements Storage {
     
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
+        if(transactionsDisabled && data.isDirect()){
+            //if transactions are disabled and this buffer is direct,
+            //changes written into buffer are directly reflected in file.
+            //so there is no need to write buffer second time
+            return;
+        }
+        
         FileChannel f = getChannel(pageNumber);
         int offsetInFile = (int) ((pageNumber % PAGES_PER_FILE)*BLOCK_SIZE);
         MappedByteBuffer b = buffers.get(f);
@@ -76,15 +89,25 @@ public class StorageDiskMapped implements Storage {
             //expand file size
             f.position(newFileSize - 1);
             f.write(ByteBuffer.allocate(1));
+            //unmap old buffer
+            unmapBuffer(b);
             //remap buffer
             b = f.map(FileChannel.MapMode.READ_WRITE, 0,newFileSize);
-            buffers.put(f,b);
+            buffers.put(f, b);
         }
 
         //write into buffer
         b.position(offsetInFile);
         data.rewind();
         b.put(data);
+    }
+
+    private void unmapBuffer(MappedByteBuffer b) {
+        if(b!=null){
+            Cleaner cleaner = ((sun.nio.ch.DirectBuffer) b).cleaner();
+            if(cleaner!=null)
+                cleaner.clean();
+        }
     }
 
     public ByteBuffer read(long pageNumber) throws IOException {
@@ -98,21 +121,26 @@ public class StorageDiskMapped implements Storage {
         
         //check buffers size
         if(b.limit()<=offsetInFile){
-            //file is smaller, return empty data
-            return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
-        }
+                //file is smaller, return empty data
+                return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+            }
 
         b.position(offsetInFile);
         ByteBuffer ret = b.slice();
         ret.limit(BLOCK_SIZE);
-        return ret.asReadOnlyBuffer();
+        if(!transactionsDisabled||readonly){
+            // changes written into buffer will be directly written into file
+            // so we need to protect buffer from modifications
+            ret = ret.asReadOnlyBuffer();
+        }
+        return ret;
     }
 
     public void forceClose() throws IOException {
         for(FileChannel f: channels){
             if(f==null) continue;
             f.close();
-            buffers.get(f).clear(); //TODO clear buffer somehow
+            unmapBuffer(buffers.get(f));
         }
         channels = null;
         buffers = null;
@@ -177,7 +205,7 @@ public class StorageDiskMapped implements Storage {
     }
 
     public boolean isReadonly() {
-        return false;
+        return readonly;
     }
 
 

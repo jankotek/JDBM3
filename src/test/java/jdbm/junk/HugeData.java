@@ -3,6 +3,7 @@ package jdbm.junk;
 import jdbm.DB;
 import jdbm.DBMaker;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class HugeData {
     static public void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
+        new File("/tmp/large/").mkdirs();
         DB db = new DBMaker("/tmp/large/db" + Math.random())
                 .disableTransactions()
                 .enableMRUCache()

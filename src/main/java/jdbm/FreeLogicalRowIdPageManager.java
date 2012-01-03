@@ -28,7 +28,6 @@ final class FreeLogicalRowIdPageManager {
     private RecordFile file;
     // our page manager
     private PageManager pageman;
-    private int blockSize;
 
     private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
 
@@ -41,7 +40,6 @@ final class FreeLogicalRowIdPageManager {
                                 PageManager pageman) throws IOException {
         this.file = file;
         this.pageman = pageman;
-        this.blockSize = Storage.BLOCK_SIZE;
     }
 
     /**
@@ -60,7 +58,7 @@ final class FreeLogicalRowIdPageManager {
         long retval = 0;
         for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
             FreeLogicalRowIdPage fp = FreeLogicalRowIdPage
-                    .getFreeLogicalRowIdPageView(file.get(current), blockSize);
+                    .getFreeLogicalRowIdPageView(file.get(current));
             int slot = fp.getFirstAllocated();
             if (slot != -1) {
                 // got one!
@@ -99,7 +97,7 @@ final class FreeLogicalRowIdPageManager {
         for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
 
             BlockIo curBlock = file.get(current);
-            FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock, blockSize);
+            FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock);
             int slot = fp.getFirstFree();
             //iterate over free slots in page and fill them
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
@@ -120,7 +118,7 @@ final class FreeLogicalRowIdPageManager {
             //allocate new page
             long freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
             BlockIo curBlock = file.get(freePage);
-            FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock, blockSize);
+            FreeLogicalRowIdPage fp = FreeLogicalRowIdPage.getFreeLogicalRowIdPageView(curBlock);
             int slot = fp.getFirstFree();
             //iterate over free slots in page and fill them
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {

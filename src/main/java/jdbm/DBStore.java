@@ -79,7 +79,11 @@ final class DBStore
      * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
      */
     private final boolean readonly;
-    private final boolean transactionDisabled;
+    private final boolean transactionsDisabled;
+
+    private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
+
+
     /**
      * cipher used for decryption, may be null
      */
@@ -164,7 +168,7 @@ final class DBStore
             throws IOException {
         _filename = filename;
         this.readonly = readonly;
-        this.transactionDisabled = transactionDisabled;
+        this.transactionsDisabled = transactionDisabled;
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
         reopen();
@@ -172,7 +176,7 @@ final class DBStore
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile(_filename + DBR, readonly, transactionDisabled, cipherIn, cipherOut);
+        _physFile = new RecordFile(_filename + DBR, readonly, transactionsDisabled, cipherIn, cipherOut);
         _physPageman = new PageManager(_physFile);
         _physMgr = new PhysicalRowIdManager(_physFile, _physPageman,
                 new FreePhysicalRowIdPageManager(_physFile, _physPageman));
@@ -180,7 +184,7 @@ final class DBStore
         if (Storage.BLOCK_SIZE > 256 * 8)
             throw new InternalError(); //too big page, slot number would not fit into page
 
-        _logicFile = new RecordFile(_filename + IDR, readonly, transactionDisabled, cipherIn, cipherOut);
+        _logicFile = new RecordFile(_filename + IDR, readonly, transactionsDisabled, cipherIn, cipherOut);
         _logicPageman = new PageManager(_logicFile);
         _logicMgr = new LogicalRowIdManager(_logicFile, _logicPageman,
                 new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -234,6 +238,11 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
+        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
+
         if (bufferInUse) {
             //current reusable buffer is in use, have to fallback into creating new instances
             DataInputOutput buffer2 = new DataInputOutput();
@@ -276,6 +285,9 @@ final class DBStore
                     + logRowId);
         }
 
+        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
 
         if (DEBUG) {
             System.out.println("BaseRecordManager.delete() recid " + logRowId);
@@ -296,6 +308,10 @@ final class DBStore
         if (recid <= 0) {
             throw new IllegalArgumentException("Argument 'recid' is invalid: "
                     + recid);
+        }
+
+        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
         }
 
         if (bufferInUse) {
@@ -512,7 +528,7 @@ final class DBStore
 
 
     public synchronized void rollback() {
-        if (transactionDisabled)
+        if (transactionsDisabled)
             throw new IllegalAccessError("Transactions are disabled, can not rollback");
 
         try {
@@ -907,6 +923,10 @@ final class DBStore
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
         logicalRowId = decompressRecid(logicalRowId);
 
+        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+            commit();
+        }
+
         long physLoc = _physMgr.insert(data, 0, data.length);
         _logicMgr.forceInsert(logicalRowId, physLoc);
     }
@@ -967,8 +987,4 @@ final class DBStore
     }
 
 
-    public void setDiskFlush(boolean b) {
-
-
-    }
 }

@@ -81,17 +81,17 @@ final class RecordFile {
      * @throws IOException whenever the creation of the underlying
      *                     RandomAccessFile throws it.
      */
-    RecordFile(String fileName, boolean readonly, boolean transactionDisabled, Cipher cipherIn, Cipher cipherOut) throws IOException {
+    RecordFile(String fileName, boolean readonly, boolean transactionsDisabled, Cipher cipherIn, Cipher cipherOut) throws IOException {
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
-        this.transactionsDisabled = transactionDisabled;
+        this.transactionsDisabled = transactionsDisabled;
         if (fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
         else
-            this.storage = new StorageDiskMapped(fileName);
+            this.storage = new StorageDiskMapped(fileName,readonly,transactionsDisabled);
         if (this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
-        if (!readonly && !transactionDisabled) {
+        if (!readonly && !transactionsDisabled) {
             txnMgr = new TransactionManager(this, storage, cipherIn, cipherOut);
         } else {
             txnMgr = null;
@@ -361,4 +361,7 @@ final class RecordFile {
         storage.sync();
     }
 
+    public int getDirtyPageCount() {
+        return dirty.size();
+    }
 }

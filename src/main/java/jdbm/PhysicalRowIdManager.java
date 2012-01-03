@@ -319,6 +319,7 @@ final class PhysicalRowIdManager {
     void roolback() throws IOException {
         cachedLastAllocatedRecordPage = Long.MIN_VALUE;
         cachedLastAllocatedRecordOffset = Short.MIN_VALUE;
+        freeman.rollback();
     }
 
 

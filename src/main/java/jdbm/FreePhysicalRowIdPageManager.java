@@ -38,7 +38,6 @@ final class FreePhysicalRowIdPageManager {
     FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman) throws IOException {
         _file = file;
         _pageman = pageman;
-
     }
 
     private int lastMaxSize = -1;
@@ -101,6 +100,8 @@ final class FreePhysicalRowIdPageManager {
     void put(long rowid, int size) throws IOException {
         freeBlocksInTransactionRowid.add(rowid);
         freeBlocksInTransactionSize.add(size);
+
+        //TODO check there is an commit on close if transactionsDisabled
     }
 
     public void commit() throws IOException {
@@ -164,5 +165,10 @@ final class FreePhysicalRowIdPageManager {
         freeBlocksInTransactionRowid.clear();
         freeBlocksInTransactionSize.clear();
 
+    }
+
+    public void rollback() {
+        freeBlocksInTransactionRowid.clear();
+        freeBlocksInTransactionSize.clear();
     }
 }

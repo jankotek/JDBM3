@@ -16,7 +16,6 @@
 
 package jdbm;
 
-import junit.framework.TestSuite;
 
 /**
  * This class contains all Unit tests for {@link FreePhysicalRowIdPageManager}.

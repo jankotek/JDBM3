@@ -136,7 +136,7 @@ class Utils {
         }
 
         public void clear() {
-            if (data.length > 32 * 8)
+            if (data.length > 1024)
                 data = new long[32];
             else
                 Arrays.fill(data, 0L);
@@ -167,7 +167,7 @@ class Utils {
         }
 
         public void clear() {
-            if (data.length > 32 * 8)
+            if (data.length > 1024)
                 data = new int[32];
             else
                 Arrays.fill(data, 0);
