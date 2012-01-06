@@ -30,11 +30,11 @@ import java.security.spec.KeySpec;
  */
 public class DBMaker {
 
-    private String cacheType = "auto";
-    private int mruCacheSize = 512;
+    private String cacheType = "mruo";
+    private int mruCacheSize = 2048;
 
     private String location = null;
-    ;
+
     private boolean disableTransactions = false;
     private boolean readonly = false;
     private String password = null;
@@ -79,7 +79,7 @@ public class DBMaker {
      * Oldest instances are released from cache when new instances are fetched.
      * This cache is not cleared by GC. Is good for systems with limited memory.
      * <p/>
-     * Default size for MRU cache is 512 records.
+     * Default size for MRU cache is 2048 records.
      *
      * @return this builder
      */
@@ -89,12 +89,13 @@ public class DBMaker {
     }
 
     /**
-     * Activates 'Most Recently Used' cache and sets its size.
      *
-     * @param cacheSize number of instances which will be kept in cache. Recommended size is 512
+     * Sets 'Most Recently Used' cache size. This cache is activated by default with size 2048
+     *
+     * @param cacheSize number of instances which will be kept in cache.
      * @return this builder
      */
-    public DBMaker enableMRUCache(int cacheSize) {
+    public DBMaker setMRUCacheSize(int cacheSize) {
         if (cacheSize < 0) throw new IllegalArgumentException("Cache size is smaller than zero");
         cacheType = "mru";
         this.mruCacheSize = cacheSize;
@@ -224,30 +225,18 @@ public class DBMaker {
         }
 
 
-        String cacheType2 = cacheType;
-        if ("auto".equals(cacheType)) {
-            try {
-                //disable SOFT if available memory is bellow 50 MB
-                if (Runtime.getRuntime().maxMemory() <= 1024 * 1024 * 50)
-                    cacheType2 = "mru";
-                else
-                    cacheType2 = "soft";
-            } catch (Exception e) {
-                cacheType2 = "mru";
-            }
-        }
 
-        if ("mru".equals(cacheType2)) {
+        if ("mru".equals(cacheType)) {
             db = new DBCache((DBStore) db, mruCacheSize, false, true);
-        } else if ("soft".equals(cacheType2)) {
+        } else if ("soft".equals(cacheType)) {
             db = new DBCache((DBStore) db, 0, true, true);
-        } else if ("weak".equals(cacheType2)) {
+        } else if ("weak".equals(cacheType)) {
             db = new DBCache((DBStore) db, 0, true, false);
 
-        } else if ("none".equals(cacheType2)) {
+        } else if ("none".equals(cacheType)) {
             //do nothing
         } else {
-            throw new IllegalArgumentException("Unknown cache type: " + cacheType2);
+            throw new IllegalArgumentException("Unknown cache type: " + cacheType);
         }
 
 
