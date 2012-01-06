@@ -35,7 +35,7 @@ class DBCache
     /**
      * Wrapped DB
      */
-    protected DBAbstract _db;
+    protected DBStore _db;
 
 
     /**
@@ -101,7 +101,7 @@ class DBCache
      * @param enableReferenceCache if cache using WeakReference or SoftReference should be enabled
      * @param useSoftReference     if reference cache is enabled, decides beetween Soft or Weak reference
      */
-    public DBCache(DBAbstract db, int maxRecords, boolean enableReferenceCache, boolean useSoftReference) {
+    public DBCache(DBStore db, int maxRecords, boolean enableReferenceCache, boolean useSoftReference) {
         if (db == null) {
             throw new IllegalArgumentException("Argument 'db' is null");
         }
@@ -129,10 +129,13 @@ class DBCache
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
         }
+        
+        if(_db.needsAutoCommit())
+            commit();
 
         long recid = _db.insert(obj, serializer);
 
-        //DONT use cache for inserts, it usually hurts performance on batch inserts
+        //TODO investigate: DONT use cache for inserts, it usually hurts performance on batch inserts
 //        if(_softCache) synchronized(_softHash) {
 //        	_softHash.put(recid, new SoftCacheEntry(recid, obj, serializer,_refQueue));
 //        }else {
@@ -155,6 +158,9 @@ class DBCache
             throw new IllegalStateException("DB has been closed");
         }
 
+        if(_db.needsAutoCommit())
+            commit();
+
         _db.delete(recid);
         CacheEntry entry = _hash.get(recid);
         if (entry != null) {
@@ -176,6 +182,10 @@ class DBCache
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
         }
+
+        if(_db.needsAutoCommit())
+            commit();
+
         if (_enableReferenceCache) synchronized (_softHash) {
             //soft cache can not contain dirty objects
             ReferenceCacheEntry e = _softHash.remove(recid);

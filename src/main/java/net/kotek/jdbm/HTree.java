@@ -128,7 +128,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         //create new root record
         this.rootRecid = db.insert(null);
         HTreeDirectory<K, V> root = new HTreeDirectory<K, V>(this, (byte) 0);
-        root.setPersistenceContext(db, rootRecid);
+        root.setPersistenceContext(rootRecid);
         this.rootRecid = db.insert(root, this.SERIALIZER);
     }
 
@@ -382,7 +382,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     public HTreeDirectory<K, V> getRoot() {
         try {
             HTreeDirectory<K, V> root = (HTreeDirectory<K, V>) db.fetch(rootRecid, this.SERIALIZER);
-            root.setPersistenceContext(db, rootRecid);
+            root.setPersistenceContext(rootRecid);
             return root;
         } catch (IOException e) {
             throw new IOError(e);
@@ -403,9 +403,6 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
     }
 
-    long getRecid() {
-        return recid;
-    }
 
     static void defrag(Long recid, DBStore r1, DBStore r2) throws IOException {
         //TODO should modCount be increased after defrag, revert or commit?
@@ -427,6 +424,10 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             throw new IOError(e);
         }
 
+    }
+    
+    DBAbstract getDB(){
+        return db;
     }
 }
 

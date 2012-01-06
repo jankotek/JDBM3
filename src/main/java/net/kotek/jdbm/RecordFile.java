@@ -162,10 +162,10 @@ final class RecordFile {
      * @param blockid The record number to release.
      * @param isDirty If true, the block was modified since the get().
      */
-    void release(long blockid, boolean isDirty) throws IOException {
+    void release(final long blockid, final boolean isDirty) throws IOException {
         BlockIo node = inUse.get(blockid);
         if (node == null)
-            throw new IOException("bad blockid " + blockid + " on release");
+            throw new IOException();
         if (!node.isDirty() && isDirty)
             node.setDirty();
         release(node);
@@ -176,7 +176,7 @@ final class RecordFile {
      *
      * @param block The block to release.
      */
-    void release(BlockIo block) throws IOException {
+    void release(final BlockIo block) throws IOException {
         final long key = block.getBlockId();
         inUse.remove(key);
         if (block.isDirty()) {

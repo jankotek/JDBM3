@@ -238,7 +238,7 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
-        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -257,6 +257,10 @@ final class DBStore
             bufferInUse = false;
         }
 
+    }
+
+    boolean needsAutoCommit() {
+        return transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES);
     }
 
 
@@ -285,7 +289,7 @@ final class DBStore
                     + logRowId);
         }
 
-        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -310,7 +314,7 @@ final class DBStore
                     + recid);
         }
 
-        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -923,7 +927,7 @@ final class DBStore
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
         logicalRowId = decompressRecid(logicalRowId);
 
-        if (transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES)) {
+        if (needsAutoCommit()) {
             commit();
         }
 

@@ -115,7 +115,7 @@ class Utils {
      */
     static final class LongArrayList {
         int size = 0;
-        long[] data = new long[32];
+        long[] data = new long[16];
 
         void add(long l) {
             if (data.length == size) {
@@ -133,10 +133,13 @@ class Utils {
         }
 
         public void clear() {
-            if (data.length > 1024)
-                data = new long[32];
-            else
-                Arrays.fill(data, 0L);
+            if (data.length > 128)
+                data = new long[16];
+            else{
+                for(int i=0;i<size;i++)
+                    data[i] = 0L;
+            }
+                
             size = 0;
         }
     }
@@ -164,10 +167,12 @@ class Utils {
         }
 
         public void clear() {
-            if (data.length > 1024)
+            if (data.length > 128)
                 data = new int[32];
-            else
-                Arrays.fill(data, 0);
+            else{
+                for(int i=0;i<size;i++)
+                    data[i] = 0;
+            }
             size = 0;
         }
     }

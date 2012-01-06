@@ -238,11 +238,11 @@ public class DBMaker {
         }
 
         if ("mru".equals(cacheType2)) {
-            db = new DBCache(db, mruCacheSize, false, true);
+            db = new DBCache((DBStore) db, mruCacheSize, false, true);
         } else if ("soft".equals(cacheType2)) {
-            db = new DBCache(db, 0, true, true);
+            db = new DBCache((DBStore) db, 0, true, true);
         } else if ("weak".equals(cacheType2)) {
-            db = new DBCache(db, 0, true, false);
+            db = new DBCache((DBStore) db, 0, true, false);
 
         } else if ("none".equals(cacheType2)) {
             //do nothing

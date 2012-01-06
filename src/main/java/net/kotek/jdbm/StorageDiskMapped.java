@@ -19,7 +19,7 @@ public class StorageDiskMapped implements Storage {
     /**
      * maximal number of pages in single file
      */
-    private final static long PAGES_PER_FILE = BLOCK_SIZE * 1024 * 512 ;
+    final static long PAGES_PER_FILE = 524288 ;
 
 
     private ArrayList<FileChannel> channels = new ArrayList<FileChannel>();
