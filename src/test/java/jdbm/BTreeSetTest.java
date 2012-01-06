@@ -78,7 +78,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
         SortedSet myTreeSet = db.createTreeSet("test", comp, null);
         for (int i = 0; i < objArray.length; i++)
             myTreeSet.add(objArray[i]);
-        SortedSet anotherTreeSet = db.loadTreeSet("test");
+        SortedSet anotherTreeSet = db.getTreeSet("test");
         anotherTreeSet.addAll(myTreeSet);
         assertTrue("TreeSet is not correct size",
                 anotherTreeSet.size() == objArray.length);

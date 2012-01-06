@@ -49,7 +49,7 @@ public class DefragTest extends TestCaseWithTestFile {
         m.defrag();
         m.close();
         m = new DBStore(file, false, false);
-        t = m.loadTreeMap("aa");
+        t = m.getTreeMap("aa");
         assertEquals(t, t2);
     }
 
@@ -76,7 +76,7 @@ public class DefragTest extends TestCaseWithTestFile {
         assertEquals(oldRecCount, r.countRecords());
 
         //compare that list was unchanged
-        assertEquals(l2, new ArrayList(r.loadLinkedList("test")));
+        assertEquals(l2, new ArrayList(r.getLinkedList("test")));
 
         //and check that random junk still have the same recids
         for (Long recid : junk.keySet()) {

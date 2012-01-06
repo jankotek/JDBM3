@@ -113,7 +113,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
         db.defrag();
         db.close();
         db = new DBStore(file, false, false);
-        map = db.loadTreeMap("aa");
+        map = db.getTreeMap("aa");
         for (long i = init; i < init + size / 10; i++) {
             assertTrue(map.containsKey("aaaaa" + i));
         }

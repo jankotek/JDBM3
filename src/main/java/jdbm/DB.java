@@ -63,7 +63,7 @@ public interface DB {
     void rollback();
 
 
-    <K, V> Map<K, V> loadHashMap(String name);
+    <K, V> Map<K, V> getHashMap(String name);
 
     /**
      * Creates or load existing Primary Hash Map which persists data into DB.
@@ -92,11 +92,11 @@ public interface DB {
 
     <K> Set<K> createHashSet(String name);
 
-    <K> Set<K> loadHashSet(String name);
+    <K> Set<K> getHashSet(String name);
 
     <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
 
-    <K, V> SortedMap<K, V> loadTreeMap(String name);
+    <K, V> SortedMap<K, V> getTreeMap(String name);
 
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
@@ -122,7 +122,7 @@ public interface DB {
     <K, V> SortedMap<K, V> createTreeMap(String name,
                                          Comparator<K> keyComparator, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
-    <K> SortedSet<K> loadTreeSet(String name);
+    <K> SortedSet<K> getTreeSet(String name);
 
     <K> SortedSet<K> createTreeSet(String name);
 
@@ -132,6 +132,6 @@ public interface DB {
 
     <K> List<K> createLinkedList(String name, Serializer<K> serializer);
 
-    <K> List<K> loadLinkedList(String name);
+    <K> List<K> getLinkedList(String name);
 
 }

@@ -26,7 +26,7 @@ public class StorageZipTest extends TestCaseWithTestFile {
 
         //open zip file and check it contains all data
         DB r2 = new DBMaker(dbpath).readonly().build();
-        Set<Long> h2 = r2.loadHashSet("hash");
+        Set<Long> h2 = r2.getHashSet("hash");
         for (Long l = 0L; l < 1e5; l++) {
             assertTrue(h2.contains(l));
         }

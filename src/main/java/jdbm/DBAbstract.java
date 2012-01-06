@@ -96,7 +96,7 @@ abstract class DBAbstract implements DB {
         return (A) fetch(recid, defaultSerializer());
     }
 
-    public <K, V> Map<K, V> loadHashMap(String name) {
+    public <K, V> Map<K, V> getHashMap(String name) {
         try {
             long recid = assertNameExist(name);
             HTree tree = fetch(recid);
@@ -127,8 +127,8 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    public synchronized <K> Set<K> loadHashSet(String name) {
-        return new HTreeSet(loadHashMap(name));
+    public synchronized <K> Set<K> getHashSet(String name) {
+        return new HTreeSet(getHashMap(name));
     }
 
     public synchronized <K> Set<K> createHashSet(String name) {
@@ -139,7 +139,7 @@ abstract class DBAbstract implements DB {
         return new HTreeSet(createHashMap(name, keySerializer, null));
     }
 
-    public <K, V> SortedMap<K, V> loadTreeMap(String name) {
+    public <K, V> SortedMap<K, V> getTreeMap(String name) {
         try {
             long recid = assertNameExist(name);
             return BTree.<K, V>load(this, recid).asMap();
@@ -173,8 +173,8 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public synchronized <K> SortedSet<K> loadTreeSet(String name) {
-        return new BTreeSet<K>((SortedMap<K, Object>) loadTreeMap(name));
+    public synchronized <K> SortedSet<K> getTreeSet(String name) {
+        return new BTreeSet<K>((SortedMap<K, Object>) getTreeMap(name));
     }
 
     public synchronized <K> SortedSet<K> createTreeSet(String name) {
@@ -208,7 +208,7 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    public <K> List<K> loadLinkedList(String name) {
+    public <K> List<K> getLinkedList(String name) {
         try {
             long recid = assertNameExist(name);
 
