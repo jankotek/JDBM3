@@ -135,12 +135,15 @@ class DBCache
 
         long recid = _db.insert(obj, serializer);
 
-        //TODO investigate: DONT use cache for inserts, it usually hurts performance on batch inserts
-//        if(_softCache) synchronized(_softHash) {
-//        	_softHash.put(recid, new SoftCacheEntry(recid, obj, serializer,_refQueue));
-//        }else {
-//        	cachePut(  recid , obj, serializer, false );
-//        }
+
+        if(_enableReferenceCache) synchronized(_softHash) {
+            if (_useSoftReference)
+                _softHash.put(recid, new SoftCacheEntry(recid, obj, _refQueue));
+            else
+                _softHash.put(recid, new WeakCacheEntry(recid, obj, _refQueue));
+        }else {
+        	cachePut(  recid , obj, serializer, false );
+        }
         return recid;
     }
 
