@@ -30,7 +30,7 @@ import java.security.spec.KeySpec;
  */
 public class DBMaker {
 
-    private String cacheType = "mruo";
+    private String cacheType = "mru";
     private int mruCacheSize = 2048;
 
     private String location = null;
