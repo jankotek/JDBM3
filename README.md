@@ -1,8 +1,8 @@
 JDBM provides HashMap, TreeMap, HashSet, TreeSet and LinkedList backed up by disk storage.
 Now you can insert billion records into collection without running out of memory.
-This is probably fastest and easiest to use pure Java database.
+JDBM is probably fastest and easiest to use pure Java database.
 
-JDBM has minimal size, standalone jar has only 160 KB (90KB stripped). Yet it is packed with
+JDBM has minimal size with standalone jar only taking 160 KB (90KB stripped). Yet it is packed with
 impressive features such as: space effective serialization, transactions, MRU/soft/weak instance cache,
 defragmentation, encryption and compression.
 
@@ -12,10 +12,10 @@ Our tests shows that it is 4 times faster than BerkleyDB Java Edition and only 2
 Tokyo Cabinet (probably fastest db written in C++).
 
 Performance is side effect of author's obsession with minimal overhead.
-JDBM runs great even on systems with limited memory or poor GC (Android)
+JDBM runs great even on systems with limited memory or poor Garbage Collector (Android).
 Data are read directly using direct mapped buffers without any copying.
 Most logic is implemented using primitive numbers and arrays. JDBM hardly ever creates new object
-instances for its internal use.
+instances for its internal use. It also uses advanced techniques to minimise consumed disk space.
 
 On top of that JDBM offers various deployment modes. You can store data on disk, memory,
 zip/jar file. DB can be encrypted using password or quickly backuped to zip file.
