@@ -20,6 +20,8 @@ package net.kotek.jdbm;
  * This is a marker interface that is implemented by classes that
  * interpret blocks of data by pretending to be an overlay.
  *
+ * TODO remove this class and its subclasses
+ *
  * @see BlockIo#setView
  */
 interface BlockView {

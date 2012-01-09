@@ -13,7 +13,7 @@ import java.util.IdentityHashMap;
 /**
  * Disk storage which uses mapped buffers
  */
-public class StorageDiskMapped implements Storage {
+class StorageDiskMapped implements Storage {
 
 
     /**

@@ -22,7 +22,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
- * Node of a Btree.
+ * Node of a BTree.
  * <p/>
  * The node contains a number of key-value pairs.  Keys are ordered to allow
  * dichotomic search. If value is too big, it is stored in separate record
@@ -38,6 +38,7 @@ import java.util.List;
  * pseudo-key
  *
  * @author Alex Boisvert
+ * @author Jan Kotek
  */
 final class BTreeNode<K, V>
         implements Serializer<BTreeNode<K, V>> {

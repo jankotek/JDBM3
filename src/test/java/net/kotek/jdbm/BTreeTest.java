@@ -112,7 +112,7 @@ public class BTreeTest
         }
 
         db = newRecordManager();
-        tree = BTree.createInstance(db, new ByteArrayComparator());
+        tree = BTree.createInstance(db, new ByteArrayComparator(),null,null);
 
         tree.insert(test1, value1, false);
         tree.insert(test2, value2, false);
@@ -163,7 +163,7 @@ public class BTreeTest
             System.out.println("BTreeTest.testBasics2");
 
         db = newRecordManager();
-        tree = BTree.createInstance(db, new ByteArrayComparator());
+        tree = BTree.createInstance(db, new ByteArrayComparator(),null,null);
 
         tree.insert(test1, value1, false);
         tree.insert(test2, value2, false);
@@ -202,7 +202,7 @@ public class BTreeTest
             System.out.println("BTreeTest.testClose");
 
         db = newRecordManager();
-        tree = BTree.createInstance(db, new ByteArrayComparator());
+        tree = BTree.createInstance(db, new ByteArrayComparator(),null,null);
 
         tree.insert(test1, value1, false);
         tree.insert(test2, value2, false);

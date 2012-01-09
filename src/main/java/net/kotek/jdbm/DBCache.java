@@ -26,8 +26,11 @@ import java.util.Iterator;
 /**
  * A DB wrapping and caching another DB.
  *
+ * @author Jan Kotek
  * @author Alex Boisvert
  * @author Cees de Groot
+ *
+ * TODO add 'cache miss' statistics
  */
 class DBCache
         extends DBAbstract {

@@ -33,21 +33,26 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * B+Trees are n-airy, yeilding log(N) search cost.  They are self-balancing,
  * preventing search performance degradation when the size of the tree grows.
  * <p/>
- * TODO update paragraph
- * Keys and associated values must be <code>Serializable</code> objects. The
- * user is responsible to supply a serializable <code>Comparator</code> object
- * to be used for the ordering of entries, which are also called <code>Tuple</code>.
+ * BTree stores its keys sorted. By default JDBM expects key to implement
+ * <code>Comparable</code> interface but user may supply its own <code>Comparator</code>
+ * at BTree creation time. Comparator is serialized and stored as part of BTree.
+ * <p/>
  * The B+Tree allows traversing the keys in forward and reverse order using a
- * TupleBrowser obtained from the browse() methods.
+ * TupleBrowser obtained from the browse() methods. But it is better to use
+ * <code>BTreeSortedMap</code> wrapper which implements <code>SortedMap</code> interface
  * <p/>
  * This implementation does not directly support duplicate keys. It is
  * possible to handle duplicates by grouping values using an ArrayList as value.
+ * This scenario is supported by JDBM serialization so there is no big performance penalty.
  * <p/>
  * There is no limit on key size or value size, but it is recommended to keep
- * keys as small as possible to reduce disk I/O. If value exceeds 32 bytes,
+ * keys as small as possible to reduce disk I/O. If serialized value exceeds 32 bytes,
  * it is stored in separate record and tree contains only recid reference to it.
+ * BTree uses delta compression for its keys.
+ *
  *
  * @author Alex Boisvert
+ * @author Jan Kotek
  */
 class BTree<K, V> {
 
@@ -58,7 +63,7 @@ class BTree<K, V> {
     /**
      * Default node size (number of entries per node)
      */
-    public static final int DEFAULT_SIZE = 8;
+    public static final int DEFAULT_SIZE = 32; //TODO test optimal size, it has serious impact on sequencial write and read
 
 
     /**
@@ -74,7 +79,7 @@ class BTree<K, V> {
 
 
     /**
-     * Comparator used to index entries.
+     * Comparator used to index entries (optional)
      */
     protected Comparator<K> _comparator;
 
@@ -91,19 +96,19 @@ class BTree<K, V> {
     protected Serializer<V> valueSerializer;
 
     /**
-     * indicates if values should be loaded during deserialization, set to true during defragmentation
+     * indicates if values should be loaded during deserialization, set to false during defragmentation
      */
     boolean loadValues = true;
 
     /**
-     * The number of structural modifications to the tree. This value is just for runtime, it is not persisted
+     * The number of structural modifications to the tree for fail fast iterators. This value is just for runtime, it is not persisted
      */
     transient int modCount = 0;
 
     /**
      * cached instance of an insert result, so we do not have to allocate new object on each insert
      */
-    protected BTreeNode.InsertResult<K, V> insertResultReuse;
+    protected BTreeNode.InsertResult<K, V> insertResultReuse; //TODO investigate performance impact of removing this
 
 
     public Serializer<K> getKeySerializer() {
@@ -111,19 +116,12 @@ class BTree<K, V> {
     }
 
 
-    public void setKeySerializer(Serializer<K> keySerializer) {
-        this.keySerializer = keySerializer;
-    }
 
 
     public Serializer<V> getValueSerializer() {
         return valueSerializer;
     }
 
-
-    public void setValueSerializer(Serializer<V> valueSerializer) {
-        this.valueSerializer = valueSerializer;
-    }
 
     /**
      * Height of the B+Tree.  This is the number of BTreeNodes you have to traverse
@@ -165,33 +163,22 @@ class BTree<K, V> {
     }
 
 
-    /**
-     * Create a new persistent BTree, with 16 entries per node.
-     *
-     * @param db         Record manager used for persistence.
-     * @param comparator Comparator used to order index entries
-     */
-    public static <K, V> BTree<K, V> createInstance(DBAbstract db,
-                                                    Comparator<K> comparator)
-            throws IOException {
-        return createInstance(db, comparator, null, null);
-    }
+
 
     /**
-     * Create a new persistent BTree, with 16 entries per node.
+     * Create a new persistent BTree
      *
      * @param db Record manager used for persistence.
      */
     @SuppressWarnings("unchecked")
     public static <K extends Comparable, V> BTree<K, V> createInstance(DBAbstract db)
             throws IOException {
-        BTree<K, V> ret = createInstance(db, null, null, null);
-        return ret;
+        return createInstance(db, null, null, null);
     }
 
 
     /**
-     * Create a new persistent BTree with the given number of entries per node.
+     * Create a new persistent BTree
      *
      * @param db              Record manager used for persistence.
      * @param comparator      Comparator used to order index entries
@@ -547,6 +534,13 @@ class BTree<K, V> {
         Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
     }
 
+    /**
+     * Copyes tree from one db to other, defragmenting it allong the way
+     * @param recid
+     * @param r1
+     * @param r2
+     * @throws IOException
+     */
     public static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
         try {
             byte[] data = r1.fetchRaw(recid);
@@ -657,9 +651,41 @@ class BTree<K, V> {
     }
 
     /**
-     * Tuple consisting of a key-value pair.
+     * Browser to traverse a collection of tuples.  The browser allows for
+     * forward and reverse order traversal.
      *
-     * @author Alex Boisvert
+     *
+     */
+    static interface BTreeTupleBrowser<K, V> {
+
+        /**
+         * Get the next tuple.
+         *
+         * @param tuple Tuple into which values are copied.
+         * @return True if values have been copied in tuple, or false if there is no next tuple.
+         */
+        boolean getNext(BTree.BTreeTuple<K, V> tuple) throws IOException;
+
+        /**
+         * Get the previous tuple.
+         *
+         * @param tuple Tuple into which values are copied.
+         * @return True if values have been copied in tuple, or false if there is no previous tuple.
+         */
+        boolean getPrevious(BTree.BTreeTuple<K, V> tuple) throws IOException;
+
+        /**
+         * Remove an entry with given key, and increases browsers expectedModCount
+         * This method is here to support 'ConcurrentModificationException' on Map interface.
+         *
+         * @param key
+         */
+        void remove(K key) throws IOException;
+
+    }
+
+    /**
+     * Tuple consisting of a key-value pair.
      */
     static final class BTreeTuple<K, V> {
 
@@ -678,38 +704,7 @@ class BTree<K, V> {
 
     }
 
-    /**
-     * Browser to traverse a collection of tuples.  The browser allows for
-     * forward and reverse order traversal.
-     *
-     * @author Alex Boisvert
-     */
-    static interface BTreeTupleBrowser<K, V> {
 
-        /**
-         * Get the next tuple.
-         *
-         * @param tuple Tuple into which values are copied.
-         * @return True if values have been copied in tuple, or false if there is no next tuple.
-         */
-        boolean getNext(BTreeTuple<K, V> tuple) throws IOException;
 
-        /**
-         * Get the previous tuple.
-         *
-         * @param tuple Tuple into which values are copied.
-         * @return True if values have been copied in tuple, or false if there is no previous tuple.
-         */
-        boolean getPrevious(BTreeTuple<K, V> tuple) throws IOException;
-
-        /**
-         * Remove an entry with given key, and increases browsers expectedModCount
-         * This method is here to support 'ConcurrentModificationException' on Map interface.
-         *
-         * @param key
-         */
-        void remove(K key) throws IOException;
-
-    }
 }
 

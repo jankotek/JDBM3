@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Implemented as an H*Tree structure.
  *
  * @author Alex Boisvert
+ * @author Jan Kotek
  */
 class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 

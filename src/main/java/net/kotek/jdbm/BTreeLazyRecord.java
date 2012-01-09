@@ -5,6 +5,8 @@ import java.io.*;
 /**
  * An record lazily loaded from store.
  * This is used in BTree/HTree to store big records outside of index tree
+ *
+ * @author Jan Kotek
  */
 class BTreeLazyRecord<E> {
 

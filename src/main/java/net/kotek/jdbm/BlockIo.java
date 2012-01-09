@@ -22,13 +22,16 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 /**
- * This class wraps a page-sized byte array and provides methods
- * to read and write data to and from it. The readers and writers
- * are just the ones that the rest of the toolkit needs, nothing else.
- * Values written are compatible with java.io routines.
- *
- * @see java.io.DataInput
- * @see java.io.DataOutput
+ * Wraps a page sizes ByteBuffer for reading and writting.
+ * <p>
+ * ByteBuffer may be subview of a larger buffer (ie large buffer mappedover a file).
+ * In this case ByteBuffer will have set limit, mark and other variables to limit its size.
+ * <p>
+ * For reading buffered may be shared. For example StoreMemory just returns its pages without copying.
+ * In this case buffer is marked as 'readonly' and needs to be copyed before write (Copy On Write - COW).
+ * COW is not necessary if transactions are disabled and changes can not be rolled back.
+ * <p>
+
  */
 final class BlockIo {
 
@@ -36,7 +39,9 @@ final class BlockIo {
 
     private ByteBuffer data; // work area
     transient private BlockView view = null;
+    /** buffers contains changes which were not written to disk yet. */
     private boolean dirty = false;
+
     private int transactionCount = 0;
 
     /**
@@ -65,15 +70,6 @@ final class BlockIo {
      */
     ByteBuffer getData() {
         return data;
-    }
-
-    /**
-     * Sets the block number. Should only be called by RecordFile.
-     */
-    void setBlockId(long id) {
-        if (isInTransaction())
-            throw new Error("BlockId assigned for transaction block");
-        blockId = id;
     }
 
     /**
@@ -259,7 +255,6 @@ final class BlockIo {
                 + view + ")";
     }
 
-    // implement externalizable interface
     public void readExternal(DataInputStream in, Cipher cipherOut) throws IOException {
         blockId = LongPacker.unpackLong(in);
         byte[] data2 = new byte[Storage.BLOCK_SIZE];
@@ -273,7 +268,7 @@ final class BlockIo {
         }
     }
 
-    // implement externalizable interface
+
     public void writeExternal(DataOutput out, Cipher cipherIn) throws IOException {
         LongPacker.packLong(out, blockId);
         out.write(Utils.encrypt(cipherIn, data.array()));

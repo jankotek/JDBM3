@@ -160,10 +160,8 @@ abstract class DBAbstract implements DB {
         try {
             assertNameNotExist(name);
 
-            BTree<K, V> tree = BTree.createInstance(this, keyComparator);
+            BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer);
 
-            tree.setKeySerializer(keySerializer);
-            tree.setValueSerializer(valueSerializer);
             setNamedObject(name, tree.getRecid());
 
             return tree.asMap();

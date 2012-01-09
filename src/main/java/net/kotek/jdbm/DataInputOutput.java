@@ -7,7 +7,9 @@ import java.util.Arrays;
 
 /**
  * Utility class which implements DataInput and DataOutput on top of byte[] buffer
- * with minomal overhead
+ * with minimal overhead
+ *
+ * @author Jan Kotek
  */
 class DataInputOutput implements DataInput, DataOutput {
 

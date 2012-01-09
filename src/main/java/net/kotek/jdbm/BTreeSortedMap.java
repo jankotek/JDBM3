@@ -20,6 +20,14 @@ import java.io.IOException;
 import java.util.*;
 
 
+/**
+ * Wrapper for <code>BTree</code> which implements <code>SortedMap</code> interface
+ *
+ * @param <K> key type
+ * @param <V> value type
+ *
+ * @author Jan Kotek
+ */
 class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> {
 
     protected final BTree<K, V> tree;

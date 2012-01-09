@@ -3,19 +3,9 @@ package net.kotek.jdbm;
 import java.util.*;
 
 /**
- * An interface/abstract class to manage records, which are objects serialized to byte[] on background.
- * <p/>
- * The set of record operations is simple: fetch, insert, update and delete.
- * Each record is identified using a "rowid" and contains a byte[] data block serialized to object.
- * Rowids are returned on inserts and you can store them someplace safe
- * to be able to get  back to them.  Data blocks can be as long as you wish,
- * and may have lengths different from the original when updating.
- * <p/>
- * DB is responsible for handling transactions.
- * JDBM2 supports only single transaction for data store.
- * See <code>commit</code> and <code>roolback</code> methods for more details.
- * <p/>
- * DB is also factory for primary Maps.
+ * Database is root class for creating and loading persistent collections. It also contains
+ * transaction operations.
+ * //TODO just write some readme
  * <p/>
  *
  * @author Jan Kotek
@@ -25,18 +15,21 @@ import java.util.*;
 public interface DB {
 
     /**
-     * Closes the record manager and release resources.
-     * Record manager can not be used after it was closed
+     * Closes the DB and release resources.
+     * DB can not be used after it was closed
      */
     void close();
 
     /**
-     * Empty cache. This may be usefull if you need to release memory.
+     * Clear cache and remove all entries it contains.
+     * This may be useful for some Garbage Collection when reference cache is used.
      */
     void clearCache();
 
     /**
-     * Defragments storage, so it consumes less space.
+     * Defragments storage so it consumes less space.
+     * It also rearranges collections and optimizes it for sequence reads.
+     * <p/>
      * This commits any uncommited data.
      */
     void defrag();
@@ -48,28 +41,36 @@ public interface DB {
     void commit();
 
     /**
-     * This calculates some database statistics.
-     * Mostly what collections are presents and how much space is used.
-     *
-     * @return statistics contained in string
-     */
-    String calculateStatistics();
-
-    /**
      * Rollback (cancel) all changes since beginning of transaction.
      * JDBM supports only single transaction.
      * This operations affects all maps created or loaded by this DB.
      */
     void rollback();
 
+    /**
+     * This calculates some database statistics such as collection sizes and record distributions.
+     * Can be useful for performance optimalisations and trouble shuting.
+     * This method can run for very long time.
+     *
+     * @return statistics contained in string
+     */
+    String calculateStatistics();
 
+
+    /**
+     * Get a <code>Map</code> which was already created and saved in DB.
+     * This map uses disk based H*Tree and should have similar performance
+     * as <code>HashMap</code>.
+     *
+     * @param name of hash map
+     *
+     * @return map
+     */
     <K, V> Map<K, V> getHashMap(String name);
 
     /**
-     * Creates or load existing Primary Hash Map which persists data into DB.
+     * Creates or load existing Map which persists data into DB.
      *
-     * @param <K>  Key type
-     * @param <V>  Value type
      * @param name record name
      * @return
      */

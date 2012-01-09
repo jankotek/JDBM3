@@ -20,10 +20,7 @@ package net.kotek.jdbm;
 import java.util.*;
 
 /**
- * TreeSet is an implementation of SortedSet. All optional operations (adding
- * and removing) are supported. The elements can be any objects which are
- * comparable to each other either using their natural order or a specified
- * Comparator.
+ * Wrapper class for <code>>SortedMap</code> to implement <code>>SortedSet</code>
  * <p/>
  * This code originally comes from Apache Harmony, was adapted by Jan Kotek for JDBM
  */
@@ -31,9 +28,10 @@ class BTreeSet<E> extends AbstractSet<E> implements SortedSet<E> {
 
 
     /**
-     * Keys are this set's elements. Values are always Boolean.TRUE
+     * Keys are this set's elements. Values are always Utils.EMPTY_STRING (to save serialized space)
+     * TODO values should not be serialized at all to save space
      */
-    private SortedMap<E, Object> backingMap;
+    final private SortedMap<E, Object> backingMap;
 
     BTreeSet(SortedMap<E, Object> map) {
         backingMap = map;

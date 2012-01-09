@@ -66,7 +66,7 @@ public class ConcurrentBTreeReadTest extends TestCaseWithTestFile {
     public void setUp() throws Exception {
         super.setUp();
         db = newRecordManager();
-        btree = BTree.createInstance(db, (Comparator) Collections.reverseOrder());
+        btree = BTree.createInstance(db, (Comparator) Collections.reverseOrder(),null,null);
         System.err.println(db.getClass());
     }
 
