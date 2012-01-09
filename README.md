@@ -2,9 +2,9 @@ JDBM provides HashMap, TreeMap, HashSet, TreeSet and LinkedList backed up by dis
 Now you can insert billion records into collection without running out of memory.
 JDBM is probably fastest and easiest to use pure Java database.
 
-JDBM has minimal size with standalone jar only taking 160 KB (90KB stripped). Yet it is packed with
+JDBM has minimal size with standalone jar only taking 160 KB (80KB stripped). Yet it is packed with
 impressive features such as: space effective serialization, transactions, MRU/soft/weak instance cache,
-defragmentation, encryption and compression.
+defragmentation, transparent encryption and compression.
 
 JDBM has outstanding performance, it can insert 1 million records per second and read even faster.
 Unlike most competitors it keeps high performance even with huge number of records (1e9).
