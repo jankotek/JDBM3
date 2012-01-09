@@ -66,7 +66,7 @@ Usage example
 
 
 Note: Special thanks to EJ-Technologies for donating us excellent
-(http://www.ej-technologies.com/products/overview.html "JProfiler")
+[JProfiler](http://www.ej-technologies.com/products/overview.html)
 
 
 
