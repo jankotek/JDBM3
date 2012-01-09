@@ -13,7 +13,7 @@ Tokyo Cabinet (probably fastest db written in C++).
 
 Performance is side effect of author's obsession with minimal overhead.
 JDBM runs great even on systems with limited memory or poor Garbage Collector (Android).
-Data are read directly using direct mapped buffers without any copying.
+Data are read directly without copying using mapped memory buffers.
 Most logic is implemented using primitive numbers and arrays. JDBM hardly ever creates new object
 instances for its internal use. It also uses advanced techniques to minimise consumed disk space.
 
@@ -50,19 +50,19 @@ Usage example
 
                 System.out.println(map.keySet());   // > [1, 2, 3]
 
-                /** Delete one record. Changes are not comited yet, but are visible. */
+                /** Delete one record. Changes are not commited yet, but are visible. */
                 map.remove(2);
 
                 System.out.println(map.keySet());   // > [1, 3]
 
-                /** Did not like the change. Roolback to last commit (undo record remove). */
+                /** Did not like the change. Rollback to last commit (undo record remove). */
                 db.rollback();
 
                 /** Key 2 was recovered */
                 System.out.println(map.keySet());   // > [1, 2, 3]
 
                 /** close record manager */
-                recMan.close();
+                db.close();
 
 
 Note: Special thanks to EJ-Technologies for donating us excellent
