@@ -256,7 +256,7 @@ final class BlockIo {
     }
 
     public void readExternal(DataInputStream in, Cipher cipherOut) throws IOException {
-        blockId = LongPacker.unpackLong(in);
+        blockId = in.readLong();
         byte[] data2 = new byte[Storage.BLOCK_SIZE];
         in.readFully(data2);
         if (cipherOut == null || Utils.allZeros(data2))
@@ -270,7 +270,7 @@ final class BlockIo {
 
 
     public void writeExternal(DataOutput out, Cipher cipherIn) throws IOException {
-        LongPacker.packLong(out, blockId);
+        out.writeLong(blockId);
         out.write(Utils.encrypt(cipherIn, data.array()));
     }
 
