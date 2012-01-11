@@ -33,6 +33,7 @@ class StorageMemory implements Storage {
         System.arraycopy(data.array(), 0, data2, 0, data.capacity());
 
         pages.ensureCapacity((int) (pageNumber + 1));
+        while(pages.size()<=pageNumber+1)pages.add(null);
         pages.set((int) pageNumber, data2);
     }
 
