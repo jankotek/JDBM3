@@ -510,15 +510,15 @@ class BTree<K, V> {
     }
 
 
-    static BTree readExternal(DataInput in)
+    static BTree readExternal(DataInput in, Serializer ser)
             throws IOException, ClassNotFoundException {
         BTree tree = new BTree();
         tree._height = in.readInt();
         tree._root = in.readLong();
         tree._entries = in.readInt();
-        tree._comparator = (Comparator) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
-        tree.keySerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
-        tree.valueSerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(in);
+        tree._comparator = (Comparator) ser.deserialize(in);
+        tree.keySerializer = (Serializer) ser.deserialize(in);
+        tree.valueSerializer = (Serializer) ser.deserialize(in);
         return tree;
     }
 
@@ -529,9 +529,9 @@ class BTree<K, V> {
         out.writeLong(_root);
         out.writeInt(_entries);
 
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, _comparator);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, keySerializer);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
+        _db.defaultSerializer().serialize(out, _comparator);
+        _db.defaultSerializer().serialize(out, keySerializer);
+        _db.defaultSerializer().serialize(out, valueSerializer);
     }
 
     /**

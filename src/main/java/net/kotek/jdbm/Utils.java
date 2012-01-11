@@ -16,57 +16,6 @@ class Utils {
      */
     static final String EMPTY_STRING = "";
 
-
-    static final Serializer CONSTRUCTOR_SERIALIZER = new Serializer() {
-
-        private final Set<String> classesWithConstructors = new HashSet<String>();
-
-        /**
-         * Throws IllegalArgumentExcpetion if given class does not have public no-argument constructor
-         */
-        private void assertHasPublicNoArgConstructor(Class clazz) {
-
-            if (classesWithConstructors.contains(clazz.toString()))
-                return;
-            try {
-                Constructor t = clazz.getConstructor();
-                Object o = t.newInstance();
-                classesWithConstructors.add(clazz.getName());
-                return;
-            } catch (Throwable e) {
-                //e.printStackTrace();
-            }
-            throw new IllegalArgumentException(("Class does not have public noarg constructor: " + clazz.getName()));
-        }
-
-
-        public void serialize(DataOutput out, Object obj) throws IOException {
-            if (obj == null)
-                out.writeUTF(EMPTY_STRING);
-            else if (obj == java.util.Collections.reverseOrder()) {
-                out.writeUTF("!!REVERSED!!");
-            } else {
-                assertHasPublicNoArgConstructor(obj.getClass());
-                out.writeUTF(obj.getClass().getName());
-            }
-        }
-
-        public Object deserialize(DataInput in) throws IOException, ClassNotFoundException {
-            String className = in.readUTF();
-            if ("".equals(className))
-                return null;
-            if ("!!REVERSED!!".equals(className))
-                return java.util.Collections.reverseOrder();
-            try {
-                Class clazz = Utils.class.getClassLoader().loadClass(className);
-                return clazz.getConstructor().newInstance();
-            } catch (Exception e) {
-                throw new Error("An error when creating an instance of: " + className, e);
-            }
-
-        }
-    };
-
     public static Storage storageFab(String fileName) throws IOException {
         Storage ret = null;
         if (fileName.contains("!/"))

@@ -125,11 +125,11 @@ class LinkedList<E> extends AbstractSequentialList<E> {
     /**
      * called from Serialization object
      */
-    static LinkedList deserialize(DataInput is) throws IOException, ClassNotFoundException {
+    static LinkedList deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
         long first = LongPacker.unpackLong(is);
         long last = LongPacker.unpackLong(is);
         int size = LongPacker.unpackInt(is);
-        Serializer serializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
+        Serializer serializer = (Serializer)  ser.deserialize(is);
         return new LinkedList(first, last, size, serializer);
     }
 
@@ -137,7 +137,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
         LongPacker.packLong(out, first);
         LongPacker.packLong(out, last);
         LongPacker.packInt(out, size);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
+        db.defaultSerializer().serialize(out, valueSerializer);
     }
 
     private final Serializer<Entry> entrySerializer = new Serializer<Entry>() {

@@ -789,13 +789,13 @@ class Serialization extends SerialClassInfo implements Serializer {
                 ret = deserializeArrayByteInt(is);
                 break;
             case JDBMLINKEDLIST:
-                ret = LinkedList.deserialize(is);
+                ret = LinkedList.deserialize(is,this);
                 break;
             case HTREE:
-                ret = HTree.deserialize(is);
+                ret = HTree.deserialize(is,this);
                 break;
             case BTREE:
-                ret = BTree.readExternal(is);
+                ret = BTree.readExternal(is,this);
                 break;
             case BTREE_NODE_LEAF:
                 throw new InternalError("BPage header, wrong serializer used");

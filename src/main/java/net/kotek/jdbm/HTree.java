@@ -390,18 +390,18 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
     }
 
-    public static HTree deserialize(DataInput is) throws IOException, ClassNotFoundException {
+    public static HTree deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
         long rootRecid = LongPacker.unpackLong(is);
-        Serializer keySerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
-        Serializer valueSerializer = (Serializer) Utils.CONSTRUCTOR_SERIALIZER.deserialize(is);
+        Serializer keySerializer = (Serializer) ser.deserialize(is);
+        Serializer valueSerializer = (Serializer)  ser.deserialize(is);
 
         return new HTree(rootRecid, keySerializer, valueSerializer);
     }
 
     void serialize(DataOutput out) throws IOException {
         LongPacker.packLong(out, rootRecid);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, keySerializer);
-        Utils.CONSTRUCTOR_SERIALIZER.serialize(out, valueSerializer);
+        db.defaultSerializer().serialize(out, keySerializer);
+        db.defaultSerializer().serialize(out, valueSerializer);
     }
 
 

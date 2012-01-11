@@ -65,7 +65,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
         db.close();
     }
 
-    public static class LongSerializer implements Serializer<Long> {
+    public static class LongSerializer implements Serializer<Long>,Serializable {
 
         public LongSerializer() {
 

@@ -191,7 +191,7 @@ public class DBTest extends TestCaseWithTestFile {
 
     final static AtomicInteger i = new AtomicInteger(0);
 
-    public static class Serial implements Serializer<String> {
+    public static class Serial implements Serializer<String>,Serializable {
 
         public String deserialize(DataInput in) throws IOException, ClassNotFoundException {
             i.incrementAndGet();
