@@ -38,12 +38,16 @@ public class DBMaker {
     private boolean disableTransactions = false;
     private boolean readonly = false;
     private String password = null;
+    private boolean useRandomAccessFile = false;
 
 
     /**
      * Creates new DBMaker and sets location where database is located.
+     * <p>
+     * If location is null, in-memory store will be used. In this case data will be
+     * lost after JVM exits.
      *
-     * @param location on disk where db is located
+     * @param location on disk where db is located, Null for in-memory store
      */
     public DBMaker(String location) {
         this.location = location;
@@ -159,11 +163,12 @@ public class DBMaker {
      * <p/>
      * Switches off transactioning for the record manager. This means
      * that a) a transaction log is not kept, and b) writes aren't
-     * synch'ed after every update. This is useful when batch inserting
-     * into a new database.
+     * synch'ed after every update. Writes are cached in memory and then flushed
+     * to disk every N writes. You may also flush writes manually by calling commit().
+     * This is useful when batch inserting into a new database.
      * <p/>
-     * Only call this method directly after opening the file, otherwise
-     * the results will be undefined.
+     * When using this, database must be properly closed before JVM shutdown.
+     * Failing to do so may and WILL corrupt store.
      *
      * @return this builder
      */
@@ -172,6 +177,19 @@ public class DBMaker {
         return this;
     }
 
+    /**
+     * By default JDBM uses mapped memory buffers to read from files.
+     * But this may behave strangely on some platforms.
+     * Safe alternative is to use old RandomAccessFile rather then mapped ByteBuffer.
+     * There is typically slower (pages needs to be copyed into memory on every write).
+     *
+     * @return this builder
+     */
+    public DBMaker useRandomAccessFile(){
+        this.useRandomAccessFile = true;
+        return this;
+    }
+    
 
     /**
      * Opens database with settings earlier specified in this builder.
@@ -219,7 +237,7 @@ public class DBMaker {
         DBAbstract db = null;
 
         try {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut);
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile);
         } catch (IOException e) {
             throw new IOError(e);
         }

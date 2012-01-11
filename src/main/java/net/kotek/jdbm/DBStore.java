@@ -92,6 +92,7 @@ final class DBStore
      * cipher used for encryption, may be null
      */
     private Cipher cipherIn;
+    private boolean useRandomAccessFile;
 
     void checkCanWrite() {
         if (readonly)
@@ -153,7 +154,7 @@ final class DBStore
     private final String _filename;
 
     public DBStore(String filename, boolean readonly, boolean transactionDisabled) throws IOException {
-        this(filename, readonly, transactionDisabled, null, null);
+        this(filename, readonly, transactionDisabled, null, null, false);
     }
 
 
@@ -164,19 +165,20 @@ final class DBStore
      *                     a valid file content-wise.
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
-                   Cipher cipherIn, Cipher cipherOut)
+                   Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile)
             throws IOException {
         _filename = filename;
         this.readonly = readonly;
         this.transactionsDisabled = transactionDisabled;
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
+        this.useRandomAccessFile = useRandomAccessFile;
         reopen();
     }
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile(_filename + DBR, readonly, transactionsDisabled, cipherIn, cipherOut);
+        _physFile = new RecordFile(_filename==null?null: _filename+ DBR, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _physPageman = new PageManager(_physFile);
         _physMgr = new PhysicalRowIdManager(_physFile, _physPageman,
                 new FreePhysicalRowIdPageManager(_physFile, _physPageman));
@@ -184,7 +186,7 @@ final class DBStore
         if (Storage.BLOCK_SIZE > 256 * 8)
             throw new InternalError(); //too big page, slot number would not fit into page
 
-        _logicFile = new RecordFile(_filename + IDR, readonly, transactionsDisabled, cipherIn, cipherOut);
+        _logicFile = new RecordFile(_filename==null?null: _filename+ IDR, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _logicPageman = new PageManager(_logicFile);
         _logicMgr = new LogicalRowIdManager(_logicFile, _logicPageman,
                 new FreeLogicalRowIdPageManager(_physFile, _physPageman));
@@ -756,7 +758,7 @@ final class DBStore
             commit();
             final String filename2 = _filename + "_defrag" + System.currentTimeMillis();
             final String filename1 = _filename;
-            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut);
+            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false);
 
             //recreate logical file with original page layout
             {

@@ -43,7 +43,8 @@
                     <source>1.5</source>
                 </configuration>
             </plugin>
-
+<!-- uncomment to enable proguard (strip down jar)-->
+<!--
             <plugin>
                 <groupId>com.pyx4me</groupId>
                 <artifactId>proguard-maven-plugin</artifactId>
@@ -66,6 +67,7 @@
                     </libs>
                 </configuration>
             </plugin>
+-->
         </plugins>
     </build>
 
