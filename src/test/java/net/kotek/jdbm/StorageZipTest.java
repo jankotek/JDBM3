@@ -15,7 +15,7 @@ public class StorageZipTest extends TestCaseWithTestFile {
         //first create archie and put it in zip file
         DBStore r = new DBStore(newTestFile(), false, true);
         Set<Long> h = r.createHashSet("hash");
-        for (Long l = 0L; l < 1e5; l++) {
+        for (Long l = 0L; l < 1e3; l++) {
             h.add(l);
         }
         r.commit();
@@ -27,7 +27,7 @@ public class StorageZipTest extends TestCaseWithTestFile {
         //open zip file and check it contains all data
         DB r2 = new DBMaker(dbpath).readonly().build();
         Set<Long> h2 = r2.getHashSet("hash");
-        for (Long l = 0L; l < 1e5; l++) {
+        for (Long l = 0L; l < 1e3; l++) {
             assertTrue(h2.contains(l));
         }
 
