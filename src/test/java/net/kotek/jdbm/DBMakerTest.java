@@ -1,31 +1,35 @@
 package net.kotek.jdbm;
 
 import junit.framework.TestCase;
-
-import java.util.List;
+import java.io.IOException;
 
 public class DBMakerTest extends TestCase {
     
-    public void testMemory(){
-        DB db = new DBMaker(null)
+    public void testMemory() throws IOException {
+        DBStore db = (DBStore) new DBMaker(null)
                 .disableCache()
                 .build();
         
-        List l = db.createLinkedList("test");
-        l.add(1);
-        l.add(2);
-        assert(l.size() == 2);
-        db.rollback();;
-        assert(l.size() == 0);
+        long recid = db.insert("aaa");
+        db.commit();
+        db.close();
+        db.update(recid,"bbb");
+        db.rollback();
+        assertEquals("aaa",db.fetch(recid));
         
         db.close();
         
-        db = new DBMaker(null)
+        db = (DBStore) new DBMaker(null)
                 .disableCache()
                 .build();
 
         //this will fail if 'test' already exists
-        l = db.createLinkedList("test");
+        try{
+            db.fetch(recid);
+            fail("record should not exist");
+        }catch(Throwable e){
+            //ignore
+        }
 
     }
 }

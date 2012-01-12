@@ -222,6 +222,7 @@ class Serialization extends SerialClassInfo implements Serializer {
         } else if (obj instanceof long[]) {
             writeLongArray(out, (long[]) obj);
             return;
+        //TODO special case for double[], float[], char[], boolean[] and short[]
         } else if (obj instanceof byte[]) {
             byte[] b = (byte[]) obj;
             out.write(ARRAY_BYTE_INT);
@@ -393,22 +394,22 @@ class Serialization extends SerialClassInfo implements Serializer {
             min = Math.min(min, i);
         }
 
-        if (0 >= min && max <= 255) {
+        if (0 <= min && max <= 255) {
             da.write(ARRAY_LONG_B);
             LongPacker.packInt(da, obj.length);
             for (long l : obj)
                 da.write((int) l);
-        } else if (0 >= min && max <= Long.MAX_VALUE) {
+        } else if (0 <= min && max <= Long.MAX_VALUE) {
             da.write(ARRAY_LONG_PACKED);
             LongPacker.packInt(da, obj.length);
             for (long l : obj)
                 LongPacker.packLong(da, l);
-        } else if (Short.MIN_VALUE >= min && max <= Short.MAX_VALUE) {
+        } else if (Short.MIN_VALUE <= min && max <= Short.MAX_VALUE) {
             da.write(ARRAY_LONG_S);
             LongPacker.packInt(da, obj.length);
             for (long l : obj)
                 da.writeShort((short) l);
-        } else if (Integer.MIN_VALUE >= min && max <= Integer.MAX_VALUE) {
+        } else if (Integer.MIN_VALUE <= min && max <= Integer.MAX_VALUE) {
             da.write(ARRAY_LONG_I);
             LongPacker.packInt(da, obj.length);
             for (long l : obj)
@@ -431,7 +432,7 @@ class Serialization extends SerialClassInfo implements Serializer {
             min = Math.min(min, i);
         }
 
-        boolean fitsInByte = 0 >= min && max <= 255;
+        boolean fitsInByte = 0 <= min && max <= 255;
         boolean fitsInShort = Short.MIN_VALUE >= min && max <= Short.MAX_VALUE;
 
 
@@ -445,7 +446,7 @@ class Serialization extends SerialClassInfo implements Serializer {
             LongPacker.packInt(da, obj.length);
             for (int i : obj)
                 da.write(i);
-        } else if (0 >= min && max <= Integer.MAX_VALUE) {
+        } else if (0 <= min && max <= Integer.MAX_VALUE) {
             da.write(ARRAY_INT_PACKED);
             LongPacker.packInt(da, obj.length);
             for (int l : obj)
@@ -456,7 +457,7 @@ class Serialization extends SerialClassInfo implements Serializer {
             for (int i : obj)
                 da.writeShort(i);
         } else {
-            da.write(ARRAY_INT_S);
+            da.write(ARRAY_INT_I);
             LongPacker.packInt(da, obj.length);
             for (int i : obj)
                 da.writeInt(i);

@@ -32,7 +32,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
     private DBAbstract db;
     private long listrecid = 0;
 
-    private int size = 0;
+    private int size = 0; //TODO size,first and last must be stored in separate record, it is not rolled back on roolback()
 
     private long first = 0;
     private long last = 0;

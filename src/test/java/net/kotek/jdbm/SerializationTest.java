@@ -326,8 +326,28 @@ public class SerializationTest extends TestCase {
         assertEquals(l1, ser.deserialize(ser.serialize(l1)));
         l1.add(-1L);
         assertEquals(l1, ser.deserialize(ser.serialize(l1)));
-
     }
+
+    public void testNegativeLongsArray() throws ClassNotFoundException, IOException {
+       long[] l = new long[] { -12 };
+       Object deserialize = ser.deserialize(ser.serialize(l));
+       assertTrue(Arrays.equals(l, (long[]) deserialize));
+     }
+
+
+    public void testNegativeIntArray() throws ClassNotFoundException, IOException {
+       int[] l = new int[] { -12 };
+       Object deserialize = ser.deserialize(ser.serialize(l));
+       assertTrue(Arrays.equals(l, (int[]) deserialize));
+     }
+
+//TODO this test fails
+//    public void testNegativeShortArray() throws ClassNotFoundException, IOException {
+//       short[] l = new short[] { -12 };
+//       Object deserialize = ser.deserialize(ser.serialize(l));
+//        assertTrue(Arrays.equals(l, (short[]) deserialize));
+//     }
+
 
     public void testDate() throws IOException, ClassNotFoundException {
         Date d = new Date(6546565565656L);
@@ -349,6 +369,8 @@ public class SerializationTest extends TestCase {
         d = new BigInteger("-535345345345344456567889889895165654423236");
         assertEquals(d, ser.deserialize(ser.serialize(d)));
     }
+
+
 
 
 }

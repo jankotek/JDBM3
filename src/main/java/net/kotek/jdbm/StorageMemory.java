@@ -14,23 +14,21 @@ class StorageMemory implements Storage {
 
 
     public ByteBuffer read(long pageNumber) throws IOException {
-        ByteBuffer data = ByteBuffer.allocate(BLOCK_SIZE);
-        if (pages.size() <= pageNumber || pages.get((int) pageNumber) == null) {
+
+        if (pages.size() <=  pageNumber || pages.get((int) pageNumber) == null) {
             //out of bounds, so just return empty data
-            System.arraycopy(RecordFile.CLEAN_DATA, 0, data.array(), 0, data.capacity());
-            return data;
+            return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
         }
 
-        byte[] data2 = pages.get((int) pageNumber);
-        System.arraycopy(data2, 0, data.array(), 0, data.capacity());
-        return data;
+        byte[] data = pages.get((int) pageNumber);
+        return ByteBuffer.wrap(data).asReadOnlyBuffer();
     }
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
         if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
 
-        byte[] data2 = new byte[data.capacity()];
-        System.arraycopy(data.array(), 0, data2, 0, data.capacity());
+        byte[] data2 = new byte[BLOCK_SIZE];
+        System.arraycopy(data.array(), 0, data2, 0, BLOCK_SIZE);
 
         pages.ensureCapacity((int) (pageNumber + 1));
         while(pages.size()<=pageNumber+1)pages.add(null);
