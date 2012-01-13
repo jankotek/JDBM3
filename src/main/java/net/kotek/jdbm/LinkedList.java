@@ -28,14 +28,33 @@ import java.util.*;
  */
 class LinkedList<E> extends AbstractSequentialList<E> {
 
-
     private DBAbstract db;
-    private long listrecid = 0;
 
-    private int size = 0; //TODO size,first and last must be stored in separate record, it is not rolled back on roolback()
+    private long rootRecid;
+    
+    static private final class Root{
+        long first;
+        long last;
+        long size;
+    }
 
-    private long first = 0;
-    private long last = 0;
+    private static final Serializer<Root> ROOT_SERIALIZER= new Serializer<Root>(){
+
+        public void serialize(DataOutput out, Root obj) throws IOException {
+            LongPacker.packLong(out,obj.first);
+            LongPacker.packLong(out,obj.last);
+            LongPacker.packLong(out,obj.size);
+        }
+
+        public Root deserialize(DataInput in) throws IOException, ClassNotFoundException {
+            Root r = new Root();
+            r.first = LongPacker.unpackLong(in);
+            r.last = LongPacker.unpackLong(in);
+            r.size = LongPacker.unpackLong(in);
+            return r;
+        }
+    };
+
     private Serializer<E> valueSerializer;
 
     /**
@@ -43,35 +62,35 @@ class LinkedList<E> extends AbstractSequentialList<E> {
      */
     protected boolean loadValues = true;
 
-    LinkedList(long first, long last, int size, Serializer<E> valueSerializer) {
-        this.first = first;
-        this.last = last;
-        this.size = size;
+    /** constructor used for deserialization */
+    LinkedList(long rootRecid, Serializer<E> valueSerializer) {
+        this.rootRecid = rootRecid;
         this.valueSerializer = valueSerializer;
     }
 
-    LinkedList(DBAbstract db, long listrecid, Serializer<E> valueSerializer) {
+    /** constructor used to create new empty list*/
+    LinkedList(DBAbstract db, Serializer<E> valueSerializer) throws IOException {
         this.db = db;
-        this.listrecid = listrecid;
         if (valueSerializer != null && !(valueSerializer instanceof Serializable))
             throw new IllegalArgumentException("Serializer does not implement Serializable");
         this.valueSerializer = valueSerializer;
-
+        //create root
+        this.rootRecid = db.insert(new Root(), ROOT_SERIALIZER);
     }
 
-    void setPersistenceContext(DBAbstract db, long listrecid) {
+    void setPersistenceContext(DBAbstract db) {
         this.db = db;
-        this.listrecid = listrecid;
     }
 
 
     public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > size)
+        Root r = getRoot();
+        if (index < 0 || index > r.size)
             throw new IndexOutOfBoundsException();
 
 
         Iter iter = new Iter();
-        iter.next = first;
+        iter.next = r.first;
 
 
         //scroll to requested position
@@ -83,29 +102,38 @@ class LinkedList<E> extends AbstractSequentialList<E> {
 
     }
 
+    private Root getRoot(){
+        try {
+           return db.fetch(rootRecid,ROOT_SERIALIZER);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
 
     public int size() {
-        return size;
+        return (int) getRoot().size;
     }
 
     public boolean add(Object value) {
-        try {
-            Entry e = new Entry(last, 0, value);
+        try {                           
+            Root r = getRoot();
+            Entry e = new Entry(r.last, 0, value);
             long recid = db.insert(e, entrySerializer);
 
             //update old last Entry to point to new record
-            if (last != 0) {
-                Entry oldLast = db.fetch(last, entrySerializer);
+            if (r.last != 0) {
+                Entry oldLast = db.fetch(r.last, entrySerializer);
                 if (oldLast.next != 0) throw new Error();
                 oldLast.next = recid;
-                db.update(last, oldLast, entrySerializer);
+                db.update(r.last, oldLast, entrySerializer);
             }
 
             //update linked list
-            last = recid;
-            if (first == 0) first = recid;
-            size++;
-            db.update(listrecid, this);
+            r.last = recid;
+            if (r.first == 0) r.first = recid;
+            r.size++;
+            db.update(rootRecid, r, ROOT_SERIALIZER);
             modCount++;
             return true;
         } catch (IOException e) {
@@ -126,17 +154,13 @@ class LinkedList<E> extends AbstractSequentialList<E> {
      * called from Serialization object
      */
     static LinkedList deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
-        long first = LongPacker.unpackLong(is);
-        long last = LongPacker.unpackLong(is);
-        int size = LongPacker.unpackInt(is);
+        long rootrecid = LongPacker.unpackLong(is);
         Serializer serializer = (Serializer)  ser.deserialize(is);
-        return new LinkedList(first, last, size, serializer);
+        return new LinkedList(rootrecid, serializer);
     }
 
     void serialize(DataOutput out) throws IOException {
-        LongPacker.packLong(out, first);
-        LongPacker.packLong(out, last);
-        LongPacker.packInt(out, size);
+        LongPacker.packLong(out, rootRecid);
         db.defaultSerializer().serialize(out, valueSerializer);
     }
 
@@ -247,12 +271,13 @@ class LinkedList<E> extends AbstractSequentialList<E> {
                     //remove old record from db
                     db.delete(prev);
                     //update list
-                    if (first == prev)
-                        first = next;
-                    if (last == prev)
-                        last = next;
-                    size--;
-                    db.update(listrecid, LinkedList.this);
+                    Root r = getRoot();
+                    if (r.first == prev)
+                        r.first = next;
+                    if (r.last == prev)
+                        r.last = next;
+                    r.size--;
+                    db.update(rootRecid, r,ROOT_SERIALIZER);
                     modCount++;
                     expectedModCount++;
                     //update iterator
@@ -278,12 +303,13 @@ class LinkedList<E> extends AbstractSequentialList<E> {
                     //remove old record from db
                     db.delete(next);
                     //update list
-                    if (last == next)
-                        last = prev;
-                    if (first == next)
-                        first = prev;
-                    size--;
-                    db.update(listrecid, LinkedList.this);
+                    Root r = getRoot();
+                    if (r.last == next)
+                        r.last = prev;
+                    if (r.first == next)
+                        r.first = prev;
+                    r.size--;
+                    db.update(rootRecid, r,ROOT_SERIALIZER);
                     modCount++;
                     expectedModCount++;
                     //update iterator
@@ -347,8 +373,9 @@ class LinkedList<E> extends AbstractSequentialList<E> {
                 db.update(next, n, entrySerializer);
 
                 //update List
-                size++;
-                db.update(listrecid, LinkedList.this);
+                Root r = getRoot();
+                r.size++;
+                db.update(rootRecid, r, ROOT_SERIALIZER);
 
                 //update iterator
                 expectedModCount++;
@@ -372,13 +399,23 @@ class LinkedList<E> extends AbstractSequentialList<E> {
      */
     static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
         try {
+            //move linked list itself
             byte[] data = r1.fetchRaw(recid);
             r2.forceInsert(recid, data);
             DataInputOutput in = new DataInputOutput();
             in.reset(data);
             LinkedList l = (LinkedList) r1.defaultSerializer().deserialize(in);
             l.loadValues = false;
-            long current = l.first;
+            //move linkedlist root
+            if(l.rootRecid == 0) //empty list, done
+                return;
+
+            data = r1.fetchRaw(l.rootRecid);
+            r2.forceInsert(l.rootRecid, data);
+            in.reset(data);
+            Root r = ROOT_SERIALIZER.deserialize(in);
+            //move all other nodes in linked list
+            long current = r.first;
             while (current != 0) {
                 data = r1.fetchRaw(current);
                 in.reset(data);

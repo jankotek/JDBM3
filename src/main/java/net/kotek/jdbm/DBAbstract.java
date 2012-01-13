@@ -194,9 +194,9 @@ abstract class DBAbstract implements DB {
             assertNameNotExist(name);
 
             //allocate record and overwrite it
-            long recid = insert(null);
-            LinkedList<K> list = new LinkedList<K>(this, recid, serializer);
-            update(recid, list);
+
+            LinkedList<K> list = new LinkedList<K>(this, serializer);
+            long recid = insert(list);
             setNamedObject(name, recid);
 
 
@@ -211,7 +211,7 @@ abstract class DBAbstract implements DB {
             long recid = assertNameExist(name);
 
             LinkedList<K> list = (LinkedList<K>) fetch(recid);
-            list.setPersistenceContext(this, recid);
+            list.setPersistenceContext(this);
             return list;
         } catch (IOException e) {
             throw new IOError(e);
