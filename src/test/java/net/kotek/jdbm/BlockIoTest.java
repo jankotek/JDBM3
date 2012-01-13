@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
@@ -78,5 +79,18 @@ public class BlockIoTest extends TestCase {
         assertEquals("long", LONG_VALUE2, test.readLong(14));
     }
 
+
+    public void testNegativeSixByte(){
+        
+        BlockIo t = new BlockIo(0, ByteBuffer.allocate(Storage.BLOCK_SIZE));
+        
+        t.writeSixByteLong(0,-11111);
+        assertEquals(-11111,t.readSixByteLong(0));
+
+        t.writeSixByteLong(0,11111);
+        assertEquals(11111,t.readSixByteLong(0));
+
+
+    }
 
 }

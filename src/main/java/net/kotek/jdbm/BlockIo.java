@@ -219,13 +219,17 @@ final class BlockIo {
      * Reads a long from the indicated position
      */
     public long readSixByteLong(int pos) {
-        return
-                (((long) (data.get(pos + 0) & 0xff) << 40) |
-                        ((long) (data.get(pos + 1) & 0xff) << 32) |
-                        ((long) (data.get(pos + 2) & 0xff) << 24) |
-                        ((long) (data.get(pos + 3) & 0xff) << 16) |
-                        ((long) (data.get(pos + 4) & 0xff) << 8) |
-                        ((long) (data.get(pos + 5) & 0xff) << 0));
+        long ret =                 
+                ((long) (data.get(pos + 0) & 0x7f) << 40) |
+                ((long) (data.get(pos + 1) & 0xff) << 32) |
+                ((long) (data.get(pos + 2) & 0xff) << 24) |
+                ((long) (data.get(pos + 3) & 0xff) << 16) |
+                ((long) (data.get(pos + 4) & 0xff) << 8) |
+                ((long) (data.get(pos + 5) & 0xff) << 0);
+        if((data.get(pos + 0) & 0x80) != 0)
+            return -ret;
+        else
+            return ret;
 
     }
 
@@ -233,10 +237,17 @@ final class BlockIo {
      * Writes a long to the indicated position
      */
     public void writeSixByteLong(int pos, long value) {
+//        if(value<0) throw new IllegalArgumentException();
 //    	if(value >> (6*8)!=0)
 //    		throw new IllegalArgumentException("does not fit");
+        int negativeBit = 0;
+        if(value<0){
+            value = -value;
+            negativeBit = 0x80;
+        }
+
         setDirty();
-        data.put(pos + 0,(byte) (0xff & (value >> 40)));
+        data.put(pos + 0,(byte) ((0x7f & (value >> 40)) | negativeBit));
         data.put(pos + 1, (byte) (0xff & (value >> 32)));
         data.put(pos + 2, (byte) (0xff & (value >> 24)));
         data.put(pos + 3, (byte) (0xff & (value >> 16)));

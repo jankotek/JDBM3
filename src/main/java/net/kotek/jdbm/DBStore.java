@@ -48,10 +48,6 @@ import java.util.zip.ZipOutputStream;
 final class DBStore
         extends DBAbstract {
 
-    private static final String IDR = ".i";
-
-    static final String DBR = ".d";
-
 
     /**
      * Version of storage. It should be safe to open lower versions, but engine should throw exception
@@ -62,12 +58,12 @@ final class DBStore
     /**
      * Underlying file for store records.
      */
-    private RecordFile _physFile;
+    private RecordFile _file;
 
     /**
      * Page manager for physical manager.
      */
-    private PageManager _physPageman;
+    private PageManager _pageman;
 
     /**
      * Physical row identifier manager.
@@ -100,15 +96,6 @@ final class DBStore
     }
 
 
-    /**
-     * Underlying file for logical records.
-     */
-    private RecordFile _logicFile;
-
-    /**
-     * Page manager for logical manager.
-     */
-    private PageManager _logicPageman;
 
 
     /**
@@ -178,18 +165,16 @@ final class DBStore
 
 
     private void reopen() throws IOException {
-        _physFile = new RecordFile(_filename==null?null: _filename+ DBR, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
-        _physPageman = new PageManager(_physFile);
-        _physMgr = new PhysicalRowIdManager(_physFile, _physPageman,
-                new FreePhysicalRowIdPageManager(_physFile, _physPageman));
+        _file = new RecordFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
+        _pageman = new PageManager(_file);
+        _physMgr = new PhysicalRowIdManager(_file, _pageman,
+                new FreePhysicalRowIdPageManager(_file, _pageman));
 
         if (Storage.BLOCK_SIZE > 256 * 8)
             throw new InternalError(); //too big page, slot number would not fit into page
 
-        _logicFile = new RecordFile(_filename==null?null: _filename+ IDR, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
-        _logicPageman = new PageManager(_logicFile);
-        _logicMgr = new LogicalRowIdManager(_logicFile, _logicPageman,
-                new FreeLogicalRowIdPageManager(_physFile, _physPageman));
+        _logicMgr = new LogicalRowIdManager(_file, _pageman,
+                new FreeLogicalRowIdPageManager(_file, _pageman));
 
         long versionNumber = getRoot(STORE_VERSION_NUMBER_ROOT);
         if (versionNumber > STORE_FORMAT_VERSION)
@@ -210,17 +195,12 @@ final class DBStore
     public synchronized void close() {
         checkIfClosed();
         try {
-            _physPageman.close();
-            _physPageman = null;
+            _pageman.close();
+            _pageman = null;
 
-            _physFile.close();
-            _physFile = null;
+            _file.close();
+            _file = null;
 
-            _logicPageman.close();
-            _logicPageman = null;
-
-            _logicFile.close();
-            _logicFile = null;
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -262,7 +242,7 @@ final class DBStore
     }
 
     boolean needsAutoCommit() {
-        return transactionsDisabled && (_physFile.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES);
+        return transactionsDisabled && (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES);
     }
 
 
@@ -426,7 +406,7 @@ final class DBStore
             throws IOException {
         checkIfClosed();
 
-        return _physPageman.getFileHeader().getRoot(id);
+        return _pageman.getFileHeader().getRoot(id);
     }
 
 
@@ -435,7 +415,7 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
-        _physPageman.getFileHeader().setRoot(id, rowid);
+        _pageman.getFileHeader().setRoot(id, rowid);
     }
 
 
@@ -525,8 +505,7 @@ final class DBStore
             _logicMgr.commit();
 
             /**commit pages */
-            _physPageman.commit();
-            _logicPageman.commit();
+            _pageman.commit();
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -544,8 +523,7 @@ final class DBStore
             _physMgr.commit();
             _logicMgr.commit(); //TODO find why commit is here !!!
 
-            _physPageman.rollback();
-            _logicPageman.rollback();
+            _pageman.rollback();
             defaultSerializer = null;
         } catch (IOException e) {
             throw new IOError(e);
@@ -561,63 +539,57 @@ final class DBStore
 
             //copy zero pages
             {
-                String file = zip2 + IDR + 0;
+                String file = zip2 + StorageDiskMapped.DBR + 0;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, _logicPageman.getHeaderBufData()));
-                z.closeEntry();
-            }
-            {
-                String file = zip2 + DBR + 0;
-                z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, _physPageman.getHeaderBufData()));
+                z.write(Utils.encrypt(cipherIn, _pageman.getHeaderBufData()));
                 z.closeEntry();
             }
 
             //iterate over pages and create new file for each
-            for (long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+            for (long pageid = _pageman.getFirst(Magic.TRANSLATION_PAGE);
                  pageid != 0;
-                 pageid = _logicPageman.getNext(pageid)
+                 pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _logicFile.get(pageid);
-                String file = zip2 + IDR + pageid;
+                BlockIo block = _file.get(pageid);
+                String file = zip2 + StorageDiskMapped.IDR + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
-                _logicFile.release(block);
+                _file.release(block);
             }
-            for (long pageid = _logicPageman.getFirst(Magic.FREELOGIDS_PAGE);
+            for (long pageid = _pageman.getFirst(Magic.FREELOGIDS_PAGE);
                  pageid != 0;
-                 pageid = _logicPageman.getNext(pageid)
+                 pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _logicFile.get(pageid);
-                String file = zip2 + IDR + pageid;
+                BlockIo block = _file.get(pageid);
+                String file = zip2 + StorageDiskMapped.IDR + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
-                _logicFile.release(block);
+                _file.release(block);
             }
 
-            for (long pageid = _physPageman.getFirst(Magic.USED_PAGE);
+            for (long pageid = _pageman.getFirst(Magic.USED_PAGE);
                  pageid != 0;
-                 pageid = _physPageman.getNext(pageid)
+                 pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _physFile.get(pageid);
-                String file = zip2 + DBR + pageid;
+                BlockIo block = _file.get(pageid);
+                String file = zip2 + StorageDiskMapped.DBR + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
-                _physFile.release(block);
+                _file.release(block);
             }
-            for (long pageid = _physPageman.getFirst(Magic.FREEPHYSIDS_PAGE);
+            for (long pageid = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE);
                  pageid != 0;
-                 pageid = _physPageman.getNext(pageid)
+                 pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _physFile.get(pageid);
-                String file = zip2 + DBR + pageid;
+                BlockIo block = _file.get(pageid);
+                String file = zip2 + StorageDiskMapped.DBR + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
-                _physFile.release(block);
+                _file.release(block);
             }
             z.close();
 
@@ -633,7 +605,7 @@ final class DBStore
      */
     private void checkIfClosed()
             throws IllegalStateException {
-        if (_physFile == null) {
+        if (_file == null) {
             throw new IllegalStateException("DB has been closed");
         }
     }
@@ -647,16 +619,16 @@ final class DBStore
     private long statisticsCountPages(short pageType) throws IOException {
         long pageCounter = 0;
 
-        for (long pageid = _logicPageman.getFirst(pageType);
+        for (long pageid = _pageman.getFirst(pageType);
              pageid != 0;
-             pageid = _logicPageman.getNext(pageid)
+             pageid = _pageman.getNext(pageid)
                 ) {
             pageCounter++;
         }
 
-        for (long pageid = _physPageman.getFirst(pageType);
+        for (long pageid = _pageman.getFirst(pageType);
              pageid != 0;
-             pageid = _physPageman.getNext(pageid)
+             pageid = _pageman.getNext(pageid)
                 ) {
             pageCounter++;
         }
@@ -704,11 +676,11 @@ final class DBStore
                 long totalAvailDiff = 0;
 
                 //count records
-                for (long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                for (long pageid = _pageman.getFirst(Magic.TRANSLATION_PAGE);
                      pageid != 0;
-                     pageid = _logicPageman.getNext(pageid)
+                     pageid = _pageman.getNext(pageid)
                         ) {
-                    BlockIo io = _logicFile.get(pageid);
+                    BlockIo io = _file.get(pageid);
                     TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 
                     for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
@@ -723,10 +695,10 @@ final class DBStore
                         recordCount++;
 
                         //get size
-                        BlockIo block = _physFile.get(physPage);
+                        BlockIo block = _file.get(physPage);
                         int availSize = RecordHeader.getAvailableSize(block, physOffset);
                         int currentSize = RecordHeader.getCurrentSize(block, physOffset);
-                        _physFile.release(block);
+                        _file.release(block);
 
                         maximalAvailSizeDiff = Math.max(maximalAvailSizeDiff, availSize - currentSize);
                         maximalRecordSize = Math.max(maximalRecordSize, currentSize);
@@ -762,41 +734,29 @@ final class DBStore
 
             //recreate logical file with original page layout
             {
-                //find maximal logical pageid
+                //find minimal logical pageid (logical pageids are negative)
                 LongHashMap<String> logicalPages = new LongHashMap<String>();
-                long maxpageid = 0;
-                for (long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+                long minpageid = 0;
+                for (long pageid = _pageman.getFirst(Magic.TRANSLATION_PAGE);
                      pageid != 0;
-                     pageid = _logicPageman.getNext(pageid)
+                     pageid = _pageman.getNext(pageid)
                         ) {
-                    maxpageid = Math.max(maxpageid, pageid);
+                    minpageid = Math.min(minpageid, pageid);
                     logicalPages.put(pageid, Utils.EMPTY_STRING);
                 }
 
                 //fill second db with logical pages
                 long pageCounter = 0;
                 for (
-                        long pageid = db2._logicPageman.allocate(Magic.TRANSLATION_PAGE);
-                        pageid <= maxpageid;
-                        pageid = db2._logicPageman.allocate(Magic.TRANSLATION_PAGE)
+                        long pageid = db2._pageman.allocate(Magic.TRANSLATION_PAGE);
+                        pageid >= minpageid;
+                        pageid = db2._pageman.allocate(Magic.TRANSLATION_PAGE)
                         ) {
                     pageCounter++;
                     if (pageCounter % 1000 == 0)
                         db2.commit();
                 }
 
-                //free pages which are not actually logical in second db
-                for (long pageid = db2._logicPageman.getFirst(Magic.TRANSLATION_PAGE);
-                     pageid <= maxpageid;
-                     pageid += Storage.BLOCK_SIZE
-                        ) {
-                    if (logicalPages.get(pageid) == null) {
-                        db2._logicPageman.free(Magic.TRANSLATION_PAGE, Magic.TRANSLATION_PAGE);
-                        pageCounter++;
-                        if (pageCounter % 1000 == 0)
-                            db2.commit();
-                    }
-                }
                 logicalPages = null;
             }
 
@@ -817,11 +777,11 @@ final class DBStore
             }
 
 
-            for (long pageid = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+            for (long pageid = _pageman.getFirst(Magic.TRANSLATION_PAGE);
                  pageid != 0;
-                 pageid = _logicPageman.getNext(pageid)
+                 pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo io = _logicFile.get(pageid);
+                BlockIo io = _file.get(pageid);
                 TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 
                 for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
@@ -830,11 +790,11 @@ final class DBStore
                         throw new Error();
 
                     //write to new file
-                    final long logicalRowId = Location.toLong(pageid, (short) pos);
+                    final long logicalRowId = Location.toLong(-pageid, (short) pos);
 
                     //read from logical location in second db,
                     //check if record was already inserted as part of collections
-                    if (db2._logicPageman.getLast(Magic.TRANSLATION_PAGE) >= pageid &&
+                    if (db2._pageman.getLast(Magic.TRANSLATION_PAGE) <= pageid &&
                             db2._logicMgr.fetch(logicalRowId) != 0) {
                         //yes, this record already exists in second db
                         continue;
@@ -857,7 +817,7 @@ final class DBStore
                     db2._logicMgr.forceInsert(logicalRowId, physLoc);
 
                 }
-                _logicFile.release(io);
+                _file.release(io);
                 db2.commit();
             }
             db2.setRoot(NAME_DIRECTORY_ROOT, getRoot(NAME_DIRECTORY_ROOT));
@@ -867,7 +827,7 @@ final class DBStore
 
             List<File> filesToDelete = new ArrayList<File>();
             //now rename old files
-            String[] exts = {IDR, DBR};
+            String[] exts = {StorageDiskMapped.IDR, StorageDiskMapped.DBR};
             for (String ext : exts) {
                 String f1 = filename1 + ext;
                 String f2 = filename2 + "_OLD" + ext;
@@ -970,9 +930,9 @@ final class DBStore
     long countRecords() throws IOException {
         long counter = 0;
 
-        long page = _logicPageman.getFirst(Magic.TRANSLATION_PAGE);
+        long page = _pageman.getFirst(Magic.TRANSLATION_PAGE);
         while (page != 0) {
-            BlockIo io = _logicFile.get(page);
+            BlockIo io = _file.get(page);
             TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
             for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
                 int pos = TranslationPage.O_TRANS + i * TranslationPage.PhysicalRowId_SIZE;
@@ -986,8 +946,8 @@ final class DBStore
                 if (physRowId != 0)
                     counter += 1;
             }
-            _logicFile.release(io);
-            page = _logicPageman.getNext(page);
+            _file.release(io);
+            page = _pageman.getNext(page);
         }
         return counter;
     }

@@ -33,6 +33,9 @@ class StorageZip implements Storage {
         ByteBuffer data = ByteBuffer.allocate(BLOCK_SIZE);
 
         ZipEntry e = z.getEntry(zip2 + pageNumber);
+        if(e == null)
+            return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+
         InputStream i = z.getInputStream(e);
         new DataInputStream(i).readFully(data.array());
         i.close();

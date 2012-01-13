@@ -45,12 +45,6 @@ interface Magic {
     public short NLISTS = 5;
 
     /**
-     * Maximum number of blocks in a file, leaving room for a 16 bit
-     * offset encoded within a long.
-     */
-    long MAX_BLOCKS = 0x7FFFFFFFFFFFL;
-
-    /**
      * Magic for transaction file
      */
     short LOGFILE_HEADER = 0x1360;
@@ -63,10 +57,7 @@ interface Magic {
      * Size of an externalized short
      */
     public short SZ_SHORT = 2;
-    /**
-     * Size of an externalized unsigned short
-     */
-    public short SZ_UNSIGNED_SHORT = 2;
+
     /**
      * Size of an externalized int
      */
@@ -76,10 +67,7 @@ interface Magic {
      */
     public short SZ_LONG = 8;
 
-    /**
-     * size of three byte integer
-     */
-    public short SZ_THREE_BYTE_INT = 3;
+
 
     /**
      * size of three byte integer

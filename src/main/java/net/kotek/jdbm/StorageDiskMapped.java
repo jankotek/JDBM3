@@ -9,11 +9,17 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 
 /**
  * Disk storage which uses mapped buffers
  */
 class StorageDiskMapped implements Storage {
+
+    static final String IDR = ".i";
+
+    static final String DBR = ".d";
+
 
 
     /**
@@ -23,6 +29,7 @@ class StorageDiskMapped implements Storage {
 
 
     private ArrayList<FileChannel> channels = new ArrayList<FileChannel>();
+    private ArrayList<FileChannel> channelsTranslation = new ArrayList<FileChannel>();
     private IdentityHashMap<FileChannel, MappedByteBuffer> buffers = new IdentityHashMap<FileChannel, MappedByteBuffer>();
 
     private String fileName;
@@ -47,18 +54,20 @@ class StorageDiskMapped implements Storage {
     }
 
     private FileChannel getChannel(long pageNumber) throws IOException {
-        int fileNumber = (int) (pageNumber/PAGES_PER_FILE );
+        int fileNumber = (int) (Math.abs(pageNumber)/PAGES_PER_FILE );
+
+        List<FileChannel> c = pageNumber>=0 ? channels : channelsTranslation;
 
         //increase capacity of array lists if needed
-        for (int i = channels.size(); i <= fileNumber; i++) {
-            channels.add(null);
+        for (int i = c.size(); i <= fileNumber; i++) {
+            c.add(null);
         }
 
-        FileChannel ret = channels.get(fileNumber);
+        FileChannel ret = c.get(fileNumber);
         if (ret == null) {
-            String name = fileName + "." + fileNumber;
+            String name = fileName + (pageNumber>=0 ? DBR : IDR) + "." + fileNumber;
             ret = new RandomAccessFile(name, "rw").getChannel();
-            channels.set(fileNumber, ret);
+            c.set(fileNumber, ret);
             buffers.put(ret, ret.map(FileChannel.MapMode.READ_WRITE, 0, ret.size()));
         }
         return ret;
@@ -74,7 +83,7 @@ class StorageDiskMapped implements Storage {
         }
         
         FileChannel f = getChannel(pageNumber);
-        int offsetInFile = (int) ((pageNumber % PAGES_PER_FILE)*BLOCK_SIZE);
+        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)*BLOCK_SIZE);
         MappedByteBuffer b = buffers.get(f);
         if( b.limit()<=offsetInFile){
 
@@ -112,7 +121,7 @@ class StorageDiskMapped implements Storage {
 
     public ByteBuffer read(long pageNumber) throws IOException {
         FileChannel f = getChannel(pageNumber);
-        int offsetInFile = (int) ((pageNumber % PAGES_PER_FILE)*BLOCK_SIZE);
+        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)*BLOCK_SIZE);
         MappedByteBuffer b = buffers.get(f);
         
         if(b == null){ //not mapped yet
@@ -142,7 +151,14 @@ class StorageDiskMapped implements Storage {
             f.close();
             unmapBuffer(buffers.get(f));
         }
+        for(FileChannel f: channelsTranslation){
+            if(f==null) continue;
+            f.close();
+            unmapBuffer(buffers.get(f));
+        }
+
         channels = null;
+        channelsTranslation = null;
         buffers = null;
     }
 

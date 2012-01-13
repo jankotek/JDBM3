@@ -50,7 +50,7 @@ final class LogicalRowIdManager {
             long firstPage = pageman.allocate(Magic.TRANSLATION_PAGE);
             short curOffset = TranslationPage.O_TRANS;
             for (int i = 0; i < ELEMS_PER_PAGE; i++) {
-                freeman.put(Location.toLong(firstPage, curOffset));
+                freeman.put(Location.toLong(-firstPage, curOffset));
                 curOffset += PageHeader.PhysicalRowId_SIZE;
             }
 
@@ -84,10 +84,11 @@ final class LogicalRowIdManager {
      */
     void delete(long rowid) throws IOException {
         //zero out old location, is needed for defragmentation
-        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)));
+        final long block = -Location.getBlock(rowid);
+        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(block));
         xlatPage.setLocationBlock(Location.getOffset(rowid), 0);
         xlatPage.setLocationOffset(Location.getOffset(rowid), (short) 0);
-        file.release(Location.getBlock(rowid), true);
+        file.release(block, true);
         freeman.put(rowid);
     }
 
@@ -99,7 +100,8 @@ final class LogicalRowIdManager {
      */
     void update(long rowid, long loc) throws IOException {
 
-        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(Location.getBlock(rowid)));
+        final long block = -Location.getBlock(rowid);
+        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(block));
         //make sure it is right type of page
 
 
@@ -108,7 +110,7 @@ final class LogicalRowIdManager {
 //		physid.setOffset(loc.getOffset());
         xlatPage.setLocationBlock(Location.getOffset(rowid), Location.getBlock(loc));
         xlatPage.setLocationOffset(Location.getOffset(rowid), Location.getOffset(loc));
-        file.release(Location.getBlock(rowid), true);
+        file.release(block, true);
     }
 
     /**
@@ -118,9 +120,9 @@ final class LogicalRowIdManager {
      * @return The physical rowid, 0 if does not exist
      */
     long fetch(long rowid) throws IOException {
-        final long block = Location.getBlock(rowid);
+        final long block = -Location.getBlock(rowid);
         long last = pageman.getLast(Magic.TRANSLATION_PAGE);
-        if (last + 1 < block)
+        if (last - 1 > block)
             return 0;
 
         final short offset = Location.getOffset(rowid);

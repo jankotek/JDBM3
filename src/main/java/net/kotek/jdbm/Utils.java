@@ -16,14 +16,6 @@ class Utils {
      */
     static final String EMPTY_STRING = "";
 
-    public static Storage storageFab(String fileName) throws IOException {
-        Storage ret = null;
-        if (fileName.contains("!/"))
-            ret = new StorageZip(fileName);
-        else
-            ret = new StorageDisk(fileName);
-        return ret;
-    }
 
 
     public static byte[] encrypt(Cipher cipherIn, ByteBuffer b) {

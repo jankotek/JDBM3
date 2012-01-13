@@ -12,7 +12,6 @@ public class DBMakerTest extends TestCase {
         
         long recid = db.insert("aaa");
         db.commit();
-        db.close();
         db.update(recid,"bbb");
         db.rollback();
         assertEquals("aaa",db.fetch(recid));

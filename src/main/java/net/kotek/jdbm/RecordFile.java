@@ -90,7 +90,7 @@ final class RecordFile {
         }else if (fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
         else if(useRandomAccessFile)
-            this.storage = new StorageDisk(fileName);
+            this.storage = new StorageDisk(fileName,readonly);
         else
             this.storage = new StorageDiskMapped(fileName,readonly,transactionsDisabled);
 

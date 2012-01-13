@@ -2,36 +2,35 @@ package net.kotek.jdbm;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
+import java.util.List;
+import static net.kotek.jdbm.StorageDiskMapped.*;
 
 /**
  * Storage which used files on disk to store data
  */
 class StorageDisk implements Storage {
 
-    /**
-     * maximal file size not rounded to block size
-     */
-    private final static long _FILESIZE = 1000000000l;
-    /**
-     * maximal file size rounded to block size
-     */
-    private final long MAX_FILE_SIZE = _FILESIZE - _FILESIZE % BLOCK_SIZE;
 
 
     private ArrayList<RandomAccessFile> rafs = new ArrayList<RandomAccessFile>();
+    private ArrayList<RandomAccessFile> rafsTranslation = new ArrayList<RandomAccessFile>();
 
     private String fileName;
 
     private long lastPageNumber = Long.MIN_VALUE;
+    private boolean readonly;
 
-    public StorageDisk(String fileName) throws IOException {
+    public StorageDisk(String fileName,boolean readonly) throws IOException {
         this.fileName = fileName;
+        this.readonly = readonly;
         //make sure first file can be opened
         //lock it
         try {
-            getRaf(0).getChannel().tryLock();
+            if(!readonly)
+                getRaf(0).getChannel().tryLock();
         } catch (IOException e) {
             throw new IOException("Could not lock DB file: " + fileName, e);
         } catch (OverlappingFileLockException e) {
@@ -40,62 +39,51 @@ class StorageDisk implements Storage {
 
     }
 
-    RandomAccessFile getRaf(long offset) throws IOException {
-        int fileNumber = (int) (offset / MAX_FILE_SIZE);
+    RandomAccessFile getRaf(long pageNumber) throws IOException {
+
+        int fileNumber = (int) (Math.abs(pageNumber)/PAGES_PER_FILE );
+
+        List<RandomAccessFile> c = pageNumber>=0 ? rafs : rafsTranslation;
 
         //increase capacity of array lists if needed
-        for (int i = rafs.size(); i <= fileNumber; i++) {
-            rafs.add(null);
+        for (int i = c.size(); i <= fileNumber; i++) {
+            c.add(null);
         }
 
-        RandomAccessFile ret = rafs.get(fileNumber);
+        RandomAccessFile ret = c.get(fileNumber);
         if (ret == null) {
-            String name = fileName + "." + fileNumber;
-            ret = new RandomAccessFile(name, "rw");
-            rafs.set(fileNumber, ret);
+            String name = fileName + (pageNumber>=0 ? DBR : IDR) + "." + fileNumber;
+            ret = new RandomAccessFile(name, readonly?"r":"rw");
+            c.set(fileNumber, ret);
         }
         return ret;
-    }
 
-    /**
-     * Synchronizes the file.
-     */
-    public void sync() throws IOException {
-        for (RandomAccessFile file : rafs)
-            if (file != null)
-                file.getFD().sync();
     }
 
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
-        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
+        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();        
+        
         long offset = pageNumber * BLOCK_SIZE;
 
-        RandomAccessFile file = getRaf(offset);
+        RandomAccessFile file = getRaf(pageNumber);
 
-        if (lastPageNumber + 1 != pageNumber)
-            file.seek(offset % MAX_FILE_SIZE);
+//        if (lastPageNumber + 1 != pageNumber)      //TODO cache position again, so seek is not necessary
+            file.seek(Math.abs(offset % (PAGES_PER_FILE*BLOCK_SIZE)));
 
         file.write(data.array());
         lastPageNumber = pageNumber;
     }
 
-    public void forceClose() throws IOException {
-        for (RandomAccessFile f : rafs) {
-            if (f != null)
-                f.close();
-        }
-        rafs = null;
-    }
 
     public ByteBuffer read(long pageNumber) throws IOException {
         
         long offset = pageNumber * BLOCK_SIZE;
         ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
         
-        RandomAccessFile file = getRaf(offset);
-        if (lastPageNumber + 1 != pageNumber)
-            file.seek(offset % MAX_FILE_SIZE);
+        RandomAccessFile file = getRaf(pageNumber);
+//        if (lastPageNumber + 1 != pageNumber) //TODO cache position again, so seek is not necessary
+            file.seek(Math.abs(offset % (PAGES_PER_FILE*BLOCK_SIZE)));
         int remaining = buffer.limit();
         int pos = 0;
         while (remaining > 0) {
@@ -128,6 +116,32 @@ class StorageDisk implements Storage {
                 fileOut.getFD().sync();
             }
         };
+    }
+
+
+    /**
+     * Synchronizes the file.
+     */
+    public void sync() throws IOException {
+        for (RandomAccessFile file : rafs)
+            if (file != null)
+                file.getFD().sync();
+        for (RandomAccessFile file : rafsTranslation)
+            if (file != null)
+                file.getFD().sync();
+    }
+
+    public void forceClose() throws IOException {
+        for (RandomAccessFile f : rafs) {
+            if (f != null)
+                f.close();
+        }
+        rafs = null;
+        for (RandomAccessFile f : rafsTranslation) {
+            if (f != null)
+                f.close();
+        }
+        rafsTranslation = null;
     }
 
 

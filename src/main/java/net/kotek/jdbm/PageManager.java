@@ -55,20 +55,29 @@ final class PageManager {
             throw new Error("allocate of free page?");
 
         // do we have something on the free list?
-        long retval = header.getFirstOf(Magic.FREE_PAGE);
+        long retval = header.getFirstOf(Magic.FREE_PAGE);                
         boolean isNew = false;
-        if (retval != 0) {
-            // yes. Point to it and make the next of that page the
-            // new first free page.
-            header.setFirstOf(Magic.FREE_PAGE, getNext(retval));
-        } else {
-            // nope. make a new record
-            retval = header.getLastOf(Magic.FREE_PAGE);
-            if (retval == 0)
-                // very new file - allocate record #1
-                retval = 1;
-            header.setLastOf(Magic.FREE_PAGE, retval + 1);
-            isNew = true;
+        
+        if(type!=Magic.TRANSLATION_PAGE){
+        
+            if (retval != 0) {
+                // yes. Point to it and make the next of that page the
+                // new first free page.
+                header.setFirstOf(Magic.FREE_PAGE, getNext(retval));
+            } else {
+                // nope. make a new record
+                retval = header.getLastOf(Magic.FREE_PAGE);
+                if (retval == 0)
+                    // very new file - allocate record #1
+                    retval = 1;
+                header.setLastOf(Magic.FREE_PAGE, retval + 1);
+                isNew = true;
+            }
+        }else{
+            //translation blocks have different allocation scheme
+            //and also have negative address
+           retval = header.getLastOf(Magic.TRANSLATION_PAGE) - 1;
+           isNew = true;
         }
 
         // Cool. We have a record, add it to the correct list
@@ -111,6 +120,9 @@ final class PageManager {
     void free(short type, long recid) throws IOException {
         if (type == Magic.FREE_PAGE)
             throw new Error("free free page?");
+        if (type == Magic.TRANSLATION_PAGE)
+            throw new Error("Translation page can not be dealocated");
+
         if (recid == 0)
             throw new Error("free header page?");
 
