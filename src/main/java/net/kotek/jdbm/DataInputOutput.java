@@ -1,8 +1,10 @@
 package net.kotek.jdbm;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -234,4 +236,11 @@ class DataInputOutput implements DataInput, DataOutput {
         Serialization.serializeString(this, s);
     }
 
+    /** helper method to write data directly from BlockIO*/ 
+    public void writeFromByteBuffer(ByteBuffer b, int offset, int length) {
+        ensureAvail(length);
+        b.position(offset);
+        b.get(buf,pos,length);
+        pos+=length;
+    }
 }

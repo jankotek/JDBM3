@@ -16,7 +16,6 @@
 
 package net.kotek.jdbm;
 
-import java.io.DataOutput;
 import java.io.IOException;
 
 import static net.kotek.jdbm.Storage.*;
@@ -92,7 +91,7 @@ final class PhysicalRowIdManager {
         free(rowid);
     }
 
-    void fetch(DataOutput out, long rowid) throws IOException {
+    void fetch(DataInputOutput out, long rowid) throws IOException {
         // fetch the record header
         long current = Location.getBlock(rowid);
         BlockIo block = file.get(current);
@@ -115,8 +114,8 @@ final class PhysicalRowIdManager {
             if (leftToRead < toCopy) {
                 toCopy = leftToRead;
             }
-            int finish = dataOffset + toCopy;
-            out.write(block.getByteArray(), dataOffset, finish - dataOffset);
+
+            out.writeFromByteBuffer(block.getData(), dataOffset, toCopy);
 
             // Go to the next block
             leftToRead -= toCopy;
