@@ -99,9 +99,6 @@ class DBCache
     /** counter which counts number of insert since last 'action'*/
     protected int insertCounter = 0;
 
-    /** check every N inserts if we are low on memory.
-     * This check is also performed every 10 seconds */
-    static final private int AUTOCLEAR_EVERY_N_INSERTS = (int) 1e8;
     private boolean _autoClearReferenceCacheOnLowMem;
 
 
@@ -155,10 +152,6 @@ class DBCache
 
 
         if(_enableReferenceCache) synchronized(_softHash) {
-            
-            //check if it is necesary to clear reference cache to release some memory
-            if(insertCounter++ %AUTOCLEAR_EVERY_N_INSERTS==0)
-                clearCacheIfLowOnMem(false);
 
             if (_useSoftReference)
                 _softHash.put(recid, new SoftCacheEntry(recid, obj, _refQueue));
@@ -170,7 +163,7 @@ class DBCache
         return recid;
     }
 
-    void clearCacheIfLowOnMem(final boolean fromClearThread) {
+    void clearCacheIfLowOnMem() {
 
         insertCounter = 0;
 
@@ -188,7 +181,7 @@ class DBCache
         //Increasing heap size to max would increase to max
         free = free + (max-total);
 
-        if(debug && fromClearThread)
+        if(debug)
             System.err.println("DBCache: freemem = " +free + " = "+(free/max)+"%");
 
         if(free<1e7 || free*4 <max)
@@ -281,8 +274,6 @@ class DBCache
                 cachePut(recid, value, serializer, false);
             else { //put record into soft cache
                 synchronized (_softHash) {
-                    if(insertCounter++ %AUTOCLEAR_EVERY_N_INSERTS==0)
-                        clearCacheIfLowOnMem(false);
 
                     if (_useSoftReference)
                         _softHash.put(recid, new SoftCacheEntry(recid, value, _refQueue));
@@ -606,7 +597,7 @@ class DBCache
                     }
                 }else{
                     //check memory consumption every 10 seconds
-                    db.clearCacheIfLowOnMem(true);
+                    db.clearCacheIfLowOnMem();
 
                 }
                 
