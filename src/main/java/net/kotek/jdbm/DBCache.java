@@ -346,7 +346,7 @@ class DBCache
      */
     protected CacheEntry cacheGet(long key) {
         CacheEntry entry = _hash.get(key);
-        if (entry != null && _last != entry) {
+        if (!_enableReferenceCache && entry != null && _last != entry) {
             //touch entry
             removeEntry(entry);
             addEntry(entry);
