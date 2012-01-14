@@ -532,7 +532,7 @@ class DBCache
 
                 //collect next item from cache,
                 //limit 10000 ms is to keep periodically checking if db was GCed
-                SoftCacheEntry e = (SoftCacheEntry) entryQueue.remove(10000);
+                ReferenceCacheEntry e = (ReferenceCacheEntry) entryQueue.remove(10000);
 
                 //check if  db was GCed, cancel in that case
                 DBCache db = db2.get();
@@ -541,7 +541,7 @@ class DBCache
                 if (e != null) {
                     synchronized (db._softHash) {
                         while (e != null) {
-                            db._softHash.remove(e._recid);
+                            db._softHash.remove(e.getRecid());
                             e = (SoftCacheEntry) entryQueue.poll();
                         }
                     }
