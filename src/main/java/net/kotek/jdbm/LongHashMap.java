@@ -30,8 +30,6 @@ import java.util.NoSuchElementException;
  * This class was modified to use primitive longs and stripped down to consume less space.
  * <p/>
  * Author of JDBM modifications: Jan Kotek
- * <p/>
- * Note: This map have weakened hash function, this works well for JDBM, but may be wrong for many other applications.
  */
 class LongHashMap<V> implements Serializable {
     private static final long serialVersionUID = 362499999763181265L;
@@ -55,31 +53,6 @@ class LongHashMap<V> implements Serializable {
         V value;
 
         long key;
-
-        public boolean equals(Object object) {
-            if (this == object) {
-                return true;
-            }
-            if (object instanceof Entry) {
-                Entry<?> entry = (Entry) object;
-                return (key == entry.key)
-                        && (value == null ? entry.value == null : value
-                        .equals(entry.value));
-            }
-            return false;
-        }
-
-
-        public int hashCode() {
-            return (int) (key)
-                    ^ (value == null ? 0 : value.hashCode());
-        }
-
-
-        public String toString() {
-            return key + "=" + value;
-        }
-
 
         Entry(long theKey) {
             this.key = theKey;
@@ -232,6 +205,7 @@ class LongHashMap<V> implements Serializable {
             elementData = new Entry[defaultSize];
         else
             Arrays.fill(elementData, null);
+        computeMaxSize();
     }
     // END android-changed
 
@@ -259,7 +233,7 @@ class LongHashMap<V> implements Serializable {
 
     public V get(final long key) {
 
-        final int hash = (int) key;
+        final int hash = powerHash(key);
         final int index = (hash & 0x7FFFFFFF) % elementData.length;
 
         //find non null entry
@@ -313,9 +287,9 @@ class LongHashMap<V> implements Serializable {
      */
 
 
-    public V put(long key, V value) {
+    public V put(final long key, final V value) {
 
-        int hash = (int) (key);
+        int hash = powerHash(key);
         int index = (hash & 0x7FFFFFFF) % elementData.length;
 
         //find non null entry
@@ -339,7 +313,7 @@ class LongHashMap<V> implements Serializable {
     }
 
 
-    Entry<V> createHashedEntry(long key, int index) {
+    Entry<V> createHashedEntry(final long key, final int index) {
         Entry<V> entry = reuseAfterDelete;
         if (entry == null) {
             entry = new Entry<V>(key);
@@ -355,14 +329,14 @@ class LongHashMap<V> implements Serializable {
     }
 
 
-    void rehash(int capacity) {
+    void rehash(final int capacity) {
         int length = (capacity == 0 ? 1 : capacity << 1);
 
         Entry<V>[] newData = newElementArray(length);
         for (int i = 0; i < elementData.length; i++) {
             Entry<V> entry = elementData[i];
             while (entry != null) {
-                int index = ((int) entry.key & 0x7FFFFFFF) % length;
+                int index = ((int) powerHash(entry.key) & 0x7FFFFFFF) % length;
                 Entry<V> next = entry.next;
                 entry.next = newData[index];
                 newData[index] = entry;
@@ -401,7 +375,7 @@ class LongHashMap<V> implements Serializable {
     Entry<V> removeEntry(final long key) {
         Entry<V> last = null;
 
-        final int hash = (int) (key);
+        final int hash = powerHash(key);
         final int index = (hash & 0x7FFFFFFF) % elementData.length;
         Entry<V> entry = elementData[index];
 
@@ -442,6 +416,12 @@ class LongHashMap<V> implements Serializable {
     public Iterator<V> valuesIterator() {
         return new HashMapIterator<V>(this);
 
+    }
+    
+    static final private int powerHash(final long key){
+        int h = (int)(key ^ (key >>> 32));
+        h ^= (h >>> 20) ^ (h >>> 12);
+        return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
 
