@@ -39,6 +39,7 @@ public class DBMaker {
     private boolean readonly = false;
     private String password = null;
     private boolean useRandomAccessFile = false;
+    private boolean autoClearRefCacheOnLowMem = true;
 
 
     /**
@@ -106,20 +107,22 @@ public class DBMaker {
         return this;
     }
 
-
     /**
-     * Set cache type automatically depending on availably memory.
-     * If availably memory size is bellow 50 MB, 'Most Recently Used' cache with 512 records will be used.
-     * Otherwise SoftReference cache will be used.
-     * <p/>
-     * This is default cache setting.
+     * If reference (soft or weak) cache is enabled, we do not trust Garbage Collector much.
+     * Instead JDBM periodicaly checks amount of free heap memory.
+     * If free memory is less than 25% or 10MB,
+     * JDBM completely clears its reference cache to prevent possible memory issues.
+     * <p>
+     * Calling this method disables auto cache clearing when mem is low.
+     * And of course it can cause some out of memory exceptions.
      *
      * @return this builder
      */
-    public DBMaker enableAutoCache() {
-        cacheType = "auto";
+    public DBMaker disableAutoClearReferenceCacheOnLowMemory(){
+        this.autoClearRefCacheOnLowMem = false;
         return this;
     }
+
 
     /**
      * Enabled storage encryption using AES cipher
@@ -245,11 +248,11 @@ public class DBMaker {
 
 
         if ("mru".equals(cacheType)) {
-            db = new DBCache((DBStore) db, mruCacheSize, false, true);
+            db = new DBCache((DBStore) db, mruCacheSize, false, true,autoClearRefCacheOnLowMem);
         } else if ("soft".equals(cacheType)) {
-            db = new DBCache((DBStore) db, 0, true, true);
+            db = new DBCache((DBStore) db, 0, true, true,autoClearRefCacheOnLowMem);
         } else if ("weak".equals(cacheType)) {
-            db = new DBCache((DBStore) db, 0, true, false);
+            db = new DBCache((DBStore) db, 0, true, false,autoClearRefCacheOnLowMem);
 
         } else if ("none".equals(cacheType)) {
             //do nothing

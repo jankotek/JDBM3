@@ -35,6 +35,8 @@ import java.util.Iterator;
 class DBCache
         extends DBAbstract {
 
+    private static final boolean debug = false;
+
     /**
      * Wrapped DB
      */
@@ -91,8 +93,16 @@ class DBCache
     /**
      * End of linked-list of cache elements.  Last entry is element
      * which has been used most recently.
-     */
+     */        
     protected CacheEntry _last;
+
+    /** counter which counts number of insert since last 'action'*/
+    protected int insertCounter = 0;
+
+    /** check every N inserts if we are low on memory.
+     * This check is also performed every 10 seconds */
+    static final private int AUTOCLEAR_EVERY_N_INSERTS = (int) 1e8;
+    private boolean _autoClearReferenceCacheOnLowMem;
 
 
     /**
@@ -104,7 +114,9 @@ class DBCache
      * @param enableReferenceCache if cache using WeakReference or SoftReference should be enabled
      * @param useSoftReference     if reference cache is enabled, decides beetween Soft or Weak reference
      */
-    public DBCache(DBStore db, int maxRecords, boolean enableReferenceCache, boolean useSoftReference) {
+    public DBCache(DBStore db, int maxRecords,
+                   boolean enableReferenceCache, boolean useSoftReference,
+                   boolean autoClearReferenceCacheOnLowMem) {
         if (db == null) {
             throw new IllegalArgumentException("Argument 'db' is null");
         }
@@ -113,6 +125,7 @@ class DBCache
         _max = maxRecords;
         _enableReferenceCache = enableReferenceCache;
         _useSoftReference = useSoftReference;
+        _autoClearReferenceCacheOnLowMem = autoClearReferenceCacheOnLowMem;
 
         if (enableReferenceCache) {
             _softHash = new LongHashMap<ReferenceCacheEntry>();
@@ -139,7 +152,14 @@ class DBCache
         long recid = _db.insert(obj, serializer);
 
 
+
+
         if(_enableReferenceCache) synchronized(_softHash) {
+            
+            //check if it is necesary to clear reference cache to release some memory
+            if(insertCounter++ %AUTOCLEAR_EVERY_N_INSERTS==0)
+                clearCacheIfLowOnMem(false);
+
             if (_useSoftReference)
                 _softHash.put(recid, new SoftCacheEntry(recid, obj, _refQueue));
             else
@@ -148,6 +168,33 @@ class DBCache
         	cachePut(  recid , obj, serializer, false );
         }
         return recid;
+    }
+
+    void clearCacheIfLowOnMem(final boolean fromClearThread) {
+
+        insertCounter = 0;
+
+        if(!_autoClearReferenceCacheOnLowMem)
+            return;
+
+        Runtime r = Runtime.getRuntime();
+        long max = r.maxMemory();
+        if(max == Long.MAX_VALUE)
+            return;
+
+        double free = r.freeMemory();
+        double total = r.totalMemory();
+        //We believe that free refers to total not max.
+        //Increasing heap size to max would increase to max
+        free = free + (max-total);
+
+        if(debug && fromClearThread)
+            System.err.println("DBCache: freemem = " +free + " = "+(free/max)+"%");
+
+        if(free<1e7 || free*4 <max)
+            clearCache();
+
+
     }
 
     public synchronized <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache) throws IOException {
@@ -234,6 +281,9 @@ class DBCache
                 cachePut(recid, value, serializer, false);
             else { //put record into soft cache
                 synchronized (_softHash) {
+                    if(insertCounter++ %AUTOCLEAR_EVERY_N_INSERTS==0)
+                        clearCacheIfLowOnMem(false);
+
                     if (_useSoftReference)
                         _softHash.put(recid, new SoftCacheEntry(recid, value, _refQueue));
                     else
@@ -507,6 +557,8 @@ class DBCache
             super(obj, queue);
             _recid = recid;
         }
+
+
     }
 
 
@@ -538,14 +590,26 @@ class DBCache
                 DBCache db = db2.get();
                 if (db == null)
                     return;
+
                 if (e != null) {
+                    
                     synchronized (db._softHash) {
+                        int counter = 0;
                         while (e != null) {
                             db._softHash.remove(e.getRecid());
                             e = (SoftCacheEntry) entryQueue.poll();
+                            if(debug)
+                                counter++;
                         }
+                        if(debug)
+                            System.err.println("DBCache: "+counter+" objects released from ref cache.");
                     }
+                }else{
+                    //check memory consumption every 10 seconds
+                    db.clearCacheIfLowOnMem(true);
+
                 }
+                
 
             } catch (InterruptedException e) {
                 return;
@@ -560,6 +624,8 @@ class DBCache
 
 
     public void clearCache() {
+        if(debug)
+            System.err.println("DBCache: Clear cache");
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
@@ -568,7 +634,7 @@ class DBCache
 
         if (_enableReferenceCache) synchronized (_softHash) {
             Iterator<ReferenceCacheEntry> iter = _softHash.valuesIterator();
-            while (iter.hasNext()) {
+            while (iter.hasNext()) {                
                 ReferenceCacheEntry e = iter.next();
                 e.clear();
             }

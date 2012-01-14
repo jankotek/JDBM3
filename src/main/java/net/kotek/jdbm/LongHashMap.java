@@ -44,7 +44,7 @@ class LongHashMap<V> implements Serializable {
 
     private int threshold;
 
-    private static final int DEFAULT_SIZE = 16;
+    private int defaultSize = 16;
 
     private transient Entry<V> reuseAfterDelete = null;
 
@@ -191,7 +191,7 @@ class LongHashMap<V> implements Serializable {
      * @since Android 1.0
      */
     public LongHashMap() {
-        this(DEFAULT_SIZE);
+        this(16);
     }
 
     /**
@@ -202,6 +202,7 @@ class LongHashMap<V> implements Serializable {
      * @since Android 1.0
      */
     public LongHashMap(int capacity) {
+        defaultSize = capacity;
         if (capacity >= 0) {
             elementCount = 0;
             elementData = newElementArray(capacity == 0 ? 1 : capacity);
@@ -224,10 +225,13 @@ class LongHashMap<V> implements Serializable {
      */
 
     public void clear() {
-        if (elementCount > 0) {
-            elementCount = 0;
-            Arrays.fill(elementData, null);
+        if (elementCount > 0) {            
+            elementCount = 0;            
         }
+        if(elementData.length>1024 && elementData.length>defaultSize)
+            elementData = new Entry[defaultSize];
+        else
+            Arrays.fill(elementData, null);
     }
     // END android-changed
 
