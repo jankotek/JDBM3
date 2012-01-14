@@ -298,7 +298,6 @@ final class PhysicalRowIdManager {
                 toCopy = leftToWrite;
             }
             block.writeByteArray(data,offsetInBuffer,dataOffset,toCopy);
-            System.arraycopy(data, offsetInBuffer, block.getByteArray(), dataOffset, toCopy);
 
             // Go to the next block
             leftToWrite -= toCopy;
