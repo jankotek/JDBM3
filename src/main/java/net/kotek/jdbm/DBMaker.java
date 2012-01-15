@@ -121,8 +121,9 @@ public class DBMaker {
     }
 
     /**
-     * If reference (soft or weak) cache is enabled, we do not trust Garbage Collector much.
-     * Instead JDBM periodicaly checks amount of free heap memory.
+     * If reference (soft,weak or hard) cache is enabled,
+     * GC may not release references fast enough (or not at all in case of hard cache).
+     * So JDBM periodically checks amount of free heap memory.
      * If free memory is less than 25% or 10MB,
      * JDBM completely clears its reference cache to prevent possible memory issues.
      * <p>
@@ -131,7 +132,7 @@ public class DBMaker {
      *
      * @return this builder
      */
-    public DBMaker disableAutoClearReferenceCacheOnLowMemory(){
+    public DBMaker disableCacheAutoClear(){
         this.autoClearRefCacheOnLowMem = false;
         return this;
     }
