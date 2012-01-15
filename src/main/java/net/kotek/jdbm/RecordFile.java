@@ -86,7 +86,7 @@ final class RecordFile {
         this.cipherOut = cipherOut;
         this.transactionsDisabled = transactionsDisabled;
         if(fileName == null){
-            this.storage = new StorageMemory();
+            this.storage = new StorageMemory(transactionsDisabled);
         }else if (fileName.contains("!/"))
             this.storage = new StorageZip(fileName);
         else if(useRandomAccessFile)

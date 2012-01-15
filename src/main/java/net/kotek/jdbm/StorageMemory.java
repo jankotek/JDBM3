@@ -10,36 +10,48 @@ import java.util.ArrayList;
  */
 class StorageMemory implements Storage {
 
-    private ArrayList<byte[]> pages = new ArrayList<byte[]>();
-    private ArrayList<byte[]> pagesLogical = new ArrayList<byte[]>();
+    private LongHashMap<byte[]> pages = new LongHashMap<byte[]>();
+    private boolean transactionsDisabled;
+
+    StorageMemory(boolean transactionsDisabled){
+        this.transactionsDisabled = transactionsDisabled;
+    }
 
 
     public ByteBuffer read(long pageNumber) throws IOException {
-        
-        ArrayList<byte[]> p = pageNumber<0 ? pagesLogical : pages;
-        pageNumber = Math.abs(pageNumber);
 
-        if (p.size() <=  pageNumber || p.get((int) pageNumber) == null) {
+        byte[] data = pages.get(pageNumber);
+        if (data == null) {
             //out of bounds, so just return empty data
             return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+        }else{
+            ByteBuffer b = ByteBuffer.wrap(data);
+            if(!transactionsDisabled)
+                return b.asReadOnlyBuffer();
+            else
+                return b;
         }
 
-        byte[] data = p.get((int) pageNumber);
-        return ByteBuffer.wrap(data).asReadOnlyBuffer();
+
     }
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
         if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
 
-        ArrayList<byte[]> p = pageNumber<0 ? pagesLogical : pages;
-        pageNumber = Math.abs(pageNumber);
+        byte[] b = pages.get(pageNumber);
 
-        byte[] data2 = new byte[BLOCK_SIZE];
-        System.arraycopy(data.array(), 0, data2, 0, BLOCK_SIZE);
+        if(transactionsDisabled && data.hasArray() && data.array() == b){
+            //already putted directly into array
+            return;
+        }
 
-        p.ensureCapacity((int) (pageNumber + 1));
-        while(p.size()<=pageNumber+1)p.add(null);
-        p.set((int) pageNumber, data2);
+        
+        if(b == null)
+            b = new byte[BLOCK_SIZE];
+        
+        data.position(0);
+        data.get(b,0,BLOCK_SIZE);
+        pages.put(pageNumber,b);
     }
 
     public void sync() throws IOException {
