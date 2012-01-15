@@ -30,7 +30,7 @@ import java.security.spec.KeySpec;
  */
 public class DBMaker {
 
-    private String cacheType = "mru";
+    private byte cacheType = DBCache.MRU;
     private int mruCacheSize = 2048;
 
     private String location = null;
@@ -63,7 +63,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableWeakCache() {
-        cacheType = "weak";
+        cacheType = DBCache.WEAK;
         return this;
     }
 
@@ -75,9 +75,23 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableSoftCache() {
-        cacheType = "soft";
+        cacheType = DBCache.SOFT;
         return this;
     }
+
+    /**
+     * Use hard reference for cache.
+     * This greatly improves performance if there is enought memory
+     * Hard cache has smaller memory overhead then Soft or Weak, because
+     * reference objects and queue does not have to be maintained
+     *
+     * @return this builder
+     */
+    public DBMaker enableHardCache() {
+        cacheType = DBCache.SOFT;
+        return this;
+    }
+
 
     /**
      * Use 'Most Recently Used' cache with limited size.
@@ -89,7 +103,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableMRUCache() {
-        cacheType = "mru";
+        cacheType = DBCache.MRU;
         return this;
     }
 
@@ -102,8 +116,7 @@ public class DBMaker {
      */
     public DBMaker setMRUCacheSize(int cacheSize) {
         if (cacheSize < 0) throw new IllegalArgumentException("Cache size is smaller than zero");
-        cacheType = "mru";
-        this.mruCacheSize = cacheSize;
+        cacheType = DBCache.MRU;
         return this;
     }
 
@@ -155,7 +168,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker disableCache() {
-        cacheType = "none";
+        cacheType = DBCache.NONE;
         return this;
     }
 
@@ -247,14 +260,17 @@ public class DBMaker {
 
 
 
-        if ("mru".equals(cacheType)) {
-            db = new DBCache((DBStore) db, mruCacheSize, false, true,autoClearRefCacheOnLowMem);
-        } else if ("soft".equals(cacheType)) {
-            db = new DBCache((DBStore) db, 0, true, true,autoClearRefCacheOnLowMem);
-        } else if ("weak".equals(cacheType)) {
-            db = new DBCache((DBStore) db, 0, true, false,autoClearRefCacheOnLowMem);
+        if (cacheType == DBCache.MRU) {
+            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
+        } else if (cacheType == DBCache.SOFT) {
+            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
+        } else if (cacheType == DBCache.HARD) {
+            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
 
-        } else if ("none".equals(cacheType)) {
+        } else if (cacheType == DBCache.WEAK) {
+            db = new DBCache((DBStore) db, mruCacheSize, cacheType, autoClearRefCacheOnLowMem);
+
+        } else if (cacheType == DBCache.NONE) {
             //do nothing
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
