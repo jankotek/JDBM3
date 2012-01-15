@@ -518,11 +518,8 @@ final class DBStore
 
         try {
             checkIfClosed();
-            _physMgr.roolback();
-
-            _physMgr.commit();
-            _logicMgr.commit(); //TODO find why commit is here !!!
-
+            _physMgr.rollback();
+            _logicMgr.rollback();
             _pageman.rollback();
             defaultSerializer = null;
         } catch (IOException e) {

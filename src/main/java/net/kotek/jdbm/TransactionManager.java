@@ -41,17 +41,6 @@ final class TransactionManager {
     // streams for transaction log.
     private DataOutputStream oos;
 
-    /**
-     * By default, we keep 10 transactions in the log file before
-     * synchronizing it with the main database file.
-     */
-    static final int DEFAULT_TXNS_IN_LOG = 1;
-
-    /**
-     * Maximum number of transactions before the log file is
-     * synchronized with the main database file.
-     */
-    private int _maxTxns = DEFAULT_TXNS_IN_LOG;
 
     /**
      * In-core copy of transactions. We could read everything back from
@@ -59,7 +48,7 @@ final class TransactionManager {
      * core anyway, so we might as well point to them and spare us a lot
      * of hassle.
      */
-    private ArrayList<BlockIo>[] txns = new ArrayList[DEFAULT_TXNS_IN_LOG];
+    private ArrayList<BlockIo> txn = new ArrayList<BlockIo>();
     private int curTxn = -1;
 
     private Storage storage;
@@ -98,27 +87,6 @@ final class TransactionManager {
     }
 
 
-    /**
-     * Set the maximum number of transactions to record in
-     * the log (and keep in memory) before the log is
-     * synchronized with the main database file.
-     * <p/>
-     * This method must be called while there are no
-     * pending transactions in the log.
-     */
-    public void setMaximumTransactionsInLog(int maxTxns)
-            throws IOException {
-        if (maxTxns <= 0) {
-            throw new IllegalArgumentException(
-                    "Argument 'maxTxns' must be greater than 0.");
-        }
-        if (curTxn != -1) {
-            throw new IllegalStateException(
-                    "Cannot change setting while transactions are pending in the log");
-        }
-        _maxTxns = maxTxns;
-        txns = new ArrayList[maxTxns];
-    }
 
 
     /**
@@ -131,12 +99,11 @@ final class TransactionManager {
 
         int numBlocks = 0;
         int writtenBlocks = 0;
-        for (int i = 0; i < _maxTxns; i++) {
-            if (txns[i] == null)
-                continue;
+
+        if(txn!=null){
             // Add each block to the blockList, replacing the old copy of this
             // block if necessary, thus avoiding writing the same block twice
-            for (Iterator<BlockIo> k = txns[i].iterator(); k.hasNext(); ) {
+            for (Iterator<BlockIo> k = txn.iterator(); k.hasNext(); ) {
                 BlockIo block = k.next();
                 if (blockList.contains(block)) {
                     block.decrementTransactionCount();
@@ -147,8 +114,9 @@ final class TransactionManager {
                 numBlocks++;
             }
 
-            txns[i] = null;
+            txn = null;
         }
+
         // Write the blocks from the blockList to disk
         synchronizeBlocks(blockList, true);
 
@@ -249,11 +217,11 @@ final class TransactionManager {
      */
     void start() throws IOException {
         curTxn++;
-        if (curTxn == _maxTxns) {
+        if (curTxn == 1) {
             synchronizeLogFromMemory();
             curTxn = 0;
         }
-        txns[curTxn] = new ArrayList();
+        txn = new ArrayList();
     }
 
     /**
@@ -261,16 +229,15 @@ final class TransactionManager {
      */
     void add(BlockIo block) throws IOException {
         block.incrementTransactionCount();
-        txns[curTxn].add(block);
+        txn.add(block);
     }
 
     /**
      * Commits the transaction to the log file.
      */
     void commit() throws IOException {
-        ArrayList<BlockIo> blocks = txns[curTxn];
-        LongPacker.packInt(oos, blocks.size());
-        for (BlockIo block : blocks) {
+        LongPacker.packInt(oos, txn.size());
+        for (BlockIo block : txn) {
             block.writeExternal(oos, cipherIn);
         }
 
@@ -278,7 +245,7 @@ final class TransactionManager {
         sync();
 
         // set clean flag to indicate blocks have been written to log
-        setClean(txns[curTxn]);
+        setClean(txn);
 
         // open a new ObjectOutputStream in order to store
         // newer states of BlockIo
@@ -327,11 +294,10 @@ final class TransactionManager {
     void synchronizeLogFromDisk() throws IOException {
         close();
 
-        for (int i = 0; i < _maxTxns; i++) {
-            if (txns[i] == null)
-                continue;
-            discardBlocks(txns[i]);
-            txns[i] = null;
+
+        if (txn != null){
+            discardBlocks(txn);
+            txn = null;
         }
 
         recover();

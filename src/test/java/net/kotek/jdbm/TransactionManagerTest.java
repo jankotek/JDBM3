@@ -76,7 +76,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
         RecordFile file1 = new RecordFile(file);
 
         // Do enough transactions to fill the first slot
-        int txnCount = TransactionManager.DEFAULT_TXNS_IN_LOG + 5;
+        int txnCount = 1;
         for (int i = 0; i < txnCount; i++) {
             BlockIo node = file1.get(i);
             node.setDirty();
@@ -86,7 +86,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
         file1.forceClose();
 
         // The data file now has the first slotfull
-        assertDataSizeEquals("len1", TransactionManager.DEFAULT_TXNS_IN_LOG *
+        assertDataSizeEquals("len1", 1 *
                 Storage.BLOCK_SIZE + 6);
         assertLogSizeNotZero("len1");
 

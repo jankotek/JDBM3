@@ -139,4 +139,8 @@ final class FreeLogicalRowIdPageManager {
         freeBlocksInTransactionRowid.clear();
 
     }
+    
+    public void rollback(){
+        freeBlocksInTransactionRowid.clear();
+    }
 }

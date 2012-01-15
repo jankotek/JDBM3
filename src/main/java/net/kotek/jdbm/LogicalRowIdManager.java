@@ -143,4 +143,9 @@ final class LogicalRowIdManager {
         freeman.commit();
     }
 
+    void rollback() throws IOException {
+        freeman.rollback();
+    }
+
+
 }
