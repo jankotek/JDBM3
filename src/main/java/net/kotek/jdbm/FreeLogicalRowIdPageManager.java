@@ -58,7 +58,7 @@ final class FreeLogicalRowIdPageManager {
         long retval = 0;
         for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
             BlockIo fp = file.get(current);
-            int slot = fp.FreeLogicalRowId_getFirstAllocated();
+            short slot = fp.FreeLogicalRowId_getFirstAllocated();
             if (slot != -1) {
                 // got one!
                 retval = fp.FreeLogicalRowId_slotToLocation(slot);
@@ -96,7 +96,7 @@ final class FreeLogicalRowIdPageManager {
         for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
 
             BlockIo fp = file.get(current);
-            int slot = fp.FreeLogicalRowId_getFirstFree();
+            short slot = fp.FreeLogicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
                 long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
@@ -116,7 +116,7 @@ final class FreeLogicalRowIdPageManager {
             //allocate new page
             long freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
             BlockIo fp = file.get(freePage);
-            int slot = fp.FreeLogicalRowId_getFirstFree();
+            short slot = fp.FreeLogicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
                 long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];

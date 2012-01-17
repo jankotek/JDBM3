@@ -619,46 +619,52 @@ final class BlockIo {
     /**
      * Frees a slot
      */
-    void  FreeLogicalRowId_free(int slot) {
+    void  FreeLogicalRowId_free(short slot) {
         pageHeaderSetLocationBlock(FreeLogicalRowId_slotToOffset(slot), 0);
         //get(slot).setBlock(0);
         FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() - 1));
 
         // update previousFoundFree if the freed slot is before what we've found in the past
-        if (slot < previousFoundFree)
-            previousFoundFree = slot;
+        if (slot < readShort(FreeLogicalRowId_O_LAST_FREE))
+            writeShort(FreeLogicalRowId_O_LAST_FREE,slot);
     }
 
     /**
      * Allocates a slot
      */
-    short  FreeLogicalRowId_alloc(int slot) {
+    short  FreeLogicalRowId_alloc(short slot) {
         FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() + 1));
         short pos =  FreeLogicalRowId_slotToOffset(slot);
         pageHeaderSetLocationBlock(pos, -1);
         //get(slot).setBlock(-1);
 
         // update previousFoundAllocated if the newly allocated slot is before what we've found in the past
-        if (slot < previousFoundAllocated)
-            previousFoundAllocated = slot;
+        if (slot < readShort(FreeLogicalRowId_O_LAST_ALOC))
+            writeShort(FreeLogicalRowId_O_LAST_ALOC,slot);
 
         return pos;
     }
 
 
 
-    int  FreeLogicalRowId_getFirstFree() {
+    short  FreeLogicalRowId_getFirstFree() {
+        short previousFoundFree = readShort(FreeLogicalRowId_O_LAST_FREE);
         for (; previousFoundFree < Magic.FreeLogicalRowId_ELEMS_PER_PAGE; previousFoundFree++) {
-            if ( FreeLogicalRowId_isFree(previousFoundFree))
+            if ( FreeLogicalRowId_isFree(previousFoundFree)){
+                writeShort(FreeLogicalRowId_O_LAST_FREE,previousFoundFree);
                 return previousFoundFree;
+            }
         }
         return -1;
     }
 
-    int  FreeLogicalRowId_getFirstAllocated() {
+    short  FreeLogicalRowId_getFirstAllocated() {
+        short previousFoundAllocated = readShort(FreeLogicalRowId_O_LAST_ALOC);;
         for (; previousFoundAllocated < Magic.FreeLogicalRowId_ELEMS_PER_PAGE; previousFoundAllocated++) {
-            if ( FreeLogicalRowId_isAllocated(previousFoundAllocated))
+            if ( FreeLogicalRowId_isAllocated(previousFoundAllocated)){
+                writeShort(FreeLogicalRowId_O_LAST_ALOC,previousFoundAllocated);
                 return previousFoundAllocated;
+            }
         }
         return -1;
     }
@@ -669,9 +675,6 @@ final class BlockIo {
     }
 
 
-    //TODO move cache fields away from this class
-    private int previousFoundFree = 0; // keeps track of the most recent found free slot so we can locate it again quickly
-    private int previousFoundAllocated = 0; // keeps track of the most recent found allocated slot so we can locate it again quickly
 
 
 }

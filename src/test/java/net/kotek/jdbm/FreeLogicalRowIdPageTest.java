@@ -33,9 +33,9 @@ public class FreeLogicalRowIdPageTest extends TestCase {
         assertEquals("zero count", 0, page.FreeLogicalRowId_getCount());
 
         // three allocs
-        short id = page.FreeLogicalRowId_alloc(0);
-        id = page.FreeLogicalRowId_alloc(1);
-        id = page.FreeLogicalRowId_alloc(2);
+        short id = page.FreeLogicalRowId_alloc((short) 0);
+        id = page.FreeLogicalRowId_alloc((short) 1);
+        id = page.FreeLogicalRowId_alloc((short) 2);
         assertEquals("three count", 3, page.FreeLogicalRowId_getCount());
 
         // setup last id (2)
@@ -43,8 +43,8 @@ public class FreeLogicalRowIdPageTest extends TestCase {
         page.pageHeaderSetLocationOffset(id, (short) 2);
 
         // two frees
-        page.FreeLogicalRowId_free(0);
-        page.FreeLogicalRowId_free(1);
+        page.FreeLogicalRowId_free((short) 0);
+        page.FreeLogicalRowId_free((short) 1);
         assertEquals("one left count", 1, page.FreeLogicalRowId_getCount());
         assertTrue("isfree 0", page.FreeLogicalRowId_isFree(0));
         assertTrue("isfree 1", page.FreeLogicalRowId_isFree(1));
