@@ -1,28 +1,23 @@
 JDBM provides HashMap, TreeMap, HashSet, TreeSet and LinkedList backed up by disk storage.
-Now you can insert billion records into collection without running out of memory.
-JDBM is probably fastest and easiest to use pure Java database.
+Now you can insert more than a billion records into collection without running out of memory.
+JDBM is probably the fastest pure Java database.
 
-JDBM has minimal size with standalone jar only taking 160 KB (80KB stripped). Yet it is packed with
+JDBM is tiny with its standalone jar only taking 160 KB (80KB if stripped). Yet it is packed with
 impressive features such as: space effective serialization, transactions, MRU/soft/weak instance cache,
 defragmentation, transparent encryption and compression.
 
-JDBM has outstanding performance, it can insert 1 million records per second and read even faster.
-Unlike most competitors it keeps high performance even with huge number of records (1e9).
-Our tests shows that it is 4 times faster than BerkleyDB Java Edition and only 2 times slower than
-Tokyo Cabinet (probably fastest db written in C++).
+JDBM has outstanding performance; it can insert a million records per second and read them even faster.
+Unlike most of its competitors, it keeps high performance even with a huge number of records (1e12).
+Our tests show that it is 4 times faster than BerkleyDB Java Edition and only 2 times slower than
+Tokyo Cabinet (probably the fastest db written in C++).
 
-Performance is side effect of author's obsession with minimal overhead.
-JDBM runs great even on systems with limited memory or poor Garbage Collector (Android).
-Data are read directly without copying using mapped memory buffers.
-Most logic is implemented using primitive numbers and arrays. JDBM hardly ever creates new object
+Its performance is a side effect of the author's obsession with minimal overhead.
+JDBM runs great even on systems with limited memory and poor Garbage Collector (Android).
+Data are read directly without copying, simply by using mapped memory buffers.
+Most of the logic is implemented using primitive numbers and arrays. JDBM hardly ever creates new object
 instances for its internal use. It also uses advanced techniques to minimise consumed disk space.
 
-On top of that JDBM offers various deployment modes. You can store data on disk, memory,
-zip/jar file. DB can be encrypted using password or quickly backuped to zip file.
-Various stores can be also combined, for example DB deployed over webstart with modifications
-stored in users folder. JDBM truly is swiss army knife for most of your storage needs.
-
-And best of all JDBM is opensource and free-as-beer under Apache 2.0 license.
+Last but not least, JDBM is opensource and free-as-beer under Apache 2.0 license.
 
 Usage example
 -------------
