@@ -67,7 +67,15 @@ class StorageMemory implements Storage {
     public DataInputStream readTransactionLog() {
         if (transLog == null)
             return null;
-        return new DataInputStream(new ByteArrayInputStream(transLog.toByteArray()));
+        DataInputStream ret =  new DataInputStream(
+                new ByteArrayInputStream(transLog.toByteArray()));
+        //read stream header
+        try {
+            ret.readShort();
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+        return ret;
     }
 
     public void deleteTransactionLog() {
