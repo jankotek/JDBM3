@@ -32,7 +32,6 @@ Usage example
                 String fileName = "helloWorld";
                 DB db = new DBMaker(fileName)
                         .enableSoftCache()
-                        .enableEncryption("password")
                         .build();
 
                 /** Creates TreeMap which stores data in database. */
