@@ -341,12 +341,42 @@ public class SerializationTest extends TestCase {
        assertTrue(Arrays.equals(l, (int[]) deserialize));
      }
 
-//TODO this test fails
-//    public void testNegativeShortArray() throws ClassNotFoundException, IOException {
-//       short[] l = new short[] { -12 };
-//       Object deserialize = ser.deserialize(ser.serialize(l));
-//        assertTrue(Arrays.equals(l, (short[]) deserialize));
-//     }
+
+    public void testNegativeShortArray() throws ClassNotFoundException, IOException {
+       short[] l = new short[] { -12 };
+       Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (short[]) deserialize));
+     }
+
+    public void testBooleanArray() throws ClassNotFoundException, IOException {
+        boolean[] l = new boolean[] { true,false };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (boolean[]) deserialize));
+    }
+
+    public void testDoubleArray() throws ClassNotFoundException, IOException {
+        double[] l = new double[] { Math.PI, 1D };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (double[]) deserialize));
+    }
+
+    public void testFloatArray() throws ClassNotFoundException, IOException {
+        float[] l = new float[] { 1F, 1.234235F };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (float[]) deserialize));
+    }
+
+    public void testByteArray() throws ClassNotFoundException, IOException {
+        byte[] l = new byte[] { 1,34,-5 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (byte[]) deserialize));
+    }
+
+    public void testCharArray() throws ClassNotFoundException, IOException {
+        char[] l = new char[] { '1','a','&' };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (char[]) deserialize));
+    }
 
 
     public void testDate() throws IOException, ClassNotFoundException {

@@ -222,7 +222,36 @@ class Serialization extends SerialClassInfo implements Serializer {
         } else if (obj instanceof long[]) {
             writeLongArray(out, (long[]) obj);
             return;
-        //TODO special case for double[], float[], char[], boolean[] and short[]
+        } else if (obj instanceof short[]) {
+            out.write(SHORT_ARRAY);
+            short[] a = (short[]) obj;
+            LongPacker.packInt(out,a.length);
+            for(short s:a) out.writeShort(s);
+            return;
+        } else if (obj instanceof boolean[]) {
+            out.write(BOOLEAN_ARRAY);
+            boolean[] a = (boolean[]) obj;
+            LongPacker.packInt(out,a.length);
+            for(boolean s:a) out.writeBoolean(s); //TODO pack 8 booleans to single byte
+            return;
+        } else if (obj instanceof double[]) {
+            out.write(DOUBLE_ARRAY);
+            double[] a = (double[]) obj;
+            LongPacker.packInt(out,a.length);
+            for(double s:a) out.writeDouble(s);
+            return;
+        } else if (obj instanceof float[]) {
+            out.write(FLOAT_ARRAY);
+            float[] a = (float[]) obj;
+            LongPacker.packInt(out,a.length);
+            for(float s:a) out.writeFloat(s);
+            return;
+        } else if (obj instanceof char[]) {
+            out.write(CHAR_ARRAY);
+            char[] a = (char[]) obj;
+            LongPacker.packInt(out,a.length);
+            for(char s:a) out.writeChar(s);
+            return;
         } else if (obj instanceof byte[]) {
             byte[] b = (byte[]) obj;
             out.write(ARRAY_BYTE_INT);
@@ -694,6 +723,31 @@ class Serialization extends SerialClassInfo implements Serializer {
                 break;
             case BYTE_FULL:
                 ret = Byte.valueOf(is.readByte());
+                break;
+            case SHORT_ARRAY:
+                int size = LongPacker.unpackInt(is);
+                ret = new short[size];
+                for(int i=0;i<size;i++) ((short[])ret)[i] = is.readShort();
+                break;
+            case BOOLEAN_ARRAY:
+                size = LongPacker.unpackInt(is);
+                ret = new boolean[size];
+                for(int i=0;i<size;i++) ((boolean[])ret)[i] = is.readBoolean();
+                break;
+            case DOUBLE_ARRAY:
+                size = LongPacker.unpackInt(is);
+                ret = new double[size];
+                for(int i=0;i<size;i++) ((double[])ret)[i] = is.readDouble();
+                break;
+            case FLOAT_ARRAY:
+                size = LongPacker.unpackInt(is);
+                ret = new float[size];
+                for(int i=0;i<size;i++) ((float[])ret)[i] = is.readFloat();
+                break;
+            case CHAR_ARRAY:
+                size = LongPacker.unpackInt(is);
+                ret = new char[size];
+                for(int i=0;i<size;i++) ((char[])ret)[i] = is.readChar();
                 break;
             case CHAR:
                 ret = Character.valueOf(is.readChar());

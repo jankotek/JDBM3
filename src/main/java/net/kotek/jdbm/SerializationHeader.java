@@ -59,12 +59,13 @@ final class SerializationHeader {
     final static int DOUBLE_255 = 50;
     final static int DOUBLE_SHORT = 51;
     final static int DOUBLE_FULL = 52;
-    final static int FREEEE222 = 53; //TODO  free slot
+    final static int DOUBLE_ARRAY = 53;
     final static int BIGDECIMAL = 54;
-    final static int FREEEE222222 = 55; //TODO free slot
-    final static int BIGINTEGER = 56;
+    final static int BIGINTEGER = 55;
+    final static int FLOAT_ARRAY = 56;
     final static int INTEGER_MINUS_MAX = 57;
-
+    final static int SHORT_ARRAY = 58;
+    final static int BOOLEAN_ARRAY = 59;
 
     final static int ARRAY_INT_B_255 = 60;
     final static int ARRAY_INT_B_INT = 61;
@@ -78,7 +79,7 @@ final class SerializationHeader {
     final static int ARRAY_LONG_L = 68;
     final static int ARRAY_LONG_PACKED = 69;
 
-    final static int NOTUSED_ARRAY_BYTE_255 = 70;
+    final static int CHAR_ARRAY = 70;
     final static int ARRAY_BYTE_INT = 71;
 
     final static int NOTUSED_ARRAY_OBJECT_255 = 72;
