@@ -23,12 +23,12 @@ interface Magic {
     /**
      * Magic cookie at start of file
      */
-    public short FILE_HEADER = 0x1350;
+    short FILE_HEADER = 0x1350;
 
     /**
      * Magic for blocks. They're offset by the block type magic codes.
      */
-    public short BLOCK = 0x1351;
+    short BLOCK = 0x1351;
 
     /**
      * Magics for blocks in certain lists. Offset by baseBlockMagic
@@ -42,7 +42,7 @@ interface Magic {
     /**
      * Number of lists in a file
      */
-    public short NLISTS = 5;
+    short NLISTS = 5;
 
     /**
      * Magic for transaction file
@@ -52,26 +52,66 @@ interface Magic {
     /**
      * Size of an externalized byte
      */
-    public short SZ_BYTE = 1;
+    short SZ_BYTE = 1;
     /**
      * Size of an externalized short
      */
-    public short SZ_SHORT = 2;
+    short SZ_SHORT = 2;
 
     /**
      * Size of an externalized int
      */
-    public short SZ_INT = 4;
+    short SZ_INT = 4;
     /**
      * Size of an externalized long
      */
-    public short SZ_LONG = 8;
-
-
+    short SZ_LONG = 8;
 
     /**
      * size of three byte integer
      */
-    public short SZ_SIX_BYTE_LONG = 6;
+    short SZ_SIX_BYTE_LONG = 6;
+
+
+    /**offsets in file header (zero page in file)*/
+    short FILE_HEADER_O_MAGIC = 0; // short magic
+    short FILE_HEADER_O_LISTS = Magic.SZ_SHORT; // long[2*NLISTS]
+    int FILE_HEADER_O_ROOTS = FILE_HEADER_O_LISTS + (Magic.NLISTS * 2 * Magic.SZ_LONG);
+    /**
+     * The number of "root" rowids available in the file.
+     */
+    int FILE_HEADER_NROOTS = (Storage.BLOCK_SIZE - FILE_HEADER_O_ROOTS) / Magic.SZ_LONG;
+
+
+    short PAGE_HEADER_O_MAGIC = 0; // short magic
+    short PAGE_HEADER_O_NEXT = Magic.SZ_SHORT;
+    short PAGE_HEADER_O_PREV = PAGE_HEADER_O_NEXT + Magic.SZ_SIX_BYTE_LONG;
+    short PAGE_HEADER_SIZE = PAGE_HEADER_O_PREV + Magic.SZ_SIX_BYTE_LONG;
+
+    short PhysicalRowId_O_BLOCK = 0; // long block
+    short PhysicalRowId_O_OFFSET = Magic.SZ_SIX_BYTE_LONG; // short offset
+    int PhysicalRowId_SIZE = PhysicalRowId_O_OFFSET + Magic.SZ_SHORT;
+    
+    short DATA_PAGE_O_FIRST = PAGE_HEADER_SIZE; // short firstrowid
+    short DATA_PAGE_O_DATA = (short) (DATA_PAGE_O_FIRST + Magic.SZ_SHORT);
+    short DATA_PER_PAGE = (short) (Storage.BLOCK_SIZE - DATA_PAGE_O_DATA);
+
+
+    short FreePhysicalRowId_O_SIZE = Magic.PhysicalRowId_SIZE; // int size
+    short FreePhysicalRowId_SIZE = FreePhysicalRowId_O_SIZE + Magic.SZ_INT;
+
+    // offsets
+    short FreePhysicalRowId_O_COUNT = Magic.PAGE_HEADER_SIZE; // short count
+    short FreePhysicalRowId_O_FREE = FreePhysicalRowId_O_COUNT + Magic.SZ_SHORT;
+    short FreePhysicalRowId_ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - FreePhysicalRowId_O_FREE) / FreePhysicalRowId_SIZE);
+
+
+       // offsets
+    short FreeLogicalRowId_O_COUNT = Magic.PAGE_HEADER_SIZE; // short count
+    short FreeLogicalRowId_O_FREE = (short) (FreeLogicalRowId_O_COUNT + Magic.SZ_SHORT);
+    short FreeLogicalRowId_ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - FreeLogicalRowId_O_FREE) / Magic.PhysicalRowId_SIZE);
+
+
+
 
 }

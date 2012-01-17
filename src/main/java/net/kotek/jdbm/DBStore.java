@@ -406,7 +406,7 @@ final class DBStore
             throws IOException {
         checkIfClosed();
 
-        return _pageman.getFileHeader().getRoot(id);
+        return _pageman.getFileHeader().fileHeaderGetRoot(id);
     }
 
 
@@ -415,7 +415,7 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
-        _pageman.getFileHeader().setRoot(id, rowid);
+        _pageman.getFileHeader().fileHeaderSetRoot(id, rowid);
     }
 
 
@@ -678,12 +678,11 @@ final class DBStore
                      pageid = _pageman.getNext(pageid)
                         ) {
                     BlockIo io = _file.get(pageid);
-                    TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 
                     for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
-                        final int pos = TranslationPage.O_TRANS + i * TranslationPage.PhysicalRowId_SIZE;
-                        long physPage = xlatPage.getLocationBlock((short) pos);
-                        short physOffset = xlatPage.getLocationOffset((short) pos);
+                        final int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
+                        long physPage = io.pageHeaderGetLocationBlock((short) pos);
+                        short physOffset = io.pageHeaderGetLocationOffset((short) pos);
                         if (physPage == 0 && physOffset == 0) {
                             freeRecordCount++;
                             continue;
@@ -779,10 +778,9 @@ final class DBStore
                  pageid = _pageman.getNext(pageid)
                     ) {
                 BlockIo io = _file.get(pageid);
-                TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
 
                 for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
-                    final int pos = TranslationPage.O_TRANS + i * TranslationPage.PhysicalRowId_SIZE;
+                    final int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
                     if (pos > Short.MAX_VALUE)
                         throw new Error();
 
@@ -799,8 +797,8 @@ final class DBStore
 
                     //get physical location in this db
                     long physRowId = Location.toLong(
-                            xlatPage.getLocationBlock((short) pos),
-                            xlatPage.getLocationOffset((short) pos));
+                            io.pageHeaderGetLocationBlock((short) pos),
+                            io.pageHeaderGetLocationOffset((short) pos));
                     if (physRowId == 0)
                         continue;
 
@@ -903,7 +901,7 @@ final class DBStore
         long block = Location.getBlock(recid);
         short offset = Location.getOffset(recid);
 
-        offset = (short) (offset - TranslationPage.O_TRANS);
+        offset = (short) (offset - Magic.PAGE_HEADER_SIZE);
         if (offset % 8 != 0)
             throw new InternalError("not 8");
         long slot = offset / 8;
@@ -916,7 +914,7 @@ final class DBStore
 
     static long decompressRecid(long recid) {
         long block = recid >> 8;
-        short offset = (short) (((recid & 0xff)) * 8 + TranslationPage.O_TRANS);
+        short offset = (short) (((recid & 0xff)) * 8 + Magic.PAGE_HEADER_SIZE);
         return Location.toLong(block, offset);
     }
 
@@ -930,16 +928,15 @@ final class DBStore
         long page = _pageman.getFirst(Magic.TRANSLATION_PAGE);
         while (page != 0) {
             BlockIo io = _file.get(page);
-            TranslationPage xlatPage = TranslationPage.getTranslationPageView(io);
             for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
-                int pos = TranslationPage.O_TRANS + i * TranslationPage.PhysicalRowId_SIZE;
+                int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
                 if (pos > Short.MAX_VALUE)
                     throw new Error();
 
                 //get physical location
                 long physRowId = Location.toLong(
-                        xlatPage.getLocationBlock((short) pos),
-                        xlatPage.getLocationOffset((short) pos));
+                        io.pageHeaderGetLocationBlock((short) pos),
+                        io.pageHeaderGetLocationOffset((short) pos));
                 if (physRowId != 0)
                     counter += 1;
             }

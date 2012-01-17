@@ -23,6 +23,22 @@ import java.io.IOException;
  * level.
  */
 final class FreePhysicalRowIdPageManager {
+    
+    /**
+     * Used to place a limit on the wasted capacity resulting in a modified first fit policy for re-allocated of free
+     * records. This value is the maximum first fit waste that is accepted when scanning the available slots on a given
+     * page of the free physical row page list.
+     */
+    static final transient int wasteMargin = 128;
+
+    /**
+     * Used to place a limit on the wasted capacity resulting in a modified first fit policy for re-allocated of free
+     * records. This value is the upper bound of waste that is accepted before scanning another page on the free
+     * physical row page list. If no page can be found whose waste for the re-allocation request would be less than this
+     * value then a new page will be allocated and the requested physical row will be allocated from that new page.
+     */
+    static final transient int wasteMargin2 = Magic.PAGE_HEADER_SIZE / 4;
+    
     // our record file
     protected RecordFile _file;
 
@@ -31,6 +47,7 @@ final class FreePhysicalRowIdPageManager {
 
     private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
     private final Utils.IntArrayList freeBlocksInTransactionSize = new Utils.IntArrayList();
+
 
     /**
      * Creates a new instance using the indicated record file and page manager.
@@ -62,16 +79,16 @@ final class FreePhysicalRowIdPageManager {
 
         int maxSize = -1;
         for (long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current != 0; current = _pageman.getNext(current)) {
-            FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(_file.get(current));
-            int slot = fp.getFirstLargerThan(size);
+            BlockIo fp = _file.get(current);
+            int slot = fp.FreePhysicalRowId_getFirstLargerThan(size);
             if (slot > 0) {
                 //reset maximal size, as record has changed
                 lastMaxSize = -1;
                 // got one!
-                retval = fp.slotToLocation(slot);
+                retval = fp.FreePhysicalRowId_slotToLocation(slot);
 
-                fp.free(slot);
-                if (fp.getCount() == 0) {
+                fp.FreePhysicalRowId_free(slot);
+                if (fp.FreePhysicalRowId_getCount() == 0) {
                     // page became empty - free it
                     _file.release(current, false);
                     _pageman.free(Magic.FREEPHYSIDS_PAGE, current);
@@ -93,6 +110,7 @@ final class FreePhysicalRowIdPageManager {
 
         return 0;
     }
+
 
     /**
      * Puts the indicated rowid on the free list, which avaits for commit
@@ -116,19 +134,18 @@ final class FreePhysicalRowIdPageManager {
                  current != 0;
                  current = fromLast ? _pageman.getPrev(current) : _pageman.getNext(current)
                     ) {
-                BlockIo curBlock = _file.get(current);
-                FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock);
-                int slot = fp.getFirstFree();
+                BlockIo fp = _file.get(current);
+                int slot = fp.FreePhysicalRowId_getFirstFree();
                 //iterate over free slots in page and fill them
                 while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
                     int size = freeBlocksInTransactionSize.data[rowidpos];
                     long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
 
-                    short freePhysRowId = fp.alloc(slot);
-                    fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                    fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                    short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
+                    fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
+                    fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
                     fp.FreePhysicalRowId_setSize(freePhysRowId, size);
-                    slot = fp.getFirstFree();
+                    slot = fp.FreePhysicalRowId_getFirstFree();
                 }
                 _file.release(current, true);
                 if (!(rowidpos < freeBlocksInTransactionRowid.size))
@@ -141,18 +158,17 @@ final class FreePhysicalRowIdPageManager {
         while (rowidpos < freeBlocksInTransactionRowid.size) {
             //allocate new page
             long freePage = _pageman.allocate(Magic.FREEPHYSIDS_PAGE);
-            BlockIo curBlock = _file.get(freePage);
-            FreePhysicalRowIdPage fp = FreePhysicalRowIdPage.getFreePhysicalRowIdPageView(curBlock);
-            int slot = fp.getFirstFree();
+            BlockIo fp = _file.get(freePage);
+            int slot = fp.FreePhysicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
             while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
                 int size = freeBlocksInTransactionSize.data[rowidpos];
                 long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
-                short freePhysRowId = fp.alloc(slot);
-                fp.setLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                fp.setLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
+                fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
+                fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
                 fp.FreePhysicalRowId_setSize(freePhysRowId, size);
-                slot = fp.getFirstFree();
+                slot = fp.FreePhysicalRowId_getFirstFree();
             }
             _file.release(freePage, true);
             if (!(rowidpos < freeBlocksInTransactionRowid.size))

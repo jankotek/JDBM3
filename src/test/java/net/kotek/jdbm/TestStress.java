@@ -61,13 +61,13 @@ public class TestStress extends TestCaseWithTestFile {
     }
 
     // holder for root records
-    long[] roots = new long[FileHeader.NROOTS];
+    long[] roots = new long[Magic.FILE_HEADER_NROOTS];
 
     private int getRandomAllocatedRoot() {
-        int slot = rnd.nextInt(FileHeader.NROOTS);
+        int slot = rnd.nextInt(Magic.FILE_HEADER_NROOTS);
         while (roots[slot] == 0) {
             slot++;
-            if (slot == FileHeader.NROOTS)
+            if (slot == Magic.FILE_HEADER_NROOTS)
                 slot = 0; // wrap
         }
         return slot;
@@ -160,7 +160,7 @@ public class TestStress extends TestCaseWithTestFile {
                 } else if (op == 51) {
 
                     // SET ROOT
-                    int root = rnd.nextInt(FileHeader.NROOTS);
+                    int root = rnd.nextInt(Magic.FILE_HEADER_NROOTS);
                     if (root > 10) { //DONT do this for reserved roots
                         roots[root] = rnd.nextLong();
                         db.setRoot(root, roots[root]);

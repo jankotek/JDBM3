@@ -26,8 +26,7 @@ import java.nio.ByteBuffer;
 final class PageManager {
     // our record file
     private RecordFile file;
-    // header data
-    private FileHeader header;
+
     private BlockIo headerBuf;
 
     /**
@@ -36,13 +35,10 @@ final class PageManager {
     PageManager(RecordFile file) throws IOException {
         this.file = file;
 
-        // check the file header. If the magic is 0, we assume a new
+        // check the file headerBuf.fileHeader If the magic is 0, we assume a new
         // file. Note that we hold on to the file header node.
         headerBuf = file.get(0);
-        if (headerBuf.readShort(0) == 0)
-            header = new FileHeader(headerBuf, true);
-        else
-            header = new FileHeader(headerBuf, false);
+        headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 
     /**
@@ -55,7 +51,7 @@ final class PageManager {
             throw new Error("allocate of free page?");
 
         // do we have something on the free list?
-        long retval = header.getFirstOf(Magic.FREE_PAGE);                
+        long retval = headerBuf.fileHeaderGetFirstOf(Magic.FREE_PAGE);                
         boolean isNew = false;
         
         if(type!=Magic.TRANSLATION_PAGE){
@@ -63,53 +59,54 @@ final class PageManager {
             if (retval != 0) {
                 // yes. Point to it and make the next of that page the
                 // new first free page.
-                header.setFirstOf(Magic.FREE_PAGE, getNext(retval));
+                headerBuf.fileHeaderSetFirstOf(Magic.FREE_PAGE, getNext(retval));
             } else {
                 // nope. make a new record
-                retval = header.getLastOf(Magic.FREE_PAGE);
+                retval = headerBuf.fileHeaderGetLastOf(Magic.FREE_PAGE);
                 if (retval == 0)
                     // very new file - allocate record #1
                     retval = 1;
-                header.setLastOf(Magic.FREE_PAGE, retval + 1);
+                headerBuf.fileHeaderSetLastOf(Magic.FREE_PAGE, retval + 1);
                 isNew = true;
             }
         }else{
             //translation blocks have different allocation scheme
             //and also have negative address
-           retval = header.getLastOf(Magic.TRANSLATION_PAGE) - 1;
+           retval = headerBuf.fileHeaderGetLastOf(Magic.TRANSLATION_PAGE) - 1;
            isNew = true;
         }
 
         // Cool. We have a record, add it to the correct list
-        BlockIo buf = file.get(retval);
-        PageHeader pageHdr = isNew ? new PageHeader(buf, type)
-                : PageHeader.getView(buf);
-        long oldLast = header.getLastOf(type);
+        BlockIo pageHdr = file.get(retval);
+        if(isNew){
+            pageHdr.pageHeaderSetType(type);
+        }else{
+            if (!pageHdr.pageHeaderMagicOk())
+                throw new Error("CRITICAL: page header magic for block "+
+                        pageHdr.getBlockId() + " not OK "+ pageHdr.pageHeaderGetMagic());
+        }
+        long oldLast = headerBuf.fileHeaderGetLastOf(type);
 
         // Clean data.
-        buf.writeByteArray(RecordFile.CLEAN_DATA, 0, 0, Storage.BLOCK_SIZE);
+        pageHdr.writeByteArray(RecordFile.CLEAN_DATA, 0, 0, Storage.BLOCK_SIZE);
 
-        pageHdr.setType(type);
-        pageHdr.setPrev(oldLast);
-        pageHdr.setNext(0);
+        pageHdr.pageHeaderSetType(type);
+        pageHdr.pageHeaderSetPrev(oldLast);
+        pageHdr.pageHeaderSetNext(0);
 
 
         if (oldLast == 0)
             // This was the first one of this type
-            header.setFirstOf(type, retval);
-        header.setLastOf(type, retval);
+            headerBuf.fileHeaderSetFirstOf(type, retval);
+        headerBuf.fileHeaderSetLastOf(type, retval);
         file.release(retval, true);
 
         // If there's a previous, fix up its pointer
         if (oldLast != 0) {
-            buf = file.get(oldLast);
-            pageHdr = PageHeader.getView(buf);
-            pageHdr.setNext(retval);
+            pageHdr = file.get(oldLast);
+            pageHdr.pageHeaderSetNext(retval);
             file.release(oldLast, true);
         }
-
-        // remove the view, we have modified the type.
-        buf.setView(null);
 
         return retval;
     }
@@ -127,35 +124,32 @@ final class PageManager {
             throw new Error("free header page?");
 
         // get the page and read next and previous pointers
-        BlockIo buf = file.get(recid);
-        PageHeader pageHdr = PageHeader.getView(buf);
-        long prev = pageHdr.getPrev();
-        long next = pageHdr.getNext();
+        BlockIo pageHdr = file.get(recid);
+        long prev = pageHdr.pageHeaderGetPrev();
+        long next = pageHdr.pageHeaderGetNext();
 
         // put the page at the front of the free list.
-        pageHdr.setType(Magic.FREE_PAGE);
-        pageHdr.setNext(header.getFirstOf(Magic.FREE_PAGE));
-        pageHdr.setPrev(0);
+        pageHdr.pageHeaderSetType(Magic.FREE_PAGE);
+        pageHdr.pageHeaderSetNext(headerBuf.fileHeaderGetFirstOf(Magic.FREE_PAGE));
+        pageHdr.pageHeaderSetPrev(0);
 
-        header.setFirstOf(Magic.FREE_PAGE, recid);
+        headerBuf.fileHeaderSetFirstOf(Magic.FREE_PAGE, recid);
         file.release(recid, true);
 
         // remove the page from its old list
         if (prev != 0) {
-            buf = file.get(prev);
-            pageHdr = PageHeader.getView(buf);
-            pageHdr.setNext(next);
+            pageHdr = file.get(prev);
+            pageHdr.pageHeaderSetNext(next);
             file.release(prev, true);
         } else {
-            header.setFirstOf(type, next);
+            headerBuf.fileHeaderSetFirstOf(type, next);
         }
         if (next != 0) {
-            buf = file.get(next);
-            pageHdr = PageHeader.getView(buf);
-            pageHdr.setPrev(prev);
+            pageHdr = file.get(next);
+            pageHdr.pageHeaderSetPrev(prev);
             file.release(next, true);
         } else {
-            header.setLastOf(type, prev);
+            headerBuf.fileHeaderSetLastOf(type, prev);
         }
 
     }
@@ -166,7 +160,7 @@ final class PageManager {
      */
     long getNext(long block) throws IOException {
         try {
-            return PageHeader.getView(file.get(block)).getNext();
+            return file.get(block).pageHeaderGetNext();
         } finally {
             file.release(block, false);
         }
@@ -177,7 +171,7 @@ final class PageManager {
      */
     long getPrev(long block) throws IOException {
         try {
-            return PageHeader.getView(file.get(block)).getPrev();
+            return file.get(block).pageHeaderGetPrev();
         } finally {
             file.release(block, false);
         }
@@ -187,14 +181,14 @@ final class PageManager {
      * Returns the first page on the indicated list.
      */
     long getFirst(short type) throws IOException {
-        return header.getFirstOf(type);
+        return headerBuf.fileHeaderGetFirstOf(type);
     }
 
     /**
      * Returns the last page on the indicated list.
      */
     long getLast(short type) throws IOException {
-        return header.getLastOf(type);
+        return headerBuf.fileHeaderGetLastOf(type);
     }
 
 
@@ -210,7 +204,7 @@ final class PageManager {
 
         // and obtain it again
         headerBuf = file.get(0);
-        header = new FileHeader(headerBuf, false);
+        headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 
     /**
@@ -223,29 +217,18 @@ final class PageManager {
         file.rollback();
         // and obtain it again
         headerBuf = file.get(0);
-        if (headerBuf.readShort(0) == 0)
-            header = new FileHeader(headerBuf, true);
-        else
-            header = new FileHeader(headerBuf, false);
+        headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 
     /**
      * Closes the page manager. This flushes the page manager and releases
-     * the lock on the header.
+     * the lock on the headerBuf.fileHeader
      */
     void close() throws IOException {
         file.release(headerBuf);
         file.commit();
         headerBuf = null;
-        header = null;
         file = null;
-    }
-
-    /**
-     * Returns the file header.
-     */
-    FileHeader getFileHeader() {
-        return header;
     }
 
 
@@ -256,4 +239,7 @@ final class PageManager {
         return headerBuf.getData();
     }
 
+    public BlockIo getFileHeader() {
+        return headerBuf;
+    }
 }

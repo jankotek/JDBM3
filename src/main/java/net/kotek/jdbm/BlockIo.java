@@ -20,6 +20,7 @@ package net.kotek.jdbm;
 import javax.crypto.Cipher;
 import java.io.*;
 import java.nio.ByteBuffer;
+import static net.kotek.jdbm.Magic.*;
 
 /**
  * Wraps a page sizes ByteBuffer for reading and writting.
@@ -38,7 +39,7 @@ final class BlockIo {
     private long blockId;
 
     private ByteBuffer data; // work area
-    transient private BlockView view = null;
+
     /** buffers contains changes which were not written to disk yet. */
     private boolean dirty = false;
 
@@ -77,20 +78,6 @@ final class BlockIo {
      */
     long getBlockId() {
         return blockId;
-    }
-
-    /**
-     * Returns the current view of the block.
-     */
-    public BlockView getView() {
-        return view;
-    }
-
-    /**
-     * Sets the current view of the block.
-     */
-    public void setView(BlockView view) {
-        this.view = view;
     }
 
     /**
@@ -262,8 +249,7 @@ final class BlockIo {
     public String toString() {
         return "BlockIO("
                 + blockId + ","
-                + dirty + ","
-                + view + ")";
+                + dirty +")";
     }
 
     public void readExternal(DataInputStream in, Cipher cipherOut) throws IOException {
@@ -301,4 +287,391 @@ final class BlockIo {
         data.position(offset);
         data.put(buf,srcOffset,length);
     }
+    
+    public void fileHeaderCheckHead(boolean isNew){
+        if (isNew)
+            writeShort(FILE_HEADER_O_MAGIC, Magic.FILE_HEADER);
+        else{
+            short magic = readShort(FILE_HEADER_O_MAGIC);
+            if(magic!=FILE_HEADER)
+                throw new Error("CRITICAL: file header magic not OK " + magic);
+       }
+    }
+
+    /**
+     * Returns the first block of the indicated list
+     */
+    long fileHeaderGetFirstOf(int list) {
+        return readLong(fileHeaderOffsetOfFirst(list));
+    }
+
+    /**
+     * Sets the first block of the indicated list
+     */
+    void fileHeaderSetFirstOf(int list, long value) {
+        writeLong(fileHeaderOffsetOfFirst(list), value);
+    }
+
+    /**
+     * Returns the last block of the indicated list
+     */
+    long fileHeaderGetLastOf(int list) {
+        return readLong(fileHeaderOffsetOfLast(list));
+    }
+
+    /**
+     * Sets the last block of the indicated list
+     */
+    void fileHeaderSetLastOf(int list, long value) {
+        writeLong(fileHeaderOffsetOfLast(list), value);
+    }
+
+
+    /**
+     * Returns the offset of the "first" block of the indicated list
+     */
+    private short fileHeaderOffsetOfFirst(int list) {
+        return (short) (FILE_HEADER_O_LISTS + (2 * Magic.SZ_LONG * list));
+    }
+
+    /**
+     * Returns the offset of the "last" block of the indicated list
+     */
+    private short fileHeaderOffsetOfLast(int list) {
+        return (short) (fileHeaderOffsetOfFirst(list) + Magic.SZ_LONG);
+    }
+
+
+    
+    /**
+     * Returns the indicated root rowid. A root rowid is a special rowid
+     * that needs to be kept between sessions. It could conceivably be
+     * stored in a special file, but as a large amount of space in the
+     * block header is wasted anyway, it's more useful to store it where
+     * it belongs.
+     *
+
+     */
+    long fileHeaderGetRoot(final int root) {
+        final short offset = (short) (FILE_HEADER_O_ROOTS + (root * Magic.SZ_LONG));
+        return readLong(offset);
+    }
+
+    /**
+     * Sets the indicated root rowid.
+     *
+     */
+    void fileHeaderSetRoot(final int root, final long rowid) {
+        final short offset = (short) (FILE_HEADER_O_ROOTS + (root * Magic.SZ_LONG));
+        writeLong(offset, rowid);
+    }
+
+
+    /**
+     * Returns true if the magic corresponds with the fileHeader magic.
+     */
+    boolean pageHeaderMagicOk() {
+        int magic = pageHeaderGetMagic();
+        return magic >= Magic.BLOCK  && magic <= (Magic.BLOCK + Magic.FREEPHYSIDS_PAGE);
+    }
+
+    /**
+     * For paranoia mode
+     */
+    protected void pageHeaderParanoiaMagicOk() {
+        if (!pageHeaderMagicOk())
+            throw new Error("CRITICAL: page header magic not OK " + pageHeaderGetMagic());
+    }
+
+    short pageHeaderGetMagic() {
+        return readShort(PAGE_HEADER_O_MAGIC);
+    }
+
+    long pageHeaderGetNext() {
+        pageHeaderParanoiaMagicOk();
+        return readSixByteLong(PAGE_HEADER_O_NEXT);
+    }
+
+    void pageHeaderSetNext(long next) {
+        pageHeaderParanoiaMagicOk();
+        writeSixByteLong(PAGE_HEADER_O_NEXT, next);
+    }
+
+    long pageHeaderGetPrev() {
+        pageHeaderParanoiaMagicOk();
+        return readSixByteLong(PAGE_HEADER_O_PREV);
+    }
+
+
+    void pageHeaderSetPrev(long prev) {
+        pageHeaderParanoiaMagicOk();
+        writeSixByteLong(PAGE_HEADER_O_PREV, prev);
+    }
+    void pageHeaderSetType(short type) {
+        writeShort(PAGE_HEADER_O_MAGIC, (short) (Magic.BLOCK + type));
+    }
+
+    long pageHeaderGetLocationBlock(short pos) {
+        return readSixByteLong(pos + PhysicalRowId_O_BLOCK);
+    }
+
+    void pageHeaderSetLocationBlock(short pos, long value) {
+        writeSixByteLong(pos + PhysicalRowId_O_BLOCK, value);
+    }
+
+    short pageHeaderGetLocationOffset(short pos) {
+        return readShort(pos + PhysicalRowId_O_OFFSET);
+    }
+
+    void pageHeaderSetLocationOffset(short pos, short value) {
+        writeShort(pos + PhysicalRowId_O_OFFSET, value);
+    }
+
+    short dataPageGetFirst() {
+        return readShort(DATA_PAGE_O_FIRST);
+    }
+
+    void dataPageSetFirst(short value) {
+        pageHeaderParanoiaMagicOk();
+        if (value > 0 && value < DATA_PAGE_O_DATA)
+            throw new Error("DataPage.setFirst: offset " + value + " too small");
+        writeShort(DATA_PAGE_O_FIRST, value);
+    }
+
+
+    /**
+     * Returns the number of free rowids
+     */
+    short FreePhysicalRowId_getCount() {
+        return readShort(FreePhysicalRowId_O_COUNT);
+    }
+
+    /**
+     * Sets the number of free rowids
+     */
+    private void FreePhysicalRowId_setCount(short i) {
+        writeShort(FreePhysicalRowId_O_COUNT, i);
+    }
+
+    /**
+     * Frees a slot
+     */
+    void FreePhysicalRowId_free(int slot) {
+        short pos = FreePhysicalRowId_slotToOffset(slot);
+        FreePhysicalRowId_setSize(pos, 0);
+        //get(slot).setSize(0);
+        FreePhysicalRowId_setCount((short) (FreePhysicalRowId_getCount() - 1));
+    }
+
+    /**
+     * Allocates a slot
+     */
+    short FreePhysicalRowId_alloc(int slot) {
+        FreePhysicalRowId_setCount((short) (FreePhysicalRowId_getCount() + 1));
+        return FreePhysicalRowId_slotToOffset(slot);
+    }
+
+    /**
+     * Returns true if a slot is free
+     */
+    boolean FreePhysicalRowId_isFree(int slot) {
+        short pos = FreePhysicalRowId_slotToOffset(slot);
+        return FreePhysicalRowId_getSize(pos) == 0;
+    }
+
+    /**
+     * Converts slot to offset
+     */
+    short FreePhysicalRowId_slotToOffset(int slot) {
+        return (short) (FreePhysicalRowId_O_FREE + (slot * FreePhysicalRowId_SIZE));
+    }
+
+    int FreePhysicalRowId_offsetToSlot(short pos) {
+        int pos2 = pos;
+        return (pos2 - FreePhysicalRowId_O_FREE) / FreePhysicalRowId_SIZE;
+    }
+
+
+    /**
+     * Returns first free slot, -1 if no slots are available
+     */
+    int FreePhysicalRowId_getFirstFree() {
+        for (int i = 0; i < FreePhysicalRowId_ELEMS_PER_PAGE; i++) {
+            if (FreePhysicalRowId_isFree(i))
+                return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the size
+     */
+    int FreePhysicalRowId_getSize(short pos) {
+        return readInt(pos + FreePhysicalRowId_O_SIZE);
+    }
+
+    /**
+     * Sets the size
+     */
+    void FreePhysicalRowId_setSize(short pos, int value) {
+        writeInt(pos + FreePhysicalRowId_O_SIZE, value);
+    }
+
+    public long FreePhysicalRowId_slotToLocation(int slot) {
+        short pos = FreePhysicalRowId_slotToOffset(slot);
+        return Location.toLong(pageHeaderGetLocationBlock(pos), pageHeaderGetLocationOffset(pos));
+    }
+
+
+    /**
+     * Returns first slot with available size >= indicated size, or minus maximal size available on this page
+     *
+     * @param requestedSize requested allocation size.
+     *
+     * //TODO too big method, move it away
+     */
+    int FreePhysicalRowId_getFirstLargerThan(final int requestedSize) {
+
+        int maxSize = 0;
+        /*
+           * Tracks slot of the smallest available physical row on the page.
+           */
+        int bestSlot = -1;
+        /*
+           * Tracks size of the smallest available physical row on the page.
+           */
+        int bestSlotSize = 0;
+        /*
+           * Scan each slot in the page.
+           */
+        for (int i = 0; i < Magic.FreePhysicalRowId_ELEMS_PER_PAGE; i++) {
+            /*
+                * When large allocations are used, the space wasted by the first fit policy can become very large (25% of
+                * the store). The first fit policy has been modified to only accept a record with a maximum amount of
+                * wasted capacity given the requested allocation size.
+                */
+            // Note: isAllocated(i) is equiv to get(i).getSize() != 0
+            //long theSize = get(i).getSize(); // capacity of this free record.
+            short pos = FreePhysicalRowId_slotToOffset(i);
+            int currentRecSize = FreePhysicalRowId_getSize(pos); // capacity of this free record.
+            if (currentRecSize > maxSize) maxSize = currentRecSize;
+            int waste = currentRecSize - requestedSize; // when non-negative, record has suf. capacity.
+            if (waste >= 0) {
+                if (waste < FreePhysicalRowIdPageManager.wasteMargin) {
+                    return i; // record has suf. capacity and not too much waste.
+                } else if (bestSlotSize >= currentRecSize) {
+                    /*
+                          * This slot is a better fit that any that we have seen so far on this page so we update the slot#
+                          * and available size for that slot.
+                          */
+                    bestSlot = i;
+                    bestSlotSize = currentRecSize;
+                }
+            }
+        }
+        if (bestSlot != -1) {
+            /*
+                * An available slot was identified that is large enough, but it exceeds the first wasted capacity limit. At
+                * this point we check to see whether it is under our second wasted capacity limit. If it is, then we return
+                * that slot.
+                */
+            long waste = bestSlotSize - requestedSize; // when non-negative, record has suf. capacity.
+            if (waste >= 0 && waste < FreePhysicalRowIdPageManager.wasteMargin2) {
+                // record has suf. capacity and not too much waste.
+                return bestSlot;
+            }
+            /*
+                * Will scan next page on the free physical row page list.
+                */
+        }
+
+        return -maxSize;
+    }
+
+
+    short FreeLogicalRowId_getCount() {
+        return readShort(Magic.FreeLogicalRowId_O_COUNT);
+    }
+
+    private void FreeLogicalRowId_setCount(short i) {
+        writeShort(Magic.FreeLogicalRowId_O_COUNT, i);
+    }
+
+    boolean FreeLogicalRowId_isFree(int slot) {
+        return !FreeLogicalRowId_isAllocated(slot);
+    }
+
+
+     boolean FreeLogicalRowId_isAllocated(int slot) {
+         //return get(slot).getBlock() > 0;
+         return pageHeaderGetLocationBlock(FreeLogicalRowId_slotToOffset(slot)) > 0;
+     }
+
+
+    short FreeLogicalRowId_slotToOffset(int slot) {
+        return (short) (Magic.FreeLogicalRowId_O_FREE +
+                (slot * Magic.PhysicalRowId_SIZE));
+    }
+
+
+
+
+    /**
+     * Frees a slot
+     */
+    void  FreeLogicalRowId_free(int slot) {
+        pageHeaderSetLocationBlock(FreeLogicalRowId_slotToOffset(slot), 0);
+        //get(slot).setBlock(0);
+        FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() - 1));
+
+        // update previousFoundFree if the freed slot is before what we've found in the past
+        if (slot < previousFoundFree)
+            previousFoundFree = slot;
+    }
+
+    /**
+     * Allocates a slot
+     */
+    short  FreeLogicalRowId_alloc(int slot) {
+        FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() + 1));
+        short pos =  FreeLogicalRowId_slotToOffset(slot);
+        pageHeaderSetLocationBlock(pos, -1);
+        //get(slot).setBlock(-1);
+
+        // update previousFoundAllocated if the newly allocated slot is before what we've found in the past
+        if (slot < previousFoundAllocated)
+            previousFoundAllocated = slot;
+
+        return pos;
+    }
+
+
+
+    int  FreeLogicalRowId_getFirstFree() {
+        for (; previousFoundFree < Magic.FreeLogicalRowId_ELEMS_PER_PAGE; previousFoundFree++) {
+            if ( FreeLogicalRowId_isFree(previousFoundFree))
+                return previousFoundFree;
+        }
+        return -1;
+    }
+
+    int  FreeLogicalRowId_getFirstAllocated() {
+        for (; previousFoundAllocated < Magic.FreeLogicalRowId_ELEMS_PER_PAGE; previousFoundAllocated++) {
+            if ( FreeLogicalRowId_isAllocated(previousFoundAllocated))
+                return previousFoundAllocated;
+        }
+        return -1;
+    }
+
+    public long  FreeLogicalRowId_slotToLocation(int slot) {
+        short pos =  FreeLogicalRowId_slotToOffset(slot);
+        return Location.toLong(pageHeaderGetLocationBlock(pos), pageHeaderGetLocationOffset(pos));
+    }
+
+
+    //TODO move cache fields away from this class
+    private int previousFoundFree = 0; // keeps track of the most recent found free slot so we can locate it again quickly
+    private int previousFoundAllocated = 0; // keeps track of the most recent found allocated slot so we can locate it again quickly
+
+
 }

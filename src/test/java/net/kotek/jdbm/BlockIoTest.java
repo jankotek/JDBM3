@@ -93,4 +93,16 @@ public class BlockIoTest extends TestCase {
 
     }
 
+
+    public void testPageHeaderSetWriteRead() throws Exception {
+        BlockIo data = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
+        data.writeShort(0, Magic.BLOCK);
+
+        data.pageHeaderSetNext(10);
+        data.pageHeaderSetPrev(33);
+
+        assertEquals("next", 10, data.pageHeaderGetNext());
+        assertEquals("prev", 33, data.pageHeaderGetPrev());
+    }
+
 }

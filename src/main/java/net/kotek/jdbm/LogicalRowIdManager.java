@@ -26,8 +26,8 @@ final class LogicalRowIdManager {
     private final RecordFile file;
     private final PageManager pageman;
     private final FreeLogicalRowIdPageManager freeman;
-    final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - TranslationPage.O_TRANS) / TranslationPage.PhysicalRowId_SIZE);
-    ;
+    static final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - Magic.PAGE_HEADER_SIZE) / Magic.PhysicalRowId_SIZE);
+
 
     /**
      * Creates a log rowid manager using the indicated record file and page manager
@@ -48,10 +48,10 @@ final class LogicalRowIdManager {
             // no. This means that we bootstrap things by allocating
             // a new translation page and freeing all the rowids on it.
             long firstPage = pageman.allocate(Magic.TRANSLATION_PAGE);
-            short curOffset = TranslationPage.O_TRANS;
+            short curOffset = Magic.PAGE_HEADER_SIZE;
             for (int i = 0; i < ELEMS_PER_PAGE; i++) {
                 freeman.put(Location.toLong(-firstPage, curOffset));
-                curOffset += PageHeader.PhysicalRowId_SIZE;
+                curOffset += Magic.PhysicalRowId_SIZE;
             }
 
             retval = freeman.get();
@@ -85,9 +85,9 @@ final class LogicalRowIdManager {
     void delete(long rowid) throws IOException {
         //zero out old location, is needed for defragmentation
         final long block = -Location.getBlock(rowid);
-        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(block));
-        xlatPage.setLocationBlock(Location.getOffset(rowid), 0);
-        xlatPage.setLocationOffset(Location.getOffset(rowid), (short) 0);
+        BlockIo xlatPage = file.get(block);
+        xlatPage.pageHeaderSetLocationBlock(Location.getOffset(rowid), 0);
+        xlatPage.pageHeaderSetLocationOffset(Location.getOffset(rowid), (short) 0);
         file.release(block, true);
         freeman.put(rowid);
     }
@@ -101,15 +101,9 @@ final class LogicalRowIdManager {
     void update(long rowid, long loc) throws IOException {
 
         final long block = -Location.getBlock(rowid);
-        TranslationPage xlatPage = TranslationPage.getTranslationPageView(file.get(block));
-        //make sure it is right type of page
-
-
-//		PhysicalRowId physid = xlatPage.get(rowid.getOffset());
-//		physid.setBlock(loc.getBlock());
-//		physid.setOffset(loc.getOffset());
-        xlatPage.setLocationBlock(Location.getOffset(rowid), Location.getBlock(loc));
-        xlatPage.setLocationOffset(Location.getOffset(rowid), Location.getOffset(loc));
+        BlockIo xlatPage = file.get(block);
+        xlatPage.pageHeaderSetLocationBlock(Location.getOffset(rowid), Location.getBlock(loc));
+        xlatPage.pageHeaderSetLocationOffset(Location.getOffset(rowid), Location.getOffset(loc));
         file.release(block, true);
     }
 
@@ -127,13 +121,11 @@ final class LogicalRowIdManager {
 
         final short offset = Location.getOffset(rowid);
 
-        BlockIo bio = file.get(block);
-        TranslationPage xlatPage = TranslationPage.getTranslationPageView(bio);
+        BlockIo xlatPage = file.get(block);
         try {
-            long retval = Location.toLong(
-                    xlatPage.getLocationBlock(offset),
-                    xlatPage.getLocationOffset(offset));
-            return retval;
+            return Location.toLong(
+                    xlatPage.pageHeaderGetLocationBlock(offset),
+                    xlatPage.pageHeaderGetLocationOffset(offset));
         } finally {
             file.release(block, false);
         }

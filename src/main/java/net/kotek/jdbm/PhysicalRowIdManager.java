@@ -29,7 +29,7 @@ final class PhysicalRowIdManager {
     final private RecordFile file;
     final private PageManager pageman;
     final private FreePhysicalRowIdPageManager freeman;
-    static final private short DATA_PER_PAGE = (short) (BLOCK_SIZE - DataPage.O_DATA);
+    static final private short DATA_PER_PAGE = (short) (BLOCK_SIZE - Magic.DATA_PAGE_O_DATA);
     //caches offset after last allocation. So we dont have to iterate throw page every allocation
     private long cachedLastAllocatedRecordPage = Long.MIN_VALUE;
     private short cachedLastAllocatedRecordOffset = Short.MIN_VALUE;
@@ -125,7 +125,7 @@ final class PhysicalRowIdManager {
             if (leftToRead > 0) {
                 current = pageman.getNext(current);
                 block = file.get(current);
-                dataOffset = DataPage.O_DATA;
+                dataOffset = Magic.DATA_PAGE_O_DATA;
             }
 
         }
@@ -150,50 +150,47 @@ final class PhysicalRowIdManager {
      * search should start.
      */
     private long allocNew(int size, long start) throws IOException {
-        BlockIo curBlock;
-        DataPage curPage;
+        BlockIo curPage;
         if (start == 0 ||
                 //last page was completely filled?
                 cachedLastAllocatedRecordPage == start && cachedLastAllocatedRecordOffset == BLOCK_SIZE
                 ) {
             // we need to create a new page.
             start = pageman.allocate(Magic.USED_PAGE);
-            curBlock = file.get(start);
-            curPage = DataPage.getDataPageView(curBlock, BLOCK_SIZE);
-            curPage.setFirst(DataPage.O_DATA);
-            cachedLastAllocatedRecordOffset = DataPage.O_DATA;
-            cachedLastAllocatedRecordPage = curBlock.getBlockId();
-            RecordHeader.setAvailableSize(curBlock, DataPage.O_DATA, 0);
-            RecordHeader.setCurrentSize(curBlock, DataPage.O_DATA, 0);
+            curPage = file.get(start);
+            curPage.dataPageSetFirst(Magic.DATA_PAGE_O_DATA);
+            cachedLastAllocatedRecordOffset = Magic.DATA_PAGE_O_DATA;
+            cachedLastAllocatedRecordPage = curPage.getBlockId();
+            RecordHeader.setAvailableSize(curPage, Magic.DATA_PAGE_O_DATA, 0);
+            RecordHeader.setCurrentSize(curPage, Magic.DATA_PAGE_O_DATA, 0);
 
         } else {
-            curBlock = file.get(start);
-            curPage = DataPage.getDataPageView(curBlock, BLOCK_SIZE);
+            curPage = file.get(start);
         }
 
         // follow the rowids on this page to get to the last one. We don't
         // fall off, because this is the last page, remember?
-        short pos = curPage.getFirst();
+        short pos = curPage.dataPageGetFirst();
         if (pos == 0) {
             // page is exactly filled by the last block of a record
-            file.release(curBlock);
+            file.release(curPage);
             return allocNew(size, 0);
         }
 
         short hdr = pos;
 
-        if (cachedLastAllocatedRecordPage != curBlock.getBlockId()) {
+        if (cachedLastAllocatedRecordPage != curPage.getBlockId()) {
             //position was not cached, have to find it again
-            int availSize = RecordHeader.getAvailableSize(curBlock, hdr);
+            int availSize = RecordHeader.getAvailableSize(curPage, hdr);
             while (availSize != 0 && pos < BLOCK_SIZE) {
                 pos += availSize + RecordHeader.SIZE;
                 if (pos == BLOCK_SIZE) {
                     // Again, a filled page.
-                    file.release(curBlock);
+                    file.release(curPage);
                     return allocNew(size, 0);
                 }
                 hdr = pos;
-                availSize = RecordHeader.getAvailableSize(curBlock, hdr);
+                availSize = RecordHeader.getAvailableSize(curPage, hdr);
             }
         } else {
             hdr = cachedLastAllocatedRecordOffset;
@@ -203,7 +200,7 @@ final class PhysicalRowIdManager {
         if (pos == RecordHeader.SIZE) {
             // the last record exactly filled the page. Restart forcing
             // a new page.
-            file.release(curBlock);
+            file.release(curPage);
         }
 
         // we have the position, now tack on extra pages until we've got
@@ -221,28 +218,26 @@ final class PhysicalRowIdManager {
             }
 
             // write out the header now so we don't have to come back.
-            RecordHeader.setAvailableSize(curBlock, hdr, size);
+            RecordHeader.setAvailableSize(curPage, hdr, size);
             file.release(start, true);
 
             int neededLeft = size - freeHere;
             // Refactor these two blocks!
             while (neededLeft >= DATA_PER_PAGE) {
                 start = pageman.allocate(Magic.USED_PAGE);
-                curBlock = file.get(start);
-                curPage = DataPage.getDataPageView(curBlock, BLOCK_SIZE);
-                curPage.setFirst((short) 0); // no rowids, just data
+                curPage = file.get(start);
+                curPage.dataPageSetFirst((short) 0); // no rowids, just data
                 file.release(start, true);
                 neededLeft -= DATA_PER_PAGE;
             }
             if (neededLeft > 0) {
                 // done with whole chunks, allocate last fragment.
                 start = pageman.allocate(Magic.USED_PAGE);
-                curBlock = file.get(start);
-                curPage = DataPage.getDataPageView(curBlock, BLOCK_SIZE);
-                curPage.setFirst((short) (DataPage.O_DATA + neededLeft));
+                curPage = file.get(start);
+                curPage.dataPageSetFirst((short) (Magic.DATA_PAGE_O_DATA + neededLeft));
                 file.release(start, true);
-                cachedLastAllocatedRecordOffset = (short) (DataPage.O_DATA + neededLeft);
-                cachedLastAllocatedRecordPage = curBlock.getBlockId();
+                cachedLastAllocatedRecordOffset = (short) (Magic.DATA_PAGE_O_DATA + neededLeft);
+                cachedLastAllocatedRecordPage = curPage.getBlockId();
 
             }
         } else {
@@ -252,10 +247,10 @@ final class PhysicalRowIdManager {
             if (freeHere - size <= (16 + RecordHeader.SIZE)) {
                 size = freeHere;
             }
-            RecordHeader.setAvailableSize(curBlock, hdr, size);
+            RecordHeader.setAvailableSize(curPage, hdr, size);
             file.release(start, true);
             cachedLastAllocatedRecordOffset = (short) (hdr + RecordHeader.SIZE + size);
-            cachedLastAllocatedRecordPage = curBlock.getBlockId();
+            cachedLastAllocatedRecordPage = curPage.getBlockId();
 
         }
         return retval;
@@ -308,7 +303,7 @@ final class PhysicalRowIdManager {
             if (leftToWrite > 0) {
                 current = pageman.getNext(current);
                 block = file.get(current);
-                dataOffset = DataPage.O_DATA;
+                dataOffset = Magic.DATA_PAGE_O_DATA;
             }
         }
     }

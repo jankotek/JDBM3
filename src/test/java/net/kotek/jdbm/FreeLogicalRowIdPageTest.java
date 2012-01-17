@@ -18,68 +18,50 @@ package net.kotek.jdbm;
 
 import junit.framework.TestCase;
 
-/**
- * This class contains all Unit tests for {@link FreeLogicalRowIdPage}.
- */
 public class FreeLogicalRowIdPageTest extends TestCase {
 
-    public FreeLogicalRowIdPageTest(String name) {
-        super(name);
-    }
 
-
-    /**
-     * Test constructor - create a page
-     */
-    public void testCtor() throws Exception {
-        byte[] data = new byte[Storage.BLOCK_SIZE];
-        BlockIo test = new BlockIo(0, data);
-        new PageHeader(test, Magic.FREELOGIDS_PAGE);
-        FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test);
-    }
 
     /**
      * Test basics
      */
     public void testBasics() throws Exception {
         byte[] data = new byte[Storage.BLOCK_SIZE];
-        BlockIo test = new BlockIo(0, data);
-        new PageHeader(test, Magic.FREELOGIDS_PAGE);
-        FreeLogicalRowIdPage page = new FreeLogicalRowIdPage(test);
+        BlockIo page = new BlockIo(0, data);
 
         // we have a completely empty page.
-        assertEquals("zero count", 0, page.getCount());
+        assertEquals("zero count", 0, page.FreeLogicalRowId_getCount());
 
         // three allocs
-        short id = page.alloc(0);
-        id = page.alloc(1);
-        id = page.alloc(2);
-        assertEquals("three count", 3, page.getCount());
+        short id = page.FreeLogicalRowId_alloc(0);
+        id = page.FreeLogicalRowId_alloc(1);
+        id = page.FreeLogicalRowId_alloc(2);
+        assertEquals("three count", 3, page.FreeLogicalRowId_getCount());
 
         // setup last id (2)
-        page.setLocationBlock(id, 1);
-        page.setLocationOffset(id, (short) 2);
+        page.pageHeaderSetLocationBlock(id, 1);
+        page.pageHeaderSetLocationOffset(id, (short) 2);
 
         // two frees
-        page.free(0);
-        page.free(1);
-        assertEquals("one left count", 1, page.getCount());
-        assertTrue("isfree 0", page.isFree(0));
-        assertTrue("isfree 1", page.isFree(1));
-        assertTrue("isalloc 2", page.isAllocated(2));
+        page.FreeLogicalRowId_free(0);
+        page.FreeLogicalRowId_free(1);
+        assertEquals("one left count", 1, page.FreeLogicalRowId_getCount());
+        assertTrue("isfree 0", page.FreeLogicalRowId_isFree(0));
+        assertTrue("isfree 1", page.FreeLogicalRowId_isFree(1));
+        assertTrue("isalloc 2", page.FreeLogicalRowId_isAllocated(2));
 
         // now, create a new page over the data and check whether
         // it's all the same.
-        page = new FreeLogicalRowIdPage(test);
+        page = new BlockIo(0,data);
 
-        assertEquals("2: one left count", 1, page.getCount());
-        assertTrue("2: isfree 0", page.isFree(0));
-        assertTrue("2: isfree 1", page.isFree(1));
-        assertTrue("2: isalloc 2", page.isAllocated(2));
+        assertEquals("2: one left count", 1, page.FreeLogicalRowId_getCount());
+        assertTrue("2: isfree 0", page.FreeLogicalRowId_isFree(0));
+        assertTrue("2: isfree 1", page.FreeLogicalRowId_isFree(1));
+        assertTrue("2: isalloc 2", page.FreeLogicalRowId_isAllocated(2));
 
-        id = page.slotToOffset(2);
-        assertEquals("block", 1, page.getLocationBlock(id));
-        assertEquals("offset", 2, page.getLocationOffset(id));
+        id = page.FreeLogicalRowId_slotToOffset(2);
+        assertEquals("block", 1, page.pageHeaderGetLocationBlock(id));
+        assertEquals("offset", 2, page.pageHeaderGetLocationOffset(id));
 
     }
 

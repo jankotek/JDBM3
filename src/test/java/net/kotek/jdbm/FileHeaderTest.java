@@ -18,30 +18,24 @@ package net.kotek.jdbm;
 
 import junit.framework.TestCase;
 
-/**
- * This class contains all Unit tests for {@link FileHeader}.
- */
 public class FileHeaderTest extends TestCase {
 
-    public FileHeaderTest(String name) {
-        super(name);
-    }
 
     /**
      * Test set, write, read
      */
     public void testSetWriteRead() throws Exception {
         BlockIo b = new BlockIo(0, new byte[1000]);
-        FileHeader f = new FileHeader(b, true);
+        b.fileHeaderCheckHead(true);        
         for (int i = 0; i < Magic.NLISTS; i++) {
-            f.setFirstOf(i, 100 * i);
-            f.setLastOf(i, 200 * i);
+            b.fileHeaderSetFirstOf(i, 100 * i);
+            b.fileHeaderSetLastOf(i, 200 * i);
         }
 
-        f = new FileHeader(b, false);
+        b.fileHeaderCheckHead(false);
         for (int i = 0; i < Magic.NLISTS; i++) {
-            assertEquals("first " + i, i * 100, f.getFirstOf(i));
-            assertEquals("last " + i, i * 200, f.getLastOf(i));
+            assertEquals("first " + i, i * 100, b.fileHeaderGetFirstOf(i));
+            assertEquals("last " + i, i * 200, b.fileHeaderGetLastOf(i));
         }
     }
 
@@ -50,14 +44,14 @@ public class FileHeaderTest extends TestCase {
      */
     public void testRootRowids() throws Exception {
         BlockIo b = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
-        FileHeader f = new FileHeader(b, true);
-        for (int i = 0; i < FileHeader.NROOTS; i++) {
-            f.setRoot(i, 100 * i);
+        b.fileHeaderCheckHead(true);
+        for (int i = 0; i < Magic.FILE_HEADER_NROOTS; i++) {
+            b.fileHeaderSetRoot(i, 100 * i);
         }
 
-        f = new FileHeader(b, false);
-        for (int i = 0; i < FileHeader.NROOTS; i++) {
-            assertEquals("root " + i, i * 100, f.getRoot(i));
+        b.fileHeaderCheckHead(false);
+        for (int i = 0; i < Magic.FILE_HEADER_NROOTS; i++) {
+            assertEquals("root " + i, i * 100, b.fileHeaderGetRoot(i));
         }
     }
 
