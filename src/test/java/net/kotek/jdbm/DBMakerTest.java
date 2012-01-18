@@ -2,6 +2,8 @@ package net.kotek.jdbm;
 
 import junit.framework.TestCase;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 public class DBMakerTest extends TestCaseWithTestFile {
     
@@ -44,8 +46,31 @@ public class DBMakerTest extends TestCaseWithTestFile {
         assertEquals("aaa",db.fetch(recid));
 
         db.close();
+    }
 
 
+    public void testEncrypt(){
+        String file = newTestFile();
+        DB db = new DBMaker(file)
+                .enableEncryption("password")
+                .build();
+        
+        Set l = db.createHashSet("test");
+        for(int i = 0;i<10000;i++){
+            l.add("aa"+i);
+        }
+        db.commit();
+        db.close();
+        db = new DBMaker(file)
+                .enableEncryption("password")
+                .build();
+        l = db.getHashSet("test");
+        for(int i = 0;i<10000;i++){
+            assertTrue(l.contains("aa"+i));
+        }
+        db.close();
+        
+       
     }
 
 }

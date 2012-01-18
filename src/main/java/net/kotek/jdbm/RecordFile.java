@@ -144,13 +144,21 @@ final class RecordFile {
         } else {
             //decrypt if needed
             ByteBuffer b = storage.read(blockid);
-            if (!Utils.allZeros(b.array())) try {
-                cipherOut.doFinal(b.array(), 0, Storage.BLOCK_SIZE, node.getByteArray());
-            } catch (Exception e) {
-                throw new IOError(e);
+            byte[] bb;
+            if(b.hasArray()){
+                bb = b.array();
+            }else{
+                bb = new byte[Storage.BLOCK_SIZE];
+                b.position(0);
+                b.get(bb, 0, Storage.BLOCK_SIZE);
             }
-            else {
-                System.arraycopy(CLEAN_DATA, 0, node.getData(), 0, Storage.BLOCK_SIZE);
+            if (!Utils.allZeros(bb)) try {
+                bb = cipherOut.doFinal(bb);
+                node = new BlockIo(blockid, ByteBuffer.wrap(bb));
+                } catch (Exception e) {
+                throw new IOError(e);
+            }else {
+                node = new BlockIo(blockid, ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer());
             }
         }
 
