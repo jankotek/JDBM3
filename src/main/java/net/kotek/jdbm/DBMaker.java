@@ -38,6 +38,7 @@ public class DBMaker {
     private boolean disableTransactions = false;
     private boolean readonly = false;
     private String password = null;
+    private boolean useAES256Bit = true;
     private boolean useRandomAccessFile = false;
     private boolean autoClearRefCacheOnLowMem = true;
 
@@ -139,16 +140,22 @@ public class DBMaker {
 
 
     /**
-     * Enabled storage encryption using AES cipher
-     * Storage can not be read, unless the key is provided next time it is opened
+     * Enabled storage encryption using AES cipher. JDBM supports both 128 bit and 256 bit encryption if JRE provides it.
+     * There are some restrictions on AES 256 bit and not all JREs have it  by default.
+     * <p/>
+     * Storage can not be read (decrypted), unless the key is provided next time it is opened
      *
-     * @param password
+     * @param password used to encrypt store
+     * @param useAES256Bit if true strong AES 256 bit encryption is used. Otherwise more usual AES 128 bit is used.
      * @return this builder
      */
-    public DBMaker enableEncryption(String password) {
+    public DBMaker enableEncryption(String password, boolean useAES256Bit) {
         this.password = password;
+        this.useAES256Bit = useAES256Bit;
         return this;
     }
+
+
 
 
     /**
@@ -223,8 +230,9 @@ public class DBMaker {
             //this code comes from stack owerflow
             //http://stackoverflow.com/questions/992019/java-256bit-aes-encryption/992413#992413
             byte[] salt = new byte[]{3, -34, 123, 53, 78, 121, -12, -1, 45, -12, -48, 89, 11, 100, 99, 8};
+
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1024, 256);
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1024, useAES256Bit?256:128);
             SecretKey tmp = factory.generateSecret(spec);
             SecretKey secret = new SecretKeySpec(tmp.getEncoded(), "AES");
 

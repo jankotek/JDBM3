@@ -52,7 +52,7 @@ public class DBMakerTest extends TestCaseWithTestFile {
     public void testEncrypt(){
         String file = newTestFile();
         DB db = new DBMaker(file)
-                .enableEncryption("password")
+                .enableEncryption("password",false)
                 .build();
         
         Set l = db.createHashSet("test");
@@ -62,7 +62,7 @@ public class DBMakerTest extends TestCaseWithTestFile {
         db.commit();
         db.close();
         db = new DBMaker(file)
-                .enableEncryption("password")
+                .enableEncryption("password",false)
                 .build();
         l = db.getHashSet("test");
         for(int i = 0;i<10000;i++){
