@@ -982,7 +982,7 @@ final class BTreeNode<K, V>
 
         writeKeys(oos, node._keys, node._first);
 
-        if (node._isLeaf) {
+        if (node._isLeaf && _btree.hasValues()) {
             writeValues(oos, node);
         }
     }
@@ -990,16 +990,24 @@ final class BTreeNode<K, V>
 
     private void readValues(DataInputOutput ois, BTreeNode<K, V> node) throws IOException, ClassNotFoundException {
         node._values = new Object[BTree.DEFAULT_SIZE];
-        Serializer<V> serializer = _btree.valueSerializer != null ? _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
-        for (int i = node._first; i < BTree.DEFAULT_SIZE; i++) {
-            int header = ois.readUnsignedByte();
-            if (header == BTreeLazyRecord.NULL) {
-                node._values[i] = null;
-            } else if (header == BTreeLazyRecord.LAZY_RECORD) {
-                long recid = LongPacker.unpackLong(ois);
-                node._values[i] = new BTreeLazyRecord(_btree._db, recid, serializer);
-            } else {
-                node._values[i] = BTreeLazyRecord.fastDeser(ois, serializer, header);
+        if(_btree.hasValues()){
+            Serializer<V> serializer = _btree.valueSerializer != null ? _btree.valueSerializer : (Serializer<V>) _btree.getRecordManager().defaultSerializer();
+            for (int i = node._first; i < BTree.DEFAULT_SIZE; i++) {
+                int header = ois.readUnsignedByte();
+                if (header == BTreeLazyRecord.NULL) {
+                    node._values[i] = null;
+                } else if (header == BTreeLazyRecord.LAZY_RECORD) {
+                    long recid = LongPacker.unpackLong(ois);
+                    node._values[i] = new BTreeLazyRecord(_btree._db, recid, serializer);
+                } else {
+                    node._values[i] = BTreeLazyRecord.fastDeser(ois, serializer, header);
+                }
+            }
+        }else{
+            //create fake values
+            for (int i = node._first; i < BTree.DEFAULT_SIZE; i++) {
+                if(node._keys[i]!=null)
+                    node._values[i] = Utils.EMPTY_STRING;
             }
         }
     }

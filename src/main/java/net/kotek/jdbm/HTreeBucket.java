@@ -281,28 +281,30 @@ final class HTreeBucket<K, V> {
         }
 
         //write values
-        Serializer valSerializer = tree.valueSerializer != null ? tree.valueSerializer : tree.getRecordManager().defaultSerializer();
+        if(tree.hasValues()){
+            Serializer valSerializer = tree.valueSerializer != null ? tree.valueSerializer : tree.getRecordManager().defaultSerializer();
 
-        for (byte i = 0; i < size; i++) {
-            Object value = _keysAndValues[i + OVERFLOW_SIZE];
-            if (value == null) {
-                out.write(BTreeLazyRecord.NULL);
-            } else if (value instanceof BTreeLazyRecord) {
-                out.write(BTreeLazyRecord.LAZY_RECORD);
-                LongPacker.packLong(out, ((BTreeLazyRecord) value).recid);
-            } else {
-                //transform to byte array
-                out3.reset();
-                valSerializer.serialize(out3, value);
-
-                if (out3.getPos() > BTreeLazyRecord.MAX_INTREE_RECORD_SIZE) {
-                    //store as separate record
-                    long recid = tree.getRecordManager().insert(out3.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER);
+            for (byte i = 0; i < size; i++) {
+                Object value = _keysAndValues[i + OVERFLOW_SIZE];
+                if (value == null) {
+                    out.write(BTreeLazyRecord.NULL);
+                } else if (value instanceof BTreeLazyRecord) {
                     out.write(BTreeLazyRecord.LAZY_RECORD);
-                    LongPacker.packLong(out, recid);
+                    LongPacker.packLong(out, ((BTreeLazyRecord) value).recid);
                 } else {
-                    out.write(out3.getPos());
-                    out.write(out3.getBuf(), 0, out3.getPos());
+                    //transform to byte array
+                    out3.reset();
+                    valSerializer.serialize(out3, value);
+
+                    if (out3.getPos() > BTreeLazyRecord.MAX_INTREE_RECORD_SIZE) {
+                        //store as separate record
+                        long recid = tree.getRecordManager().insert(out3.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER);
+                        out.write(BTreeLazyRecord.LAZY_RECORD);
+                        LongPacker.packLong(out, recid);
+                    } else {
+                        out.write(out3.getPos());
+                        out.write(out3.getBuf(), 0, out3.getPos());
+                    }
                 }
             }
         }
@@ -325,16 +327,23 @@ final class HTreeBucket<K, V> {
         }
 
         //read values
-        Serializer<V> valSerializer = tree.valueSerializer != null ? tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
-        for (byte i = 0; i < size; i++) {
-            int header = in.readUnsignedByte();
-            if (header == BTreeLazyRecord.NULL) {
-                _keysAndValues[i + OVERFLOW_SIZE] = null;
-            } else if (header == BTreeLazyRecord.LAZY_RECORD) {
-                long recid = LongPacker.unpackLong(in);
-                _keysAndValues[i + OVERFLOW_SIZE] = (new BTreeLazyRecord(tree.getRecordManager(), recid, valSerializer));
-            } else {
-                _keysAndValues[i + OVERFLOW_SIZE] = BTreeLazyRecord.fastDeser(in, valSerializer, header);
+        if(tree.hasValues()){
+            Serializer<V> valSerializer = tree.valueSerializer != null ? tree.valueSerializer : (Serializer<V>) tree.getRecordManager().defaultSerializer();
+            for (byte i = 0; i < size; i++) {
+                int header = in.readUnsignedByte();
+                if (header == BTreeLazyRecord.NULL) {
+                    _keysAndValues[i + OVERFLOW_SIZE] = null;
+                } else if (header == BTreeLazyRecord.LAZY_RECORD) {
+                    long recid = LongPacker.unpackLong(in);
+                    _keysAndValues[i + OVERFLOW_SIZE] = (new BTreeLazyRecord(tree.getRecordManager(), recid, valSerializer));
+                } else {
+                    _keysAndValues[i + OVERFLOW_SIZE] = BTreeLazyRecord.fastDeser(in, valSerializer, header);
+                }
+            }
+        }else{
+            for (byte i = 0; i < size; i++) {
+                if(_keysAndValues[i]!=null)
+                    _keysAndValues[i+OVERFLOW_SIZE] = Utils.EMPTY_STRING;
             }
         }
     }

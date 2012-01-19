@@ -100,6 +100,9 @@ class BTree<K, V> {
      */
     boolean loadValues = true;
 
+    /** if false map contains only keys, used for set*/
+    private boolean hasValues = true;
+
     /**
      * The number of structural modifications to the tree for fail fast iterators. This value is just for runtime, it is not persisted
      */
@@ -167,28 +170,22 @@ class BTree<K, V> {
 
     /**
      * Create a new persistent BTree
-     *
-     * @param db Record manager used for persistence.
      */
     @SuppressWarnings("unchecked")
     public static <K extends Comparable, V> BTree<K, V> createInstance(DBAbstract db)
             throws IOException {
-        return createInstance(db, null, null, null);
+        return createInstance(db, null, null, null,true);
     }
 
 
     /**
      * Create a new persistent BTree
-     *
-     * @param db              Record manager used for persistence.
-     * @param comparator      Comparator used to order index entries
-     * @param keySerializer   Serializer used to serialize index keys (optional)
-     * @param valueSerializer Serializer used to serialize index values (optional)
      */
     public static <K, V> BTree<K, V> createInstance(DBAbstract db,
                                                     Comparator<K> comparator,
                                                     Serializer<K> keySerializer,
-                                                    Serializer<V> valueSerializer)
+                                                    Serializer<V> valueSerializer,
+                                                    boolean hasValues)
             throws IOException {
         BTree<K, V> btree;
 
@@ -204,6 +201,7 @@ class BTree<K, V> {
         btree._nodeSerializer = new BTreeNode<K, V>();
         btree._nodeSerializer._btree = btree;
         btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer());
+        btree.hasValues = hasValues;
         return btree;
     }
 
@@ -516,6 +514,7 @@ class BTree<K, V> {
         tree._height = in.readInt();
         tree._root = in.readLong();
         tree._entries = in.readInt();
+        tree.hasValues = in.readBoolean();
         tree._comparator = (Comparator) ser.deserialize(in);
         tree.keySerializer = (Serializer) ser.deserialize(in);
         tree.valueSerializer = (Serializer) ser.deserialize(in);
@@ -528,7 +527,7 @@ class BTree<K, V> {
         out.writeInt(_height);
         out.writeLong(_root);
         out.writeInt(_entries);
-
+        out.writeBoolean(hasValues);
         _db.defaultSerializer().serialize(out, _comparator);
         _db.defaultSerializer().serialize(out, keySerializer);
         _db.defaultSerializer().serialize(out, valueSerializer);
@@ -648,6 +647,10 @@ class BTree<K, V> {
             out.add(root._recid);
             root.dumpChildNodeRecIDs(out, _height);
         }
+    }
+
+    public boolean hasValues() {
+        return hasValues;
     }
 
     /**

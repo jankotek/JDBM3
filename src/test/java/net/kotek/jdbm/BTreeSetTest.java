@@ -37,6 +37,8 @@ public class BTreeSetTest extends TestCaseWithTestFile {
         public boolean equals(Object o1, Object o2) {
             return ((Integer) o1).compareTo((Integer) o2) == 0;
         }
+
+
     }
 
     SortedSet<Object> ts;
@@ -85,10 +87,10 @@ public class BTreeSetTest extends TestCaseWithTestFile {
         for (int counter = 0; counter < objArray.length; counter++)
             assertTrue("TreeSet does not contain correct elements",
                     anotherTreeSet.contains(objArray[counter]));
-        assertTrue("TreeSet does not answer correct comparator", anotherTreeSet
-                .comparator() == comp);
-        assertTrue("TreeSet does not use comparator",
-                anotherTreeSet.first() == objArray[objArray.length - 1]);
+        assertEquals("TreeSet does not answer correct comparator", anotherTreeSet
+                .comparator().getClass(),comp.getClass());
+        assertEquals("TreeSet does not use comparator",
+                anotherTreeSet.first() , objArray[objArray.length - 1]);
     }
 
     /**
@@ -201,8 +203,8 @@ public class BTreeSetTest extends TestCaseWithTestFile {
      */
     public void test_last() {
         // Test for method java.lang.Object java.util.TreeSet.last()
-        assertTrue("Returned incorrect last element",
-                ts.last() == objArray[objArray.length - 1]);
+        assertEquals("Returned incorrect last element",
+                ts.last(),objArray[objArray.length - 1]);
     }
 
     /**
@@ -294,7 +296,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
      */
     public void setUp() throws Exception {
         super.setUp();
-        db = newRecordManager();
+        db = newBaseRecordManager();
         ts = db.createTreeSet("testBTreeSet");
         for (int i = 0; i < objArray.length; i++) {
             Object x = objArray[i] = new Integer(i);

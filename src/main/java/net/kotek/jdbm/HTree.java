@@ -89,7 +89,8 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     protected boolean readonly = false;
     private long rootRecid;
     private DBAbstract db;
-    private long recid;
+    /** if false map contains only keys, used for set*/
+    private boolean hasValues = true;
 
     /**
      * counts structural changes in tree at runtume. Is here to support fail-fast behaviour.
@@ -119,12 +120,12 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     /**
      * Create a persistent hashtable.
      */
-    public HTree(DBAbstract db, long recid, Serializer<K> keySerializer, Serializer<V> valueSerializer)
+    public HTree(DBAbstract db, Serializer<K> keySerializer, Serializer<V> valueSerializer, boolean hasValues)
             throws IOException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         this.db = db;
-        this.recid = recid;
+        this.hasValues = hasValues;
 
         //create new root record
         this.rootRecid = db.insert(null);
@@ -137,16 +138,16 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     /**
      * Load a persistent hashtable
      */
-    public HTree(long rootRecid, Serializer<K> keySerializer, Serializer<V> valueSerializer)
+    public HTree(long rootRecid, Serializer<K> keySerializer, Serializer<V> valueSerializer, boolean hasValues)
             throws IOException {
         this.rootRecid = rootRecid;
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+        this.hasValues = hasValues;
     }
 
-    void setPersistenceContext(DBAbstract db, long recid) {
+    void setPersistenceContext(DBAbstract db) {
         this.db = db;
-        this.recid = recid;
     }
 
 
@@ -392,14 +393,16 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
     public static HTree deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
         long rootRecid = LongPacker.unpackLong(is);
+        boolean hasValues = is.readBoolean();
         Serializer keySerializer = (Serializer) ser.deserialize(is);
         Serializer valueSerializer = (Serializer)  ser.deserialize(is);
 
-        return new HTree(rootRecid, keySerializer, valueSerializer);
+        return new HTree(rootRecid, keySerializer, valueSerializer, hasValues);
     }
 
     void serialize(DataOutput out) throws IOException {
         LongPacker.packLong(out, rootRecid);
+        out.writeBoolean(hasValues);;
         db.defaultSerializer().serialize(out, keySerializer);
         db.defaultSerializer().serialize(out, valueSerializer);
     }
@@ -429,6 +432,10 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     
     DBAbstract getDB(){
         return db;
+    }
+
+    public boolean hasValues() {
+        return hasValues;
     }
 }
 

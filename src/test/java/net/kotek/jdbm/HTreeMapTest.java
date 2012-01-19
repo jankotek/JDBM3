@@ -26,7 +26,7 @@ public class HTreeMapTest extends MapInterfaceTest<Integer, String> {
     DBAbstract r;
 
     public void setUp() throws Exception {
-        r = TestCaseWithTestFile.newRecordManager();
+        r = TestCaseWithTestFile.newBaseRecordManager();
     }
 
     @Override

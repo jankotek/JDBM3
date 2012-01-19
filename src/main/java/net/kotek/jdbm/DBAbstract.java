@@ -100,7 +100,10 @@ abstract class DBAbstract implements DB {
         try {
             long recid = assertNameExist(name);
             HTree tree = fetch(recid);
-            tree.setPersistenceContext(this, recid);
+            tree.setPersistenceContext(this);
+            if(!tree.hasValues()){
+                throw new ClassCastException("HashSet is not HashMap");
+            }
             return tree;
         } catch (IOException e) {
             throw new IOError(e);
@@ -116,9 +119,8 @@ abstract class DBAbstract implements DB {
         try {
             assertNameNotExist(name);
 
-            long recid = insert(null);
-            HTree<K, V> tree = new HTree(this, recid, keySerializer, valueSerializer);
-            update(recid, tree);
+            HTree<K, V> tree = new HTree(this, keySerializer, valueSerializer,true);
+            long recid = insert(tree);
             setNamedObject(name, recid);
 
             return tree;
@@ -128,7 +130,17 @@ abstract class DBAbstract implements DB {
     }
 
     public synchronized <K> Set<K> getHashSet(String name) {
-        return new HTreeSet(getHashMap(name));
+        try {
+            long recid = assertNameExist(name);
+            HTree tree = fetch(recid);
+            tree.setPersistenceContext(this);
+            if(tree.hasValues()){
+                throw new ClassCastException("HashMap is not HashSet");
+            }
+            return  new HTreeSet(tree);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
     }
 
     public synchronized <K> Set<K> createHashSet(String name) {
@@ -136,13 +148,26 @@ abstract class DBAbstract implements DB {
     }
 
     public synchronized <K> Set<K> createHashSet(String name, Serializer<K> keySerializer) {
-        return new HTreeSet(createHashMap(name, keySerializer, null));
+        try {
+            assertNameNotExist(name);
+
+            HTree<K, Object> tree = new HTree(this, keySerializer, null,false);
+            long recid = insert(tree);
+            setNamedObject(name, recid);
+
+            return new HTreeSet<K>(tree);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
     }
 
     public <K, V> SortedMap<K, V> getTreeMap(String name) {
         try {
             long recid = assertNameExist(name);
-            return BTree.<K, V>load(this, recid).asMap();
+            BTree t =  BTree.<K, V>load(this, recid);
+            if(!t.hasValues())
+                throw new ClassCastException("TreeSet is not TreeMap");
+            return t.asMap();
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -159,11 +184,8 @@ abstract class DBAbstract implements DB {
                                                              Serializer<V> valueSerializer) {
         try {
             assertNameNotExist(name);
-
-            BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer);
-
+            BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer,true);
             setNamedObject(name, tree.getRecid());
-
             return tree.asMap();
         } catch (IOException e) {
             throw new IOError(e);
@@ -172,7 +194,15 @@ abstract class DBAbstract implements DB {
 
 
     public synchronized <K> SortedSet<K> getTreeSet(String name) {
-        return new BTreeSet<K>((SortedMap<K, Object>) getTreeMap(name));
+        try {
+            long recid = assertNameExist(name);
+            BTree t =  BTree.<K, Object>load(this, recid);
+            if(t.hasValues())
+                throw new ClassCastException("TreeMap is not TreeSet");
+            return new BTreeSet<K>(t.asMap());
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
     }
 
     public synchronized <K> SortedSet<K> createTreeSet(String name) {
@@ -181,7 +211,15 @@ abstract class DBAbstract implements DB {
 
 
     public synchronized <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer) {
-        return new BTreeSet<K>(createTreeMap(name, keyComparator, keySerializer, null));
+        try {
+            assertNameNotExist(name);
+            BTree<K, Object> tree = BTree.createInstance(this, keyComparator, keySerializer, null,false);
+            setNamedObject(name, tree.getRecid());
+            return new BTreeSet<K>(tree.asMap());
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+
     }
 
 
