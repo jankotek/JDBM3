@@ -82,7 +82,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
         // delete the record
-        physMgr.delete(loc2);
+        physMgr.free(loc2);
 
         f.forceClose();
     }

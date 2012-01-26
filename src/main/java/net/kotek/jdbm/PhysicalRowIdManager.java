@@ -49,7 +49,7 @@ final class PhysicalRowIdManager {
      */
     long insert(byte[] data, int start, int length) throws IOException {
         if (length < 1)
-            throw new IllegalArgumentException("Lenght is <1");
+            throw new IllegalArgumentException("Length is <1");
         if (start < 0)
             throw new IllegalArgumentException("negative start");
 
@@ -67,7 +67,7 @@ final class PhysicalRowIdManager {
         short head = Location.getOffset(rowid);
         int availSize = RecordHeader.getAvailableSize(block, head);
         if (length > availSize ||
-                //difference between free and available space can be only 64KB.
+                //difference between free and available space can be only 254.
                 //if bigger, need to realocate and free block
                 availSize - length > RecordHeader.MAX_SIZE_SPACE
                 ) {
@@ -84,12 +84,6 @@ final class PhysicalRowIdManager {
         return rowid;
     }
 
-    /**
-     * Deletes a record.
-     */
-    void delete(long rowid) throws IOException {
-        free(rowid);
-    }
 
     void fetch(DataInputOutput out, long rowid) throws IOException {
         // fetch the record header
@@ -179,7 +173,7 @@ final class PhysicalRowIdManager {
 
         short hdr = pos;
 
-        if (cachedLastAllocatedRecordPage != curPage.getBlockId()) {
+        if (cachedLastAllocatedRecordPage != curPage.getBlockId() ) {
             //position was not cached, have to find it again
             int availSize = RecordHeader.getAvailableSize(curPage, hdr);
             while (availSize != 0 && pos < BLOCK_SIZE) {
@@ -197,10 +191,17 @@ final class PhysicalRowIdManager {
             pos = cachedLastAllocatedRecordOffset;
         }
 
-        if (pos == RecordHeader.SIZE) {
+
+        if (pos == RecordHeader.SIZE) { //TODO why is this here?
             // the last record exactly filled the page. Restart forcing
             // a new page.
             file.release(curPage);
+        }
+        
+        if(hdr>Storage.BLOCK_SIZE - 16){
+            file.release(curPage);
+            //there is not enought space on current page, so force new page
+            return allocNew(size,0);
         }
 
         // we have the position, now tack on extra pages until we've got
@@ -212,7 +213,7 @@ final class PhysicalRowIdManager {
             // if yes, increase the allocation. A small bit is a record
             // header plus 16 bytes.
             int lastSize = (size - freeHere) % DATA_PER_PAGE;
-            if ((DATA_PER_PAGE - lastSize) < (RecordHeader.SIZE + 16)) {
+            if (size <DATA_PER_PAGE && (DATA_PER_PAGE - lastSize) < (RecordHeader.SIZE + 16)) {
                 size += (DATA_PER_PAGE - lastSize);
                 size = RecordHeader.roundAvailableSize(size);
             }
@@ -257,15 +258,21 @@ final class PhysicalRowIdManager {
 
     }
 
-    private void free(long id) throws IOException {
+    void free(final long id) throws IOException {
         // get the rowid, and write a zero current size into it.
-        BlockIo curBlock = file.get(Location.getBlock(id));
+        final BlockIo curBlock = file.get(Location.getBlock(id));
+        final short offset = Location.getOffset(id);
+        final int size = RecordHeader.getAvailableSize(curBlock, offset);
+        if(size>DATA_PER_PAGE){
+            //if record is large and spread across multiple pages, shrink it to current page and release pages it occupies
+            //TODO feel lucky? implement comment above
+        }
 
-        RecordHeader.setCurrentSize(curBlock, Location.getOffset(id), 0);
+        RecordHeader.setCurrentSize(curBlock, offset, 0);
         file.release(Location.getBlock(id), true);
 
         // write the rowid to the free list
-        freeman.put(id, RecordHeader.getAvailableSize(curBlock, Location.getOffset(id)));
+        freeman.put(id, size);
     }
 
     /**

@@ -250,7 +250,7 @@ final class RecordFile {
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
                 if(cipherIn !=null)                    
-                    storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, node.getData())));
+                   storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, node.getData())));
                 else
                    storage.write(node.getBlockId(),node.getData());
                 node.setClean();

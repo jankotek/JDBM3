@@ -32,6 +32,7 @@ final class RecordHeader {
     // offsets
     private static final short O_CURRENTSIZE = 0; // int currentSize
     private static final short O_AVAILABLESIZE = Magic.SZ_BYTE; // int availableSize
+    static final int MAX_RECORD_SIZE = 8355839;
     static final int SIZE = O_AVAILABLESIZE + Magic.SZ_SHORT;
     /**
      * Maximal difference between current and available size,
@@ -110,8 +111,6 @@ final class RecordHeader {
 
     }
 
-
-    static final int MAX_RECORD_SIZE = 8355839;
 
 
     static int roundAvailableSize(int value) {

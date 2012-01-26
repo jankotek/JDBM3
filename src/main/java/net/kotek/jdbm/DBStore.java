@@ -282,7 +282,7 @@ final class DBStore
         logRowId = decompressRecid(logRowId);
 
         long physRowId = _logicMgr.fetch(logRowId);
-        _physMgr.delete(physRowId);
+        _physMgr.free(physRowId);
         _logicMgr.delete(logRowId);
     }
 
