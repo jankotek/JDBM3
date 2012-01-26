@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.security.spec.KeySpec;
 
 /**
- *
+ * Class used to configure and create DB. It uses builder pattern.
  */
 public class DBMaker {
 
@@ -252,7 +252,7 @@ public class DBMaker {
                 throw new Error("Block size changed after encryption, make sure you use '/NoPadding'");
             byte[] data2 = cipherOut.doFinal(encData);
             for (int i = 0; i < data.length; i++) {
-                if (data[i] != data2[i]) throw new Error();
+                if (data[i] != data2[i]) throw new Error("Encryption provided by JRE does not work");
             }
 
         } catch (Exception e) {
@@ -268,23 +268,13 @@ public class DBMaker {
         }
 
 
-
-        if (cacheType == DBCache.MRU) {
+        if (cacheType == DBCache.MRU || cacheType == DBCache.SOFT || cacheType == DBCache.HARD || cacheType == DBCache.WEAK) {
             db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
-        } else if (cacheType == DBCache.SOFT) {
-            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
-        } else if (cacheType == DBCache.HARD) {
-            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
-
-        } else if (cacheType == DBCache.WEAK) {
-            db = new DBCache((DBStore) db, mruCacheSize, cacheType, autoClearRefCacheOnLowMem);
-
         } else if (cacheType == DBCache.NONE) {
             //do nothing
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
         }
-
 
         return db;
     }
