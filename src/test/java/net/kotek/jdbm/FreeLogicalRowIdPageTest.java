@@ -39,8 +39,8 @@ public class FreeLogicalRowIdPageTest extends TestCase {
         assertEquals("three count", 3, page.FreeLogicalRowId_getCount());
 
         // setup last id (2)
-        page.pageHeaderSetLocationBlock(id, 1);
-        page.pageHeaderSetLocationOffset(id, (short) 2);
+        page.pageHeaderSetLocation(id, Location.toLong(1, (short) 2));
+
 
         // two frees
         page.FreeLogicalRowId_free((short) 0);
@@ -60,8 +60,9 @@ public class FreeLogicalRowIdPageTest extends TestCase {
         assertTrue("2: isalloc 2", page.FreeLogicalRowId_isAllocated(2));
 
         id = page.FreeLogicalRowId_slotToOffset(2);
-        assertEquals("block", 1, page.pageHeaderGetLocationBlock(id));
-        assertEquals("offset", 2, page.pageHeaderGetLocationOffset(id));
+        long loc = page.pageHeaderGetLocation(id);
+        assertEquals("block", 1, Location.getBlock(loc));
+        assertEquals("offset", 2, Location.getOffset(loc));
 
     }
 

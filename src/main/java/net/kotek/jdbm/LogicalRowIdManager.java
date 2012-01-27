@@ -40,8 +40,11 @@ final class LogicalRowIdManager {
 
     /**
      * Creates a new logical rowid pointing to the indicated physical id
+     *
+     * @param physloc physical location to point to
+     * @return logical recid
      */
-    long insert(long loc) throws IOException {
+    long insert(final long physloc) throws IOException {
         // check whether there's a free rowid to reuse
         long retval = freeman.get();
         if (retval == 0) {
@@ -60,7 +63,7 @@ final class LogicalRowIdManager {
             }
         }
         // write the translation.
-        update(retval, loc);
+        update(retval, physloc);
         return retval;
     }
 
@@ -71,7 +74,7 @@ final class LogicalRowIdManager {
      * @param physLoc
      * @throws IOException
      */
-    void forceInsert(long logicalRowId, long physLoc) throws IOException {
+    void forceInsert(final long logicalRowId, final long physLoc) throws IOException {
         if (fetch(logicalRowId) != 0)
             throw new Error("can not forceInsert, record already exists: " + logicalRowId);
 
@@ -82,53 +85,49 @@ final class LogicalRowIdManager {
     /**
      * Releases the indicated logical rowid.
      */
-    void delete(long rowid) throws IOException {
+    void delete(final long logicalrowid) throws IOException {
         //zero out old location, is needed for defragmentation
-        final long block = -Location.getBlock(rowid);
-        BlockIo xlatPage = file.get(block);
-        xlatPage.pageHeaderSetLocationBlock(Location.getOffset(rowid), 0);
-        xlatPage.pageHeaderSetLocationOffset(Location.getOffset(rowid), (short) 0);
+        final long block = -Location.getBlock(logicalrowid);
+        final BlockIo xlatPage = file.get(block);
+        xlatPage.pageHeaderSetLocation(Location.getOffset(logicalrowid), 0);
         file.release(block, true);
-        freeman.put(rowid);
+        freeman.put(logicalrowid);
     }
 
     /**
      * Updates the mapping
      *
-     * @param rowid The logical rowid
-     * @param loc   The physical rowid
+     * @param logicalrowid The logical rowid
+     * @param physloc   The physical rowid
      */
-    void update(long rowid, long loc) throws IOException {
+    void update(final long logicalrowid, final long physloc) throws IOException {
 
-        final long block = -Location.getBlock(rowid);
-        BlockIo xlatPage = file.get(block);
-        xlatPage.pageHeaderSetLocationBlock(Location.getOffset(rowid), Location.getBlock(loc));
-        xlatPage.pageHeaderSetLocationOffset(Location.getOffset(rowid), Location.getOffset(loc));
+        final long block = -Location.getBlock(logicalrowid);
+        final BlockIo xlatPage = file.get(block);
+        xlatPage.pageHeaderSetLocation(Location.getOffset(logicalrowid), physloc);
         file.release(block, true);
     }
 
     /**
      * Returns a mapping
      *
-     * @param rowid The logical rowid
+     * @param logicalrowid The logical rowid
      * @return The physical rowid, 0 if does not exist
      */
-    long fetch(long rowid) throws IOException {
-        final long block = -Location.getBlock(rowid);
-        long last = pageman.getLast(Magic.TRANSLATION_PAGE);
+    long fetch(long logicalrowid) throws IOException {
+        final long block = -Location.getBlock(logicalrowid);
+        final long last = pageman.getLast(Magic.TRANSLATION_PAGE);
         if (last - 1 > block)
             return 0;
 
-        final short offset = Location.getOffset(rowid);
+        final short offset = Location.getOffset(logicalrowid);
 
-        BlockIo xlatPage = file.get(block);
-        try {
-            return Location.toLong(
-                    xlatPage.pageHeaderGetLocationBlock(offset),
-                    xlatPage.pageHeaderGetLocationOffset(offset));
-        } finally {
-            file.release(block, false);
-        }
+        final BlockIo xlatPage = file.get(block);
+        final long ret =  xlatPage.pageHeaderGetLocation(offset);
+
+
+        file.release(block, false);
+        return ret;
     }
 
     void commit() throws IOException {

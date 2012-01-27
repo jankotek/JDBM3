@@ -16,6 +16,7 @@
 
 package net.kotek.jdbm;
 
+import java.io.FileOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
@@ -34,8 +35,8 @@ import java.util.Iterator;
  */
 class DBCache
         extends DBAbstract {
-    
-    
+
+
     static final byte NONE = 1;
     static final byte MRU = 2;
     static final byte WEAK = 3;
@@ -91,7 +92,7 @@ class DBCache
     /**
      * End of linked-list of cache elements.  Last entry is element
      * which has been used most recently.
-     */        
+     */
     protected CacheEntry _last;
 
     /** counter which counts number of insert since last 'action'*/
@@ -135,7 +136,7 @@ class DBCache
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
         }
-        
+
         if(_db.needsAutoCommit())
             commit();
 
@@ -150,10 +151,10 @@ class DBCache
                 _softHash.put(recid, new SoftCacheEntry(recid, obj, _refQueue));
             else if (_cacheType == WEAK)
                 _softHash.put(recid, new WeakCacheEntry(recid, obj, _refQueue));
-            else 
+            else
                 _softHash.put(recid,obj);
         }else {
-        	cachePut(  recid , obj, serializer, false );
+            cachePut(  recid , obj, serializer, false );
         }
         return recid;
     }
@@ -203,10 +204,12 @@ class DBCache
             commit();
 
         _db.delete(recid);
-        CacheEntry entry = _hash.get(recid);
-        if (entry != null) {
-            removeEntry(entry);
-            _hash.remove(entry._recid);
+        synchronized (_hash){
+            CacheEntry entry = _hash.get(recid);
+            if (entry != null) {
+                removeEntry(entry);
+                _hash.remove(entry._recid);
+            }
         }
         if (_cacheType>MRU) synchronized (_softHash) {
             Object e = _softHash.remove(recid);
@@ -234,14 +237,16 @@ class DBCache
                 ((ReferenceCacheEntry)e).clear();
             }
         }
-        CacheEntry entry = cacheGet(recid);
-        if (entry != null) {
-            // reuse existing cache entry
-            entry._obj = obj;
-            entry._serializer = serializer;
-            entry._isDirty = true;
-        } else {
-            cachePut(recid, obj, serializer, true);
+        synchronized (_hash){
+            CacheEntry entry = cacheGet(recid);
+            if (entry != null) {
+                // reuse existing cache entry
+                entry._obj = obj;
+                entry._serializer = serializer;
+                entry._isDirty = true;
+            } else {
+                cachePut(recid, obj, serializer, true);
+            }
         }
     }
 
@@ -255,22 +260,27 @@ class DBCache
         if (_cacheType>MRU) synchronized (_softHash) {
             Object e = _softHash.get(recid);
             if (e != null) {
-                
+
                 if(e instanceof ReferenceCacheEntry)
                     e = ((ReferenceCacheEntry)e).get();
                 if (e != null) {
                     return (A) e;
                 }
             }
+        }else{
+            CacheEntry entry = cacheGet(recid);
+            if (entry != null) {
+                return (A) entry._obj;
+            }
+
         }
 
-        CacheEntry entry = cacheGet(recid);
-        if (entry == null) {
-            A value = _db.fetch(recid, serializer);
-            if (!(_cacheType>MRU))
-                cachePut(recid, value, serializer, false);
-            else { //put record into soft cache
-                synchronized (_softHash) {
+        A value = _db.fetch(recid, serializer);
+        if (_cacheType==MRU){
+            //put record into MRU cache
+            cachePut(recid, value, serializer, false);
+        }else { //put record into soft cache
+           synchronized (_softHash) {
 
                     if (_cacheType == SOFT)
                         _softHash.put(recid, new SoftCacheEntry(recid, value, _refQueue));
@@ -278,12 +288,10 @@ class DBCache
                         _softHash.put(recid, new WeakCacheEntry(recid, value, _refQueue));
                     else
                         _softHash.put(recid,value);
-                }
-            }
-            return value;
-        } else {
-            return (A) entry._obj;
+           }
         }
+
+        return value;
     }
 
 
@@ -306,6 +314,7 @@ class DBCache
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
         }
+
         updateCacheEntries();
         _db.commit();
     }
@@ -319,7 +328,11 @@ class DBCache
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
-        _hash.clear();
+        synchronized (_hash){
+            _hash.clear();
+            _first = null;
+            _last = null;
+        }
         if (_cacheType>MRU) synchronized (_softHash) {
             Iterator<ReferenceCacheEntry> iter = _softHash.valuesIterator();
             while (iter.hasNext()) {
@@ -328,8 +341,6 @@ class DBCache
             }
             _softHash.clear();
         }
-        _first = null;
-        _last = null;
     }
 
 
@@ -366,13 +377,25 @@ class DBCache
      */
     protected void updateCacheEntries() {
         try {
-            Iterator<CacheEntry> iter = _hash.valuesIterator();
-            while (iter.hasNext()) {
-                CacheEntry entry = iter.next();
-                if (entry._isDirty) {
-                    _db.update(entry._recid, entry._obj, entry._serializer);
-                    entry._isDirty = false;
+            synchronized(_hash){
+
+                //make defensive copy of values as _db.update() may trigger changes in db
+                CacheEntry[] vals = new CacheEntry[_hash.size()];
+                Iterator<CacheEntry> iter = _hash.valuesIterator();
+                for(int i = 0;i<vals.length;i++){
+                    vals[i] = iter.next();
                 }
+                iter = null;
+
+                for(CacheEntry entry:vals){
+
+                    if (entry._isDirty) {
+                        _db.update(entry._recid, entry._obj, entry._serializer);
+                        entry._isDirty = false;
+                    }
+
+                }
+                //TODO entries are not dirty anymore, maybe _hash.clear()?
             }
         } catch (IOException e) {
             throw new IOError(e);
@@ -385,13 +408,15 @@ class DBCache
      * Obtain an object in the cache
      */
     protected CacheEntry cacheGet(long key) {
-        CacheEntry entry = _hash.get(key);
-        if (!(_cacheType>MRU) && entry != null && _last != entry) {
-            //touch entry
-            removeEntry(entry);
-            addEntry(entry);
+        synchronized (_hash){
+            CacheEntry entry = _hash.get(key);
+            if (!(_cacheType>MRU) && entry != null && _last != entry) {
+                //touch entry
+                removeEntry(entry);
+                addEntry(entry);
+            }
+            return entry;
         }
-        return entry;
     }
 
 
@@ -401,29 +426,31 @@ class DBCache
      * @throws IOException
      */
     protected void cachePut(long recid, Object value, Serializer serializer, boolean dirty) throws IOException {
-        CacheEntry entry = _hash.get(recid);
-        if (entry != null) {
-            entry._obj = value;
-            entry._serializer = serializer;
-            //touch entry
-            if (_last != entry) {
-                removeEntry(entry);
-                addEntry(entry);
-            }
-        } else {
-
-            if (_hash.size() == _max) {
-                // purge and recycle entry
-                entry = purgeEntry();
-                entry._recid = recid;
+        synchronized (_hash){
+            CacheEntry entry = _hash.get(recid);
+            if (entry != null) {
                 entry._obj = value;
-                entry._isDirty = dirty;
                 entry._serializer = serializer;
+                //touch entry
+                if (_last != entry) {
+                    removeEntry(entry);
+                    addEntry(entry);
+                }
             } else {
-                entry = new CacheEntry(recid, value, serializer, dirty);
+
+                if (_hash.size() == _max) {
+                    // purge and recycle entry
+                    entry = purgeEntry();
+                    entry._recid = recid;
+                    entry._obj = value;
+                    entry._isDirty = dirty;
+                    entry._serializer = serializer;
+                } else {
+                    entry = new CacheEntry(recid, value, serializer, dirty);
+                }
+                addEntry(entry);
+                _hash.put(entry._recid, entry);
             }
-            addEntry(entry);
-            _hash.put(entry._recid, entry);
         }
     }
 
@@ -431,13 +458,15 @@ class DBCache
      * Add a CacheEntry.  Entry goes at the end of the list.
      */
     protected void addEntry(CacheEntry entry) {
-        if (_first == null) {
-            _first = entry;
-            _last = entry;
-        } else {
-            _last._next = entry;
-            entry._previous = _last;
-            _last = entry;
+        synchronized (_hash){
+            if (_first == null) {
+                _first = entry;
+                _last = entry;
+            } else {
+                _last._next = entry;
+                entry._previous = _last;
+                _last = entry;
+            }
         }
     }
 
@@ -446,22 +475,24 @@ class DBCache
      * Remove a CacheEntry from linked list
      */
     protected void removeEntry(CacheEntry entry) {
-        if (entry == _first) {
-            _first = entry._next;
+        synchronized (_hash){
+            if (entry == _first) {
+                _first = entry._next;
+            }
+            if (_last == entry) {
+                _last = entry._previous;
+            }
+            CacheEntry previous = entry._previous;
+            CacheEntry next = entry._next;
+            if (previous != null) {
+                previous._next = next;
+            }
+            if (next != null) {
+                next._previous = previous;
+            }
+            entry._previous = null;
+            entry._next = null;
         }
-        if (_last == entry) {
-            _last = entry._previous;
-        }
-        CacheEntry previous = entry._previous;
-        CacheEntry next = entry._next;
-        if (previous != null) {
-            previous._next = next;
-        }
-        if (next != null) {
-            next._previous = previous;
-        }
-        entry._previous = null;
-        entry._next = null;
     }
 
     /**
@@ -470,24 +501,25 @@ class DBCache
      * @return recyclable CacheEntry
      */
     protected CacheEntry purgeEntry() {
-        CacheEntry entry = _first;
-        if (entry == null)
-            return new CacheEntry(-1, null, null, false);
+        synchronized (_hash){
+            CacheEntry entry = _first;
+            if (entry == null)
+                return new CacheEntry(-1, null, null, false);
 
-        if (entry._isDirty) try {
-            _db.update(entry._recid, entry._obj, entry._serializer);
-        } catch (IOException e) {
-            throw new IOError(e);
+            if (entry._isDirty) try {
+                _db.update(entry._recid, entry._obj, entry._serializer);
+            } catch (IOException e) {
+                throw new IOError(e);
+            }
+
+
+            removeEntry(entry);
+            _hash.remove(entry._recid);
+            entry._obj = null;
+            entry._serializer = null;
+            entry._isDirty = false;
+            return entry;
         }
-
-        removeEntry(entry);
-        _hash.remove(entry._recid);
-
-
-        entry._obj = null;
-        entry._serializer = null;
-        entry._isDirty = false;
-        return entry;
     }
 
 
@@ -582,7 +614,7 @@ class DBCache
                     return;
 
                 if (e != null) {
-                    
+
                     synchronized (db._softHash) {
                         int counter = 0;
                         while (e != null) {
@@ -599,7 +631,7 @@ class DBCache
                     db.clearCacheIfLowOnMem();
 
                 }
-                
+
 
             } catch (InterruptedException e) {
                 return;
@@ -619,8 +651,13 @@ class DBCache
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
-        while (_hash.size() > 0)
-            purgeEntry();
+        synchronized (_hash){
+            while (_hash.size() > 0){
+                purgeEntry();
+            }
+            _first = null;
+            _last = null;
+        }
 
         if (_cacheType>MRU) synchronized (_softHash) {
             if(_cacheType!=HARD){
@@ -632,8 +669,6 @@ class DBCache
             }
             _softHash.clear();
         }
-        _first = null;
-        _last = null;
 
     }
 

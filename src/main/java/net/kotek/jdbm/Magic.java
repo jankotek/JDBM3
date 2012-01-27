@@ -88,9 +88,9 @@ interface Magic {
     short PAGE_HEADER_O_PREV = PAGE_HEADER_O_NEXT + Magic.SZ_SIX_BYTE_LONG;
     short PAGE_HEADER_SIZE = PAGE_HEADER_O_PREV + Magic.SZ_SIX_BYTE_LONG;
 
-    short PhysicalRowId_O_BLOCK = 0; // long block
-    short PhysicalRowId_O_OFFSET = Magic.SZ_SIX_BYTE_LONG; // short offset
-    int PhysicalRowId_SIZE = PhysicalRowId_O_OFFSET + Magic.SZ_SHORT;
+    short PhysicalRowId_O_LOCATION = 0; // long block
+//    short PhysicalRowId_O_OFFSET = Magic.SZ_SIX_BYTE_LONG; // short offset
+    int PhysicalRowId_SIZE = Magic.SZ_SIX_BYTE_LONG;
     
     short DATA_PAGE_O_FIRST = PAGE_HEADER_SIZE; // short firstrowid
     short DATA_PAGE_O_DATA = (short) (DATA_PAGE_O_FIRST + Magic.SZ_SHORT);

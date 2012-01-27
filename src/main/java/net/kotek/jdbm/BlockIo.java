@@ -411,21 +411,31 @@ final class BlockIo {
         writeShort(PAGE_HEADER_O_MAGIC, (short) (Magic.BLOCK + type));
     }
 
-    long pageHeaderGetLocationBlock(short pos) {
-        return readSixByteLong(pos + PhysicalRowId_O_BLOCK);
+    long pageHeaderGetLocation(final short pos){
+        return readSixByteLong(pos + PhysicalRowId_O_LOCATION);
     }
 
-    void pageHeaderSetLocationBlock(short pos, long value) {
-        writeSixByteLong(pos + PhysicalRowId_O_BLOCK, value);
+
+    void pageHeaderSetLocation(short pos, long value) {
+       writeSixByteLong(pos + PhysicalRowId_O_LOCATION, value);
     }
 
-    short pageHeaderGetLocationOffset(short pos) {
-        return readShort(pos + PhysicalRowId_O_OFFSET);
-    }
 
-    void pageHeaderSetLocationOffset(short pos, short value) {
-        writeShort(pos + PhysicalRowId_O_OFFSET, value);
-    }
+//    long pageHeaderGetLocationBlock(short pos) {
+//        return readSixByteLong(pos + PhysicalRowId_O_LOCATION);
+//    }
+//
+//    void pageHeaderSetLocationBlock(short pos, long value) {
+//        writeSixByteLong(pos + PhysicalRowId_O_LOCATION, value);
+//    }
+
+//    short pageHeaderGetLocationOffset(short pos) {
+//        return readShort(pos + PhysicalRowId_O_OFFSET);
+//    }
+//
+//    void pageHeaderSetLocationOffset(short pos, short value) {
+//        writeShort(pos + PhysicalRowId_O_OFFSET, value);
+//    }
 
     short dataPageGetFirst() {
         return readShort(DATA_PAGE_O_FIRST);
@@ -519,7 +529,7 @@ final class BlockIo {
 
     public long FreePhysicalRowId_slotToLocation(int slot) {
         short pos = FreePhysicalRowId_slotToOffset(slot);
-        return Location.toLong(pageHeaderGetLocationBlock(pos), pageHeaderGetLocationOffset(pos));
+        return pageHeaderGetLocation(pos);
     }
 
 
@@ -604,7 +614,7 @@ final class BlockIo {
 
      boolean FreeLogicalRowId_isAllocated(int slot) {
          //return get(slot).getBlock() > 0;
-         return pageHeaderGetLocationBlock(FreeLogicalRowId_slotToOffset(slot)) > 0;
+         return pageHeaderGetLocation(FreeLogicalRowId_slotToOffset(slot)) > 0;
      }
 
 
@@ -620,7 +630,7 @@ final class BlockIo {
      * Frees a slot
      */
     void  FreeLogicalRowId_free(short slot) {
-        pageHeaderSetLocationBlock(FreeLogicalRowId_slotToOffset(slot), 0);
+        pageHeaderSetLocation(FreeLogicalRowId_slotToOffset(slot), Location.toLong(0, (short) 0));
         //get(slot).setBlock(0);
         FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() - 1));
 
@@ -635,7 +645,7 @@ final class BlockIo {
     short  FreeLogicalRowId_alloc(short slot) {
         FreeLogicalRowId_setCount((short) ( FreeLogicalRowId_getCount() + 1));
         short pos =  FreeLogicalRowId_slotToOffset(slot);
-        pageHeaderSetLocationBlock(pos, -1);
+        pageHeaderSetLocation(pos, Location.toLong(-1, (short) 0));
         //get(slot).setBlock(-1);
 
         // update previousFoundAllocated if the newly allocated slot is before what we've found in the past
@@ -659,7 +669,7 @@ final class BlockIo {
     }
 
     short  FreeLogicalRowId_getFirstAllocated() {
-        short previousFoundAllocated = readShort(FreeLogicalRowId_O_LAST_ALOC);;
+        short previousFoundAllocated = readShort(FreeLogicalRowId_O_LAST_ALOC);
         for (; previousFoundAllocated < Magic.FreeLogicalRowId_ELEMS_PER_PAGE; previousFoundAllocated++) {
             if ( FreeLogicalRowId_isAllocated(previousFoundAllocated)){
                 writeShort(FreeLogicalRowId_O_LAST_ALOC,previousFoundAllocated);
@@ -671,7 +681,7 @@ final class BlockIo {
 
     public long  FreeLogicalRowId_slotToLocation(int slot) {
         short pos =  FreeLogicalRowId_slotToOffset(slot);
-        return Location.toLong(pageHeaderGetLocationBlock(pos), pageHeaderGetLocationOffset(pos));
+        return pageHeaderGetLocation(pos);
     }
 
 

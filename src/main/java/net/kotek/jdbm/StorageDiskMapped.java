@@ -23,9 +23,11 @@ class StorageDiskMapped implements Storage {
 
 
     /**
-     * maximal number of pages in single file
+     * Maximal number of pages in single file.
+     * Calculated so that each file will have 1 GB
      */
-    final static long PAGES_PER_FILE = 524288 ;
+    final static long PAGES_PER_FILE = (1024*1024*1024)>>>Storage.BLOCK_SIZE_SHIFT;
+
 
 
     private ArrayList<FileChannel> channels = new ArrayList<FileChannel>();
@@ -89,7 +91,7 @@ class StorageDiskMapped implements Storage {
 
             //remapping buffer for each newly added page would be slow,
             //so allocate new size in chunks
-            int increment = Math.min(BLOCK_SIZE * 1000,offsetInFile/10);
+            int increment = Math.min(BLOCK_SIZE * 1024,offsetInFile/10);
             increment  -= increment%BLOCK_SIZE;
 
             long newFileSize = offsetInFile+BLOCK_SIZE + increment;

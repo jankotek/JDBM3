@@ -39,8 +39,7 @@ public class FreePhysicalRowIdPageTest extends TestCase {
         assertEquals("three count", 3, page.FreePhysicalRowId_getCount());
 
         // setup last id (2)
-        page.pageHeaderSetLocationBlock(id, 1);
-        page.pageHeaderSetLocationOffset(id, (short) 2);
+        page.pageHeaderSetLocation(id, Location.toLong(1, (short) 2));
         page.FreePhysicalRowId_setSize(id, 3);
 
         // two frees
@@ -61,8 +60,9 @@ public class FreePhysicalRowIdPageTest extends TestCase {
         assertTrue("2: isalloc 2", !page.FreePhysicalRowId_isFree(2));
 
         id = page.FreePhysicalRowId_slotToOffset(2);
-        assertEquals("block", 1, page.pageHeaderGetLocationBlock(id));
-        assertEquals("offset", 2, page.pageHeaderGetLocationOffset(id));
+        long loc = page.pageHeaderGetLocation(id);
+        assertEquals("block", 1, Location.getBlock(loc));
+        assertEquals("offset", 2, Location.getOffset(loc));
         assertEquals("size", 3, page.FreePhysicalRowId_getSize(id));
 
     }

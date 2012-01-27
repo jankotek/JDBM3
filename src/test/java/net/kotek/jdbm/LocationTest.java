@@ -38,5 +38,26 @@ public class LocationTest extends TestCase {
         assertEquals("offset2", 20, Location.getOffset(loc));
 
     }
+    
+    
+    public void testShift(){
+        int shift = 0xFF0000FF;
+        assertEquals( shift>>>24, 0xFF);
+        assertEquals( shift<<8, 0xFF00);
+
+                     
+    }
+    
+    
+    public void testCompressRecid(){
+        for(long l = Magic.PAGE_HEADER_SIZE;l<Storage.BLOCK_SIZE;l+=6){
+            assertEquals(l,Location.decompressRecid(Location.compressRecid(l)));
+        }
+        
+        for(long l = Magic.PAGE_HEADER_SIZE+Storage.BLOCK_SIZE*5;l<Storage.BLOCK_SIZE*6;l+=6){
+            assertEquals(l,Location.decompressRecid(Location.compressRecid(l)));
+        }
+        
+    }
 
 }

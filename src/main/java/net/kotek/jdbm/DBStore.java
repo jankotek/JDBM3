@@ -90,6 +90,7 @@ final class DBStore
     private Cipher cipherIn;
     private boolean useRandomAccessFile;
 
+
     void checkCanWrite() {
         if (readonly)
             throw new UnsupportedOperationException("Could not write, store is opened as read-only");
@@ -170,9 +171,6 @@ final class DBStore
         _physMgr = new PhysicalRowIdManager(_file, _pageman,
                 new FreePhysicalRowIdPageManager(_file, _pageman));
 
-        if (Storage.BLOCK_SIZE > 256 * 8)
-            throw new InternalError(); //too big page, slot number would not fit into page
-
         _logicMgr = new LogicalRowIdManager(_file, _pageman,
                 new FreeLogicalRowIdPageManager(_file, _pageman));
 
@@ -251,13 +249,13 @@ final class DBStore
         buf.reset();
 
         serializer.serialize(buf, obj);
-        long physRowId = _physMgr.insert(buf.getBuf(), 0, buf.getPos());
-        long recid = _logicMgr.insert(physRowId);
+        final long physRowId = _physMgr.insert(buf.getBuf(), 0, buf.getPos());
+        final long recid = _logicMgr.insert(physRowId);
         if (DEBUG) {
             System.out.println("BaseRecordManager.insert() recid " + recid + " length " + buf.getPos());
         }
 
-        return compressRecid(recid);
+        return Location.compressRecid(recid);
     }
 
 
@@ -279,7 +277,7 @@ final class DBStore
             System.out.println("BaseRecordManager.delete() recid " + logRowId);
         }
 
-        logRowId = decompressRecid(logRowId);
+        logRowId =  Location.decompressRecid(logRowId);
 
         long physRowId = _logicMgr.fetch(logRowId);
         _physMgr.free(physRowId);
@@ -316,9 +314,11 @@ final class DBStore
     }
 
 
-    private <A> void update2(long logRecid, A obj, Serializer<A> serializer, DataInputOutput buf)
+    private <A> void update2(long logRecid, final A obj, final Serializer<A> serializer, final DataInputOutput buf)
             throws IOException {
-        logRecid = decompressRecid(logRecid);
+        
+        logRecid =  Location.decompressRecid(logRecid);
+
         long physRecid = _logicMgr.fetch(logRecid);
         if (physRecid == 0)
             throw new IOException("Can not update, recid does not exist: " + logRecid);
@@ -337,7 +337,7 @@ final class DBStore
     }
 
 
-    public synchronized <A> A fetch(long recid, Serializer<A> serializer)
+    public synchronized <A> A fetch(final long recid, final Serializer<A> serializer)
             throws IOException {
 
         checkIfClosed();
@@ -365,10 +365,10 @@ final class DBStore
     }
 
 
-    private <A> A fetch2(long recid, Serializer<A> serializer, DataInputOutput buf)
+    private <A> A fetch2(long recid, final Serializer<A> serializer, final DataInputOutput buf)
             throws IOException {
 
-        recid = decompressRecid(recid);
+        recid =  Location.decompressRecid(recid);
 
         buf.reset();
         long physLocation = _logicMgr.fetch(recid);
@@ -388,9 +388,9 @@ final class DBStore
             throw new IOError(e);
         }
     }
-
+    
     byte[] fetchRaw(long recid) throws IOException {
-        recid = decompressRecid(recid);
+        recid =  Location.decompressRecid(recid);
         long physLocation = _logicMgr.fetch(recid);
         if (physLocation == 0) {
             //throw new IOException("Record not found, recid: "+recid);
@@ -681,9 +681,9 @@ final class DBStore
 
                     for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
                         final int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
-                        long physPage = io.pageHeaderGetLocationBlock((short) pos);
-                        short physOffset = io.pageHeaderGetLocationOffset((short) pos);
-                        if (physPage == 0 && physOffset == 0) {
+                        final long physLoc = io.pageHeaderGetLocation((short) pos);
+                        
+                        if (physLoc == 0) {
                             freeRecordCount++;
                             continue;
                         }
@@ -691,7 +691,8 @@ final class DBStore
                         recordCount++;
 
                         //get size
-                        BlockIo block = _file.get(physPage);
+                        BlockIo block = _file.get(Location.getBlock(physLoc));
+                        final short physOffset = Location.getOffset(physLoc);
                         int availSize = RecordHeader.getAvailableSize(block, physOffset);
                         int currentSize = RecordHeader.getCurrentSize(block, physOffset);
                         _file.release(block);
@@ -796,9 +797,8 @@ final class DBStore
                     }
 
                     //get physical location in this db
-                    long physRowId = Location.toLong(
-                            io.pageHeaderGetLocationBlock((short) pos),
-                            io.pageHeaderGetLocationOffset((short) pos));
+                    final long physRowId =  io.pageHeaderGetLocation((short) pos);
+                            
                     if (physRowId == 0)
                         continue;
 
@@ -882,7 +882,7 @@ final class DBStore
      * @throws IOException
      */
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
-        logicalRowId = decompressRecid(logicalRowId);
+        logicalRowId = Location.decompressRecid(logicalRowId);
 
         if (needsAutoCommit()) {
             commit();
@@ -893,30 +893,6 @@ final class DBStore
     }
 
 
-    /**
-     * Compress recid from physical form (block - offset) to (block - slot).
-     * This way resulting number is smaller and can be easier packed with LongPacker
-     */
-    static long compressRecid(long recid) {
-        long block = Location.getBlock(recid);
-        short offset = Location.getOffset(recid);
-
-        offset = (short) (offset - Magic.PAGE_HEADER_SIZE);
-        if (offset % 8 != 0)
-            throw new InternalError("not 8");
-        long slot = offset / 8;
-        if (slot < 0 || slot > 255)
-            throw new InternalError("too big slot: " + slot);
-
-        return (block << 8) + (long) slot;
-
-    }
-
-    static long decompressRecid(long recid) {
-        long block = recid >> 8;
-        short offset = (short) (((recid & 0xff)) * 8 + Magic.PAGE_HEADER_SIZE);
-        return Location.toLong(block, offset);
-    }
 
     /**
      * Returns number of records stored in database.
@@ -934,9 +910,8 @@ final class DBStore
                     throw new Error();
 
                 //get physical location
-                long physRowId = Location.toLong(
-                        io.pageHeaderGetLocationBlock((short) pos),
-                        io.pageHeaderGetLocationOffset((short) pos));
+                long physRowId = io.pageHeaderGetLocation((short) pos);
+
                 if (physRowId != 0)
                     counter += 1;
             }

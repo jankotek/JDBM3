@@ -101,8 +101,7 @@ final class FreeLogicalRowIdPageManager {
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
                 long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
                 short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
-                fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 slot = fp.FreeLogicalRowId_getFirstFree();
             }
             file.release(current, true);
@@ -121,8 +120,7 @@ final class FreeLogicalRowIdPageManager {
             while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
                 long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
                 short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
-                fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 slot = fp.FreeLogicalRowId_getFirstFree();
             }
             file.release(freePage, true);

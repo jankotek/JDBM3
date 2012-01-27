@@ -142,8 +142,7 @@ final class FreePhysicalRowIdPageManager {
                     long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
 
                     short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
-                    fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                    fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                    fp.pageHeaderSetLocation(freePhysRowId, rowid);
                     fp.FreePhysicalRowId_setSize(freePhysRowId, size);
                     slot = fp.FreePhysicalRowId_getFirstFree();
                 }
@@ -165,8 +164,7 @@ final class FreePhysicalRowIdPageManager {
                 int size = freeBlocksInTransactionSize.data[rowidpos];
                 long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
                 short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
-                fp.pageHeaderSetLocationBlock(freePhysRowId, Location.getBlock(rowid));
-                fp.pageHeaderSetLocationOffset(freePhysRowId, Location.getOffset(rowid));
+                fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 fp.FreePhysicalRowId_setSize(freePhysRowId, size);
                 slot = fp.FreePhysicalRowId_getFirstFree();
             }

@@ -16,24 +16,25 @@ public class HugeData {
     static public void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
-        new File("/hugo/large/").mkdirs();
-        DB db = new DBMaker("/hugo/large/db" + Math.random())
+        //new File("/media/b0beb325-d9fe-4a30-9f58-77e6b15e6b7d/lost+found/large/").mkdirs();
+        DB db = new DBMaker("/media/b0beb325-d9fe-4a30-9f58-77e6b15e6b7d/db")
                 .disableTransactions()
-                .enableMRUCache()
                 .build();
 
-        Map<Long,Integer> map = db.createHashMap("test");
+        Map<Long,Integer> map = db.createTreeMap("test");
 //        List<Long> test = db.createLinkedList("test");
+        final double max = 1e10;
 
-        for (Long i = 1L; i < 1e10; i++) {
+        for (Long i = 1L; i < max; i++) {
             if (i % 1e6 == 0) {
-                System.out.println(i);
+                System.out.println(i + " - " +(100D * i /max) + " %");
                 //Thread.sleep(1000000);
             }
 //            test.add(i);
             map.put(i,i.hashCode());
         }
 
+        db.defrag();
         db.close();
 
         System.out.println("Finished, total time: " + (System.currentTimeMillis() - startTime) / 1000);

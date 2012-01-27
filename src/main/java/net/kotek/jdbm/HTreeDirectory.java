@@ -162,15 +162,15 @@ final class HTreeDirectory<K, V> {
     }
 
     private long getRecid(int hash) {
-        long[] sub = _children[hash>>3];
+        long[] sub = _children[hash>>>3];
         return sub==null? 0 : sub[hash%8];
     }
 
     private void putRecid(int hash, long recid) {
-        long[] sub = _children[hash>>3];
+        long[] sub = _children[hash>>>3];
         if(sub == null){
             sub = new long[8];
-            _children[hash>>3] = sub;
+            _children[hash>>>3] = sub;
         }
         sub[hash%8] = recid;
     }

@@ -46,7 +46,8 @@ class LongHashMap<V> implements Serializable {
 
     private transient Entry<V> reuseAfterDelete = null;
 
-    static final class Entry<V> {
+    static final class Entry<V> implements  Serializable{
+        private static final long serialVersionUID = 362445231113181265L;
 
         Entry<V> next;
 
