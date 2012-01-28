@@ -72,28 +72,29 @@ Instance cache
 --------------
 JDBM caches created instances similar way as Hibernate or other ORM frameworks. This greatly reduces serialization overhead and speedups database. There are five cache types, each configurable with method on `DBMaker` builder:
 
-*  **Most Recently Used** (MRU) cache. It is fixed size and stores newest entryes. This cache is on by default and is recomended for systems with limited memory. You can configure its size, default size is 2048.
+*  **Most Recently Used** (MRU) cache. It has fixed size and stores newest entries. This cache is on by default and is recommended for systems with limited memory. You can configure its size, default size is 2048.
 
 *  **No cache**. You may disable instance cache by using `DBMaker.disableCache()`
 
-*  **Weak reference cache**. Instances are referenced using `WeakReference`. When item is no longer referenced by other instances, it can be discarted by GC. Use `DBMaker.enableWeakCache()` to enable it.
+*  **Weak reference cache**. Instances are referenced using `WeakReference`. When item is no longer referenced by other instances, it can be discarded by GC. Use `DBMaker.enableWeakCache()` to enable it.
 
 *  **Soft reference cache**. Instances are referenced using `SoftReference`. Similar to `WeakReference` but holds longer, until systems starts running out of memory. Use `DBMaker.enableSoftCache()` to enable it.
 
 *  **Hard reference cache**. All instances fetched by JDBM are stored in cache until released. GC has no power to discard them.  Use `DBMaker.enableHardCache()` to enable it.
 
 
-Weak/Soft/Hard should be used only if you have enought heap memory (-Xmx256M or more), otherwise keep default safe option which is MRU cache. Our tests shows that GC may not be fast enought to prevent OutOfMemoryException with reference cache. So JDBM every 10 seconds checks free memory and if it goes bellow 25%, it completely clears reference cache. 
+Weak/Soft/Hard should be used only if you have enough heap memory (-Xmx256M or more), otherwise keep default safe option which is MRU cache. Our tests shows that GC may not be fast enough to prevent OutOfMemoryException with reference cache. So JDBM every 10 seconds checks free memory and if it goes bellow 25%, it completely clears reference cache.
 
 You may also clear cache manually using `DB.clearCache()`, when moving from one type of data to other.
 
 Transactions
 ------------
-JDBM supports single transaction per store. So unlike most other databases it does not have multiple concurrent transactions with row/table locks, pessimistic locking and similar stuff. This greatly simplify design and speedups database. 
+JDBM supports single transaction per store. So unlike most other databases, it does not have multiple concurrent transactions with row/table locks, pessimistic locking and similar stuff.
+This greatly simplify API and speedups database.
 
-Transaction implementation is sound and solid. Uncommited data are stored in memory. Latter during commit, data are appended to end of transaction log file, it makes it safe as append operation hardly ever corrupts file. After commit is finished, data are replayed from transaction file into main storage. If users calls rollback, transaction log file is discarted. 
+Transaction implementation is sound and solid. Uncommited data are stored in memory. Latter during commit, data are appended to end of transaction log file, it makes it safe as append operation hardly ever corrupts file. After commit is finished, data are replayed from transaction log file into main storage file. If users calls rollback, transaction log file is discarded.
 
-Keeping transaction log file brings some overhead. It is possible to disable transaction and speedup modifications. In this case no efford is made to protect file from corruption, all is sacrisifised for maximal speed. It is absolutely necesary to properly close storage before exit. You may disable transactions by using `DBMaker.disableTransactions()`.
+Keeping transaction log file brings some overhead. It is possible to disable transaction and speedup modifications. In this case no effort is made to protect file from corruption, all is sacrificed for maximal speed. It is absolutely necessary to properly close storage before exit. You may disable transactions by using `DBMaker.disableTransactions()`.
 
 Uncommited data are stored in memory and flushed to disk during commit. So with large transactions you may run out of memory easily.
 
