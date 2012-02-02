@@ -26,15 +26,16 @@ import java.util.*;
 abstract class DBAbstract implements DB {
 
 
-    /**
-     * Inserts a new record using a custom serializer.
-     *
-     * @param obj        the object for the new record.
-     * @param serializer a custom serializer
-     * @return the rowid for the new record.
-     * @throws java.io.IOException when one of the underlying I/O operations fails.
-     */
-    abstract <A> long insert(A obj, Serializer<A> serializer) throws IOException;
+
+   /**
+      * Inserts a new record using a custom serializer.
+      *
+      * @param obj        the object for the new record.
+      * @param serializer a custom serializer
+      * @return the rowid for the new record.
+      * @throws java.io.IOException when one of the underlying I/O operations fails.
+      */
+    abstract <A> long insert(A obj, Serializer<A> serializer,boolean disableCache) throws IOException;
 
     /**
      * Deletes a record.
@@ -83,7 +84,7 @@ abstract class DBAbstract implements DB {
 
 
     public long insert(Object obj) throws IOException {
-        return insert(obj, defaultSerializer());
+        return insert(obj, defaultSerializer(),false);
     }
 
 

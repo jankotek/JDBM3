@@ -793,6 +793,21 @@ public class BTreeTest
         }
 
     } // ObjectTT
+    
+    public void testIssue2(){
+        //this causes stack overflow
+        // https://github.com/jankotek/JDBM3/issues/2
+        DB build = new DBMaker(newTestFile()).setMRUCacheSize(100).build();
+        Map<String, String> treeMap = build.createTreeMap("treeMap");
+        for (int i = 0; i < 100000; i++) {
+            treeMap.put(i + "asdddfffffffffffffffffffdgf" + i + "sddfdfsfddddddddddddddddd" + i, "dsfgfg.dfcdfsgfgfffffffffffffffffdddddddddd");
+            if (i % 10000 == 0) {
+                build.commit();
+            }
+        }
+        build.commit();
+        build.close();
+    }
 
 }
 

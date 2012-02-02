@@ -199,7 +199,7 @@ final class HTreeDirectory<K, V> {
             // insert (key,value) pair in bucket
             Object existing = bucket.addElement(key, value);
 
-            long b_recid = tree.getDB().insert(bucket, tree.SERIALIZER);
+            long b_recid = tree.getDB().insert(bucket, tree.SERIALIZER,false);
             putRecid(hash, b_recid);
 
             tree.getDB().update(_recid, this, tree.SERIALIZER);
@@ -229,7 +229,7 @@ final class HTreeDirectory<K, V> {
                                 + "Depth=" + _depth);
                     }
                     HTreeDirectory dir = new HTreeDirectory(tree, (byte) (_depth + 1));
-                    long dir_recid = tree.getDB().insert(dir, tree.SERIALIZER);
+                    long dir_recid = tree.getDB().insert(dir, tree.SERIALIZER,false);
                     dir.setPersistenceContext(dir_recid);
 
                     putRecid(hash, dir_recid);

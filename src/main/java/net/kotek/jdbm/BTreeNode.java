@@ -134,7 +134,7 @@ final class BTreeNode<K, V>
         _children[BTree.DEFAULT_SIZE - 2] = overflow._recid;
         _children[BTree.DEFAULT_SIZE - 1] = root._recid;
 
-        _recid = _btree._db.insert(this, this);
+        _recid = _btree._db.insert(this, this,false);
     }
 
 
@@ -158,7 +158,7 @@ final class BTreeNode<K, V>
         _values[BTree.DEFAULT_SIZE - 2] = value;
         _values[BTree.DEFAULT_SIZE - 1] = null;  // I am the root BTreeNode for now
 
-        _recid = _btree._db.insert(this, this);
+        _recid = _btree._db.insert(this, this,false);
     }
 
 
@@ -182,7 +182,7 @@ final class BTreeNode<K, V>
             _children = new long[BTree.DEFAULT_SIZE];
         }
 
-        _recid = _btree._db.insert(this, this);
+        _recid = _btree._db.insert(this, this,false);
     }
 
 
@@ -1033,7 +1033,7 @@ final class BTreeNode<K, V>
 
                 if (output.getPos() > BTreeLazyRecord.MAX_INTREE_RECORD_SIZE) {
                     //write as separate record
-                    long recid = _btree._db.insert(output.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER);
+                    long recid = _btree._db.insert(output.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER,true);
                     oos.write(BTreeLazyRecord.LAZY_RECORD);
                     LongPacker.packLong(oos, recid);
                 } else {

@@ -298,7 +298,7 @@ final class HTreeBucket<K, V> {
 
                     if (out3.getPos() > BTreeLazyRecord.MAX_INTREE_RECORD_SIZE) {
                         //store as separate record
-                        long recid = tree.getRecordManager().insert(out3.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER);
+                        long recid = tree.getRecordManager().insert(out3.toByteArray(), BTreeLazyRecord.FAKE_SERIALIZER,true);
                         out.write(BTreeLazyRecord.LAZY_RECORD);
                         LongPacker.packLong(out, recid);
                     } else {

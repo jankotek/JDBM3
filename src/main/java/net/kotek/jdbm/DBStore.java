@@ -205,15 +205,7 @@ final class DBStore
     }
 
 
-    /**
-     * Inserts a new record using a custom serializer.
-     *
-     * @param obj        the object for the new record.
-     * @param serializer a custom serializer
-     * @return the rowid for the new record.
-     * @throws IOException when one of the underlying I/O operations fails.
-     */
-    public synchronized <A> long insert(A obj, Serializer<A> serializer)
+    public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
             throws IOException {
         checkIfClosed();
         checkCanWrite();
@@ -484,7 +476,7 @@ final class DBStore
             long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
             if (serialClassInfoRecid == 0) {
                 //insert new empty array list
-                serialClassInfoRecid = insert(new ArrayList<SerialClassInfo.ClassInfo>(0), SerialClassInfo.serializer);
+                serialClassInfoRecid = insert(new ArrayList<SerialClassInfo.ClassInfo>(0), SerialClassInfo.serializer,false);
                 setRoot(SERIAL_CLASS_INFO_RECID_ROOT, serialClassInfoRecid);
             }
 

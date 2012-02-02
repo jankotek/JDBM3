@@ -200,7 +200,7 @@ class BTree<K, V> {
         btree.valueSerializer = valueSerializer;
         btree._nodeSerializer = new BTreeNode<K, V>();
         btree._nodeSerializer._btree = btree;
-        btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer());
+        btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer(),false);
         btree.hasValues = hasValues;
         return btree;
     }

@@ -131,7 +131,7 @@ class DBCache
     }
 
 
-    public synchronized <A> long insert(A obj, Serializer<A> serializer)
+    public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
             throws IOException {
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
@@ -140,10 +140,10 @@ class DBCache
         if(_db.needsAutoCommit())
             commit();
 
-        long recid = _db.insert(obj, serializer);
+        final long recid = _db.insert(obj, serializer,disableCache);
 
 
-
+        if(disableCache) return recid;
 
         if(_cacheType>MRU) synchronized(_softHash) {
 

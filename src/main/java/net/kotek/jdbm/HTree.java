@@ -131,7 +131,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         this.rootRecid = db.insert(null);
         HTreeDirectory<K, V> root = new HTreeDirectory<K, V>(this, (byte) 0);
         root.setPersistenceContext(rootRecid);
-        this.rootRecid = db.insert(root, this.SERIALIZER);
+        this.rootRecid = db.insert(root, this.SERIALIZER,false);
     }
 
 

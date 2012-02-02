@@ -75,7 +75,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             throw new IllegalArgumentException("Serializer does not implement Serializable");
         this.valueSerializer = valueSerializer;
         //create root
-        this.rootRecid = db.insert(new Root(), ROOT_SERIALIZER);
+        this.rootRecid = db.insert(new Root(), ROOT_SERIALIZER,false);
     }
 
     void setPersistenceContext(DBAbstract db) {
@@ -119,7 +119,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
         try {                           
             Root r = getRoot();
             Entry e = new Entry(r.last, 0, value);
-            long recid = db.insert(e, entrySerializer);
+            long recid = db.insert(e, entrySerializer,false);
 
             //update old last Entry to point to new record
             if (r.last != 0) {
@@ -356,7 +356,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             try {
                 //insert new entry
                 Entry<E> e = new Entry<E>(prev, next, value);
-                long recid = db.insert(e, entrySerializer);
+                long recid = db.insert(e, entrySerializer,false);
 
                 //update previous entry
                 if (prev != 0) {
