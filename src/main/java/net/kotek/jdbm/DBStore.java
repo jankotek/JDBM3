@@ -695,6 +695,7 @@ final class DBStore
                         totalRecordSize += currentSize;
 
                     }
+                    _file.release(io);
                 }
 
                 b.append("  Contains " + recordCount + " records and " + freeRecordCount + " free slots.\n");

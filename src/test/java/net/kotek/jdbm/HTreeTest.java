@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Map;
 
 /**
  * This class contains all Unit tests for {@link HTree}.
@@ -113,6 +114,22 @@ public class HTreeTest extends TestCaseWithTestFile {
         assertTrue(updOld.isEmpty());
         assertTrue(updNew.isEmpty());
 
+    }
+
+    public void testIssue(){
+        int size = 100000;
+        int commitSize = 100000;
+        DB build = new DBMaker(newTestFile()).setMRUCacheSize(100).build();
+        Map<String, String> hashMap = build.createHashMap("hashMap");
+        for (int i = 0; i < size; i++) {
+            hashMap.put(i + "asdddfdgf" + i + "sddfdfsf" + i, "dsfgfg.dfcdfsgfg");
+            if (i % commitSize == 0) {
+                build.commit();
+            }
+        }
+        build.commit();
+        build.calculateStatistics();
+        build.close();
     }
 
 
