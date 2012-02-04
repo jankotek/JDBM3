@@ -368,6 +368,10 @@ class DBCache
     }
 
     public String calculateStatistics() {
+        if (_db == null) {
+            throw new IllegalStateException("DB has been closed");
+        }
+
         return _db.calculateStatistics();
     }
 

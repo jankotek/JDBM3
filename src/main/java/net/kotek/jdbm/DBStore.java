@@ -627,6 +627,8 @@ final class DBStore
     }
 
     public synchronized String calculateStatistics() {
+        checkIfClosed();
+
         try {
 
             final StringBuilder b = new StringBuilder();
