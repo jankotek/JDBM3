@@ -123,6 +123,33 @@ final class FreePhysicalRowIdPageManager {
     }
 
     public void commit() throws IOException {
+        if(freeBlocksInTransactionRowid.size==0)
+            return;
+
+        quickSort(freeBlocksInTransactionRowid.data,freeBlocksInTransactionSize.data,0,freeBlocksInTransactionRowid.size-1);
+
+        //try to merge records released next to each other into single one
+        int prevIndex = 0;
+        for(int i=1;i<freeBlocksInTransactionRowid.size;i++){
+            if(freeBlocksInTransactionSize.data[i] + freeBlocksInTransactionSize.data[prevIndex]<30000 &&
+                freeBlocksInTransactionRowid.data[prevIndex] + freeBlocksInTransactionSize.data[i] == freeBlocksInTransactionRowid.data[i]){
+                //increase previous record size and effectively delete old record size
+                long blockId = Location.getBlock(freeBlocksInTransactionRowid.data[prevIndex]);
+                BlockIo b = _file.get(blockId);
+                RecordHeader.setCurrentSize(b,Location.getOffset(freeBlocksInTransactionRowid.data[prevIndex]), 0);
+                freeBlocksInTransactionSize.data[prevIndex]+=freeBlocksInTransactionSize.data[i];
+                RecordHeader.setAvailableSize(b,Location.getOffset(freeBlocksInTransactionRowid.data[prevIndex]), freeBlocksInTransactionSize.data[prevIndex]);
+                _file.release(b);
+                //zero out curr record, so it does not get added to list
+                freeBlocksInTransactionRowid.data[i] = 0;
+                freeBlocksInTransactionSize.data[i] = 0;
+                //move to next, without leaving previous record
+                i++;
+                continue;
+            }
+            prevIndex = i;
+        }
+
         //write all uncommited free records
         int rowidpos = 0;
 
@@ -140,6 +167,7 @@ final class FreePhysicalRowIdPageManager {
                 while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
                     int size = freeBlocksInTransactionSize.data[rowidpos];
                     long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
+                    if(size == 0) continue;
 
                     short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
                     fp.pageHeaderSetLocation(freePhysRowId, rowid);
@@ -163,6 +191,7 @@ final class FreePhysicalRowIdPageManager {
             while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
                 int size = freeBlocksInTransactionSize.data[rowidpos];
                 long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
+                if(size == 0) continue;
                 short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
                 fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 fp.FreePhysicalRowId_setSize(freePhysRowId, size);
@@ -180,6 +209,44 @@ final class FreePhysicalRowIdPageManager {
         freeBlocksInTransactionSize.clear();
 
     }
+
+    /** quick sort which also sorts elements in second array*/
+    private static void quickSort(final long array[], final int array2[],final int low, final int n){
+        long temp;
+        int temp2;
+        int lo = low;
+        int hi = n;
+        if (lo >= n) {
+            return;
+        }
+        long mid = array[(lo + hi) / 2];
+        while (lo < hi) {
+            while (lo<hi && array[lo] < mid) {
+                lo++;
+            }
+            while (lo<hi && array[hi] > mid) {
+                hi--;
+            }
+            if (lo < hi) {
+                temp = array[lo];
+                array[lo] = array[hi];
+                array[hi] = temp;
+                temp2 = array2[lo];
+                array2[lo] = array2[hi];
+                array2[hi] = temp2;
+            }
+        }
+        if (hi < lo) {
+            temp2 = hi;
+            hi = lo;
+            lo = temp2;
+        }
+        quickSort(array, array2, low, lo);
+        quickSort(array, array2, lo == low ? lo+1 : lo, n);
+    }
+
+
+
 
     public void rollback() {
         freeBlocksInTransactionRowid.clear();
