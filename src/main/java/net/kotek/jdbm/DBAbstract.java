@@ -99,7 +99,9 @@ abstract class DBAbstract implements DB {
 
     public <K, V> Map<K, V> getHashMap(String name) {
         try {
-            long recid = assertNameExist(name);
+            long recid = getNamedObject(name);
+            if(recid == 0) return null;
+
             HTree tree = fetch(recid);
             tree.setPersistenceContext(this);
             if(!tree.hasValues()){
@@ -132,7 +134,9 @@ abstract class DBAbstract implements DB {
 
     public synchronized <K> Set<K> getHashSet(String name) {
         try {
-            long recid = assertNameExist(name);
+            long recid = getNamedObject(name);
+            if(recid == 0) return null;
+
             HTree tree = fetch(recid);
             tree.setPersistenceContext(this);
             if(tree.hasValues()){
@@ -164,7 +168,9 @@ abstract class DBAbstract implements DB {
 
     public <K, V> SortedMap<K, V> getTreeMap(String name) {
         try {
-            long recid = assertNameExist(name);
+            long recid = getNamedObject(name);
+            if(recid == 0) return null;
+
             BTree t =  BTree.<K, V>load(this, recid);
             if(!t.hasValues())
                 throw new ClassCastException("TreeSet is not TreeMap");
@@ -196,7 +202,9 @@ abstract class DBAbstract implements DB {
 
     public synchronized <K> SortedSet<K> getTreeSet(String name) {
         try {
-            long recid = assertNameExist(name);
+            long recid = getNamedObject(name);
+            if(recid == 0) return null;
+
             BTree t =  BTree.<K, Object>load(this, recid);
             if(t.hasValues())
                 throw new ClassCastException("TreeMap is not TreeSet");
@@ -247,8 +255,8 @@ abstract class DBAbstract implements DB {
 
     public <K> List<K> getLinkedList(String name) {
         try {
-            long recid = assertNameExist(name);
-
+            long recid = getNamedObject(name);
+            if(recid == 0) return null;
             LinkedList<K> list = (LinkedList<K>) fetch(recid);
             list.setPersistenceContext(this);
             return list;
@@ -263,12 +271,6 @@ abstract class DBAbstract implements DB {
             throw new IllegalArgumentException("Object with name '" + name + "' already exists");
     }
 
-    private long assertNameExist(String name) throws IOException {
-        long recid = getNamedObject(name);
-        if (recid == 0)
-            throw new IllegalArgumentException("Object with name '" + name + "' does not exist");
-        return recid;
-    }
 
 
     /**
