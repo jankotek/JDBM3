@@ -438,6 +438,39 @@ final class DBStore
         saveNameDirectory(nameDirectory);
     }
 
+    public Map<String,Collection> getCollections(){
+        try{
+          Map<String,Collection> ret = new LinkedHashMap<String, Collection>();
+          for(Map.Entry<String,Long> e:getNameDirectory().entrySet()){
+            ret.put(e.getKey(), (Collection) fetch(e.getValue()));
+          }
+          return Collections.unmodifiableMap(ret);
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+                
+    }
+
+    
+    public void deleteCollection(String name){
+        try{
+            Map<String,Long> dir = getNameDirectory();
+            Long recid = dir.get(name);
+            if(recid == null) throw new IOException("Collection not found");
+            
+            Collection c = fetch(recid);
+            c.clear();
+            delete(recid);
+            
+            dir.remove(name);
+            saveNameDirectory(dir);
+
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+           
+    }
+
 
     /**
      * Load name directory

@@ -133,6 +133,12 @@ public interface DB {
 
     <K> List<K> createLinkedList(String name, Serializer<K> serializer);
 
-    <K> List<K> getLinkedList(String name );
+    <K> List<K> getLinkedList(String name);
+
+    /** returns unmodifiable map which contains all collection names and collections thenselfs*/
+    Map<String,Collection> getCollections();
+
+    /** completely remove collection from store*/
+    void deleteCollection(String name);
 
 }

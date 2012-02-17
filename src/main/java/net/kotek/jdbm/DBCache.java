@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A DB wrapping and caching another DB.
@@ -680,6 +682,17 @@ class DBCache
     public void defrag() {
         commit();
         _db.defrag();
+    }
+
+
+
+    public Map<String,Collection> getCollections(){
+        return  _db.getCollections();
+    }
+
+    /** completely remove collection from store*/
+    public void deleteCollection(String name){
+        _db.deleteCollection(name);
     }
 
 
