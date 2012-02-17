@@ -158,9 +158,9 @@ abstract class SerialClassInfo {
         if (containsClass(clazz))
             return;
 
-        ObjectStreamClass streamClass = ObjectStreamClass.lookup(clazz);
 
-        ObjectStreamField[] streamFields = streamClass.getFields();
+
+        ObjectStreamField[] streamFields = getFields(clazz);
         FieldInfo[] fields = new FieldInfo[streamFields.length];
         for (int i = 0; i < fields.length; i++) {
             ObjectStreamField sf = streamFields[i];
@@ -173,6 +173,23 @@ abstract class SerialClassInfo {
         if (db != null)
             db.update(serialClassInfoRecid, registered, serializer);
 
+    }
+
+    private ObjectStreamField[] getFields(Class clazz) {
+        ObjectStreamClass streamClass = ObjectStreamClass.lookup(clazz);
+        FastArrayList<ObjectStreamField> fieldsList = new FastArrayList<ObjectStreamField>();
+        while (streamClass != null) {
+            for (ObjectStreamField f : streamClass.getFields()) {
+                fieldsList.add(f);
+            }
+            clazz = clazz.getSuperclass();
+            streamClass = ObjectStreamClass.lookup(clazz);
+        }
+        ObjectStreamField[] fields = new ObjectStreamField[fieldsList.size()];
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = fieldsList.get(i);
+        }
+        return fields;
     }
 
     private void assertClassSerializable(Class clazz) throws NotSerializableException, InvalidClassException {
@@ -268,10 +285,11 @@ abstract class SerialClassInfo {
         LongPacker.packInt(out, classId);
         ClassInfo classInfo = registered.get(classId);
 
-        ObjectStreamClass streamClass = ObjectStreamClass.lookup(obj.getClass());
-        LongPacker.packInt(out, streamClass.getFields().length);
+        ObjectStreamField[] fields = getFields(obj.getClass());
 
-        for (ObjectStreamField f : streamClass.getFields()) {
+        LongPacker.packInt(out, fields.length);
+
+        for (ObjectStreamField f : fields) {
             //write field ID
             int fieldId = classInfo.getFieldId(f.getName());
             if (fieldId == -1) {

@@ -27,4 +27,24 @@ public class Serialization2Test extends TestCaseWithTestFile {
     }
 
 
+    public void test3() throws IOException {
+        
+        String file = newTestFile();
+        
+        Serialized2DerivedBean att = new Serialized2DerivedBean();
+        DB db = new DBMaker(file).disableCache().build();
+
+        Map<Object, Object> map =  db.createHashMap("test");
+
+        map.put("att", att);
+        db.commit();
+        db.close();
+        db = new DBMaker(file).disableCache().build();
+        map =  db.getHashMap("test");
+
+
+        Serialized2DerivedBean retAtt = (Serialized2DerivedBean) map.get("att");
+        assertEquals(att, retAtt);
+    }
+
 }
