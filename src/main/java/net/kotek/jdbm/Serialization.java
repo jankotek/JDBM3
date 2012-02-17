@@ -606,7 +606,7 @@ class Serialization extends SerialClassInfo implements Serializer {
         /** first try to deserialize object without allocating object stack*/
         switch (head) {
             case NULL:
-                return null;
+                break;
             case BOOLEAN_TRUE:
                 ret = Boolean.TRUE;
                 break;
@@ -864,7 +864,7 @@ class Serialization extends SerialClassInfo implements Serializer {
 
         }
 
-        if (ret != null) {
+        if (ret != null || head == NULL) {
             if (objectStack != null)
                 objectStack.add(ret);
             return ret;
