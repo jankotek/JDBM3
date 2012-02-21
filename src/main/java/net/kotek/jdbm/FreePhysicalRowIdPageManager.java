@@ -60,6 +60,70 @@ final class FreePhysicalRowIdPageManager {
     private int lastMaxSize = -1;
 
     /**
+     * Returns first slot with available size >= indicated size, or minus maximal size available on this page
+     *
+     * @param b  BlockIO
+     * @param requestedSize requested allocation size.
+     */
+    static int getFirstLargerThan(BlockIo b, final int requestedSize) {
+
+        int maxSize = 0;
+        /*
+           * Tracks slot of the smallest available physical row on the page.
+           */
+        int bestSlot = -1;
+        /*
+           * Tracks size of the smallest available physical row on the page.
+           */
+        int bestSlotSize = 0;
+        /*
+           * Scan each slot in the page.
+           */
+        for (int i = 0; i < Magic.FreePhysicalRowId_ELEMS_PER_PAGE; i++) {
+            /*
+                * When large allocations are used, the space wasted by the first fit policy can become very large (25% of
+                * the store). The first fit policy has been modified to only accept a record with a maximum amount of
+                * wasted capacity given the requested allocation size.
+                */
+            // Note: isAllocated(i) is equiv to get(i).getSize() != 0
+            //long theSize = get(i).getSize(); // capacity of this free record.
+            short pos = b.FreePhysicalRowId_slotToOffset(i);
+            int currentRecSize = b.FreePhysicalRowId_getSize(pos); // capacity of this free record.
+            if (currentRecSize > maxSize) maxSize = currentRecSize;
+            int waste = currentRecSize - requestedSize; // when non-negative, record has suf. capacity.
+            if (waste >= 0) {
+                if (waste < wasteMargin) {
+                    return i; // record has suf. capacity and not too much waste.
+                } else if (bestSlotSize >= currentRecSize) {
+                    /*
+                          * This slot is a better fit that any that we have seen so far on this page so we update the slot#
+                          * and available size for that slot.
+                          */
+                    bestSlot = i;
+                    bestSlotSize = currentRecSize;
+                }
+            }
+        }
+        if (bestSlot != -1) {
+            /*
+                * An available slot was identified that is large enough, but it exceeds the first wasted capacity limit. At
+                * this point we check to see whether it is under our second wasted capacity limit. If it is, then we return
+                * that slot.
+                */
+            long waste = bestSlotSize - requestedSize; // when non-negative, record has suf. capacity.
+            if (waste >= 0 && waste < wasteMargin2) {
+                // record has suf. capacity and not too much waste.
+                return bestSlot;
+            }
+            /*
+                * Will scan next page on the free physical row page list.
+                */
+        }
+
+        return -maxSize;
+    }
+
+    /**
      * Returns a free physical rowid of the indicated size, or null if nothing was found. This scans the free physical
      * row table, which is modeled as a linked list of pages. Each page on that list has slots that are either free
      * (awaiting the insertion of the location of a free physical row) or available for reallocation requests. An
@@ -80,7 +144,7 @@ final class FreePhysicalRowIdPageManager {
         int maxSize = -1;
         for (long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current != 0; current = _pageman.getNext(current)) {
             BlockIo fp = _file.get(current);
-            int slot = fp.FreePhysicalRowId_getFirstLargerThan(size);
+            int slot = getFirstLargerThan(fp, size);
             if (slot > 0) {
                 //reset maximal size, as record has changed
                 lastMaxSize = -1;
