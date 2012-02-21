@@ -527,7 +527,7 @@ public class BTreeTest
         for (int i = 0; i < 5; i++) {
             DBAbstract db = (DBAbstract) new DBMaker(recordManagerBasename).disableCache().build();
 
-            try {
+
                 BTree<String, Serializable> tree = BTree.createInstance(db);
                 String[] keys = new String[1000];
                 for (int count = 0; count < 1000; count++) {
@@ -557,14 +557,15 @@ public class BTreeTest
                 BTreeNode root = tree.getRoot();
                 assertNull(root);
 
-            } finally {
+
+
                 db.close();
-                long currentdbSize = new File(recordManagerDBname).length();
+                currentdbSize = new File(recordManagerDBname).length();
                 assertTrue("file size too small " + currentdbSize, currentdbSize > 0);
                 if (previousdbSize != 0) {
                     assertTrue(currentdbSize == previousdbSize);
                 }
-            }
+
         }
     }
 
