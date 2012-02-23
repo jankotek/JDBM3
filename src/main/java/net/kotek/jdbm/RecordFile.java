@@ -176,12 +176,16 @@ final class RecordFile {
      * @param isDirty If true, the block was modified since the get().
      */
     void release(final long blockid, final boolean isDirty) throws IOException {
-        BlockIo node = inUse.get(blockid);
-        if (node == null)
-            throw new IOException();
-        if (!node.isDirty() && isDirty)
-            node.setDirty();
-        release(node);
+
+        final BlockIo block = inUse.remove(blockid);
+        if (!block.isDirty() && isDirty)
+            block.setDirty();
+
+        if (block.isDirty()) {
+            dirty.put(blockid, block);
+        } else if (!transactionsDisabled && block.isInTransaction()) {
+            inTxn.put(blockid, block);
+        }
     }
 
     /**
@@ -195,10 +199,8 @@ final class RecordFile {
         if (block.isDirty()) {
             // System.out.println( "Dirty: " + key + block );
             dirty.put(key, block);
-        } else {
-            if (!transactionsDisabled && block.isInTransaction()) {
-                inTxn.put(key, block);
-            }
+        } else if (!transactionsDisabled && block.isInTransaction()) {
+            inTxn.put(key, block);
         }
     }
 

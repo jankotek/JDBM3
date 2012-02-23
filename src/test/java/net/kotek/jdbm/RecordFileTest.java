@@ -126,7 +126,7 @@ final public class RecordFileTest
         try {
             file.release(1, true);
             fail("expected exception");
-        } catch (IOException except) {
+        } catch (NullPointerException except) {
             // ignore
         }
         file.release(0, false);
