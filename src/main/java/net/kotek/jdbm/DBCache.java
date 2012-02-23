@@ -159,6 +159,7 @@ class DBCache
         }else {
             cachePut(  recid , obj, serializer, false );
         }
+
         return recid;
     }
 
@@ -190,6 +191,7 @@ class DBCache
     }
 
     public synchronized <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache) throws IOException {
+
         if (disableCache)
             return _db.fetch(recid, serializer, disableCache);
         else
@@ -223,9 +225,7 @@ class DBCache
 
     }
 
-    public synchronized <A> void update(long recid, A obj,
-                                        Serializer<A> serializer)
-            throws IOException {
+    public synchronized <A> void update(final long recid, A obj, Serializer<A> serializer) throws IOException {
         if (_db == null) {
             throw new IllegalStateException("DB has been closed");
         }
@@ -239,6 +239,7 @@ class DBCache
             }
         }
         synchronized (_hash){
+
             CacheEntry entry = cacheGet(recid);
             if (entry != null) {
                 // reuse existing cache entry
@@ -272,13 +273,15 @@ class DBCache
                     return (A) e;
                 }
             }
-        }else{
-            CacheEntry entry = cacheGet(recid);
-            if (entry != null) {
-                return (A) entry._obj;
-            }
-
         }
+
+        //MRU cache is enabled in any case, as it contains modified entries
+        CacheEntry entry = cacheGet(recid);
+        if (entry != null) {
+            return (A) entry._obj;
+        }
+
+
 
         A value = _db.fetch(recid, serializer);
 
@@ -394,8 +397,10 @@ class DBCache
             synchronized(_hash){
 
                 //make defensive copy of values as _db.update() may trigger changes in db
+
                 CacheEntry[] vals = new CacheEntry[_hash.size()];
                 Iterator<CacheEntry> iter = _hash.valuesIterator();
+                
                 for(int i = 0;i<vals.length;i++){
                     vals[i] = iter.next();
                 }
@@ -404,6 +409,7 @@ class DBCache
                 for(CacheEntry entry:vals){
 
                     if (entry._isDirty) {
+
                         _db.update(entry._recid, entry._obj, entry._serializer);
                         entry._isDirty = false;
                     }
