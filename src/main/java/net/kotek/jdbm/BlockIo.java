@@ -506,6 +506,8 @@ final class BlockIo {
      * Returns first free slot, -1 if no slots are available
      */
     int FreePhysicalRowId_getFirstFree() {
+        if(FreeLogicalRowId_getCount()==FreePhysicalRowId_ELEMS_PER_PAGE)
+            return -1;
         for (int i = 0; i < FreePhysicalRowId_ELEMS_PER_PAGE; i++) {
             if (FreePhysicalRowId_isFree(i))
                 return i;
