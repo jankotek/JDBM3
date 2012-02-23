@@ -59,7 +59,7 @@ final class RecordFile {
 
 
     // transactions disabled?
-    private boolean transactionsDisabled = false;
+    final boolean transactionsDisabled;
 
     /**
      * A block of clean data to wipe clean pages.

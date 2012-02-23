@@ -17,6 +17,7 @@
 package net.kotek.jdbm;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class manages free physical rowid pages and provides methods to free and allocate physical rowids on a high
@@ -45,9 +46,9 @@ final class FreePhysicalRowIdPageManager {
     // our page manager
     protected PageManager _pageman;
 
-    private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
-    private final Utils.IntArrayList freeBlocksInTransactionSize = new Utils.IntArrayList();
-
+    private long[] inTransRecid = new long[4];
+    private int[] inTransCapacity = new int[4];
+    private int inTransSize = 0;
 
     /**
      * Creates a new instance using the indicated record file and page manager.
@@ -130,7 +131,23 @@ final class FreePhysicalRowIdPageManager {
      * allocated slot is indicated by a non-zero size field in that slot and the size is the size of the available free
      * record in bytes.
      */
-    long get(int size) throws IOException {
+    long get(final int size) throws IOException {
+        //first check data in transaction, maybe some of them are usable
+
+        for(int i = 0;i<inTransSize;i++){
+            //check if size is in limits
+            if(inTransCapacity[i]>=size &&  inTransCapacity[i]<size + wasteMargin)
+            {
+                final long ret = inTransRecid[i];
+                //move last item to current pos and delete current item
+                inTransSize--;
+                inTransRecid[i] = inTransRecid[inTransSize];
+                inTransCapacity[i] = inTransCapacity[inTransSize];
+
+                return ret;
+            }
+                
+        }
 
 
         //requested record is bigger than any previously found
@@ -179,34 +196,40 @@ final class FreePhysicalRowIdPageManager {
     /**
      * Puts the indicated rowid on the free list, which avaits for commit
      */
-    void put(long rowid, int size) throws IOException {
-        freeBlocksInTransactionRowid.add(rowid);
-        freeBlocksInTransactionSize.add(size);
-
-        //TODO check there is an commit on close if transactionsDisabled
+    void put(final long rowid, final int size) throws IOException {
+        //ensure capacity
+        if(inTransSize==inTransRecid.length){
+            inTransRecid = Arrays.copyOf(inTransRecid, inTransRecid.length * 2);
+            inTransCapacity = Arrays.copyOf(inTransCapacity, inTransCapacity.length * 2);
+        }
+        inTransRecid[inTransSize] = rowid;
+        inTransCapacity[inTransSize] = size;
+        inTransSize++;
     }
 
     public void commit() throws IOException {
-        if(freeBlocksInTransactionRowid.size==0)
+        if(inTransSize==0)
             return;
 
-        quickSort(freeBlocksInTransactionRowid.data,freeBlocksInTransactionSize.data,0,freeBlocksInTransactionRowid.size-1);
+        quickSort(inTransRecid,inTransCapacity,0,inTransSize-1);
 
         //try to merge records released next to each other into single one
         int prevIndex = 0;
-        for(int i=1;i<freeBlocksInTransactionRowid.size;i++){
-            if(freeBlocksInTransactionSize.data[i] + freeBlocksInTransactionSize.data[prevIndex]<30000 &&
-                freeBlocksInTransactionRowid.data[prevIndex] + freeBlocksInTransactionSize.data[i] == freeBlocksInTransactionRowid.data[i]){
+        for(int i=1;i<inTransSize;i++){
+            if(inTransCapacity[i] == 0) continue;
+
+            if(inTransCapacity[i] + inTransCapacity[prevIndex]<Short.MAX_VALUE &&
+                inTransRecid[prevIndex] + inTransCapacity[i] == inTransRecid[i]){
                 //increase previous record size and effectively delete old record size
-                long blockId = Location.getBlock(freeBlocksInTransactionRowid.data[prevIndex]);
+                final long blockId = Location.getBlock(inTransRecid[prevIndex]);
                 BlockIo b = _file.get(blockId);
-                RecordHeader.setCurrentSize(b,Location.getOffset(freeBlocksInTransactionRowid.data[prevIndex]), 0);
-                freeBlocksInTransactionSize.data[prevIndex]+=freeBlocksInTransactionSize.data[i];
-                RecordHeader.setAvailableSize(b,Location.getOffset(freeBlocksInTransactionRowid.data[prevIndex]), freeBlocksInTransactionSize.data[prevIndex]);
+                RecordHeader.setCurrentSize(b,Location.getOffset(inTransRecid[prevIndex]), 0);
+                inTransCapacity[prevIndex]+=inTransCapacity[i];
+                RecordHeader.setAvailableSize(b,Location.getOffset(inTransRecid[prevIndex]), inTransCapacity[prevIndex]);
                 _file.release(b);
                 //zero out curr record, so it does not get added to list
-                freeBlocksInTransactionRowid.data[i] = 0;
-                freeBlocksInTransactionSize.data[i] = 0;
+                inTransRecid[i] = 0;
+                inTransCapacity[i] = 0;
                 //move to next, without leaving previous record
                 i++;
                 continue;
@@ -217,61 +240,51 @@ final class FreePhysicalRowIdPageManager {
         //write all uncommited free records
         int rowidpos = 0;
 
-        if (freeBlocksInTransactionRowid.size < 200) { //if there is too much released records, just write those into new page, this greatly speedsup imports.
 
-            //iterate over filled pages
-            final boolean fromLast = Math.random() < 0.5; //iterating from begining makes pages filled wery quickly, so swap it sometimes.
-            for (long current = fromLast ? _pageman.getLast(Magic.FREEPHYSIDS_PAGE) : _pageman.getFirst(Magic.FREEPHYSIDS_PAGE);
-                 current != 0;
-                 current = fromLast ? _pageman.getPrev(current) : _pageman.getNext(current)
-                    ) {
-                BlockIo fp = _file.get(current);
-                int slot = fp.FreePhysicalRowId_getFirstFree();
-                //iterate over free slots in page and fill them
-                while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
-                    int size = freeBlocksInTransactionSize.data[rowidpos];
-                    long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
-                    if(size == 0) continue;
+        //iterate over free recid pages
 
-                    short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
-                    fp.pageHeaderSetLocation(freePhysRowId, rowid);
-                    fp.FreePhysicalRowId_setSize(freePhysRowId, size);
-                    slot = fp.FreePhysicalRowId_getFirstFree();
-                }
-                _file.release(current, true);
-                if (!(rowidpos < freeBlocksInTransactionRowid.size))
-                    break;
-            }
+        long curpage = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE);
+
+
+        if(_file.transactionsDisabled && inTransSize>200){
+            //iterating over existing free pages can be time consuming
+            //so disable it under some conditions and start allocating new freePhys pages
+            //straight away
+            curpage = 0;
         }
 
-        //now we propably filled all already allocated pages,
-        //time to start allocationg new pages
-        while (rowidpos < freeBlocksInTransactionRowid.size) {
-            //allocate new page
-            long freePage = _pageman.allocate(Magic.FREEPHYSIDS_PAGE);
-            BlockIo fp = _file.get(freePage);
+        while (rowidpos < inTransSize) {
+
+            //get next page for free recid, allocate new page if needed
+            BlockIo fp = curpage!=0 ? _file.get(curpage) :
+                    _file.get(_pageman.allocate(Magic.FREEPHYSIDS_PAGE));
+            
             int slot = fp.FreePhysicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
-            while (slot != -1 && rowidpos < freeBlocksInTransactionRowid.size) {
-                int size = freeBlocksInTransactionSize.data[rowidpos];
-                long rowid = freeBlocksInTransactionRowid.data[rowidpos++];
+            while (slot != -1 && rowidpos < inTransSize) {
+                int size = inTransCapacity[rowidpos];
+                long rowid = inTransRecid[rowidpos++];
                 if(size == 0) continue;
-                short freePhysRowId = fp.FreePhysicalRowId_alloc(slot);
-                fp.pageHeaderSetLocation(freePhysRowId, rowid);
-                fp.FreePhysicalRowId_setSize(freePhysRowId, size);
+
+                short freePhysPos = fp.FreePhysicalRowId_alloc(slot);
+                fp.pageHeaderSetLocation(freePhysPos, rowid);
+                fp.FreePhysicalRowId_setSize(freePhysPos, size);
                 slot = fp.FreePhysicalRowId_getFirstFree();
+
+
             }
-            _file.release(freePage, true);
-            if (!(rowidpos < freeBlocksInTransactionRowid.size))
+            _file.release(fp);
+            if (!(rowidpos < inTransSize))
                 break;
+
+
+            if(curpage!=0){
+                    curpage = _pageman.getNext(curpage);
+            }
         }
 
-        if (rowidpos < freeBlocksInTransactionRowid.size)
-            throw new InternalError();
-
-        freeBlocksInTransactionRowid.clear();
-        freeBlocksInTransactionSize.clear();
-
+        //rollback is called just to clear the list, we do not really want rolling back
+        rollback();
     }
 
     /** quick sort which also sorts elements in second array*/
@@ -313,7 +326,10 @@ final class FreePhysicalRowIdPageManager {
 
 
     public void rollback() {
-        freeBlocksInTransactionRowid.clear();
-        freeBlocksInTransactionSize.clear();
+        if(inTransRecid.length>128)
+            inTransRecid = new long[4];
+        if(inTransCapacity.length>128)
+            inTransCapacity = new int[4];
+        inTransSize = 0;
     }
 }

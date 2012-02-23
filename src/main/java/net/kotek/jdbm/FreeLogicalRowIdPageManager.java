@@ -18,6 +18,7 @@
 package net.kotek.jdbm;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class manages free Logical rowid pages and provides methods
@@ -29,7 +30,8 @@ final class FreeLogicalRowIdPageManager {
     // our page manager
     private PageManager pageman;
 
-    private final Utils.LongArrayList freeBlocksInTransactionRowid = new Utils.LongArrayList();
+    private long[] inTransRowid = new long[4];
+    private int inTransSize = 0;
 
 
     /**
@@ -47,10 +49,8 @@ final class FreeLogicalRowIdPageManager {
      * 0 if nothing was found.
      */
     long get() throws IOException {
-        if (freeBlocksInTransactionRowid.size != 0) {
-            long first = freeBlocksInTransactionRowid.data[freeBlocksInTransactionRowid.size - 1];
-            freeBlocksInTransactionRowid.removeLast();
-            return first;
+        if (inTransSize != 0) {
+            return inTransRowid[--inTransSize];
         }
 
         // Loop through the free Logical rowid list until we get
@@ -84,7 +84,12 @@ final class FreeLogicalRowIdPageManager {
      * Puts the indicated rowid on the free list
      */
     void put(long rowid) throws IOException {
-        freeBlocksInTransactionRowid.add(rowid);
+        //ensure capacity
+        if(inTransSize==inTransRowid.length)
+            inTransRowid = Arrays.copyOf(inTransRowid,inTransRowid.length*2);
+        //add record and increase size
+        inTransRowid[inTransSize]=rowid;
+        inTransSize++;
     }
 
 
@@ -95,47 +100,50 @@ final class FreeLogicalRowIdPageManager {
         //iterate over filled pages
         for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
 
-            BlockIo fp = file.get(current);
+            final BlockIo fp = file.get(current);
             short slot = fp.FreeLogicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
-            while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
-                long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
-                short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
+            while (slot != -1 && rowIdPos < inTransSize) {
+                final long rowid = inTransRowid[rowIdPos++];
+                final short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
                 fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 slot = fp.FreeLogicalRowId_getFirstFree();
             }
             file.release(current, true);
-            if (!(rowIdPos < freeBlocksInTransactionRowid.size))
+            if (!(rowIdPos < inTransSize))
                 break;
         }
 
         //now we propably filled all already allocated pages,
         //time to start allocationg new pages
-        while (rowIdPos < freeBlocksInTransactionRowid.size) {
+        while (rowIdPos < inTransSize) {
             //allocate new page
             long freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
             BlockIo fp = file.get(freePage);
             short slot = fp.FreeLogicalRowId_getFirstFree();
             //iterate over free slots in page and fill them
-            while (slot != -1 && rowIdPos < freeBlocksInTransactionRowid.size) {
-                long rowid = freeBlocksInTransactionRowid.data[rowIdPos++];
+            while (slot != -1 && rowIdPos < inTransSize) {
+                long rowid = inTransRowid[rowIdPos++];
                 short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
                 fp.pageHeaderSetLocation(freePhysRowId, rowid);
                 slot = fp.FreeLogicalRowId_getFirstFree();
             }
             file.release(freePage, true);
-            if (!(rowIdPos < freeBlocksInTransactionRowid.size))
+            if (!(rowIdPos < inTransSize))
                 break;
         }
 
-        if (rowIdPos < freeBlocksInTransactionRowid.size)
+        if (rowIdPos < inTransSize)
             throw new InternalError();
 
-        freeBlocksInTransactionRowid.clear();
+        //rollback is called just to clear the list, we do not really want rolling back
+        rollback();
 
     }
     
     public void rollback(){
-        freeBlocksInTransactionRowid.clear();
+        if(inTransRowid.length>128)
+            inTransRowid = new long[4];
+        inTransSize = 0;
     }
 }
