@@ -648,12 +648,6 @@ final class DBStore
             pageCounter++;
         }
 
-        for (long pageid = _pageman.getFirst(pageType);
-             pageid != 0;
-             pageid = _pageman.getNext(pageid)
-                ) {
-            pageCounter++;
-        }
 
         return pageCounter;
 
@@ -734,7 +728,7 @@ final class DBStore
                 }
 
                 b.append("  Contains " + recordCount + " records and " + freeRecordCount + " free slots.\n");
-                b.append("  Total space occupied by data is " + totalRecordSize + "\n");
+                b.append("  Total space occupied by data is " + Utils.formatSpaceUsage(totalRecordSize) + "\n");
                 b.append("  Average data size in record is " + Utils.formatSpaceUsage(Math.round(1D * totalRecordSize / recordCount)) + "\n");
                 b.append("  Maximal data size in record is " + Utils.formatSpaceUsage(maximalRecordSize) + "\n");
                 b.append("  Space wasted in record fragmentation is " + Utils.formatSpaceUsage(totalAvailDiff) + "\n");
