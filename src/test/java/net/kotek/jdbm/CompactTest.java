@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class CompactTest extends TestCaseWithTestFile {
     
-    final int MAX = 1000 * 200;
+    final int MAX = 1000 * 1000;
 
     public void testHashCompaction() throws IOException{
 
@@ -67,6 +67,7 @@ public class CompactTest extends TestCaseWithTestFile {
         db0.close();
         db0 = new DBMaker(f).disableTransactions().build();
         db =  db0.getTreeMap("db");
+
 
 
         System.out.println("Adding");

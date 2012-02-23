@@ -41,6 +41,7 @@ public class DBMaker {
     private boolean useAES256Bit = true;
     private boolean useRandomAccessFile = false;
     private boolean autoClearRefCacheOnLowMem = true;
+    private boolean autoDefrag = true;
 
 
     /**
@@ -213,6 +214,29 @@ public class DBMaker {
         this.useRandomAccessFile = true;
         return this;
     }
+
+    /**
+     * JDBM is not very good at reclaiming free space after massive deletes.
+     * For this reason JDBM tracks store fragmentation and if performance
+     * penalty is too high, it automatically triggers defragmentation.
+     * <p/>
+     * Autodefragmentation always takes place after commit, so it is
+     * transparent to user, except delay while store is defragmented.
+     * With disabled transactions autodefrag may take place any time
+     * after write operation.
+     * <p/>
+     * Use this option to disable automatic defragmentation.
+     * You can reach better performance with manual defrag.
+     * For example when doing massive delete, it is best to
+     * trigger defrag after delete completed. Auto defrag could trigger
+     * more then once during delete operation.
+     *
+     * @return this builder
+     */
+    public DBMaker disableAutoDefrag(){
+        this.autoDefrag = false;
+        return this;
+    }
     
 
     /**
@@ -262,7 +286,7 @@ public class DBMaker {
         DBAbstract db = null;
 
         try {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile);
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag);
         } catch (IOException e) {
             throw new IOError(e);
         }

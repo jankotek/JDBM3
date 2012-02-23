@@ -28,7 +28,7 @@ final class PhysicalRowIdManager {
     // The file we're talking to and the associated page manager.
     final private RecordFile file;
     final private PageManager pageman;
-    final private FreePhysicalRowIdPageManager freeman;
+    final FreePhysicalRowIdPageManager freeman;
     static final private short DATA_PER_PAGE = (short) (BLOCK_SIZE - Magic.DATA_PAGE_O_DATA);
     //caches offset after last allocation. So we dont have to iterate throw page every allocation
     private long cachedLastAllocatedRecordPage = Long.MIN_VALUE;

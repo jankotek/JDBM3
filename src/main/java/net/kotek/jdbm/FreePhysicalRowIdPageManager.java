@@ -24,6 +24,16 @@ import java.util.Arrays;
  * level.
  */
 final class FreePhysicalRowIdPageManager {
+
+    /**
+     * massive deletes leaves lot of free phys pages. 
+     * This slows down new allocations, so this is one of the criteria for 
+     * autodefragmentation 
+     */
+    static final int DEFRAGMENT_AFTER_N_PAGES = 255;
+
+    boolean needsDefragementation = false;
+
     
     /**
      * Used to place a limit on the wasted capacity resulting in a modified first fit policy for re-allocated of free
@@ -149,6 +159,7 @@ final class FreePhysicalRowIdPageManager {
                 
         }
 
+        int pageCounter = 0;
 
         //requested record is bigger than any previously found
         if (lastMaxSize != -1 && size > lastMaxSize)
@@ -161,6 +172,7 @@ final class FreePhysicalRowIdPageManager {
         int maxSize = -1;
         for (long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current != 0; current = _pageman.getNext(current)) {
             BlockIo fp = _file.get(current);
+            pageCounter++;
             int slot = getFirstLargerThan(fp, size);
             if (slot > 0) {
                 //reset maximal size, as record has changed
@@ -177,6 +189,11 @@ final class FreePhysicalRowIdPageManager {
                     _file.release(current, true);
                 }
 
+
+
+                if(pageCounter>DEFRAGMENT_AFTER_N_PAGES)
+                    needsDefragementation = true;
+
                 return retval;
             } else {
                 if (maxSize < -slot)
@@ -188,6 +205,10 @@ final class FreePhysicalRowIdPageManager {
         }
         //update maximal size available
         lastMaxSize = maxSize;
+
+
+        if(pageCounter>DEFRAGMENT_AFTER_N_PAGES)
+            needsDefragementation = true;
 
         return 0;
     }

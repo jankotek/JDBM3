@@ -39,13 +39,14 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                     HTreeBucket ret = new HTreeBucket(HTree.this);
                     if (loadValues)
                         ret.readExternal(ds);
-                    if (ds.available() != 0)
+
+                    if (loadValues && ds.available() != 0)
                         throw new InternalError("bytes left: " + ds.available());
                     return ret;
                 } else if (i == SerializationHeader.HTREE_DIRECTORY) {
                     HTreeDirectory ret = new HTreeDirectory(HTree.this);
                     ret.readExternal(ds);
-                    if (ds.available() != 0)
+                    if (loadValues && ds.available() != 0)
                         throw new InternalError("bytes left: " + ds.available());
                     return ret;
                 } else {

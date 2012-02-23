@@ -76,6 +76,7 @@ final class DBStore
      */
     private final boolean readonly;
     private final boolean transactionsDisabled;
+    private final boolean autodefrag;
 
     private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
 
@@ -89,6 +90,9 @@ final class DBStore
      */
     private Cipher cipherIn;
     private boolean useRandomAccessFile;
+
+    /** If this DB is wrapped in DBCache, it is not responsible to drive the auto commits*/
+    boolean wrappedInCache = false;
 
 
     void checkCanWrite() {
@@ -142,7 +146,7 @@ final class DBStore
     private final String _filename;
 
     public DBStore(String filename, boolean readonly, boolean transactionDisabled) throws IOException {
-        this(filename, readonly, transactionDisabled, null, null, false);
+        this(filename, readonly, transactionDisabled, null, null, false,true);
     }
 
 
@@ -153,7 +157,8 @@ final class DBStore
      *                     a valid file content-wise.
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
-                   Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile)
+                   Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
+                   boolean autodefrag)
             throws IOException {
         _filename = filename;
         this.readonly = readonly;
@@ -161,6 +166,7 @@ final class DBStore
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
         this.useRandomAccessFile = useRandomAccessFile;
+        this.autodefrag = autodefrag;
         reopen();
     }
 
@@ -210,7 +216,7 @@ final class DBStore
         checkIfClosed();
         checkCanWrite();
 
-        if (needsAutoCommit()) {
+        if (!wrappedInCache && needsAutoCommit()) {
             commit();
         }
 
@@ -229,10 +235,12 @@ final class DBStore
             bufferInUse = false;
         }
 
+
     }
 
     boolean needsAutoCommit() {
-        return transactionsDisabled && (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES);
+        return  transactionsDisabled &&
+         (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES || _physMgr.freeman.needsDefragementation);
     }
 
 
@@ -261,7 +269,7 @@ final class DBStore
                     + logRowId);
         }
 
-        if (needsAutoCommit()) {
+        if (!wrappedInCache && needsAutoCommit()) {
             commit();
         }
 
@@ -286,7 +294,7 @@ final class DBStore
                     + recid);
         }
 
-        if (needsAutoCommit()) {
+        if (!wrappedInCache && needsAutoCommit()) {
             commit();
         }
 
@@ -531,6 +539,13 @@ final class DBStore
 
             /**commit pages */
             _pageman.commit();
+
+
+            if(autodefrag && _physMgr.freeman.needsDefragementation){
+
+                _physMgr.freeman.needsDefragementation = false;
+                defrag();
+            }
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -749,7 +764,7 @@ final class DBStore
             commit();
             final String filename2 = _filename + "_defrag" + System.currentTimeMillis();
             final String filename1 = _filename;
-            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false);
+            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false,true);
 
             //recreate logical file with original page layout
             {
@@ -906,7 +921,7 @@ final class DBStore
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
         logicalRowId = Location.decompressRecid(logicalRowId);
 
-        if (needsAutoCommit()) {
+        if (!wrappedInCache && needsAutoCommit()) {
             commit();
         }
 

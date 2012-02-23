@@ -129,6 +129,7 @@ class DBCache
             _softRefThread.setDaemon(true);
             _softRefThread.start();
         }
+        db.wrappedInCache = true;
 
     }
 
@@ -202,9 +203,6 @@ class DBCache
             throw new IllegalStateException("DB has been closed");
         }
 
-        if(_db.needsAutoCommit())
-            commit();
-
         _db.delete(recid);
         synchronized (_hash){
             CacheEntry entry = _hash.get(recid);
@@ -220,6 +218,9 @@ class DBCache
             }
         }
 
+        if(_db.needsAutoCommit())
+            commit();
+
     }
 
     public synchronized <A> void update(long recid, A obj,
@@ -229,8 +230,6 @@ class DBCache
             throw new IllegalStateException("DB has been closed");
         }
 
-        if(_db.needsAutoCommit())
-            commit();
 
         if (_cacheType>MRU) synchronized (_softHash) {
             //soft cache can not contain dirty objects
@@ -250,6 +249,10 @@ class DBCache
                 cachePut(recid, obj, serializer, true);
             }
         }
+
+        if(_db.needsAutoCommit())
+            commit();
+
     }
 
 
@@ -278,6 +281,10 @@ class DBCache
         }
 
         A value = _db.fetch(recid, serializer);
+
+        if(_db.needsAutoCommit())
+            commit();
+
         if (_cacheType==MRU){
             //put record into MRU cache
             cachePut(recid, value, serializer, false);
@@ -318,6 +325,7 @@ class DBCache
         }
 
         updateCacheEntries();
+
         _db.commit();
     }
 
