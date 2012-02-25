@@ -28,11 +28,19 @@ public interface DB {
 
     /**
      * Defragments storage so it consumes less space.
-     * It also rearranges collections and optimizes it for sequence reads.
+     * It basically copyes all records into different store and then renames it, replacing original store.
      * <p/>
-     * This commits any uncommited data.
+     * Defrag has two steps: In first collections are rearranged, so records in collection are close to each other,
+     * and read speed is improved. In second step all records are sequentially transferred, reclaiming all unused space.
+     * First step is optinal and may slow down defragmentation significantly as ut requires many random-access reads.
+     * Second step reads and writes data sequentially and is very fast, comparable to copying files to new location.
+     *
+     * <p/>
+     * This commits any uncommited data. Defrag also requires free space, as store is basically recreated at new location.
+     *
+     * @param sortCollections if collection records should be rearranged during defragment, this takes some extra time
      */
-    void defrag();
+    void defrag(boolean sortCollections);
 
     /**
      * Commit (make persistent) all changes since beginning of transaction.

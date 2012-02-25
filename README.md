@@ -109,6 +109,11 @@ Standard java serialization stores class structure data (field names, types...) 
 
 Our serialization is designed to be very fast on small chunks of data (a few POJOs glued together). With couple of thousands nodes in object tree it  becomes slow. This affects single key or value only, and does not apply to JDBM collections. Maximal record size in JDBM is 8 MB anyway, so it is good practise to store only small key/value and use filesystem for larger data.
 
+Defragmentation
+---------------
+
+
+
 Troubleshooting
 ===============
 JDBM uses chained exception so user does not have to write try catch blocks. IOException is usually wrapped in IOError which is unchecked. So please always check first exception.

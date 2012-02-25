@@ -34,7 +34,7 @@ public class HugeData {
             map.put(i,i.hashCode());
         }
 
-        db.defrag();
+        db.defrag(true);
         db.close();
 
         System.out.println("Finished, total time: " + (System.currentTimeMillis() - startTime) / 1000);

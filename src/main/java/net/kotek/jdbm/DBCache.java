@@ -693,9 +693,9 @@ class DBCache
     }
 
 
-    public void defrag() {
+    public void defrag(boolean sortCollections) {
         commit();
-        _db.defrag();
+        _db.defrag(sortCollections);
     }
 
 

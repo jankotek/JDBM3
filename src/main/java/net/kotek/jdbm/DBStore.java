@@ -544,7 +544,7 @@ final class DBStore
             if(autodefrag && _physMgr.freeman.needsDefragementation){
 
                 _physMgr.freeman.needsDefragementation = false;
-                defrag();
+                defrag(false);
             }
         } catch (IOException e) {
             throw new IOError(e);
@@ -756,7 +756,7 @@ final class DBStore
         }
     }
 
-    public synchronized void defrag() {
+    public synchronized void defrag(boolean sortCollections) {
 
         try {
             checkIfClosed();
@@ -797,17 +797,17 @@ final class DBStore
 
             //reinsert collections so physical records are located near each other
             //iterate over named object recids, it is sorted with TreeSet
-            for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
-                Object obj = fetch(namedRecid);
-                if (obj instanceof LinkedList) {
-                    LinkedList.defrag(namedRecid, this, db2);
-                } else if (obj instanceof HTree) {
-                    HTree.defrag(namedRecid, this, db2);
-                } else if (obj instanceof BTree) {
-                    BTree.defrag(namedRecid, this, db2);
+            if(sortCollections){
+                for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
+                    Object obj = fetch(namedRecid);
+                    if (obj instanceof LinkedList) {
+                        LinkedList.defrag(namedRecid, this, db2);
+                    } else if (obj instanceof HTree) {
+                        HTree.defrag(namedRecid, this, db2);
+                    } else if (obj instanceof BTree) {
+                        BTree.defrag(namedRecid, this, db2);
+                    }
                 }
-
-
             }
 
 
