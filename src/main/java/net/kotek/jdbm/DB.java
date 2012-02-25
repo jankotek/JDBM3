@@ -144,7 +144,7 @@ public interface DB {
     <K> List<K> getLinkedList(String name);
 
     /** returns unmodifiable map which contains all collection names and collections thenselfs*/
-    Map<String,Collection> getCollections();
+    Map<String,Object> getCollections();
 
     /** completely remove collection from store*/
     void deleteCollection(String name);

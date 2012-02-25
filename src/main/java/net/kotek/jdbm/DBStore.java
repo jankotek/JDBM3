@@ -446,11 +446,25 @@ final class DBStore
         saveNameDirectory(nameDirectory);
     }
 
-    public Map<String,Collection> getCollections(){
+    public Map<String,Object> getCollections(){
         try{
-          Map<String,Collection> ret = new LinkedHashMap<String, Collection>();
+          Map<String,Object> ret = new LinkedHashMap<String, Object>();
           for(Map.Entry<String,Long> e:getNameDirectory().entrySet()){
-            ret.put(e.getKey(), (Collection) fetch(e.getValue()));
+              Object o = fetch(e.getValue());
+              if(o instanceof BTree){
+                  if(((BTree) o).hasValues)
+                    o = getTreeMap(e.getKey());
+                  else
+                    o = getTreeSet(e.getKey());
+              }
+              else if( o instanceof  HTree){
+                  if(((HTree) o).hasValues)
+                      o = getHashMap(e.getKey());
+                  else
+                      o = getHashSet(e.getKey());
+              }
+
+            ret.put(e.getKey(), o);
           }
           return Collections.unmodifiableMap(ret);
         }catch(IOException e){

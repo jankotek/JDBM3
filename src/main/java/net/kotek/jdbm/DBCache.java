@@ -700,7 +700,7 @@ class DBCache
 
 
 
-    public Map<String,Collection> getCollections(){
+    public Map<String,Object> getCollections(){
         return  _db.getCollections();
     }
 

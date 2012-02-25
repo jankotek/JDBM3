@@ -17,7 +17,7 @@
 package net.kotek.jdbm;
 
 import java.io.*;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -230,6 +230,23 @@ public class DBTest extends TestCaseWithTestFile {
             assertEquals(db.countRecords(), i + baseCount);
         }
 
+    }
+
+    public void testGetCollections() throws IOException {
+        DB db = newRecordManager();
+        db.createTreeMap("treemap");
+        db.createHashMap("hashmap");
+        db.createTreeSet("treeset");
+        db.createHashSet("hashset");
+
+        db.createLinkedList("linkedlist");
+        Map<String, Object>cols = db.getCollections();
+        assertTrue(cols.get("treemap") instanceof SortedMap);
+        assertTrue(cols.get("hashmap") instanceof Map);
+
+        assertTrue(cols.get("treeset") instanceof SortedSet);
+        assertTrue(cols.get("hashset") instanceof Set);
+        assertTrue(cols.get("linkedlist") instanceof List);
     }
 
 }
