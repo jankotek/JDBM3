@@ -43,4 +43,30 @@ public class TestIssues extends TestCaseWithTestFile {
         System.out.println("finished clearing");
         assertTrue(treeMap.isEmpty());
     }
+
+
+    public void test_issue_17_double_concurrent_get() throws InterruptedException {
+
+        final DB db = new DBMaker(newTestFile()).disableTransactions().disableCache().build();
+        db.createHashMap("map");
+
+        class RR implements Runnable{
+
+            public void run() {
+                Map<Integer, String> m =db.getHashMap("map");
+
+                for(int i = 1; i < 10000; i++)
+                    m.put(i,  "-"+ i );
+
+            }
+        }
+
+        Thread thread = new Thread(new RR());
+
+        thread.start();
+        new RR().run();
+
+        thread.join();
+        db.close();
+    }
 }

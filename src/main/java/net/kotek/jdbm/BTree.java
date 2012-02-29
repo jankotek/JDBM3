@@ -582,9 +582,6 @@ class BTree<K, V> {
         }
     };
 
-    public BTreeSortedMap<K, V> asMap() {
-        return new BTreeSortedMap<K, V>(this, false);
-    }
 
     /**
      * add RecordListener which is notified about record changes

@@ -17,6 +17,7 @@ package net.kotek.jdbm;
 
 import java.io.IOError;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 /**
@@ -25,6 +26,13 @@ import java.util.*;
  */
 abstract class DBAbstract implements DB {
 
+
+    /** to prevent double instances of the same collection, we use weak value map
+     *
+     * //TODO what to do when there is rollback?
+     * //TODO clear on close
+     */
+    final private Map<String,WeakReference<Object>> collections = new HashMap<String,WeakReference<Object>>();
 
 
    /**
@@ -93,11 +101,15 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public <A> A fetch(long recid) throws IOException {
+    synchronized public <A> A fetch(long recid) throws IOException {
         return (A) fetch(recid, defaultSerializer());
     }
 
-    public <K, V> Map<K, V> getHashMap(String name) {
+    synchronized public <K, V> Map<K, V> getHashMap(String name) {
+        Object o = getCollectionInstance(name);
+        if(o!=null)
+            return (Map<K, V>) o;
+
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
@@ -107,13 +119,14 @@ abstract class DBAbstract implements DB {
             if(!tree.hasValues()){
                 throw new ClassCastException("HashSet is not HashMap");
             }
+            collections.put(name,new WeakReference<Object>(tree));
             return tree;
         } catch (IOException e) {
             throw new IOError(e);
         }
     }
 
-    public <K, V> Map<K, V> createHashMap(String name) {
+    synchronized public <K, V> Map<K, V> createHashMap(String name) {
         return createHashMap(name, null, null);
     }
 
@@ -125,7 +138,7 @@ abstract class DBAbstract implements DB {
             HTree<K, V> tree = new HTree(this, keySerializer, valueSerializer,true);
             long recid = insert(tree);
             setNamedObject(name, recid);
-
+            collections.put(name,new WeakReference<Object>(tree));
             return tree;
         } catch (IOException e) {
             throw new IOError(e);
@@ -133,6 +146,10 @@ abstract class DBAbstract implements DB {
     }
 
     public synchronized <K> Set<K> getHashSet(String name) {
+        Object o = getCollectionInstance(name);
+        if(o!=null)
+            return (Set<K>) o;
+
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
@@ -142,7 +159,9 @@ abstract class DBAbstract implements DB {
             if(tree.hasValues()){
                 throw new ClassCastException("HashMap is not HashSet");
             }
-            return  new HTreeSet(tree);
+            Set<K> ret  =  new HTreeSet(tree);
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -160,13 +179,19 @@ abstract class DBAbstract implements DB {
             long recid = insert(tree);
             setNamedObject(name, recid);
 
-            return new HTreeSet<K>(tree);
+            Set<K> ret =  new HTreeSet<K>(tree);
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
         } catch (IOException e) {
             throw new IOError(e);
         }
     }
 
-    public <K, V> SortedMap<K, V> getTreeMap(String name) {
+    synchronized public <K, V> SortedMap<K, V> getTreeMap(String name) {
+        Object o = getCollectionInstance(name);
+        if(o!=null)
+            return (SortedMap<K, V> ) o;
+
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
@@ -174,13 +199,15 @@ abstract class DBAbstract implements DB {
             BTree t =  BTree.<K, V>load(this, recid);
             if(!t.hasValues())
                 throw new ClassCastException("TreeSet is not TreeMap");
-            return t.asMap();
+            SortedMap<K,V> ret = new BTreeSortedMap<K, V>(t,false); //TODO put readonly flag here
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
         } catch (IOException e) {
             throw new IOError(e);
         }
     }
 
-    public <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name) {
+    synchronized public <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name) {
         return createTreeMap(name, null, null, null);
     }
 
@@ -193,7 +220,9 @@ abstract class DBAbstract implements DB {
             assertNameNotExist(name);
             BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer,true);
             setNamedObject(name, tree.getRecid());
-            return tree.asMap();
+            SortedMap<K,V> ret = new BTreeSortedMap<K, V>(tree,false); //TODO put readonly flag here
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -201,6 +230,10 @@ abstract class DBAbstract implements DB {
 
 
     public synchronized <K> SortedSet<K> getTreeSet(String name) {
+        Object o = getCollectionInstance(name);
+        if(o!=null)
+            return (SortedSet<K> ) o;
+
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
@@ -208,7 +241,10 @@ abstract class DBAbstract implements DB {
             BTree t =  BTree.<K, Object>load(this, recid);
             if(t.hasValues())
                 throw new ClassCastException("TreeMap is not TreeSet");
-            return new BTreeSet<K>(t.asMap());
+            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeSortedMap(t,false));
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
+
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -224,7 +260,10 @@ abstract class DBAbstract implements DB {
             assertNameNotExist(name);
             BTree<K, Object> tree = BTree.createInstance(this, keyComparator, keySerializer, null,false);
             setNamedObject(name, tree.getRecid());
-            return new BTreeSet<K>(tree.asMap());
+            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeSortedMap(tree,false));
+            collections.put(name,new WeakReference<Object>(ret));
+            return ret;
+
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -232,11 +271,11 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public <K> List<K> createLinkedList(String name) {
+    synchronized public <K> List<K> createLinkedList(String name) {
         return createLinkedList(name, null);
     }
 
-    public <K> List<K> createLinkedList(String name, Serializer<K> serializer) {
+    synchronized public <K> List<K> createLinkedList(String name, Serializer<K> serializer) {
         try {
             assertNameNotExist(name);
 
@@ -246,6 +285,7 @@ abstract class DBAbstract implements DB {
             long recid = insert(list);
             setNamedObject(name, recid);
 
+            collections.put(name,new WeakReference<Object>(list));
 
             return list;
         } catch (IOException e) {
@@ -253,16 +293,31 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    public <K> List<K> getLinkedList(String name) {
+    synchronized public <K> List<K> getLinkedList(String name) {
+        Object o = getCollectionInstance(name);
+        if(o!=null)
+            return (List<K> ) o;
+
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
             LinkedList<K> list = (LinkedList<K>) fetch(recid);
             list.setPersistenceContext(this);
+            collections.put(name,new WeakReference<Object>(list));
             return list;
         } catch (IOException e) {
             throw new IOError(e);
         }
+    }
+    
+    private synchronized  Object getCollectionInstance(String name){
+        WeakReference ref = collections.get(name);
+        if(ref==null)return null;
+        Object o = ref.get();
+        if(o != null) return o;
+        //already GCed
+        collections.remove(name);
+        return null;
     }
 
 
