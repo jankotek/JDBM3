@@ -19,7 +19,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
             map.put(i, "");
         }
         db.commit();
-        db.defrag();
+        db.defrag(true);
         db.close();
         long fileSize = new File(file + ".dbr.0").length() / 1024;
         System.out.println("file size: " + fileSize);
@@ -110,7 +110,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
             map.put("aaaaa" + i, "");
         }
         db.commit();
-        db.defrag();
+        db.defrag(true);
         db.close();
         db = new DBStore(file, false, false);
         map = db.getTreeMap("aa");

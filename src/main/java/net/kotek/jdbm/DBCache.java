@@ -706,14 +706,14 @@ class DBCache
     }
 
 
-    public void defrag() {
+    public void defrag(boolean sortCollections) {
         commit();
-        _db.defrag();
+        _db.defrag(sortCollections);
     }
 
 
 
-    public Map<String,Collection> getCollections(){
+    public Map<String,Object> getCollections(){
         return  _db.getCollections();
     }
 

@@ -269,7 +269,7 @@ final class PhysicalRowIdManager {
         }
 
         RecordHeader.setCurrentSize(curBlock, offset, 0);
-        file.release(Location.getBlock(id), true);
+        file.release(curBlock);
 
         // write the rowid to the free list
         freeman.put(id, size);

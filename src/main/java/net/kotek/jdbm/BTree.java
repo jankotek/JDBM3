@@ -101,7 +101,7 @@ class BTree<K, V> {
     boolean loadValues = true;
 
     /** if false map contains only keys, used for set*/
-    private boolean hasValues = true;
+    boolean hasValues = true;
 
     /**
      * The number of structural modifications to the tree for fail fast iterators. This value is just for runtime, it is not persisted
@@ -200,8 +200,9 @@ class BTree<K, V> {
         btree.valueSerializer = valueSerializer;
         btree._nodeSerializer = new BTreeNode<K, V>();
         btree._nodeSerializer._btree = btree;
-        btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer(),false);
         btree.hasValues = hasValues;
+        btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer(),false);
+
         return btree;
     }
 
@@ -581,9 +582,6 @@ class BTree<K, V> {
         }
     };
 
-    public BTreeSortedMap<K, V> asMap() {
-        return new BTreeSortedMap<K, V>(this, false);
-    }
 
     /**
      * add RecordListener which is notified about record changes

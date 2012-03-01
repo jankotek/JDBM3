@@ -446,11 +446,25 @@ final class DBStore
         saveNameDirectory(nameDirectory);
     }
 
-    public Map<String,Collection> getCollections(){
+    public Map<String,Object> getCollections(){
         try{
-          Map<String,Collection> ret = new LinkedHashMap<String, Collection>();
+          Map<String,Object> ret = new LinkedHashMap<String, Object>();
           for(Map.Entry<String,Long> e:getNameDirectory().entrySet()){
-            ret.put(e.getKey(), (Collection) fetch(e.getValue()));
+              Object o = fetch(e.getValue());
+              if(o instanceof BTree){
+                  if(((BTree) o).hasValues)
+                    o = getTreeMap(e.getKey());
+                  else
+                    o = getTreeSet(e.getKey());
+              }
+              else if( o instanceof  HTree){
+                  if(((HTree) o).hasValues)
+                      o = getHashMap(e.getKey());
+                  else
+                      o = getHashSet(e.getKey());
+              }
+
+            ret.put(e.getKey(), o);
           }
           return Collections.unmodifiableMap(ret);
         }catch(IOException e){
@@ -544,7 +558,7 @@ final class DBStore
             if(autodefrag && _physMgr.freeman.needsDefragementation){
 
                 _physMgr.freeman.needsDefragementation = false;
-                defrag();
+                defrag(false);
             }
         } catch (IOException e) {
             throw new IOError(e);
@@ -756,7 +770,7 @@ final class DBStore
         }
     }
 
-    public synchronized void defrag() {
+    public synchronized void defrag(boolean sortCollections) {
 
         try {
             checkIfClosed();
@@ -797,17 +811,17 @@ final class DBStore
 
             //reinsert collections so physical records are located near each other
             //iterate over named object recids, it is sorted with TreeSet
-            for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
-                Object obj = fetch(namedRecid);
-                if (obj instanceof LinkedList) {
-                    LinkedList.defrag(namedRecid, this, db2);
-                } else if (obj instanceof HTree) {
-                    HTree.defrag(namedRecid, this, db2);
-                } else if (obj instanceof BTree) {
-                    BTree.defrag(namedRecid, this, db2);
+            if(sortCollections){
+                for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
+                    Object obj = fetch(namedRecid);
+                    if (obj instanceof LinkedList) {
+                        LinkedList.defrag(namedRecid, this, db2);
+                    } else if (obj instanceof HTree) {
+                        HTree.defrag(namedRecid, this, db2);
+                    } else if (obj instanceof BTree) {
+                        BTree.defrag(namedRecid, this, db2);
+                    }
                 }
-
-
             }
 
 

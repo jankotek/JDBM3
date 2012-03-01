@@ -10,7 +10,7 @@ public class DefragTest extends TestCaseWithTestFile {
         String file = newTestFile();
         DBStore m = new DBStore(file, false, false);
         long loc = m.insert("123");
-        m.defrag();
+        m.defrag(true);
         m.close();
         m = new DBStore(file, false, false);
         assertEquals(m.fetch(loc), "123");
@@ -26,7 +26,7 @@ public class DefragTest extends TestCaseWithTestFile {
             map.put(loc, "" + i);
         }
 
-        m.defrag();
+        m.defrag(true);
         m.close();
         m = new DBStore(file, false, false);
         for (Long l : map.keySet()) {
@@ -46,7 +46,7 @@ public class DefragTest extends TestCaseWithTestFile {
             t2.put(i, "" + i);
         }
 
-        m.defrag();
+        m.defrag(true);
         m.close();
         m = new DBStore(file, false, false);
         t = m.getTreeMap("aa");
@@ -69,7 +69,7 @@ public class DefragTest extends TestCaseWithTestFile {
         //make copy of linked list
         List l2 = new ArrayList(l);
         long oldRecCount = r.countRecords();
-        r.defrag();
+        r.defrag(true);
 
         r.close();
         r = new DBStore(file, false, false);

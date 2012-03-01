@@ -91,7 +91,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     private long rootRecid;
     private DBAbstract db;
     /** if false map contains only keys, used for set*/
-    private boolean hasValues = true;
+    boolean hasValues = true;
 
     /**
      * counts structural changes in tree at runtume. Is here to support fail-fast behaviour.
