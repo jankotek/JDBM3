@@ -16,7 +16,6 @@
 
 package net.kotek.jdbm;
 
-import java.io.FileOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
@@ -57,6 +56,11 @@ class DBCache
      * Cached object hashtable
      */
     protected LongHashMap<CacheEntry> _hash;
+    
+    /**
+     * Dirty status of _hash CacheEntry Values
+     */
+    protected LongHashMap<CacheEntry> _hashDirties;
 
     /**
      * If Soft Cache is enabled, this contains softly referenced clean entries.
@@ -115,6 +119,7 @@ class DBCache
             throw new IllegalArgumentException("Argument 'db' is null");
         }
         _hash = new LongHashMap<CacheEntry>(maxRecords);
+        _hashDirties = new LongHashMap<CacheEntry>();
         _db = db;
         _max = maxRecords;
         this._cacheType = cacheType;
@@ -211,6 +216,7 @@ class DBCache
             if (entry != null) {
                 removeEntry(entry);
                 _hash.remove(entry._recid);
+                _hashDirties.remove(entry._recid);
             }
         }
         if (_cacheType>MRU) synchronized (_softHash) {
@@ -245,7 +251,7 @@ class DBCache
                 // reuse existing cache entry
                 entry._obj = obj;
                 entry._serializer = serializer;
-                entry._isDirty = true;
+                setCacheEntryDirty(entry, true);
             } else {
                 cachePut(recid, obj, serializer, true);
             }
@@ -316,6 +322,7 @@ class DBCache
         _db.close();
         _db = null;
         _hash = null;
+        _hashDirties = null;
         _softHash = null;
         if (_cacheType>MRU)
             _softRefThread.interrupt();
@@ -343,6 +350,7 @@ class DBCache
         // where part of the transaction
         synchronized (_hash){
             _hash.clear();
+            _hashDirties.clear();
             _first = null;
             _last = null;
         }
@@ -398,8 +406,8 @@ class DBCache
 
                 //make defensive copy of values as _db.update() may trigger changes in db
 
-                CacheEntry[] vals = new CacheEntry[_hash.size()];
-                Iterator<CacheEntry> iter = _hash.valuesIterator();
+                CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
+                Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
                 
                 for(int i = 0;i<vals.length;i++){
                     vals[i] = iter.next();
@@ -407,14 +415,9 @@ class DBCache
                 iter = null;
 
                 for(CacheEntry entry:vals){
-
-                    if (entry._isDirty) {
-
-                        _db.update(entry._recid, entry._obj, entry._serializer);
-                        entry._isDirty = false;
-                    }
-
-                }
+                    _db.update(entry._recid, entry._obj, entry._serializer);
+                }                
+                _hashDirties.clear();
                 //TODO entries are not dirty anymore, maybe _hash.clear()?
             }
         } catch (IOException e) {
@@ -463,7 +466,7 @@ class DBCache
                     entry = purgeEntry();
                     entry._recid = recid;
                     entry._obj = value;
-                    entry._isDirty = dirty;
+                    setCacheEntryDirty(entry, dirty);
                     entry._serializer = serializer;
                 } else {
                     entry = new CacheEntry(recid, value, serializer, dirty);
@@ -526,7 +529,7 @@ class DBCache
             if (entry == null)
                 return new CacheEntry(-1, null, null, false);
 
-            if (entry._isDirty) try {
+            if (isCacheEntryDirty(entry)) try {
                 _db.update(entry._recid, entry._obj, entry._serializer);
             } catch (IOException e) {
                 throw new IOError(e);
@@ -537,10 +540,22 @@ class DBCache
             _hash.remove(entry._recid);
             entry._obj = null;
             entry._serializer = null;
-            entry._isDirty = false;
+            setCacheEntryDirty(entry, false);
             return entry;
         }
     }
+    
+	protected boolean isCacheEntryDirty(CacheEntry entry) {
+		return _hashDirties.get(entry._recid) != null;
+	}
+
+	protected void setCacheEntryDirty(CacheEntry entry, boolean dirty) {
+		if (dirty) {
+			_hashDirties.put(entry._recid, entry);
+		} else {
+			_hashDirties.remove(entry._recid);
+		}
+	}
 
 
     @SuppressWarnings("unchecked")
@@ -550,7 +565,6 @@ class DBCache
         protected Object _obj;
 
         protected Serializer _serializer;
-        protected boolean _isDirty;
 
         protected CacheEntry _previous;
         protected CacheEntry _next;
@@ -560,7 +574,6 @@ class DBCache
             _recid = recid;
             _obj = obj;
             _serializer = serializer;
-            _isDirty = isDirty;
         }
 
     }
