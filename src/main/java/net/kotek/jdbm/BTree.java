@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * <p/>
  * The B+Tree allows traversing the keys in forward and reverse order using a
  * TupleBrowser obtained from the browse() methods. But it is better to use
- * <code>BTreeSortedMap</code> wrapper which implements <code>SortedMap</code> interface
+ * <code>BTreeMap</code> wrapper which implements <code>SortedMap</code> interface
  * <p/>
  * This implementation does not directly support duplicate keys. It is
  * possible to handle duplicates by grouping values using an ArrayList as value.
@@ -413,7 +413,7 @@ class BTree<K, V> {
         }
 
         tuple = new BTreeTuple<K, V>(null, null);
-        browser = browse(key);
+        browser = browse(key,true);
         if (browser.getNext(tuple)) {
             return tuple;
         } else {
@@ -460,7 +460,7 @@ class BTree<K, V> {
      * @return Browser positionned just before the given key.
      */
     @SuppressWarnings("unchecked")
-    public BTreeTupleBrowser<K, V> browse(K key)
+    public BTreeTupleBrowser<K, V> browse(final K key, final boolean inclusive)
             throws IOException {
         try {
             lock.readLock().lock();
@@ -468,7 +468,7 @@ class BTree<K, V> {
             if (rootNode == null) {
                 return EMPTY_BROWSER;
             }
-            BTreeTupleBrowser<K, V> browser = rootNode.find(_height, key);
+            BTreeTupleBrowser<K, V> browser = rootNode.find(_height, key, inclusive);
             return browser;
         } finally {
             lock.readLock().unlock();

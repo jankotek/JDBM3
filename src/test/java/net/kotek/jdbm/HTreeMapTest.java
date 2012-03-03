@@ -19,8 +19,8 @@ import java.util.Map;
 
 public class HTreeMapTest extends MapInterfaceTest<Integer, String> {
 
-    public HTreeMapTest(String name) {
-        super(name, false, false, true, true, true, true);
+    public HTreeMapTest() {
+        super(false, false, true, true, true, true);
     }
 
     DBAbstract r;

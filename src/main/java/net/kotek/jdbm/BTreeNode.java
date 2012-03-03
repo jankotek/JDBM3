@@ -223,9 +223,9 @@ final class BTreeNode<K, V>
      * @return TupleBrowser positionned just before the given key, or before
      *         next greater key if key isn't found.
      */
-    BTree.BTreeTupleBrowser<K, V> find(int height, K key)
+    BTree.BTreeTupleBrowser<K, V> find(int height, final K key, final boolean inclusive)
             throws IOException {
-        byte index = findChildren(key);
+        byte index = findChildren(key,inclusive);
 
         height -= 1;
 
@@ -235,7 +235,7 @@ final class BTreeNode<K, V>
         } else {
             // non-leaf node
             BTreeNode<K, V> child = loadNode(_children[index]);
-            return child.find(height, key);
+            return child.find(height, key,inclusive);
         }
     }
 
@@ -250,7 +250,7 @@ final class BTreeNode<K, V>
      */
     V findValue(int height, K key)
             throws IOException {
-        byte index = findChildren(key);
+        byte index = findChildren(key,true);
 
         height -= 1;
 
@@ -346,7 +346,7 @@ final class BTreeNode<K, V>
         InsertResult<K, V> result;
         long overflow;
 
-        final byte index = findChildren(key);
+        final byte index = findChildren(key,true);
 
         height -= 1;
         if (height == 0) {
@@ -500,7 +500,7 @@ final class BTreeNode<K, V>
         RemoveResult<K, V> result;
 
         int half = BTree.DEFAULT_SIZE / 2;
-        byte index = findChildren(key);
+        byte index = findChildren(key,true);
 
         height -= 1;
         if (height == 0) {
@@ -709,15 +709,16 @@ final class BTreeNode<K, V>
      *
      * @return index of first children with equal or greater key.
      */
-    private byte findChildren(final K key) {
+    private byte findChildren(final K key, final boolean inclusive) {
         int left = _first;
         int right = BTree.DEFAULT_SIZE - 1;
         int middle;
+        final int D = inclusive?0:1;
 
         // binary search
         while (true) {
             middle = (left + right) / 2;
-            if (compare(_keys[middle], key) < 0) {
+            if (compare(_keys[middle], key) < D) {
                 left = middle + 1;
             } else {
                 right = middle;
@@ -1436,7 +1437,7 @@ final class BTreeNode<K, V>
 
             //An entry was removed and this may trigger tree rebalance,
             //This would change current node layout, so find our position again
-            BTree.BTreeTupleBrowser b = _node._btree.browse(key);
+            BTree.BTreeTupleBrowser b = _node._btree.browse(key,true);
             //browser is positioned just before value which was currently deleted, so find if we have new value
             if (b.getNext(new BTree.BTreeTuple(null, null))) {
                 //next value value exists, copy its state

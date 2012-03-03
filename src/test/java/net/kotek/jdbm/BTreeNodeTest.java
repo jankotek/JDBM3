@@ -55,7 +55,7 @@ public class BTreeNodeTest extends TestCaseWithTestFile {
         node.insert(1, test1, test1, false);
 
         // test binary search
-        browser = node.find(1, test2);
+        browser = node.find(1, test2,true);
         if (browser.getNext(tuple) == false) {
             throw new IllegalStateException("Browser didn't have 'test2'");
         }

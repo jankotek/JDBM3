@@ -18,17 +18,18 @@ package net.kotek.jdbm;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentNavigableMap;
 
 
 /**
- * Wrapper for <code>BTree</code> which implements <code>SortedMap</code> interface
+ * Wrapper for <code>BTree</code> which implements <code>ConcurrentNavigableMap</code> interface
  *
  * @param <K> key type
  * @param <V> value type
  *
  * @author Jan Kotek
  */
-class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> {
+class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap<K, V> {
 
     protected final BTree<K, V> tree;
 
@@ -38,21 +39,29 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
 
     protected final boolean readonly;
 
-    public BTreeSortedMap(BTree<K, V> tree, boolean readonly) {
-        this(tree, readonly, null, null);
+    protected NavigableSet<K> keySet2;
+    private final boolean toInclusive;
+    private final boolean fromInclusive;
+
+    public BTreeMap(BTree<K, V> tree, boolean readonly) {
+        this(tree, readonly, null, false, null, false);
     }
 
-    protected BTreeSortedMap(BTree<K, V> tree, boolean readonly, K fromKey, K toKey) {
+    protected BTreeMap(BTree<K, V> tree, boolean readonly, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
         this.tree = tree;
         this.fromKey = fromKey;
+        this.fromInclusive = fromInclusive;
         this.toKey = toKey;
+        this.toInclusive = toInclusive;
         this.readonly = readonly;
     }
 
     @Override
-    public Set<java.util.Map.Entry<K, V>> entrySet() {
+    public Set<Entry<K, V>> entrySet() {
         return _entrySet;
     }
+
+
 
     private final Set<java.util.Map.Entry<K, V>> _entrySet = new AbstractSet<Entry<K, V>>() {
 
@@ -61,7 +70,7 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
                 private static final long serialVersionUID = 978651696969194154L;
 
                 public V setValue(V arg0) {
-                    BTreeSortedMap.this.put(getKey(), arg0);
+                    BTreeMap.this.put(getKey(), arg0);
                     return super.setValue(arg0);
                 }
 
@@ -104,7 +113,7 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
         public Iterator<java.util.Map.Entry<K, V>> iterator() {
             try {
                 final BTree.BTreeTupleBrowser<K, V> br = fromKey == null ?
-                        tree.browse() : tree.browse(fromKey);
+                        tree.browse() : tree.browse(fromKey, fromInclusive);
                 return new Iterator<Entry<K, V>>() {
 
                     private Entry<K, V> next;
@@ -191,19 +200,29 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
         }
 
         public int size() {
-            return BTreeSortedMap.this.size();
+            return BTreeMap.this.size();
         }
 
     };
 
 
     public boolean inBounds(K e) {
+        if(fromKey == null && toKey == null)
+            return true;
+
         Comparator comp = comparator();
         if (comp == null) comp = Utils.COMPARABLE_COMPARATOR;
-        if (fromKey != null && comp.compare(e, fromKey) < 0)
-            return false;
-        if (toKey != null && comp.compare(e, toKey) >= 0)
-            return false;
+        
+        if(fromKey!=null){
+            final int compare = comp.compare(e, fromKey);
+            if(compare<0) return false;
+            if(!fromInclusive && compare == 0) return false;
+        }
+        if(toKey!=null){
+            final int compare = comp.compare(e, toKey);
+            if(compare>0)return false;
+            if(!toInclusive && compare == 0) return false;
+        }
         return true;
     }
 
@@ -282,10 +301,10 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
     }
 
     public K firstKey() {
-        if (size() == 0)
-            throw new NoSuchElementException();
+        if (isEmpty())
+            return null;
         try {
-            BTree.BTreeTupleBrowser<K, V> b = fromKey == null ? tree.browse() : tree.browse(fromKey);
+            BTree.BTreeTupleBrowser<K, V> b = fromKey == null ? tree.browse() : tree.browse(fromKey,true);
             BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
             b.getNext(t);
             return t.key;
@@ -295,10 +314,10 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
     }
 
     public K lastKey() {
-        if (size() == 0)
-            throw new NoSuchElementException();
+        if (isEmpty())
+            return null;
         try {
-            BTree.BTreeTupleBrowser<K, V> b = toKey == null ? tree.browse(null) : tree.browse(toKey);
+            BTree.BTreeTupleBrowser<K, V> b = toKey == null ? tree.browse(null,true) : tree.browse(toKey,true);
             BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
             b.getPrevious(t);
             return t.key;
@@ -307,23 +326,175 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
         }
     }
 
-
-    public SortedMap<K, V> headMap(K toKey) {
-        return new BTreeSortedMap<K, V>(tree, readonly, null, toKey);
+    public ConcurrentNavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+        return new BTreeMap<K, V>(tree, readonly, null, false, toKey, inclusive);
     }
 
 
-    public SortedMap<K, V> subMap(K fromKey, K toKey) {
+    public ConcurrentNavigableMap<K, V> headMap(K toKey) {
+        return headMap(toKey,false);
+    }
+
+
+    public Entry<K, V> lowerEntry(K key) {
+        K k = lowerKey(key);
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+    }
+
+    public K lowerKey(K key) {
+        if (isEmpty())
+            return null;
+        if(fromKey!=null || toKey!=null) throw new UnsupportedOperationException();
+        try {
+            BTree.BTreeTupleBrowser<K, V> b  = tree.browse(key,true) ;
+            BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
+            b.getPrevious(t);
+            return t.key;
+            //TODO limits on submap
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+
+    }
+
+    public Entry<K, V> floorEntry(K key) {
+        K k = floorKey(key);
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+
+    }
+
+    public K floorKey(K key) {
+        if (isEmpty())
+            return null;
+
+        if(fromKey!=null || toKey!=null) throw new UnsupportedOperationException();
+        try {
+            BTree.BTreeTupleBrowser<K, V> b  = tree.browse(key,true) ;
+            BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
+            b.getNext(t);
+            Comparator comp = comparator();
+            if (comp == null) comp = Utils.COMPARABLE_COMPARATOR;
+            if(comp.compare(t.key,key) == 0)
+                return t.key;
+
+            b.getPrevious(t);
+            b.getPrevious(t);
+            return t.key;
+            //TODO limits on submap
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public Entry<K, V> ceilingEntry(K key) {
+        K k = ceilingKey(key);
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+    }
+
+    public K ceilingKey(K key) {
+        if (isEmpty())
+            return null;
+        if(fromKey!=null || toKey!=null) throw new UnsupportedOperationException();
+
+        try {
+            BTree.BTreeTupleBrowser<K, V> b  = tree.browse(key,true) ;
+            BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
+            b.getNext(t);
+            return t.key;
+            //TODO limits on submap
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public Entry<K, V> higherEntry(K key) {
+        K k = higherKey(key);
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+    }
+
+    public K higherKey(K key) {
+        if (isEmpty())
+            return null;
+        if(fromKey!=null || toKey!=null) throw new UnsupportedOperationException();
+
+        try {
+            BTree.BTreeTupleBrowser<K, V> b  = tree.browse(key,false) ;
+            BTree.BTreeTuple<K, V> t = new BTree.BTreeTuple<K, V>();
+            b.getNext(t);
+            return t.key;
+            //TODO limits on submap
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public Entry<K, V> firstEntry() {
+        K k = firstKey();
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+    }
+
+    public Entry<K, V> lastEntry() {
+        K k = lastKey();
+        return k==null? null : new SimpleEntry<K, V>(k,get(k));
+    }
+
+    public Entry<K, V> pollFirstEntry() {
+        Entry<K,V> first = firstEntry();
+        if(first!=null)
+            remove(first.getKey());
+        return first;
+    }
+
+    public Entry<K, V> pollLastEntry() {
+        Entry<K,V> last = lastEntry();
+        if(last!=null)
+            remove(last.getKey());
+        return last;
+    }
+
+    public ConcurrentNavigableMap<K, V> descendingMap() {
+        throw new  UnsupportedOperationException("not implemented yet");
+        //TODO implement descending (reverse order) map
+    }
+
+
+    public NavigableSet<K> keySet() {
+        return navigableKeySet();
+    }
+
+    public NavigableSet<K> navigableKeySet() {
+        if(keySet2 == null)
+            keySet2 = new BTreeSet<K>((NavigableMap<K,Object>) this);
+        return keySet2;
+    }
+
+    public NavigableSet<K> descendingKeySet() {
+        return descendingMap().navigableKeySet();
+    }
+
+
+
+    public ConcurrentNavigableMap<K, V> tailMap(K fromKey) {
+        return tailMap(fromKey,true);
+    }
+
+
+    public ConcurrentNavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+        return new BTreeMap<K, V>(tree, readonly, fromKey, inclusive, null, false);
+    }
+
+    public ConcurrentNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
         Comparator comp = comparator();
         if (comp == null) comp = Utils.COMPARABLE_COMPARATOR;
         if (comp.compare(fromKey, toKey) > 0)
             throw new IllegalArgumentException("fromKey is bigger then toKey");
-        return new BTreeSortedMap<K, V>(tree, readonly, fromKey, toKey);
+        return new BTreeMap<K, V>(tree, readonly, fromKey, fromInclusive, toKey, toInclusive);
     }
 
-    public SortedMap<K, V> tailMap(K fromKey) {
-        return new BTreeSortedMap<K, V>(tree, readonly, fromKey, null);
+    public ConcurrentNavigableMap<K, V> subMap(K fromKey, K toKey) {
+        return subMap(fromKey,true,toKey,false);
     }
+
 
     public BTree<K, V> getTree() {
         return tree;
@@ -342,19 +513,6 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
         tree.removeRecordListener(listener);
     }
 
-    public Integer newIntegerKey() {
-        if (isEmpty())
-            return Integer.valueOf(0);
-        K k = lastKey();
-        return Integer.valueOf(((Integer) k).intValue() + 1);
-    }
-
-    public Long newLongKey() {
-        if (isEmpty())
-            return Long.valueOf(0);
-        K k = lastKey();
-        return Long.valueOf(((Long) k).longValue() + 1L);
-    }
 
     public int size() {
         if (fromKey == null && toKey == null)
@@ -373,4 +531,23 @@ class BTreeSortedMap<K, V> extends AbstractMap<K, V> implements SortedMap<K, V> 
     }
 
 
+    public V putIfAbsent(K key, V value) {
+        throw new UnsupportedOperationException();
+         //TODO autogenerated
+    }
+
+    public boolean remove(Object key, Object value) {
+        //TODO autogenerated
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean replace(K key, V oldValue, V newValue) {
+        throw new UnsupportedOperationException();
+        //TODO autogenerated
+    }
+
+    public V replace(K key, V value) {
+        throw new UnsupportedOperationException();
+        //TODO autogenerated
+    }
 }

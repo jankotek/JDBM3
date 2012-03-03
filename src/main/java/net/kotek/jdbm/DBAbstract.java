@@ -19,6 +19,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
  * An abstract class implementing most of DB.
@@ -187,10 +188,10 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    synchronized public <K, V> SortedMap<K, V> getTreeMap(String name) {
+    synchronized public <K, V> ConcurrentNavigableMap<K, V> getTreeMap(String name) {
         Object o = getCollectionInstance(name);
         if(o!=null)
-            return (SortedMap<K, V> ) o;
+            return (ConcurrentNavigableMap<K, V> ) o;
 
         try {
             long recid = getNamedObject(name);
@@ -199,7 +200,7 @@ abstract class DBAbstract implements DB {
             BTree t =  BTree.<K, V>load(this, recid);
             if(!t.hasValues())
                 throw new ClassCastException("TreeSet is not TreeMap");
-            SortedMap<K,V> ret = new BTreeSortedMap<K, V>(t,false); //TODO put readonly flag here
+            ConcurrentNavigableMap<K,V> ret = new BTreeMap<K, V>(t,false); //TODO put readonly flag here
             collections.put(name,new WeakReference<Object>(ret));
             return ret;
         } catch (IOException e) {
@@ -207,12 +208,12 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    synchronized public <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name) {
+    synchronized public <K extends Comparable, V> ConcurrentNavigableMap<K, V> createTreeMap(String name) {
         return createTreeMap(name, null, null, null);
     }
 
 
-    public synchronized <K, V> SortedMap<K, V> createTreeMap(String name,
+    public synchronized <K, V> ConcurrentNavigableMap<K, V> createTreeMap(String name,
                                                              Comparator<K> keyComparator,
                                                              Serializer<K> keySerializer,
                                                              Serializer<V> valueSerializer) {
@@ -220,7 +221,7 @@ abstract class DBAbstract implements DB {
             assertNameNotExist(name);
             BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer,true);
             setNamedObject(name, tree.getRecid());
-            SortedMap<K,V> ret = new BTreeSortedMap<K, V>(tree,false); //TODO put readonly flag here
+            ConcurrentNavigableMap<K,V> ret = new BTreeMap<K, V>(tree,false); //TODO put readonly flag here
             collections.put(name,new WeakReference<Object>(ret));
             return ret;
         } catch (IOException e) {
@@ -229,10 +230,10 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public synchronized <K> SortedSet<K> getTreeSet(String name) {
+    public synchronized <K> NavigableSet<K> getTreeSet(String name) {
         Object o = getCollectionInstance(name);
         if(o!=null)
-            return (SortedSet<K> ) o;
+            return (NavigableSet<K> ) o;
 
         try {
             long recid = getNamedObject(name);
@@ -241,7 +242,7 @@ abstract class DBAbstract implements DB {
             BTree t =  BTree.<K, Object>load(this, recid);
             if(t.hasValues())
                 throw new ClassCastException("TreeMap is not TreeSet");
-            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeSortedMap(t,false));
+            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeMap(t,false));
             collections.put(name,new WeakReference<Object>(ret));
             return ret;
 
@@ -250,17 +251,17 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    public synchronized <K> SortedSet<K> createTreeSet(String name) {
+    public synchronized <K> NavigableSet<K> createTreeSet(String name) {
         return createTreeSet(name, null, null);
     }
 
 
-    public synchronized <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer) {
+    public synchronized <K> NavigableSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer) {
         try {
             assertNameNotExist(name);
             BTree<K, Object> tree = BTree.createInstance(this, keyComparator, keySerializer, null,false);
             setNamedObject(name, tree.getRecid());
-            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeSortedMap(tree,false));
+            BTreeSet<K> ret =  new BTreeSet<K>(new BTreeMap(tree,false));
             collections.put(name,new WeakReference<Object>(ret));
             return ret;
 

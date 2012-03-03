@@ -1,6 +1,7 @@
 package net.kotek.jdbm;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
  * Database is root class for creating and loading persistent collections. It also contains
@@ -105,7 +106,7 @@ public interface DB {
 
     <K> Set<K> createHashSet(String name, Serializer<K> keySerializer);
 
-    <K, V> SortedMap<K, V> getTreeMap(String name);
+    <K, V> ConcurrentNavigableMap<K, V> getTreeMap(String name);
 
     /**
      * Creates or load existing Primary TreeMap which persists data into DB.
@@ -115,7 +116,7 @@ public interface DB {
      * @param name record name
      * @return
      */
-    <K extends Comparable, V> SortedMap<K, V> createTreeMap(String name);
+    <K extends Comparable, V> NavigableMap<K, V> createTreeMap(String name);
 
     /**
      * Creates or load existing TreeMap which persists data into DB.
@@ -128,14 +129,14 @@ public interface DB {
      * @param valueSerializer Serializer used for values. This may reduce disk space usage
      * @return
      */
-    <K, V> SortedMap<K, V> createTreeMap(String name,
+    <K, V> ConcurrentNavigableMap<K, V> createTreeMap(String name,
                                          Comparator<K> keyComparator, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
-    <K> SortedSet<K> getTreeSet(String name);
+    <K> NavigableSet<K> getTreeSet(String name);
 
-    <K> SortedSet<K> createTreeSet(String name);
+    <K> NavigableSet<K> createTreeSet(String name);
 
-    <K> SortedSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer);
+    <K> NavigableSet<K> createTreeSet(String name, Comparator<K> keyComparator, Serializer<K> keySerializer);
 
     <K> List<K> createLinkedList(String name);
 

@@ -100,14 +100,12 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
      * Constructor with an explicit {@code supportsIteratorRemove} parameter.
      */
     protected MapInterfaceTest(
-            String name,
             boolean allowsNullKeys,
             boolean allowsNullValues,
             boolean supportsPut,
             boolean supportsRemove,
             boolean supportsClear,
             boolean supportsIteratorRemove) {
-        super(name);
         this.supportsPut = supportsPut;
         this.supportsRemove = supportsRemove;
         this.supportsClear = supportsClear;
