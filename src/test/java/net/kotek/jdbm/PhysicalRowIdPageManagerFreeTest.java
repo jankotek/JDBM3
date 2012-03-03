@@ -16,11 +16,11 @@
 
 package net.kotek.jdbm;
 
-/**
- * This class contains all Unit tests for {@link FreeLogicalRowIdPageManager}.
- */
-public class FreeLogicalRowIdPageManagerTest extends TestCaseWithTestFile {
 
+/**
+ * This class contains all Unit tests for {@link PhysicalRowIdPageManagerFree}.
+ */
+public class PhysicalRowIdPageManagerFreeTest extends TestCaseWithTestFile {
 
     /**
      * Test constructor
@@ -28,7 +28,7 @@ public class FreeLogicalRowIdPageManagerTest extends TestCaseWithTestFile {
     public void testCtor() throws Exception {
         RecordFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        FreeLogicalRowIdPageManager freeMgr = new FreeLogicalRowIdPageManager(
+        PhysicalRowIdPageManagerFree freeMgr = new PhysicalRowIdPageManagerFree(
                 f, pm);
 
         pm.close();
@@ -39,17 +39,18 @@ public class FreeLogicalRowIdPageManagerTest extends TestCaseWithTestFile {
      * Test basics
      */
     public void testBasics() throws Exception {
+
         RecordFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        FreeLogicalRowIdPageManager freeMgr = new FreeLogicalRowIdPageManager(
+        PhysicalRowIdPageManagerFree freeMgr = new PhysicalRowIdPageManagerFree(
                 f, pm);
 
-        // allocate a rowid - should fail on an empty file
-        long loc = freeMgr.get();
+        // allocate 10,000 bytes - should fail on an empty file.
+        long loc = freeMgr.getFreeRecord(10000);
         assertTrue("loc is not null?", loc == 0);
 
         pm.close();
         f.close();
     }
-
 }
+

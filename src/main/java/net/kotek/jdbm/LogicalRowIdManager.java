@@ -17,6 +17,7 @@
 package net.kotek.jdbm;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class manages the linked lists of logical rowid pages.
@@ -25,17 +26,19 @@ final class LogicalRowIdManager {
     // our record file and associated page manager
     private final RecordFile file;
     private final PageManager pageman;
-    private final FreeLogicalRowIdPageManager freeman;
     static final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - Magic.PAGE_HEADER_SIZE) / Magic.PhysicalRowId_SIZE);
+
+    private long[] freeRecordsInTransRowid = new long[4];
+    private int freeRecordsInTransSize = 0;
+
 
 
     /**
      * Creates a log rowid manager using the indicated record file and page manager
      */
-    LogicalRowIdManager(RecordFile file, PageManager pageman, FreeLogicalRowIdPageManager freeman) throws IOException {
+    LogicalRowIdManager(RecordFile file, PageManager pageman) throws IOException {
         this.file = file;
         this.pageman = pageman;
-        this.freeman = freeman;
     }
 
     /**
@@ -46,18 +49,18 @@ final class LogicalRowIdManager {
      */
     long insert(final long physloc) throws IOException {
         // check whether there's a free rowid to reuse
-        long retval = freeman.get();
+        long retval = getFreeSlot();
         if (retval == 0) {
             // no. This means that we bootstrap things by allocating
             // a new translation page and freeing all the rowids on it.
             long firstPage = pageman.allocate(Magic.TRANSLATION_PAGE);
             short curOffset = Magic.PAGE_HEADER_SIZE;
             for (int i = 0; i < ELEMS_PER_PAGE; i++) {
-                freeman.put(Location.toLong(-firstPage, curOffset));
+                putFreeSlot(Location.toLong(-firstPage, curOffset));
                 curOffset += Magic.PhysicalRowId_SIZE;
             }
 
-            retval = freeman.get();
+            retval = getFreeSlot();
             if (retval == 0) {
                 throw new Error("couldn't obtain free translation");
             }
@@ -91,7 +94,7 @@ final class LogicalRowIdManager {
         final BlockIo xlatPage = file.get(block);
         xlatPage.pageHeaderSetLocation(Location.getOffset(logicalrowid), 0);
         file.release(block, true);
-        freeman.put(logicalrowid);
+        putFreeSlot(logicalrowid);
     }
 
     /**
@@ -131,12 +134,108 @@ final class LogicalRowIdManager {
     }
 
     void commit() throws IOException {
-        freeman.commit();
+        //write all uncommited free records
+        int rowIdPos = 0;
+
+        //iterate over filled pages
+        for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
+
+            final BlockIo fp = file.get(current);
+            short slot = fp.FreeLogicalRowId_getFirstFree();
+            //iterate over free slots in page and fill them
+            while (slot != -1 && rowIdPos < freeRecordsInTransSize) {
+                final long rowid = freeRecordsInTransRowid[rowIdPos++];
+                final short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
+                fp.pageHeaderSetLocation(freePhysRowId, rowid);
+                slot = fp.FreeLogicalRowId_getFirstFree();
+            }
+            file.release(current, true);
+            if (!(rowIdPos < freeRecordsInTransSize))
+                break;
+        }
+
+        //now we propably filled all already allocated pages,
+        //time to start allocationg new pages
+        while (rowIdPos < freeRecordsInTransSize) {
+            //allocate new page
+            long freePage = pageman.allocate(Magic.FREELOGIDS_PAGE);
+            BlockIo fp = file.get(freePage);
+            short slot = fp.FreeLogicalRowId_getFirstFree();
+            //iterate over free slots in page and fill them
+            while (slot != -1 && rowIdPos < freeRecordsInTransSize) {
+                long rowid = freeRecordsInTransRowid[rowIdPos++];
+                short freePhysRowId = fp.FreeLogicalRowId_alloc(slot);
+                fp.pageHeaderSetLocation(freePhysRowId, rowid);
+                slot = fp.FreeLogicalRowId_getFirstFree();
+            }
+            file.release(freePage, true);
+            if (!(rowIdPos < freeRecordsInTransSize))
+                break;
+        }
+
+        if (rowIdPos < freeRecordsInTransSize)
+            throw new InternalError();
+        if(freeRecordsInTransRowid.length>128)
+            freeRecordsInTransRowid = new long[4];
+        freeRecordsInTransSize = 0;
+
     }
 
     void rollback() throws IOException {
-        freeman.rollback();
+        if(freeRecordsInTransRowid.length>128)
+            freeRecordsInTransRowid = new long[4];
+        freeRecordsInTransSize = 0;
     }
+
+
+    /**
+     * Returns a free Logical rowid, or
+     * 0 if nothing was found.
+     */
+    long getFreeSlot() throws IOException {
+        if (freeRecordsInTransSize != 0) {
+            return freeRecordsInTransRowid[--freeRecordsInTransSize];
+        }
+
+        // Loop through the free Logical rowid list until we get
+        // the first rowid.
+        long retval = 0;
+        for (long current = pageman.getFirst(Magic.FREELOGIDS_PAGE); current != 0; current = pageman.getNext(current)) {
+            BlockIo fp = file.get(current);
+            short slot = fp.FreeLogicalRowId_getFirstAllocated();
+            if (slot != -1) {
+                // got one!
+                retval = fp.FreeLogicalRowId_slotToLocation(slot);
+
+                fp.FreeLogicalRowId_free(slot);
+                if (fp.FreeLogicalRowId_getCount() == 0) {
+                    // page became empty - free it
+                    file.release(current, false);
+                    pageman.free(Magic.FREELOGIDS_PAGE, current);
+                } else
+                    file.release(current, true);
+
+                return retval;
+            } else {
+                // no luck, go to next page
+                file.release(current, false);
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Puts the indicated rowid on the free list
+     */
+    void putFreeSlot(long rowid) throws IOException {
+        //ensure capacity
+        if(freeRecordsInTransSize == freeRecordsInTransRowid.length)
+            freeRecordsInTransRowid = Arrays.copyOf(freeRecordsInTransRowid, freeRecordsInTransRowid.length * 2);
+        //add record and increase size
+        freeRecordsInTransRowid[freeRecordsInTransSize]=rowid;
+        freeRecordsInTransSize++;
+    }
+
 
 
 }

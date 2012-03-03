@@ -23,7 +23,7 @@ import java.util.Arrays;
  * This class manages free physical rowid pages and provides methods to free and allocate physical rowids on a high
  * level.
  */
-final class FreePhysicalRowIdPageManager {
+final class PhysicalRowIdPageManagerFree {
 
     /**
      * massive deletes leaves lot of free phys pages. 
@@ -63,7 +63,7 @@ final class FreePhysicalRowIdPageManager {
     /**
      * Creates a new instance using the indicated record file and page manager.
      */
-    FreePhysicalRowIdPageManager(RecordFile file, PageManager pageman) throws IOException {
+    PhysicalRowIdPageManagerFree(RecordFile file, PageManager pageman) throws IOException {
         _file = file;
         _pageman = pageman;
     }
@@ -76,7 +76,7 @@ final class FreePhysicalRowIdPageManager {
      * @param b  BlockIO
      * @param requestedSize requested allocation size.
      */
-    static int getFirstLargerThan(BlockIo b, final int requestedSize) {
+    static int getFirstFreeLargerThan(BlockIo b, final int requestedSize) {
 
         int maxSize = 0;
         /*
@@ -141,7 +141,7 @@ final class FreePhysicalRowIdPageManager {
      * allocated slot is indicated by a non-zero size field in that slot and the size is the size of the available free
      * record in bytes.
      */
-    long get(final int size) throws IOException {
+    long getFreeRecord(final int size) throws IOException {
         //first check data in transaction, maybe some of them are usable
 
         for(int i = 0;i<inTransSize;i++){
@@ -173,7 +173,7 @@ final class FreePhysicalRowIdPageManager {
         for (long current = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE); current != 0; current = _pageman.getNext(current)) {
             BlockIo fp = _file.get(current);
             pageCounter++;
-            int slot = getFirstLargerThan(fp, size);
+            int slot = getFirstFreeLargerThan(fp, size);
             if (slot > 0) {
                 //reset maximal size, as record has changed
                 lastMaxSize = -1;
@@ -217,7 +217,7 @@ final class FreePhysicalRowIdPageManager {
     /**
      * Puts the indicated rowid on the free list, which avaits for commit
      */
-    void put(final long rowid, final int size) throws IOException {
+    void putFreeRecord(final long rowid, final int size) throws IOException {
         //ensure capacity
         if(inTransSize==inTransRecid.length){
             inTransRecid = Arrays.copyOf(inTransRecid, inTransRecid.length * 2);
@@ -232,7 +232,7 @@ final class FreePhysicalRowIdPageManager {
         if(inTransSize==0)
             return;
 
-        quickSort(inTransRecid,inTransCapacity,0,inTransSize-1);
+        Utils.quickSort(inTransRecid, inTransCapacity, 0, inTransSize - 1);
 
         //try to merge records released next to each other into single one
         int prevIndex = 0;
@@ -304,49 +304,15 @@ final class FreePhysicalRowIdPageManager {
             }
         }
 
-        //rollback is called just to clear the list, we do not really want rolling back
-        rollback();
+        clearFreeInTrans();
     }
-
-    /** quick sort which also sorts elements in second array*/
-    private static void quickSort(final long array[], final int array2[],final int low, final int n){
-        long temp;
-        int temp2;
-        int lo = low;
-        int hi = n;
-        if (lo >= n) {
-            return;
-        }
-        long mid = array[(lo + hi) / 2];
-        while (lo < hi) {
-            while (lo<hi && array[lo] < mid) {
-                lo++;
-            }
-            while (lo<hi && array[hi] > mid) {
-                hi--;
-            }
-            if (lo < hi) {
-                temp = array[lo];
-                array[lo] = array[hi];
-                array[hi] = temp;
-                temp2 = array2[lo];
-                array2[lo] = array2[hi];
-                array2[hi] = temp2;
-            }
-        }
-        if (hi < lo) {
-            temp2 = hi;
-            hi = lo;
-            lo = temp2;
-        }
-        quickSort(array, array2, low, lo);
-        quickSort(array, array2, lo == low ? lo+1 : lo, n);
-    }
-
-
 
 
     public void rollback() {
+        clearFreeInTrans();
+    }
+
+    private void clearFreeInTrans() {
         if(inTransRecid.length>128)
             inTransRecid = new long[4];
         if(inTransCapacity.length>128)

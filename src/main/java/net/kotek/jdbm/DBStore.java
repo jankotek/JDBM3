@@ -175,10 +175,9 @@ final class DBStore
         _file = new RecordFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _pageman = new PageManager(_file);
         _physMgr = new PhysicalRowIdManager(_file, _pageman,
-                new FreePhysicalRowIdPageManager(_file, _pageman));
+                new PhysicalRowIdPageManagerFree(_file, _pageman));
 
-        _logicMgr = new LogicalRowIdManager(_file, _pageman,
-                new FreeLogicalRowIdPageManager(_file, _pageman));
+        _logicMgr = new LogicalRowIdManager(_file, _pageman);
 
         long versionNumber = getRoot(STORE_VERSION_NUMBER_ROOT);
         if (versionNumber > STORE_FORMAT_VERSION)

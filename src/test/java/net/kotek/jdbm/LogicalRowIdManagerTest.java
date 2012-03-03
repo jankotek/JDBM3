@@ -31,7 +31,7 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
         RecordFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
 
-        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm, new FreeLogicalRowIdPageManager(free, pmfree));
+        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
 
         f.forceClose();
     }
@@ -44,7 +44,7 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
         PageManager pm = new PageManager(f);
         RecordFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
-        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm, new FreeLogicalRowIdPageManager(free, pmfree));
+        LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
         long physid = Location.toLong(20, (short) 234);
 
         long logid = logMgr.insert(physid);
@@ -59,5 +59,19 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
         f.forceClose();
     }
 
+
+    public void testFreeBasics() throws Exception {
+        RecordFile f = newRecordFile();
+        PageManager pm = new PageManager(f);
+        LogicalRowIdManager freeMgr = new LogicalRowIdManager(
+                f, pm);
+
+        // allocate a rowid - should fail on an empty file
+        long loc = freeMgr.getFreeSlot();
+        assertTrue("loc is not null?", loc == 0);
+
+        pm.close();
+        f.close();
+    }
 
 }

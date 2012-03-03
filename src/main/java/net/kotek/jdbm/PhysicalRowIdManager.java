@@ -28,7 +28,7 @@ final class PhysicalRowIdManager {
     // The file we're talking to and the associated page manager.
     final private RecordFile file;
     final private PageManager pageman;
-    final FreePhysicalRowIdPageManager freeman;
+    final PhysicalRowIdPageManagerFree freeman;
     static final private short DATA_PER_PAGE = (short) (BLOCK_SIZE - Magic.DATA_PAGE_O_DATA);
     //caches offset after last allocation. So we dont have to iterate throw page every allocation
     private long cachedLastAllocatedRecordPage = Long.MIN_VALUE;
@@ -37,7 +37,7 @@ final class PhysicalRowIdManager {
     /**
      * Creates a new rowid manager using the indicated record file. and page manager.
      */
-    PhysicalRowIdManager(RecordFile file, PageManager pageManager, FreePhysicalRowIdPageManager freeman) throws IOException {
+    PhysicalRowIdManager(RecordFile file, PageManager pageManager, PhysicalRowIdPageManagerFree freeman) throws IOException {
         this.file = file;
         this.pageman = pageManager;
         this.freeman = freeman;
@@ -132,7 +132,7 @@ final class PhysicalRowIdManager {
      */
     private long alloc(int size) throws IOException {
         size = RecordHeader.roundAvailableSize(size);
-        long retval = freeman.get(size);
+        long retval = freeman.getFreeRecord(size);
         if (retval == 0) {
             retval = allocNew(size, pageman.getLast(Magic.USED_PAGE));
         }
@@ -272,7 +272,7 @@ final class PhysicalRowIdManager {
         file.release(curBlock);
 
         // write the rowid to the free list
-        freeman.put(id, size);
+        freeman.putFreeRecord(id, size);
     }
 
     /**

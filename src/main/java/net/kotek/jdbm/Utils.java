@@ -104,4 +104,38 @@ class Utils {
 //    }
 
 
+    /** quick sort which also sorts elements in second array*/
+    static void quickSort(final long array[], final int array2[], final int low, final int n){
+        long temp;
+        int temp2;
+        int lo = low;
+        int hi = n;
+        if (lo >= n) {
+            return;
+        }
+        long mid = array[(lo + hi) / 2];
+        while (lo < hi) {
+            while (lo<hi && array[lo] < mid) {
+                lo++;
+            }
+            while (lo<hi && array[hi] > mid) {
+                hi--;
+            }
+            if (lo < hi) {
+                temp = array[lo];
+                array[lo] = array[hi];
+                array[hi] = temp;
+                temp2 = array2[lo];
+                array2[lo] = array2[hi];
+                array2[hi] = temp2;
+            }
+        }
+        if (hi < lo) {
+            temp2 = hi;
+            hi = lo;
+            lo = temp2;
+        }
+        quickSort(array, array2, low, lo);
+        quickSort(array, array2, lo == low ? lo+1 : lo, n);
+    }
 }
