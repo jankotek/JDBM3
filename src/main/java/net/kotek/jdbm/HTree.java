@@ -412,8 +412,8 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     static void defrag(Long recid, DBStore r1, DBStore r2) throws IOException {
         //TODO should modCount be increased after defrag, revert or commit?
         try {
-            byte[] data = r1.fetchRaw(recid);
-            r2.forceInsert(recid, data);
+            byte[] data = r1.recman.fetchRaw(recid);
+            r2.recman.forceInsert(recid, data);
             DataInput in = new DataInputStream(new ByteArrayInputStream(data));
             HTree t = (HTree) r1.defaultSerializer().deserialize(in);
             t.db = r1;
@@ -421,7 +421,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
             HTreeDirectory d = t.getRoot();
             if (d != null) {
-                r2.forceInsert(t.rootRecid, r1.fetchRaw(t.rootRecid));
+                r2.recman.forceInsert(t.rootRecid, r1.recman.fetchRaw(t.rootRecid));
                 d.defrag(r1, r2);
             }
 

@@ -400,8 +400,8 @@ class LinkedList<E> extends AbstractSequentialList<E> {
     static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
         try {
             //move linked list itself
-            byte[] data = r1.fetchRaw(recid);
-            r2.forceInsert(recid, data);
+            byte[] data = r1.recman.fetchRaw(recid);
+            r2.recman.forceInsert(recid, data);
             DataInputOutput in = new DataInputOutput();
             in.reset(data);
             LinkedList l = (LinkedList) r1.defaultSerializer().deserialize(in);
@@ -410,16 +410,16 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             if(l.rootRecid == 0) //empty list, done
                 return;
 
-            data = r1.fetchRaw(l.rootRecid);
-            r2.forceInsert(l.rootRecid, data);
+            data = r1.recman.fetchRaw(l.rootRecid);
+            r2.recman.forceInsert(l.rootRecid, data);
             in.reset(data);
             Root r = ROOT_SERIALIZER.deserialize(in);
             //move all other nodes in linked list
             long current = r.first;
             while (current != 0) {
-                data = r1.fetchRaw(current);
+                data = r1.recman.fetchRaw(current);
                 in.reset(data);
-                r2.forceInsert(current, data);
+                r2.recman.forceInsert(current, data);
 
                 Entry e = (Entry) l.entrySerializer.deserialize(in);
                 current = e.next;

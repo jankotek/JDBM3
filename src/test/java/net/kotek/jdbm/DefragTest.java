@@ -68,12 +68,12 @@ public class DefragTest extends TestCaseWithTestFile {
         r.commit();
         //make copy of linked list
         List l2 = new ArrayList(l);
-        long oldRecCount = r.countRecords();
+        long oldRecCount = ((RecordManagerNative)r.recman).countRecords();
         r.defrag(true);
 
         r.close();
         r = new DBStore(file, false, false);
-        assertEquals(oldRecCount, r.countRecords());
+        assertEquals(oldRecCount, ((RecordManagerNative)r.recman).countRecords());
 
         //compare that list was unchanged
         assertEquals(l2, new ArrayList(r.getLinkedList("test")));

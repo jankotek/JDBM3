@@ -1290,8 +1290,8 @@ final class BTreeNode<K, V>
         if (_children != null)
             for (long child : _children) {
                 if (child == 0) continue;
-                byte[] data = r1.fetchRaw(child);
-                r2.forceInsert(child, data);
+                byte[] data = r1.recman.fetchRaw(child);
+                r2.recman.forceInsert(child, data);
                 BTreeNode t = deserialize(new DataInputOutput(data));
                 t._btree = _btree;
                 t.defrag(r1, r2);

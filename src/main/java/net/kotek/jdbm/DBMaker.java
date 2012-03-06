@@ -30,18 +30,18 @@ import java.security.spec.KeySpec;
  */
 public class DBMaker {
 
-    private byte cacheType = DBCache.MRU;
-    private int mruCacheSize = 2048;
+    protected byte cacheType = DBCache.MRU;
+    protected int mruCacheSize = 2048;
 
-    private String location = null;
+    protected String location = null;
 
-    private boolean disableTransactions = false;
-    private boolean readonly = false;
-    private String password = null;
-    private boolean useAES256Bit = true;
-    private boolean useRandomAccessFile = false;
-    private boolean autoClearRefCacheOnLowMem = true;
-    private boolean autoDefrag = true;
+    protected boolean disableTransactions = false;
+    protected boolean readonly = false;
+    protected String password = null;
+    protected boolean useAES256Bit = true;
+    protected boolean useRandomAccessFile = false;
+    protected boolean autoClearRefCacheOnLowMem = true;
+    protected boolean autoDefrag = true;
 
 
     /**

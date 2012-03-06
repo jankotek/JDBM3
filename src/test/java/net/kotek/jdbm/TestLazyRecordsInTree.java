@@ -15,28 +15,28 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile {
 
     void doIt(DBStore r, Map<Integer, String> m) throws IOException {
         m.put(1, "");
-        long counter = r.countRecords();
+        long counter = ((RecordManagerNative)r.recman).countRecords();
         //number of records should increase after inserting big record
         m.put(1, makeString(1000));
-        assertEquals(counter + 1, r.countRecords());
+        assertEquals(counter + 1, ((RecordManagerNative)r.recman).countRecords());
         assertEquals(m.get(1), makeString(1000));
 
         //old record should be disposed when replaced with big record
         m.put(1, makeString(1001));
-        assertEquals(counter + 1, r.countRecords());
+        assertEquals(counter + 1, ((RecordManagerNative)r.recman).countRecords());
         assertEquals(m.get(1), makeString(1001));
 
         //old record should be disposed when replaced with small record
         m.put(1, "aa");
-        assertEquals(counter, r.countRecords());
+        assertEquals(counter, ((RecordManagerNative)r.recman).countRecords());
         assertEquals(m.get(1), "aa");
 
         //old record should be disposed after deleting
         m.put(1, makeString(1001));
-        assertEquals(counter + 1, r.countRecords());
+        assertEquals(counter + 1, ((RecordManagerNative)r.recman).countRecords());
         assertEquals(m.get(1), makeString(1001));
         m.remove(1);
-        assertTrue(counter >= r.countRecords());
+        assertTrue(counter >= ((RecordManagerNative)r.recman).countRecords());
         assertEquals(m.get(1), null);
 
 

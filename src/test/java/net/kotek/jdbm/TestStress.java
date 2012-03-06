@@ -163,7 +163,7 @@ public class TestStress extends TestCaseWithTestFile {
                     int root = rnd.nextInt(Magic.FILE_HEADER_NROOTS);
                     if (root > 10) { //DONT do this for reserved roots
                         roots[root] = rnd.nextLong();
-                        db.setRoot(root, roots[root]);
+                        db.recman.setRoot(root, roots[root]);
                         rootsets++;
                     }
                 } else if (op == 52) {
@@ -175,7 +175,7 @@ public class TestStress extends TestCaseWithTestFile {
 
                     int root = getRandomAllocatedRoot();
                     if (root > 10) { //DONT do this for reserved roots
-                        assertEquals("root", roots[root], db.getRoot(root));
+                        assertEquals("root", roots[root], db.recman.getRoot(root));
                         rootgets++;
                     }
                 } else {

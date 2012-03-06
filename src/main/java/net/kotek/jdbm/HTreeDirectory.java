@@ -414,8 +414,8 @@ final class HTreeDirectory<K, V> {
             if(sub==null) continue;
             for (long child : sub) {
                 if (child == 0) continue;
-                byte[] data = r1.fetchRaw(child);
-                r2.forceInsert(child, data);
+                byte[] data = r1.recman.fetchRaw(child);
+                r2.recman.forceInsert(child, data);
                 Object t = tree.SERIALIZER.deserialize(new DataInputOutput(data));
                 if (t instanceof HTreeDirectory) {
                     ((HTreeDirectory) t).defrag(r1, r2);
