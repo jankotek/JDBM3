@@ -42,6 +42,7 @@ public class DBMaker {
     protected boolean useRandomAccessFile = false;
     protected boolean autoClearRefCacheOnLowMem = true;
     protected boolean autoDefrag = true;
+    protected boolean closeOnJVMExit = false;
 
 
     /**
@@ -237,7 +238,17 @@ public class DBMaker {
         this.autoDefrag = false;
         return this;
     }
-    
+
+
+    /**
+     * Registers shutdown hook and close database on JVM exit, if it was not already closed; 
+     * 
+     * @return this builder
+     */
+    public DBMaker closeOnExit(){
+        this.closeOnJVMExit = true;
+        return this;
+    }
 
     /**
      * Opens database with settings earlier specified in this builder.
@@ -298,6 +309,17 @@ public class DBMaker {
             //do nothing
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
+        }
+        
+        if(closeOnJVMExit){
+            final DB db2 = db;
+            Thread t = new Thread("JDBM shutdown"){
+              public void run(){
+                  if(!db2.isClosed())
+                    db2.close();    
+              }
+            };
+            Runtime.getRuntime().removeShutdownHook(t);
         }
 
         return db;

@@ -328,6 +328,10 @@ class DBCache
             _softRefThread.interrupt();
     }
 
+    public synchronized boolean isClosed(){
+        return _db == null;
+    }
+
 
     public synchronized void commit() {
         if (_db == null) {

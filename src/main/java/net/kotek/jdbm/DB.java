@@ -21,6 +21,9 @@ public interface DB {
      */
     void close();
 
+    /** @return true if db was already closed */
+    boolean isClosed();
+
     /**
      * Clear cache and remove all entries it contains.
      * This may be useful for some Garbage Collection when reference cache is used.

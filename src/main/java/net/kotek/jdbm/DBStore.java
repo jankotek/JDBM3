@@ -170,11 +170,6 @@ final class DBStore
     }
 
 
-    /**
-     * Closes the record manager.
-     *
-     * @throws IOException when one of the underlying I/O operations fails.
-     */
     public synchronized void close() {
         checkIfClosed();
         try {
@@ -184,6 +179,10 @@ final class DBStore
         } catch (IOException e) {
             throw new IOError(e);
         }
+    }
+    
+    public synchronized boolean isClosed(){
+        return recman == null;
     }
 
 

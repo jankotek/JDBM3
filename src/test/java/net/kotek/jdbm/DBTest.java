@@ -248,5 +248,10 @@ public class DBTest extends TestCaseWithTestFile {
         assertTrue(cols.get("hashset") instanceof Set);
         assertTrue(cols.get("linkedlist") instanceof List);
     }
+    
+    public void testRegisterShutdown(){
+        DB d = new DBMaker(newTestFile()).closeOnExit().build();
+        //do nothing
+    }
 
 }
