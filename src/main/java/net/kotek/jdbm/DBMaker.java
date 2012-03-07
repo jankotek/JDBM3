@@ -43,6 +43,7 @@ public class DBMaker {
     protected boolean autoClearRefCacheOnLowMem = true;
     protected boolean autoDefrag = true;
     protected boolean closeOnJVMExit = false;
+    protected boolean deleteFilesAfterCloseFlag = false;
 
 
     /**
@@ -251,6 +252,16 @@ public class DBMaker {
     }
 
     /**
+     * Delete all storage files after DB is closed
+     *
+     * @return this builder
+     */
+    public DBMaker deleteFilesAfterClose(){
+        this.deleteFilesAfterCloseFlag = true;
+        return this;
+    }
+
+    /**
      * Opens database with settings earlier specified in this builder.
      *
      * @return new DB
@@ -297,7 +308,7 @@ public class DBMaker {
         DBAbstract db = null;
 
         try {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag);
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag);
         } catch (IOException e) {
             throw new IOError(e);
         }

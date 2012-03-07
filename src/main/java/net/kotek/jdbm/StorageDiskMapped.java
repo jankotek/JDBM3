@@ -67,14 +67,18 @@ class StorageDiskMapped implements Storage {
 
         FileChannel ret = c.get(fileNumber);
         if (ret == null) {
-            String name = fileName + (pageNumber>=0 ? DBR : IDR) + "." + fileNumber;
+            String name = makeFileName(fileName, pageNumber, fileNumber);
             ret = new RandomAccessFile(name, "rw").getChannel();
             c.set(fileNumber, ret);
             buffers.put(ret, ret.map(FileChannel.MapMode.READ_WRITE, 0, ret.size()));
         }
         return ret;
     }
-    
+
+    static String makeFileName(String fileName, long pageNumber, int fileNumber) {
+        return fileName + (pageNumber>=0 ? DBR : IDR) + "." + fileNumber;
+    }
+
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
         if(transactionsDisabled && data.isDirect()){
@@ -184,6 +188,28 @@ class StorageDiskMapped implements Storage {
                 fileOut.getFD().sync();
             }
         };
+    }
+
+    public void deleteAllFiles() throws IOException {
+        deleteTransactionLog();
+        deleteFiles(fileName);
+    }
+
+    static void deleteFiles(String fileName) {
+        for(int i = 0; true; i++){
+            String name = makeFileName(fileName,+1, i);
+            File f =new File(name);
+            boolean exists = f.exists();
+            if(exists && !f.delete()) f.deleteOnExit();
+            if(!exists) break;
+        }
+        for(int i = 0; true; i++){
+            String name = makeFileName(fileName,-1, i);
+            File f =new File(name);
+            boolean exists = f.exists();
+            if(exists && !f.delete()) f.deleteOnExit();
+            if(!exists) break;
+        }
     }
 
 

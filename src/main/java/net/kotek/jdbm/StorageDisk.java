@@ -52,7 +52,7 @@ class StorageDisk implements Storage {
 
         RandomAccessFile ret = c.get(fileNumber);
         if (ret == null) {
-            String name = fileName + (pageNumber>=0 ? DBR : IDR) + "." + fileNumber;
+            String name = StorageDiskMapped.makeFileName(fileName, pageNumber, fileNumber);
             ret = new RandomAccessFile(name, readonly?"r":"rw");
             c.set(fileNumber, ret);
         }
@@ -116,6 +116,11 @@ class StorageDisk implements Storage {
                 fileOut.getFD().sync();
             }
         };
+    }
+
+    public void deleteAllFiles() {
+        deleteTransactionLog();
+        StorageDiskMapped.deleteFiles(fileName);
     }
 
 

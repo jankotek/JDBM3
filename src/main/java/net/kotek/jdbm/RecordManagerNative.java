@@ -224,7 +224,7 @@ class RecordManagerNative implements RecordManager {
         commit();
         final String filename2 = fileName + "_defrag" + System.currentTimeMillis();
         final String filename1 = fileName;
-        DBStore db2 = new DBStore(filename2, false, true, _file.cipherIn, _file.cipherOut, false,true);
+        DBStore db2 = new DBStore(filename2, false, true, _file.cipherIn, _file.cipherOut, false,true,false);
         RecordManagerNative recman2 = (RecordManagerNative) db2.recman;
 
         //recreate logical file with original page layout
@@ -526,6 +526,10 @@ class RecordManagerNative implements RecordManager {
 
         long physLoc = _physMgr.insert(data, 0, data.length);
         _logicMgr.forceInsert(logicalRowId, physLoc);
+    }
+
+    public void deleteAllFiles() throws IOException {
+        _file.deleteAllFiles();
     }
 
     public byte[] fetchRaw(long recid) throws IOException {

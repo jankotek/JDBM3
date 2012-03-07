@@ -88,6 +88,9 @@ class StorageMemory implements Storage {
         return new DataOutputStream(transLog);
     }
 
+    public void deleteAllFiles() throws IOException {
+    }
+
     public boolean isReadonly() {
         return false;
     }

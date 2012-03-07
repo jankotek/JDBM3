@@ -81,6 +81,8 @@ final class DBStore
 
     /** If this DB is wrapped in DBCache, it is not responsible to drive the auto commits*/
     boolean wrappedInCache = false;
+    
+    final private boolean deleteFilesAfterClose;
 
 
     void checkCanWrite() {
@@ -130,7 +132,7 @@ final class DBStore
     private final String _filename;
 
     public DBStore(String filename, boolean readonly, boolean transactionDisabled) throws IOException {
-        this(filename, readonly, transactionDisabled, null, null, false,true);
+        this(filename, readonly, transactionDisabled, null, null, false,true,false);
     }
 
 
@@ -142,7 +144,7 @@ final class DBStore
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
                    Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                   boolean autodefrag)
+                   boolean autodefrag, boolean deleteFilesAfterClose)
             throws IOException {
         _filename = filename;
         this.readonly = readonly;
@@ -151,6 +153,7 @@ final class DBStore
         this.cipherOut = cipherOut;
         this.useRandomAccessFile = useRandomAccessFile;
         this.autodefrag = autodefrag;
+        this.deleteFilesAfterClose = deleteFilesAfterClose;
         reopen();
     }
 
@@ -174,6 +177,8 @@ final class DBStore
         checkIfClosed();
         try {
             recman.close();
+            if(deleteFilesAfterClose)
+                recman.deleteAllFiles();
             recman = null;
 
         } catch (IOException e) {

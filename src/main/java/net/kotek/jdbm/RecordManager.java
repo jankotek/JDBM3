@@ -34,4 +34,6 @@ public interface RecordManager {
     byte[] fetchRaw(long recid) throws IOException;
 
     void forceInsert(long recid, byte[] data) throws IOException;
+
+    void deleteAllFiles() throws IOException;
 }

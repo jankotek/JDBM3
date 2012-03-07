@@ -379,4 +379,8 @@ final class RecordFile {
     public int getDirtyPageCount() {
         return dirty.size();
     }
+
+    public void deleteAllFiles() throws IOException {
+        storage.deleteAllFiles();
+    }
 }

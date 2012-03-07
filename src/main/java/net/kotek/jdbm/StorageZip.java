@@ -63,6 +63,9 @@ class StorageZip implements Storage {
         throw new UnsupportedOperationException("readonly");
     }
 
+    public void deleteAllFiles() throws IOException {
+    }
+
     public boolean isReadonly() {
         return true;
     }

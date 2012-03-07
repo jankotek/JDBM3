@@ -253,5 +253,45 @@ public class DBTest extends TestCaseWithTestFile {
         DB d = new DBMaker(newTestFile()).closeOnExit().build();
         //do nothing
     }
+    
+    public void testDeleteAfterExit(){
+        String f = newTestFile();
+        File f1 = new File(StorageDiskMapped.makeFileName(f,1,0));
+        File f2 = new File(StorageDiskMapped.makeFileName(f,-1,0));
+        
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+        
+        DB d = new DBMaker(f).deleteFilesAfterClose().build();
+        d.createHashSet("test");
+        assertTrue(f1.exists());
+        assertTrue(f2.exists());
+        d.close();
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+
+                
+    }
+
+    public void testDeleteAfterExitRAF(){
+        String f = newTestFile();
+        File f1 = new File(StorageDiskMapped.makeFileName(f,1,0));
+        File f2 = new File(StorageDiskMapped.makeFileName(f,-1,0));
+
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+
+        DB d = new DBMaker(f).deleteFilesAfterClose().useRandomAccessFile().build();
+        d.createHashSet("test");
+        assertTrue(f1.exists());
+        assertTrue(f2.exists());
+        d.close();
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+
+
+    }
+
 
 }
+

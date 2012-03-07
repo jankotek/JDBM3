@@ -49,4 +49,6 @@ interface Storage {
     void sync() throws IOException;
 
     DataOutputStream openTransactionLog() throws IOException;
+
+    void deleteAllFiles() throws IOException;
 }
