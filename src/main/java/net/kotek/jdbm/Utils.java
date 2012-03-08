@@ -138,4 +138,25 @@ class Utils {
         quickSort(array, array2, low, lo);
         quickSort(array, array2, lo == low ? lo+1 : lo, n);
     }
+    
+    
+    static <E> E max(E e1, E e2, Comparator comp){
+        if(e1 == null) return e2;
+        if(e2 == null) return e1;
+
+        if(comp == null)
+            comp = COMPARABLE_COMPARATOR;
+        return comp.compare(e1,e2)<0 ? e2:e1;
+    }
+
+    static <E> E min(E e1, E e2, Comparator comp){
+        if(e1 == null) return e2;
+        if(e2 == null) return e1;
+
+        if(comp == null)
+            comp = COMPARABLE_COMPARATOR;
+
+        return comp.compare(e1,e2)>0 ? e2:e1;
+    }
+
 }

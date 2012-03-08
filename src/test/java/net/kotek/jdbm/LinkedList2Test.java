@@ -25,16 +25,16 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * Tests for LinkedList which comes with JDBM. Original code comes from Apache Harmony,
+ * Tests for LinkedList2 which comes with JDBM. Original code comes from Apache Harmony,
  * Modified by Jan Kotek for use in JDBM
  */
-public class LinkedListTest extends TestCaseWithTestFile {
+public class LinkedList2Test extends TestCaseWithTestFile {
 
     DB db;
 
-    LinkedList ll;
+    LinkedList2 ll;
 
-    LinkedList<Object> testList;
+    LinkedList2<Object> testList;
 
     private Object testObjOne;
 
@@ -56,10 +56,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#add(int, java.lang.Object)
+     * @tests java.util.LinkedList2#add(int, java.lang.Object)
      */
     public void test_addILjava_lang_Object() {
-        // Test for method void java.util.LinkedList.add(int, java.lang.Object)
+        // Test for method void java.util.LinkedList2.add(int, java.lang.Object)
         Object o = "Test";
         ll.add(50, o);
         assertEquals("Failed to add Object>: " + ll.get(50).toString(), ll
@@ -100,10 +100,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#addAll(int, java.util.Collection)
+     * @tests java.util.LinkedList2#addAll(int, java.util.Collection)
      */
     public void test_addAllILjava_util_Collection() {
-        // Test for method boolean java.util.LinkedList.addAll(int,
+        // Test for method boolean java.util.LinkedList2.addAll(int,
         // java.util.Collection)
         ll.addAll(50, new ArrayList(ll));
         assertEquals("Returned incorrect size after adding to existing list", 200, ll
@@ -140,11 +140,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#addAll(int, java.util.Collection)
+     * @tests java.util.LinkedList2#addAll(int, java.util.Collection)
      */
     public void test_addAllILjava_util_Collection_2() {
         // Regression for HARMONY-467
-        LinkedList obj = (LinkedList) db.createLinkedList("testXX");
+        LinkedList2 obj = (LinkedList2) db.createLinkedList("testXX");
         try {
             obj.addAll(-1, (Collection) null);
             fail("IndexOutOfBoundsException expected");
@@ -153,12 +153,12 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#addAll(java.util.Collection)
+     * @tests java.util.LinkedList2#addAll(java.util.Collection)
      */
     public void test_addAllLjava_util_Collection() {
 
         // Test for method boolean
-        // java.util.LinkedList.addAll(java.util.Collection)
+        // java.util.LinkedList2.addAll(java.util.Collection)
         List l = new ArrayList();
         l.addAll(new ArrayList(ll));
 
@@ -199,10 +199,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#clear()
+     * @tests java.util.LinkedList2#clear()
      */
     public void test_clear() {
-        // Test for method void java.util.LinkedList.clear()
+        // Test for method void java.util.LinkedList2.clear()
         ll.clear();
         for (int i = 0; i < ll.size(); i++)
             assertNull("Failed to clear list", ll.get(i));
@@ -210,11 +210,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#contains(java.lang.Object)
+     * @tests java.util.LinkedList2#contains(java.lang.Object)
      */
     public void test_containsLjava_lang_Object() {
         // Test for method boolean
-        // java.util.LinkedList.contains(java.lang.Object)
+        // java.util.LinkedList2.contains(java.lang.Object)
         assertTrue("Returned false for valid element", ll
                 .contains(objArray[99]));
         assertTrue("Returned false for equal element", ll.contains(new Integer(
@@ -227,10 +227,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#get(int)
+     * @tests java.util.LinkedList2#get(int)
      */
     public void test_getI() {
-        // Test for method java.lang.Object java.util.LinkedList.get(int)
+        // Test for method java.lang.Object java.util.LinkedList2.get(int)
         assertEquals("Returned incorrect element", ll.get(22), objArray[22]);
         try {
             ll.get(8765);
@@ -241,10 +241,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#indexOf(java.lang.Object)
+     * @tests java.util.LinkedList2#indexOf(java.lang.Object)
      */
     public void test_indexOfLjava_lang_Object() {
-        // Test for method int java.util.LinkedList.indexOf(java.lang.Object)
+        // Test for method int java.util.LinkedList2.indexOf(java.lang.Object)
         assertEquals("Returned incorrect index", 87, ll.indexOf(objArray[87]));
         assertEquals("Returned index for invalid Object", -1, ll
                 .indexOf(new Object()));
@@ -255,11 +255,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#lastIndexOf(java.lang.Object)
+     * @tests java.util.LinkedList2#lastIndexOf(java.lang.Object)
      */
     public void test_lastIndexOfLjava_lang_Object() {
         // Test for method int
-        // java.util.LinkedList.lastIndexOf(java.lang.Object)
+        // java.util.LinkedList2.lastIndexOf(java.lang.Object)
         ll.add(new Integer(99));
         assertEquals("Returned incorrect index",
                 100, ll.lastIndexOf(objArray[99]));
@@ -272,11 +272,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#listIterator(int)
+     * @tests java.util.LinkedList2#listIterator(int)
      */
     public void test_listIteratorI() {
         // Test for method java.util.ListIterator
-        // java.util.LinkedList.listIterator(int)
+        // java.util.LinkedList2.listIterator(int)
         ListIterator i = ll.listIterator();
         Object elm;
         int n = 0;
@@ -322,10 +322,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#remove(int)
+     * @tests java.util.LinkedList2#remove(int)
      */
     public void test_removeI() {
-        // Test for method java.lang.Object java.util.LinkedList.remove(int)
+        // Test for method java.lang.Object java.util.LinkedList2.remove(int)
         ll.remove(10);
         assertEquals("Failed to remove element", -1, ll.indexOf(objArray[10]));
         try {
@@ -341,10 +341,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#remove(java.lang.Object)
+     * @tests java.util.LinkedList2#remove(java.lang.Object)
      */
     public void test_removeLjava_lang_Object() {
-        // Test for method boolean java.util.LinkedList.remove(java.lang.Object)
+        // Test for method boolean java.util.LinkedList2.remove(java.lang.Object)
         assertTrue("Failed to remove valid Object", ll.remove(objArray[87]));
         assertTrue("Removed invalid object", !ll.remove(new Object()));
         assertEquals("Found Object after removal", -1, ll.indexOf(objArray[87]));
@@ -355,10 +355,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
 
 
     /**
-     * @tests java.util.LinkedList#set(int, java.lang.Object)
+     * @tests java.util.LinkedList2#set(int, java.lang.Object)
      */
     public void test_setILjava_lang_Object() {
-        // Test for method java.lang.Object java.util.LinkedList.set(int,
+        // Test for method java.lang.Object java.util.LinkedList2.set(int,
         // java.lang.Object)
         Object obj;
         ll.set(65, obj = new Object());
@@ -366,10 +366,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#size()
+     * @tests java.util.LinkedList2#size()
      */
     public void test_size() {
-        // Test for method int java.util.LinkedList.size()
+        // Test for method int java.util.LinkedList2.size()
         assertEquals("Returned incorrect size", ll.size(), objArray.length);
 
         int counter = 0;
@@ -385,10 +385,10 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#toArray()
+     * @tests java.util.LinkedList2#toArray()
      */
     public void test_toArray() {
-        // Test for method java.lang.Object [] java.util.LinkedList.toArray()
+        // Test for method java.lang.Object [] java.util.LinkedList2.toArray()
         ll.add(null);
         Object[] obj = ll.toArray();
         assertEquals("Returned array of incorrect size", objArray.length + 1, obj.length);
@@ -400,11 +400,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
     }
 
     /**
-     * @tests java.util.LinkedList#toArray(java.lang.Object[])
+     * @tests java.util.LinkedList2#toArray(java.lang.Object[])
      */
     public void test_toArray$Ljava_lang_Object() {
         // Test for method java.lang.Object []
-        // java.util.LinkedList.toArray(java.lang.Object [])
+        // java.util.LinkedList2.toArray(java.lang.Object [])
         Integer[] argArray = new Integer[100];
         Object[] retArray;
         retArray = ll.toArray(argArray);
@@ -461,11 +461,11 @@ public class LinkedListTest extends TestCaseWithTestFile {
     public void setUp() throws Exception {
         super.setUp();
         this.db = newRecordManager();
-        ll = (LinkedList) db.createLinkedList("ll");
+        ll = (LinkedList2) db.createLinkedList("ll");
         for (int i = 0; i < objArray.length; i++) {
             ll.add(objArray[i]);
         }
-        testList = (LinkedList<Object>) db.createLinkedList("testList");
+        testList = (LinkedList2<Object>) db.createLinkedList("testList");
         testObjOne = new Object();
         testObjTwo = new Object();
         testObjThree = new Object();

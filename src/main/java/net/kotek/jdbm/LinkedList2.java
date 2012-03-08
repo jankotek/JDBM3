@@ -20,17 +20,20 @@ package net.kotek.jdbm;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * LinkedList which stores its nodes on disk.
+ * LinkedList2 which stores its nodes on disk.
  *
  * @author Jan Kotek
  */
-class LinkedList<E> extends AbstractSequentialList<E> {
+class LinkedList2<E> extends AbstractSequentialList<E> {
 
     private DBAbstract db;
 
     private long rootRecid;
+
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     static private final class Root{
         long first;
@@ -63,13 +66,13 @@ class LinkedList<E> extends AbstractSequentialList<E> {
     protected boolean loadValues = true;
 
     /** constructor used for deserialization */
-    LinkedList(long rootRecid, Serializer<E> valueSerializer) {
+    LinkedList2(long rootRecid, Serializer<E> valueSerializer) {
         this.rootRecid = rootRecid;
         this.valueSerializer = valueSerializer;
     }
 
     /** constructor used to create new empty list*/
-    LinkedList(DBAbstract db, Serializer<E> valueSerializer) throws IOException {
+    LinkedList2(DBAbstract db, Serializer<E> valueSerializer) throws IOException {
         this.db = db;
         if (valueSerializer != null && !(valueSerializer instanceof Serializable))
             throw new IllegalArgumentException("Serializer does not implement Serializable");
@@ -84,6 +87,8 @@ class LinkedList<E> extends AbstractSequentialList<E> {
 
 
     public ListIterator<E> listIterator(int index) {
+        lock.readLock().lock();
+        try{
         Root r = getRoot();
         if (index < 0 || index > r.size)
             throw new IndexOutOfBoundsException();
@@ -99,10 +104,14 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             iter.next();
         }
         return iter;
+        }finally {
+            lock.readLock().unlock();
+        }
 
     }
 
     private Root getRoot(){
+        //expect that caller already holds lock
         try {
            return db.fetch(rootRecid,ROOT_SERIALIZER);
         } catch (IOException e) {
@@ -112,10 +121,18 @@ class LinkedList<E> extends AbstractSequentialList<E> {
 
 
     public int size() {
+        lock.readLock().lock();
+        try{
         return (int) getRoot().size;
+        }finally {
+            lock.readLock().unlock();
+        }
+    
+            
     }
 
     public boolean add(Object value) {
+        lock.writeLock().lock();
         try {                           
             Root r = getRoot();
             Entry e = new Entry(r.last, 0, value);
@@ -138,25 +155,31 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             return true;
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.writeLock().unlock();
         }
+
 
     }
 
     private Entry<E> fetch(long recid) {
+        lock.readLock().lock();
         try {
             return db.fetch(recid, entrySerializer);
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.readLock().unlock();
         }
     }
 
     /**
      * called from Serialization object
      */
-    static LinkedList deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
+    static LinkedList2 deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
         long rootrecid = LongPacker.unpackLong(is);
         Serializer serializer = (Serializer)  ser.deserialize(is);
-        return new LinkedList(rootrecid, serializer);
+        return new LinkedList2(rootrecid, serializer);
     }
 
     void serialize(DataOutput out) throws IOException {
@@ -181,7 +204,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             Object value = null;
             if (loadValues)
                 value = valueSerializer == null ? db.defaultSerializer().deserialize(in) : valueSerializer.deserialize(in);
-            return new LinkedList.Entry(prev, next, value);
+            return new LinkedList2.Entry(prev, next, value);
         }
     };
 
@@ -250,6 +273,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
 
         public void remove() {
             checkForComodification();
+            lock.writeLock().lock();
             try {
                 if (lastOper == 1) {
                     //last operation was next() so remove previous element
@@ -319,11 +343,15 @@ class LinkedList<E> extends AbstractSequentialList<E> {
                     throw new IllegalStateException();
             } catch (IOException e) {
                 throw new IOError(e);
+            }finally {
+                lock.writeLock().unlock();
             }
+
         }
 
         public void set(E value) {
             checkForComodification();
+            lock.writeLock().lock();
             try {
                 if (lastOper == 1) {
                     //last operation was next(), so update previous item
@@ -341,18 +369,22 @@ class LinkedList<E> extends AbstractSequentialList<E> {
                     throw new IllegalStateException();
             } catch (IOException e) {
                 throw new IOError(e);
+            }finally {
+                lock.writeLock().unlock();
             }
 
         }
 
         public void add(E value) {
             checkForComodification();
+
             //use more efficient method if possible
             if (next == 0) {
-                LinkedList.this.add(value);
+                LinkedList2.this.add(value);
                 expectedModCount++;
                 return;
             }
+            lock.writeLock().lock();
             try {
                 //insert new entry
                 Entry<E> e = new Entry<E>(prev, next, value);
@@ -384,6 +416,8 @@ class LinkedList<E> extends AbstractSequentialList<E> {
 
             } catch (IOException e) {
                 throw new IOError(e);
+            }finally {
+                lock.writeLock().unlock();
             }
 
         }
@@ -404,7 +438,7 @@ class LinkedList<E> extends AbstractSequentialList<E> {
             r2.recman.forceInsert(recid, data);
             DataInputOutput in = new DataInputOutput();
             in.reset(data);
-            LinkedList l = (LinkedList) r1.defaultSerializer().deserialize(in);
+            LinkedList2 l = (LinkedList2) r1.defaultSerializer().deserialize(in);
             l.loadValues = false;
             //move linkedlist root
             if(l.rootRecid == 0) //empty list, done

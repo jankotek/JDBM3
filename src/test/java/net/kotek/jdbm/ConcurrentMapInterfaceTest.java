@@ -194,38 +194,6 @@ public abstract class ConcurrentMapInterfaceTest<K, V>
     assertInvariants(map);
   }
 
-  public void testPutIfAbsentExistingKeyNullValue() {
-    if (allowsNullValues) {
-      return;   // Not yet implemented
-    }
-    final ConcurrentMap<K, V> map;
-    final K keyToPut;
-    try {
-      map = makePopulatedMap();
-    } catch (UnsupportedOperationException e) {
-      return;
-    }
-    keyToPut = map.keySet().iterator().next();
-    int initialSize = map.size();
-    if (supportsPut) {
-      try {
-        assertNull(map.putIfAbsent(keyToPut, null));
-      } catch (NullPointerException e) {
-        // Optional.
-      }
-    } else {
-      try {
-        map.putIfAbsent(keyToPut, null);
-        fail("Expected UnsupportedOperationException or NullPointerException");
-      } catch (UnsupportedOperationException e) {
-        // Expected.
-      } catch (NullPointerException e) {
-        // Expected.
-      }
-    }
-    assertEquals(initialSize, map.size());
-    assertInvariants(map);
-  }
 
   public void testRemoveKeyValueExisting() {
     final ConcurrentMap<K, V> map;

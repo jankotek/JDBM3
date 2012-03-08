@@ -1,6 +1,7 @@
 package net.kotek.jdbm;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
@@ -78,7 +79,7 @@ public interface DB {
      *
      * @return map
      */
-    <K, V> Map<K, V> getHashMap(String name);
+    <K, V> ConcurrentMap<K, V> getHashMap(String name);
 
     /**
      * Creates or load existing Map which persists data into DB.
@@ -86,7 +87,7 @@ public interface DB {
      * @param name record name
      * @return
      */
-    <K, V> Map<K, V> createHashMap(String name);
+    <K, V> ConcurrentMap<K, V> createHashMap(String name);
 
 
     /**
@@ -101,7 +102,7 @@ public interface DB {
      * @param valueSerializer serializer to be used for Values
      * @return
      */
-    <K, V> Map<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
+    <K, V> ConcurrentMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer);
 
     <K> Set<K> createHashSet(String name);
 

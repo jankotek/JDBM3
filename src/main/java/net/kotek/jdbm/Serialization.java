@@ -269,9 +269,9 @@ class Serialization extends SerialClassInfo implements Serializer {
             out.write(HTREE);
             ((HTree) obj).serialize(out);
             return;
-        } else if (clazz == LinkedList.class) {
+        } else if (clazz == LinkedList2.class) {
             out.write(JDBMLINKEDLIST);
-            ((LinkedList) obj).serialize(out);
+            ((LinkedList2) obj).serialize(out);
             return;
         }
 
@@ -844,7 +844,7 @@ class Serialization extends SerialClassInfo implements Serializer {
                 ret = deserializeArrayByteInt(is);
                 break;
             case JDBMLINKEDLIST:
-                ret = LinkedList.deserialize(is,this);
+                ret = LinkedList2.deserialize(is, this);
                 break;
             case HTREE:
                 ret = HTree.deserialize(is,this);

@@ -156,7 +156,7 @@ class BTree<K, V> {
      */
     protected RecordListener[] recordListeners = new RecordListener[0];
 
-    protected ReadWriteLock lock = new ReentrantReadWriteLock();
+    final protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * No-argument constructor used by serialization.

@@ -18,7 +18,10 @@ package net.kotek.jdbm;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Persistent HashMap implementation for DB.
@@ -27,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Alex Boisvert
  * @author Jan Kotek
  */
-class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
+class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
 
     final Serializer SERIALIZER = new Serializer<Object>() {
 
@@ -71,6 +74,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
     };
 
+    final protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * Listeners which are notified about changes in records
@@ -152,9 +156,10 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     }
 
 
-    public synchronized V put(K key, V value) {
+    public V put(K key, V value) {
         if (readonly)
             throw new UnsupportedOperationException("readonly");
+        lock.writeLock().lock();
 
         try {
             if (key == null || value == null)
@@ -173,27 +178,33 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return oldVal;
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.writeLock().unlock();
         }
     }
 
 
-    public synchronized V get(Object key) {
+    public V get(Object key) {
+        if (key == null)
+            return null;
+        lock.readLock().lock();
         try {
-            if (key == null)
-                return null;
             return getRoot().get((K) key);
         } catch (ClassCastException e) {
             return null;
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.readLock().unlock();
         }
     }
 
 
-    public synchronized V remove(Object key) {
+    public V remove(Object key) {
         if (readonly)
             throw new UnsupportedOperationException("readonly");
 
+        lock.writeLock().lock();
         try {
             if (key == null)
                 return null;
@@ -213,18 +224,21 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return null;
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.writeLock().unlock();
         }
     }
 
-    public synchronized boolean containsKey(Object key) {
+    public boolean containsKey(Object key) {
         if (key == null)
             return false;
-
+        //no need for locking, get is already locked
         V v = get((K) key);
         return v != null;
     }
 
-    public synchronized void clear() {
+    public void clear() {
+        lock.writeLock().lock();
         try {
             Iterator<K> keyIter = keys();
             while (keyIter.hasNext()) {
@@ -233,16 +247,24 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             }
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            lock.writeLock().unlock();
         }
+
     }
 
 
     /**
      * Returns an enumeration of the keys contained in this
      */
-    public synchronized Iterator<K> keys()
+    public Iterator<K> keys()
             throws IOException {
-        return getRoot().keys();
+        lock.readLock().lock();
+        try{
+            return getRoot().keys();
+        }finally {
+            lock.readLock().unlock();
+        }
     }
 
 
@@ -283,6 +305,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                 private static final long serialVersionUID = 978651696969194154L;
 
                 public V setValue(V arg0) {
+                    //put is already locked
                     HTree.this.put(getKey(), arg0);
                     return super.setValue(arg0);
                 }
@@ -293,13 +316,17 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         public boolean add(java.util.Map.Entry<K, V> e) {
             if (readonly)
                 throw new UnsupportedOperationException("readonly");
-
             if (e.getKey() == null)
                 throw new NullPointerException("Can not add null key");
-            if (e.getValue().equals(get(e.getKey())))
-                return false;
-            HTree.this.put(e.getKey(), e.getValue());
-            return true;
+            lock.writeLock().lock();
+            try{
+                if (e.getValue().equals(get(e.getKey())))
+                    return false;
+                HTree.this.put(e.getKey(), e.getValue());
+                return true;
+            }finally {
+                lock.writeLock().unlock();
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -307,6 +334,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             if (o instanceof Entry) {
                 Entry<K, V> e = (java.util.Map.Entry<K, V>) o;
 
+                //get is already locked
                 if (e.getKey() != null && HTree.this.get(e.getKey()) != null)
                     return true;
             }
@@ -352,12 +380,17 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                 //check for nulls
                 if (e.getKey() == null || e.getValue() == null)
                     return false;
-                //get old value, must be same as item in entry
-                V v = get(e.getKey());
-                if (v == null || !e.getValue().equals(v))
-                    return false;
-                HTree.this.remove(e.getKey());
-                return true;
+                lock.writeLock().lock();
+                try{
+                    //get old value, must be same as item in entry
+                    V v = get(e.getKey());
+                    if (v == null || !e.getValue().equals(v))
+                        return false;
+                    HTree.this.remove(e.getKey());
+                    return true;
+                }finally{
+                    lock.writeLock().unlock();
+                }
             }
             return false;
 
@@ -365,6 +398,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
         @Override
         public int size() {
+            lock.readLock().lock();
             try {
                 int counter = 0;
                 Iterator<K> it = keys();
@@ -375,6 +409,8 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                 return counter;
             } catch (IOException e) {
                 throw new IOError(e);
+            }finally {
+                lock.readLock().unlock();
             }
 
         }
@@ -382,7 +418,8 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     };
 
 
-    public HTreeDirectory<K, V> getRoot() {
+    HTreeDirectory<K, V> getRoot() {
+        //assumes that caller already holds read or write lock
         try {
             HTreeDirectory<K, V> root = (HTreeDirectory<K, V>) db.fetch(rootRecid, this.SERIALIZER);
             root.setPersistenceContext(rootRecid);
@@ -438,5 +475,56 @@ class HTree<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     public boolean hasValues() {
         return hasValues;
     }
+
+    public V putIfAbsent(K key, V value) {
+        lock.writeLock().lock();
+        try{
+            if (!containsKey(key))
+                return put(key, value);
+            else
+                return get(key);
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public boolean remove(Object key, Object value) {
+        lock.writeLock().lock();
+        try{
+            if (containsKey(key) && get(key).equals(value)) {
+                remove(key);
+                return true;
+            } else return false;
+        }finally {
+            lock.writeLock().unlock();
+        }
+
+
+    }
+
+    public boolean replace(K key, V oldValue, V newValue) {
+        lock.writeLock().lock();
+        try{
+            if (containsKey(key) && get(key).equals(oldValue)) {
+                put(key, newValue);
+                return true;
+            } else return false;
+        }finally {
+            lock.writeLock().unlock();
+        }
+
+    }
+
+    public V replace(K key, V value) {
+        lock.writeLock().lock();
+        try{
+            if (containsKey(key)) {
+                return put(key, value);
+            } else return null;
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
 }
 

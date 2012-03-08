@@ -19,6 +19,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
@@ -106,10 +107,10 @@ abstract class DBAbstract implements DB {
         return (A) fetch(recid, defaultSerializer());
     }
 
-    synchronized public <K, V> Map<K, V> getHashMap(String name) {
+    synchronized public <K, V> ConcurrentMap<K, V> getHashMap(String name) {
         Object o = getCollectionInstance(name);
         if(o!=null)
-            return (Map<K, V>) o;
+            return (ConcurrentMap<K, V>) o;
 
         try {
             long recid = getNamedObject(name);
@@ -127,12 +128,12 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    synchronized public <K, V> Map<K, V> createHashMap(String name) {
+    synchronized public <K, V> ConcurrentMap<K, V> createHashMap(String name) {
         return createHashMap(name, null, null);
     }
 
 
-    public synchronized <K, V> Map<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public synchronized <K, V> ConcurrentMap<K, V> createHashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         try {
             assertNameNotExist(name);
 
@@ -282,7 +283,7 @@ abstract class DBAbstract implements DB {
 
             //allocate record and overwrite it
 
-            LinkedList<K> list = new LinkedList<K>(this, serializer);
+            LinkedList2<K> list = new LinkedList2<K>(this, serializer);
             long recid = insert(list);
             setNamedObject(name, recid);
 
@@ -302,7 +303,7 @@ abstract class DBAbstract implements DB {
         try {
             long recid = getNamedObject(name);
             if(recid == 0) return null;
-            LinkedList<K> list = (LinkedList<K>) fetch(recid);
+            LinkedList2<K> list = (LinkedList2<K>) fetch(recid);
             list.setPersistenceContext(this);
             collections.put(name,new WeakReference<Object>(list));
             return list;

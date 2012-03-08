@@ -34,6 +34,7 @@ package net.kotek.jdbm;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
  * This code comes from GoogleCollections, was modified for JDBM by Jan Kotek
@@ -49,7 +50,7 @@ import java.util.Map.Entry;
  *
  */
 public class BTreeMapTest
-        extends MapInterfaceTest<Integer, String> {
+        extends ConcurrentMapInterfaceTest<Integer, String> {
 
     public BTreeMapTest() {
         super(false, false, true, true, true, true);
@@ -72,7 +73,12 @@ public class BTreeMapTest
     }
 
     @Override
-    protected NavigableMap<Integer, String> makeEmptyMap() throws UnsupportedOperationException {
+    protected String getSecondValueNotInPopulatedMap() throws UnsupportedOperationException {
+        return "ASD";
+    }
+
+    @Override
+    protected ConcurrentNavigableMap<Integer, String> makeEmptyMap() throws UnsupportedOperationException {
         try {
             BTree<Integer, String> b = BTree.createInstance(r);
             return new BTreeMap<Integer, String>(b, false);
@@ -82,8 +88,8 @@ public class BTreeMapTest
     }
 
     @Override
-    protected NavigableMap<Integer, String> makePopulatedMap() throws UnsupportedOperationException {
-        NavigableMap<Integer, String> map = makeEmptyMap();
+    protected ConcurrentNavigableMap<Integer, String> makePopulatedMap() throws UnsupportedOperationException {
+        ConcurrentNavigableMap<Integer, String> map = makeEmptyMap();
         for (int i = 0; i < 100; i++){
             if(i%11==0||i%7==0) continue;
 
@@ -92,7 +98,7 @@ public class BTreeMapTest
         return map;
     }
     @Override
-    protected NavigableMap<Integer, String> makeEitherMap() {
+    protected ConcurrentNavigableMap<Integer, String> makeEitherMap() {
         try {
             return makePopulatedMap();
         } catch (UnsupportedOperationException e) {

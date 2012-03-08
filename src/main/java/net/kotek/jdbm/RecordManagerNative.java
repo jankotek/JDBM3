@@ -263,8 +263,8 @@ class RecordManagerNative implements RecordManager {
             //TODO defrag collections independently on store
 //            for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
 //                Object obj = fetch(namedRecid);
-//                if (obj instanceof LinkedList) {
-//                    LinkedList.defrag(namedRecid, this, db2);
+//                if (obj instanceof LinkedList2) {
+//                    LinkedList2.defrag(namedRecid, this, db2);
 //                } else if (obj instanceof HTree) {
 //                    HTree.defrag(namedRecid, this, db2);
 //                } else if (obj instanceof BTree) {

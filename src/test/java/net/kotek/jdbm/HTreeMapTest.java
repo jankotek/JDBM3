@@ -15,9 +15,9 @@
  ******************************************************************************/
 package net.kotek.jdbm;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
-public class HTreeMapTest extends MapInterfaceTest<Integer, String> {
+public class HTreeMapTest extends ConcurrentMapInterfaceTest<Integer, String> {
 
     public HTreeMapTest() {
         super(false, false, true, true, true, true);
@@ -40,14 +40,19 @@ public class HTreeMapTest extends MapInterfaceTest<Integer, String> {
     }
 
     @Override
-    protected Map<Integer, String> makeEmptyMap() throws UnsupportedOperationException {
+    protected String getSecondValueNotInPopulatedMap() throws UnsupportedOperationException {
+        return "AAAA";
+    }
+
+    @Override
+    protected ConcurrentMap<Integer, String> makeEmptyMap() throws UnsupportedOperationException {
         HTree<Integer, String> b = (HTree) r.createHashMap("" + Math.random());
         return b;
     }
 
     @Override
-    protected Map<Integer, String> makePopulatedMap() throws UnsupportedOperationException {
-        Map<Integer, String> map = makeEmptyMap();
+    protected ConcurrentMap<Integer, String> makePopulatedMap() throws UnsupportedOperationException {
+        ConcurrentMap<Integer, String> map = makeEmptyMap();
         for (int i = 0; i < 100; i++)
             map.put(i, "aa" + i);
         return map;
