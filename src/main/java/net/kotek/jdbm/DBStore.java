@@ -398,8 +398,15 @@ final class DBStore
             Long recid = dir.get(name);
             if(recid == null) throw new IOException("Collection not found");
             
-            Collection c = fetch(recid);
-            c.clear();
+            Object c = fetch(recid);
+            if(c instanceof  Collection){
+                ((Collection)c).clear();
+            }else if (c instanceof HTree){
+                ((HTree)c).clear();
+            }else if (c instanceof BTree){
+                ((BTree)c).delete();
+            }
+
             delete(recid);
             
             dir.remove(name);
