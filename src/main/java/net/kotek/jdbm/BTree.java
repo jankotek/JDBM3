@@ -543,8 +543,8 @@ class BTree<K, V> {
      */
     public static void defrag(long recid, DBStore r1, DBStore r2) throws IOException {
         try {
-            byte[] data = r1.recman.fetchRaw(recid);
-            r2.recman.forceInsert(recid, data);
+            byte[] data = r1.fetchRaw(recid);
+            r2.forceInsert(recid, data);
             DataInput in = new DataInputOutput(data);
             BTree t = (BTree) r1.defaultSerializer().deserialize(in);
             t.loadValues = false;
@@ -554,7 +554,7 @@ class BTree<K, V> {
 
             BTreeNode p = t.getRoot();
             if (p != null) {
-                r2.recman.forceInsert(t._root, r1.recman.fetchRaw(t._root));
+                r2.forceInsert(t._root, r1.fetchRaw(t._root));
                 p.defrag(r1, r2);
             }
 

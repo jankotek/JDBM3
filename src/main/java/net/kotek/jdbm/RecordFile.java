@@ -67,9 +67,9 @@ final class RecordFile {
     static final byte[] CLEAN_DATA = new byte[Storage.BLOCK_SIZE];
 
 
-    final private Storage storage;
-    final Cipher cipherOut;
-    final Cipher cipherIn;
+    final Storage storage;
+    private Cipher cipherOut;
+    private Cipher cipherIn;
 
 
     /**

@@ -220,14 +220,14 @@ public class DBTest extends TestCaseWithTestFile {
     public void testCountRecid() throws Exception {
         DBStore db = newBaseRecordManager();
         db.insert(""); //first insert an empty record, to make sure serializer is initialized
-        long baseCount = ((RecordManagerNative)db.recman).countRecords();
+        long baseCount = db.countRecords();
         for (int i = 1; i < 3000; i++) {
             Object val = "qjiodjqwoidjqwiodoi";
 
             db.insert(val);
             if (i % 1000 == 0) db.commit();
 
-            assertEquals(((RecordManagerNative)db.recman).countRecords(), i + baseCount);
+            assertEquals(db.countRecords(), i + baseCount);
         }
 
     }
