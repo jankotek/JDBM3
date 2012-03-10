@@ -123,7 +123,7 @@ final class BlockIo {
      * block is in the log but not yet in the data file. The method also
      * takes a snapshot so that the data may be modified in new transactions.
      */
-    synchronized void incrementTransactionCount() {
+    void incrementTransactionCount() {
         transactionCount++;
         // @fixme(alex)
         setClean();
@@ -133,7 +133,7 @@ final class BlockIo {
      * Decrements transaction count for this block, to signal that this
      * block has been written from the log to the data file.
      */
-    synchronized void decrementTransactionCount() {
+    void decrementTransactionCount() {
         transactionCount--;
         if (transactionCount < 0)
             throw new Error("transaction count on block "
