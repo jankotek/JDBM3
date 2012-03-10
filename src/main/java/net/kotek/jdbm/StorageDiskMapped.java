@@ -33,6 +33,8 @@ class StorageDiskMapped implements Storage {
     private ArrayList<FileChannel> channels = new ArrayList<FileChannel>();
     private ArrayList<FileChannel> channelsTranslation = new ArrayList<FileChannel>();
     private IdentityHashMap<FileChannel, MappedByteBuffer> buffers = new IdentityHashMap<FileChannel, MappedByteBuffer>();
+    
+    private IdentityHashMap<MappedByteBuffer,Void> buffersToSync = new IdentityHashMap<MappedByteBuffer,Void>();
 
     private String fileName;
     private boolean transactionsDisabled;
@@ -115,6 +117,7 @@ class StorageDiskMapped implements Storage {
         b.position(offsetInFile);
         data.rewind();
         b.put(data);
+        buffersToSync.put(b,null);
     }
 
     private void unmapBuffer(MappedByteBuffer b) {
@@ -169,9 +172,10 @@ class StorageDiskMapped implements Storage {
     }
 
     public void sync() throws IOException {
-        for(MappedByteBuffer b: buffers.values()){
+        for(MappedByteBuffer b: buffersToSync.keySet()){
             b.force();
         }
+        buffersToSync.clear();
     }
 
 
