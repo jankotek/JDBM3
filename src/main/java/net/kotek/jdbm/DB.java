@@ -153,5 +153,9 @@ public interface DB {
 
     /** completely remove collection from store*/
     void deleteCollection(String name);
-
+    
+    /**
+     * wjw_add: allows users to call in order to prevent loss of data.
+     */
+    void sync();
 }
