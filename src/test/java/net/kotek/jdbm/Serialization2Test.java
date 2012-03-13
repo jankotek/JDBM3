@@ -3,7 +3,9 @@ package net.kotek.jdbm;
 
 import junit.framework.TestCase;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 public class Serialization2Test extends TestCaseWithTestFile {
@@ -45,6 +47,39 @@ public class Serialization2Test extends TestCaseWithTestFile {
 
         Serialized2DerivedBean retAtt = (Serialized2DerivedBean) map.get("att");
         assertEquals(att, retAtt);
+    }
+
+
+
+    static class AAA implements Serializable {
+        String test  = "aa";
+    }
+
+
+    public void testReopenWithDefrag(){
+
+        String f = newTestFile();
+
+        DB db = new DBMaker(f)
+                .disableTransactions()
+                .build();
+
+        Map<Integer,AAA> map = db.createTreeMap("test");
+        map.put(1,new AAA());
+
+        db.defrag(true);
+        db.close();
+
+        db = new DBMaker(f)
+                .disableTransactions()
+                .build();
+
+        map = db.getTreeMap("test");
+        assertNotNull(map.get(1));
+        assertEquals(map.get(1).test, "aa");
+
+
+        db.close();
     }
 
 }

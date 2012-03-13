@@ -126,18 +126,20 @@ final class DBStore
     /**
      * Reserved slot for name directory recid.
      */
-    public static final int NAME_DIRECTORY_ROOT = 0;
+    public static final byte NAME_DIRECTORY_ROOT = 0;
 
 
     /**
      * Reserved slot for version number
      */
-    public static final int STORE_VERSION_NUMBER_ROOT = 1;
+    public static final byte STORE_VERSION_NUMBER_ROOT = 1;
 
     /**
      * Reserved slot for recid where Serial class info is stored
+     *
+     * NOTE when introducing more roots, do not forget to update defrag
      */
-    public static final int SERIAL_CLASS_INFO_RECID_ROOT = 2;
+    public static final byte SERIAL_CLASS_INFO_RECID_ROOT = 2;
 
 
     private final DataInputOutput buffer = new DataInputOutput();
@@ -876,6 +878,8 @@ final class DBStore
                 db2.commit();
             }
             db2.setRoot(NAME_DIRECTORY_ROOT, getRoot(NAME_DIRECTORY_ROOT));
+            db2.setRoot(STORE_VERSION_NUMBER_ROOT, getRoot(STORE_VERSION_NUMBER_ROOT));
+            db2.setRoot(SERIAL_CLASS_INFO_RECID_ROOT, getRoot(SERIAL_CLASS_INFO_RECID_ROOT));
 
             db2.close();
             close();
