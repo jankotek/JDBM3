@@ -726,5 +726,9 @@ class DBCache
         _db.deleteCollection(name);
     }
 
+    @Override
+    public void sync() {
+      _db.sync();
+    }
 
 }

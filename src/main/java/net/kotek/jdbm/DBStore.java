@@ -986,4 +986,13 @@ final class DBStore
     }
 
 
+    @Override
+    public void sync() {
+      try {
+        _file.sync();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
 }
