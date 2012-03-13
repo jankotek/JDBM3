@@ -292,6 +292,92 @@ public class DBTest extends TestCaseWithTestFile {
 
     }
 
+    public void testDeleteLinkedList() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        List l = d.createLinkedList("test");
+        l.add("1");
+        l.add("2");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+    public void testDeleteTreeMap() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        Map l = d.createTreeMap("test");
+        l.put("1", "b");
+        l.put("2", "b");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+    public void testDeleteHashMap() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        Map l = d.createHashMap("test");
+        l.put("1", "b");
+        l.put("2", "b");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+    public void testDeleteEmptyLinkedList() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        List l = d.createLinkedList("test");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+    public void testDeleteEmptyTreeMap() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        Map l = d.createTreeMap("test");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+    public void testDeleteEmptyHashMap() throws IOException {
+        DBStore d = newBaseRecordManager();
+        d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
+        d.commit();
+        long recCount = d.countRecords();
+        Map l = d.createHashMap("test");
+        d.commit();
+        assertFalse(recCount == d.countRecords());
+        d.deleteCollection("test");
+        assertEquals(recCount,d.countRecords());
+
+    }
+
+
+
 
 }
 

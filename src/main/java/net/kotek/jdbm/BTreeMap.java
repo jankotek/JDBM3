@@ -203,6 +203,17 @@ class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap
             return BTreeMap.this.size();
         }
 
+        public void clear(){
+            if(fromKey!=null || toKey!=null)
+                super.clear();
+            else
+                try {
+                    tree.clear();
+                } catch (IOException e) {
+                    throw new IOError(e);
+                }
+        }
+
     };
 
 
@@ -277,7 +288,9 @@ class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap
         }
     }
 
-    ;
+    public void clear(){
+        entrySet().clear();
+    }
 
     @SuppressWarnings("unchecked")
     @Override

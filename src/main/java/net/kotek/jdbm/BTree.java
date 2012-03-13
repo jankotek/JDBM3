@@ -148,7 +148,10 @@ class BTree<K, V> {
     /**
      * Serializer used for BTreeNodes of this tree
      */
-    private transient BTreeNode<K, V> _nodeSerializer;
+    private transient BTreeNode<K, V> _nodeSerializer = new BTreeNode();
+    {
+        _nodeSerializer._btree = this;
+    }
 
 
     /**
@@ -198,8 +201,6 @@ class BTree<K, V> {
         btree._comparator = comparator;
         btree.keySerializer = keySerializer;
         btree.valueSerializer = valueSerializer;
-        btree._nodeSerializer = new BTreeNode<K, V>();
-        btree._nodeSerializer._btree = btree;
         btree.hasValues = hasValues;
         btree._recid = db.insert(btree, btree.getRecordManager().defaultSerializer(),false);
 
@@ -509,10 +510,12 @@ class BTree<K, V> {
     }
 
 
-    static BTree readExternal(DataInput in, Serializer ser)
+    static BTree readExternal(DataInput in, Serialization ser)
             throws IOException, ClassNotFoundException {
         BTree tree = new BTree();
+        tree._db = ser.db;
         tree._height = in.readInt();
+        tree._recid = in.readLong();
         tree._root = in.readLong();
         tree._entries = in.readInt();
         tree.hasValues = in.readBoolean();
@@ -526,6 +529,7 @@ class BTree<K, V> {
     public void writeExternal(DataOutput out)
             throws IOException {
         out.writeInt(_height);
+        out.writeLong(_recid);
         out.writeLong(_root);
         out.writeInt(_entries);
         out.writeBoolean(hasValues);
@@ -615,16 +619,15 @@ class BTree<K, V> {
     }
 
     /**
-     * Deletes all BTreeNodes in this BTree, then deletes the tree from the record manager
+     * Deletes all BTreeNodes in this BTree
      */
-    public void delete()
+    public void clear()
             throws IOException {
         try {
             lock.writeLock().lock();
             BTreeNode<K, V> rootNode = getRoot();
             if (rootNode != null)
                 rootNode.delete();
-            _db.delete(_recid);
             _entries = 0;
             modCount++;
         } finally {

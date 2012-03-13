@@ -424,6 +424,19 @@ final class HTreeDirectory<K, V> {
         }
     }
 
+    void deleteAllChildren() throws IOException {
+        for(long[] ll : _children){
+            if(ll!=null){
+                for(long l:ll ){
+                    if(l!=0){
+                      tree.getDB().delete(l);
+                    }
+                }
+            }
+        }
+
+    }
+
 
     ////////////////////////////////////////////////////////////////////////
     // INNER CLASS

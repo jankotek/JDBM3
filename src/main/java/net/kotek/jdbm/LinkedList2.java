@@ -31,7 +31,7 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
 
     private DBAbstract db;
 
-    private long rootRecid;
+    final long rootRecid;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
@@ -66,7 +66,8 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
     protected boolean loadValues = true;
 
     /** constructor used for deserialization */
-    LinkedList2(long rootRecid, Serializer<E> valueSerializer) {
+    LinkedList2(DBAbstract db,long rootRecid, Serializer<E> valueSerializer) {
+        this.db = db;
         this.rootRecid = rootRecid;
         this.valueSerializer = valueSerializer;
     }
@@ -176,10 +177,10 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
     /**
      * called from Serialization object
      */
-    static LinkedList2 deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
+    static LinkedList2 deserialize(DataInput is, Serialization ser) throws IOException, ClassNotFoundException {
         long rootrecid = LongPacker.unpackLong(is);
         Serializer serializer = (Serializer)  ser.deserialize(is);
-        return new LinkedList2(rootrecid, serializer);
+        return new LinkedList2(ser.db,rootrecid, serializer);
     }
 
     void serialize(DataOutput out) throws IOException {

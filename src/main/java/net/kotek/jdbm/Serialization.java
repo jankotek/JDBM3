@@ -857,7 +857,7 @@ class Serialization extends SerialClassInfo implements Serializer {
             case BTREE_NODE_NONLEAF:
                 throw new InternalError("BPage header, wrong serializer used");
             case JAVA_SERIALIZATION:
-                throw new InternalError("Wrong header, data were propably serialized with OutputStream, not with JDBM serialization");
+                throw new InternalError("Wrong header, data were probably serialized with OutputStream, not with JDBM serialization");
 
             case -1:
                 throw new EOFException();

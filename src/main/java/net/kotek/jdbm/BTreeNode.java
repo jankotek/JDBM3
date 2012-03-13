@@ -166,8 +166,7 @@ final class BTreeNode<K, V>
      * Overflow node constructor.  Creates an empty BTreeNode.
      */
     @SuppressWarnings("unchecked")
-    BTreeNode(BTree<K, V> btree, boolean isLeaf)
-            throws IOException {
+    BTreeNode(BTree<K, V> btree, boolean isLeaf){
         _btree = btree;
 
         _isLeaf = isLeaf;
@@ -182,7 +181,11 @@ final class BTreeNode<K, V>
             _children = new long[BTree.DEFAULT_SIZE];
         }
 
-        _recid = _btree._db.insert(this, this,false);
+        try{
+            _recid = _btree._db.insert(this, this,false);
+        }catch(IOException e ){
+            throw new IOError(e);
+        }
     }
 
 

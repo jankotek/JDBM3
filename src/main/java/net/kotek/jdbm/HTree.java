@@ -92,7 +92,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
      */
     protected Serializer<V> valueSerializer;
     protected boolean readonly = false;
-    private long rootRecid;
+    final long rootRecid;
     private DBAbstract db;
     /** if false map contains only keys, used for set*/
     boolean hasValues = true;
@@ -132,10 +132,8 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
         this.db = db;
         this.hasValues = hasValues;
 
-        //create new root record
-        this.rootRecid = db.insert(null);
         HTreeDirectory<K, V> root = new HTreeDirectory<K, V>(this, (byte) 0);
-        root.setPersistenceContext(rootRecid);
+        root.setPersistenceContext(0);
         this.rootRecid = db.insert(root, this.SERIALIZER,false);
     }
 
@@ -143,8 +141,9 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
     /**
      * Load a persistent hashtable
      */
-    public HTree(long rootRecid, Serializer<K> keySerializer, Serializer<V> valueSerializer, boolean hasValues)
+    public HTree(DBAbstract db,long rootRecid, Serializer<K> keySerializer, Serializer<V> valueSerializer, boolean hasValues)
             throws IOException {
+        this.db = db;
         this.rootRecid = rootRecid;
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
@@ -429,13 +428,13 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
         }
     }
 
-    public static HTree deserialize(DataInput is, Serializer ser) throws IOException, ClassNotFoundException {
+    public static HTree deserialize(DataInput is, Serialization ser) throws IOException, ClassNotFoundException {
         long rootRecid = LongPacker.unpackLong(is);
         boolean hasValues = is.readBoolean();
         Serializer keySerializer = (Serializer) ser.deserialize(is);
         Serializer valueSerializer = (Serializer)  ser.deserialize(is);
 
-        return new HTree(rootRecid, keySerializer, valueSerializer, hasValues);
+        return new HTree(ser.db,rootRecid, keySerializer, valueSerializer, hasValues);
     }
 
     void serialize(DataOutput out) throws IOException {

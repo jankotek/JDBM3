@@ -48,6 +48,7 @@ abstract class SerialClassInfo {
 
     public SerialClassInfo(ArrayList<ClassInfo> registered) {
         this.registered = registered;
+        this.db = null;
     }
 
     public SerialClassInfo(DBAbstract db, long serialClassInfoRecid) throws IOException {
@@ -149,7 +150,7 @@ abstract class SerialClassInfo {
 
     private ArrayList<ClassInfo> registered;
 
-    private DBAbstract db = null;
+    final DBAbstract db;
 
 
     public void registerClass(Class clazz) throws IOException {

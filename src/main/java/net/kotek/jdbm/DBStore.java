@@ -491,9 +491,25 @@ final class DBStore
             Long recid = dir.get(name);
             if(recid == null) throw new IOException("Collection not found");
 
-            Collection c = fetch(recid);
-            c.clear();
+            Object o = fetch(recid);
+            //we can not use O instance since it is not correctly initialized
+            if(o instanceof LinkedList2){
+                LinkedList2 l = (LinkedList2) o;
+                l.clear();
+                delete(l.rootRecid);
+            }else if(o instanceof BTree){
+                ((BTree) o).clear();
+            } else if( o instanceof  HTree){
+                HTree t = (HTree) o;
+                t.clear();
+                HTreeDirectory n = (HTreeDirectory) fetch(t.rootRecid,t.SERIALIZER);
+                n.deleteAllChildren();
+                delete(t.rootRecid);
+            }else{
+                throw new InternalError("unknown collection type: "+(o==null?null:o.getClass()));
+            }
             delete(recid);
+
 
             dir.remove(name);
             saveNameDirectory(dir);
