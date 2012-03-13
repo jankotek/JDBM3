@@ -320,6 +320,7 @@ final class RecordFile {
             throw new Error("inUse blocks at close time");
         }
 
+        storage.sync();
         storage.forceClose();
     }
 
