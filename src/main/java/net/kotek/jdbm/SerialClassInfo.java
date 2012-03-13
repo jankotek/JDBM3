@@ -252,8 +252,8 @@ abstract class SerialClassInfo {
             //move to superclass
             clazz = clazz.getSuperclass();
         }
-        throw new NoSuchFieldError(object.getClass() + "." + fieldName);
-
+        // ignore field if it does not exist anymore
+        //throw new NoSuchFieldError(object.getClass() + "." + fieldName);
     }
 
 

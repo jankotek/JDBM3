@@ -144,6 +144,12 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
         assertEquals("zz", b2.field3);
     }
 
+    public void testSetFieldValue_IgnoresNonExistingFields() {
+        s.setFieldValue("field_does_not_exist", b2, "zzz");
+        s.setFieldValue("field3", b2, "zz");
+        assertEquals("zz", b2.field3);
+    }
+    
     public void testGetPrimitiveField() {
         assertEquals(Integer.MAX_VALUE, s.getFieldValue("intField", b2));
         assertEquals(Long.MAX_VALUE, s.getFieldValue("longField", b2));
