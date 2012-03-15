@@ -46,7 +46,7 @@ public class TestPerformance extends TestCase {
     /**
      * Test insert performance
      */
-    public void testInserts() throws Exception {
+    public void testInserts() {
 
 
         DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
@@ -59,7 +59,7 @@ public class TestPerformance extends TestCase {
             while (true) {
 
                 db.insert(UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
-                        (byte) rnd.nextInt()));
+                        (byte) rnd.nextInt(256)));
                 inserts++;
 
                 if ((inserts % 1000) == 0) {
@@ -71,8 +71,9 @@ public class TestPerformance extends TestCase {
                 }
             }
             db.close();
-            System.out.println("Inserts: " + inserts + " in "
-                    + (stop - start) + " millisecs");
+            System.out.printf("Inserts: %,d in %,d millisecs%n",
+                    inserts, stop - start);
+
         } catch (Throwable e) {
             fail("unexpected exception after " + inserts + " inserts, "
                     + (System.currentTimeMillis() - start) + "ms: " + e);
@@ -91,8 +92,8 @@ public class TestPerformance extends TestCase {
             for (int i = 0; i < RECORDS; i++) {
                 retval[i] = db.insert(UtilTT
                         .makeRecord(rnd.nextInt(MAXSIZE),
-                                (byte) rnd.nextInt()));
-                if ((i % 100) == 0)
+                                (byte) rnd.nextInt(256)));
+                if ((i % 1000) == 0)
                     System.out.print(".");
             }
             db.close();
@@ -101,8 +102,8 @@ public class TestPerformance extends TestCase {
             fail("unexpected exception during db creation: " + e);
         }
 
-        System.out.println("done (" + RECORDS + " inserts in "
-                + (System.currentTimeMillis() - start) + "ms).");
+        System.out.printf("done (%,d inserts in %,d ms).%n",
+                RECORDS, (System.currentTimeMillis() - start));
         return retval;
     }
 
@@ -118,7 +119,7 @@ public class TestPerformance extends TestCase {
         long start = System.currentTimeMillis();
         try {
 
-            long stop = 0;
+            long stop;
             while (true) {
                 db.fetch(rowids[rnd.nextInt(RECORDS)]);
                 fetches++;
@@ -129,8 +130,10 @@ public class TestPerformance extends TestCase {
                 }
             }
             db.close();
-            System.out.println("Fetches: " + fetches + " in "
-                    + (stop - start) + " millisecs");
+
+            System.out.printf("Fetches: %,d in %,d millisecs%n",
+                    fetches, stop - start);
+
         } catch (Throwable e) {
             fail("unexpected exception after " + fetches + " fetches, "
                     + (System.currentTimeMillis() - start) + "ms: " + e);
@@ -149,12 +152,12 @@ public class TestPerformance extends TestCase {
         long start = System.currentTimeMillis();
         try {
 
-            long stop = 0;
+            long stop;
             while (true) {
 
                 db.update(rowids[rnd.nextInt(RECORDS)],
                         UtilTT.makeRecord(rnd.nextInt(MAXSIZE),
-                                (byte) rnd.nextInt()));
+                                (byte) rnd.nextInt(256)));
                 updates++;
                 if ((updates % 25) == 0) {
                     stop = System.currentTimeMillis();
@@ -163,8 +166,10 @@ public class TestPerformance extends TestCase {
                 }
             }
             db.close();
-            System.out.println("Updates: " + updates + " in "
-                    + (stop - start) + " millisecs");
+
+            System.out.printf("Updates: %,d in %,d millisecs%n",
+                    updates, stop - start);
+
         } catch (Throwable e) {
             fail("unexpected exception after " + updates + " updates, "
                     + (System.currentTimeMillis() - start) + "ms: " + e);
@@ -196,8 +201,10 @@ public class TestPerformance extends TestCase {
                 }
             }
             db.close();
-            System.out.println("Deletes: " + deletes + " in "
-                    + (stop - start) + " millisecs");
+
+            System.out.printf("Deletes: %,d in %,d millisecs%n",
+                    deletes, stop - start);
+
         } catch (Throwable e) {
             e.printStackTrace();
             fail("unexpected exception after " + deletes + " deletes, "
