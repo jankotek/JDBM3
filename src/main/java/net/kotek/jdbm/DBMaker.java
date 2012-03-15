@@ -121,6 +121,7 @@ public class DBMaker {
     public DBMaker setMRUCacheSize(int cacheSize) {
         if (cacheSize < 0) throw new IllegalArgumentException("Cache size is smaller than zero");
         cacheType = DBCacheRef.MRU;
+        mruCacheSize = cacheSize;
         return this;
     }
 
