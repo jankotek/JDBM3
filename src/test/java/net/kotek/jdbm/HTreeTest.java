@@ -37,7 +37,7 @@ public class HTreeTest extends TestCaseWithTestFile {
      */
     public void testIterator() throws IOException {
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree testTree = (HTree) db.createHashMap("tree");
 
@@ -60,7 +60,7 @@ public class HTreeTest extends TestCaseWithTestFile {
     }
 
     public void testRecordListener() throws IOException {
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
         HTree<Integer, String> tree = (HTree) db.createHashMap("test");
         final List<SimpleEntry<Integer, String>> dels = new ArrayList();
         final List<SimpleEntry<Integer, String>> ins = new ArrayList();

@@ -142,7 +142,7 @@ public class HTreeSetTest extends TestCaseWithTestFile {
      */
     public void setUp() throws Exception {
         super.setUp();
-        db = newBaseRecordManager();
+        db = newDBNoCache();
         hs = db.createHashSet("testHashSet", null);
         for (int i = 0; i < objArray.length; i++)
             hs.add(objArray[i]);

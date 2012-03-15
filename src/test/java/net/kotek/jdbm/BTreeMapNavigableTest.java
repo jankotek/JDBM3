@@ -45,14 +45,10 @@
 package net.kotek.jdbm;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
-
-import junit.framework.TestCase;
 
 /**
  * to test {@link NavigableMap} implementation
@@ -82,7 +78,7 @@ public class BTreeMapNavigableTest extends TestCaseWithTestFile {
     
     
     public void setUp() throws IOException {
-        navigableMap = newRecordManager().createTreeMap("test");
+        navigableMap = newDBCache().createTreeMap("test");
     }
 
 

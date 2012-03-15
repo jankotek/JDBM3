@@ -12,7 +12,7 @@ public class TestIssues extends TestCaseWithTestFile {
     http://code.google.com/p/jdbm2/issues/detail?id=2
      */
     public void testHTreeClear() throws IOException {
-        final DBAbstract db = newRecordManager();
+        final DBAbstract db = newDBCache();
         final HTree<String, String> tree = (HTree) db.createHashMap("name");
 
         for (int i = 0; i < 1001; i++) {
@@ -29,7 +29,7 @@ public class TestIssues extends TestCaseWithTestFile {
 
 
     public void testBTreeClear() throws IOException {
-        final DB db = newRecordManager();
+        final DB db = newDBCache();
         final Map<String, String> treeMap = db.createTreeMap("test");
 
         for (int i = 0; i < 1001; i++) {

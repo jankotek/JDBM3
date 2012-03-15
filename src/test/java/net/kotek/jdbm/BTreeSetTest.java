@@ -296,7 +296,7 @@ public class BTreeSetTest extends TestCaseWithTestFile {
      */
     public void setUp() throws Exception {
         super.setUp();
-        db = newBaseRecordManager();
+        db = newDBNoCache();
         ts = db.createTreeSet("testBTreeSet");
         for (int i = 0; i < objArray.length; i++) {
             Object x = objArray[i] = new Integer(i);

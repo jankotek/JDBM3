@@ -37,7 +37,7 @@ public class BTreeBench extends TestCaseWithTestFile {
      * @throws IOException
      */
     public void test_001() throws IOException {
-        db = newRecordManager();
+        db = newDBCache();
         BTree<Long, Long> tree = BTree.createInstance(db);
         doTest(db, tree, 5001);
         db.close();

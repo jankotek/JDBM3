@@ -26,7 +26,7 @@ public class HTreeMapTest extends ConcurrentMapInterfaceTest<Integer, String> {
     DBAbstract r;
 
     public void setUp() throws Exception {
-        r = TestCaseWithTestFile.newBaseRecordManager();
+        r = TestCaseWithTestFile.newDBNoCache();
     }
 
     @Override

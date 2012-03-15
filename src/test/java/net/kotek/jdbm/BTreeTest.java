@@ -111,7 +111,7 @@ public class BTreeTest
             System.out.println("BTreeTest.testBasics");
         }
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db, new ByteArrayComparator(),null,null,true);
 
         tree.insert(test1, value1, false);
@@ -162,7 +162,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testBasics2");
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db, new ByteArrayComparator(),null,null,true);
 
         tree.insert(test1, value1, false);
@@ -201,7 +201,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testClose");
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db, new ByteArrayComparator(),null,null,true);
 
         tree.insert(test1, value1, false);
@@ -271,7 +271,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testInsert");
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db);
 
         // insert differnt objects and retrieve them
@@ -313,7 +313,7 @@ public class BTreeTest
             System.out.println("BTreeTest.testRemove");
         }
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db);
 
         tree.insert("test1", "value1", false);
@@ -358,7 +358,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testFind");
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db);
 
         tree.insert("test1", "value1", false);
@@ -386,7 +386,7 @@ public class BTreeTest
             throws IOException {
         if (DEBUG)
             System.out.println("BTreeTest.testFind");
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
         BTree<String, Serializable> tree = BTree.createInstance(db);
 
         // put enough data into the tree so we definitely have multiple nodes
@@ -413,7 +413,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testLargeDataAmount");
 
-        db = newRecordManager();
+        db = newDBCache();
         // db = new jdbm.db.BaseRecordManager( "test" );
 
         tree = BTree.createInstance(db);
@@ -447,7 +447,7 @@ public class BTreeTest
     }
 
     public void testRecordListener() throws IOException {
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
         BTree<Integer, String> tree = BTree.createInstance(db);
         final List<SimpleEntry<Integer, String>> dels = new ArrayList();
         final List<SimpleEntry<Integer, String>> ins = new ArrayList();
@@ -584,7 +584,7 @@ public class BTreeTest
         if (DEBUG)
             System.out.println("BTreeTest.testMultithreadAccess");
 
-        db = newRecordManager();
+        db = newDBCache();
         tree = BTree.createInstance(db);
 
         TestThread[] thread_pool = new TestThread[THREAD_NUMBER];

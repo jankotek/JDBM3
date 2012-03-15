@@ -14,7 +14,7 @@ public class TestInsertUpdate extends TestCaseWithTestFile {
      */
     @Test
     public void testInsertUpdateWithCustomSerializer() throws IOException {
-        DB db = newRecordManager();
+        DB db = newDBCache();
         Serializer<Long> serializer = new HTreeBucketTest.LongSerializer();
 
         Map<Long, Long> map = db.createHashMap("custom", serializer, serializer);

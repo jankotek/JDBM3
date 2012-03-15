@@ -11,7 +11,7 @@ public  class BTreeMapNavigable2Test extends TestCaseWithTestFile
 
 	public void setUp() throws Exception
 	{
-		map = newBaseRecordManager().createTreeMap("test");
+		map = newDBNoCache().createTreeMap("test");
 		
 		map.put(1, "one");
 		map.put(2, "two");

@@ -33,7 +33,7 @@ public class DBTest extends TestCaseWithTestFile {
             throws Exception {
         DB db;
 
-        db = newRecordManager();
+        db = newDBCache();
         db.close();
     }
 
@@ -43,7 +43,7 @@ public class DBTest extends TestCaseWithTestFile {
     public void testBasics()
             throws Exception {
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         // insert a 10,000 byte record.
         byte[] data = UtilTT.makeRecord(10000, (byte) 1);
@@ -85,7 +85,7 @@ public class DBTest extends TestCaseWithTestFile {
     public void testDeleteAndReuse()
             throws Exception {
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         // insert a 1500 byte record.
         byte[] data = UtilTT.makeRecord(1500, (byte) 1);
@@ -129,7 +129,7 @@ public class DBTest extends TestCaseWithTestFile {
             throws Exception {
 
         // Note: We start out with an empty file
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         db.insert(""); //first insert an empty record, to make sure serializer is initialized
         db.commit();
@@ -175,7 +175,7 @@ public class DBTest extends TestCaseWithTestFile {
 
 
     public void testNonExistingRecid() throws IOException {
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         Object obj = db.fetch(6666666);
         assertTrue(obj == null);
@@ -208,7 +208,7 @@ public class DBTest extends TestCaseWithTestFile {
         i.set(0);
         Serializer<String> ser = new Serial();
 
-        DB db = newRecordManager();
+        DB db = newDBCache();
         Map<Long, String> t = db.<Long, String>createTreeMap("test", null, null, ser);
         t.put(1l, "hopsa hejsa1");
         t.put(2l, "hopsa hejsa2");
@@ -218,7 +218,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testCountRecid() throws Exception {
-        DBStore db = newBaseRecordManager();
+        DBStore db = newDBNoCache();
         db.insert(""); //first insert an empty record, to make sure serializer is initialized
         long baseCount = db.countRecords();
         for (int i = 1; i < 3000; i++) {
@@ -233,7 +233,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testGetCollections() throws IOException {
-        DB db = newRecordManager();
+        DB db = newDBCache();
         db.createTreeMap("treemap");
         db.createHashMap("hashmap");
         db.createTreeSet("treeset");
@@ -293,7 +293,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteLinkedList() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();
@@ -308,7 +308,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteTreeMap() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();
@@ -323,7 +323,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteHashMap() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();
@@ -338,7 +338,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteEmptyLinkedList() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();
@@ -351,7 +351,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteEmptyTreeMap() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();
@@ -364,7 +364,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteEmptyHashMap() throws IOException {
-        DBStore d = newBaseRecordManager();
+        DBStore d = newDBNoCache();
         d.createHashMap("testXX").put("aa","bb"); //make sure serializer and name map are initilaized
         d.commit();
         long recCount = d.countRecords();

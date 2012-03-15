@@ -460,7 +460,7 @@ public class LinkedList2Test extends TestCaseWithTestFile {
      */
     public void setUp() throws Exception {
         super.setUp();
-        this.db = newRecordManager();
+        this.db = newDBCache();
         ll = (LinkedList2) db.createLinkedList("ll");
         for (int i = 0; i < objArray.length; i++) {
             ll.add(objArray[i]);

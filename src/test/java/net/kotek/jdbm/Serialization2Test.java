@@ -1,9 +1,6 @@
 package net.kotek.jdbm;
 
 
-import junit.framework.TestCase;
-
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
@@ -12,7 +9,7 @@ public class Serialization2Test extends TestCaseWithTestFile {
 
 
     public void test2() throws IOException {
-        DB db = newBaseRecordManager();
+        DB db = newDBNoCache();
 
         Serialization2Bean processView = new Serialization2Bean();
 

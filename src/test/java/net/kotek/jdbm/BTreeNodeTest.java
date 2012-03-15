@@ -39,7 +39,7 @@ public class BTreeNodeTest extends TestCaseWithTestFile {
         test2 = "test2";
         test3 = "test3";
 
-        db = newRecordManager();
+        db = newDBCache();
 
 
         BTree tree = BTree.createInstance(db);

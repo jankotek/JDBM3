@@ -34,7 +34,7 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testBasics() throws IOException {
         System.out.println("testBasics");
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree tree = (HTree) db.createHashMap("test");
         HTreeDirectory dir = tree.getRoot();
@@ -52,7 +52,7 @@ public class HTreeDirectoryTest extends TestCaseWithTestFile {
     public void testMixed() throws IOException {
         System.out.println("testMixed");
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree tree = (HTree) db.createHashMap("test");
         HTreeDirectory dir = tree.getRoot();

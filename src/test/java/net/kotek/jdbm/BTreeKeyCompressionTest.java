@@ -27,7 +27,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
     }
 
     public void testCornersLimitsLong() throws IOException {
-        DB db = newRecordManager();
+        DB db = newDBCache();
         SortedMap<Long, String> map = db.createTreeMap("aa");
         ArrayList<Long> ll = new ArrayList<Long>();
         for (Long i = Long.MIN_VALUE; i < Long.MIN_VALUE + 1000; i++) {
@@ -65,7 +65,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
 
 
     public void testCornersLimitsInt() throws IOException {
-        DB db = newRecordManager();
+        DB db = newDBCache();
         SortedMap<Integer, String> map = db.createTreeMap("aa");
         ArrayList<Integer> ll = new ArrayList<Integer>();
         for (Integer i = Integer.MIN_VALUE; i < Integer.MIN_VALUE + 1000; i++) {

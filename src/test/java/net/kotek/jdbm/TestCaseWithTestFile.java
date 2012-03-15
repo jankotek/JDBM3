@@ -15,10 +15,10 @@
  ******************************************************************************/
 package net.kotek.jdbm;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Subclass from this class if you have any test cases that need to do file I/O. The
@@ -56,11 +56,11 @@ abstract class TestCaseWithTestFile extends TestCase {
         return new RecordFile(newTestFile());
     }
 
-    static public DBAbstract newRecordManager() throws IOException {
+    static public DBAbstract newDBCache() throws IOException {
         return (DBAbstract) new DBMaker(newTestFile()).build();
     }
 
-    static public DBStore newBaseRecordManager() throws IOException {
+    static public DBStore newDBNoCache() throws IOException {
         return (DBStore) new DBMaker(newTestFile()).disableCache().build();
     }
 

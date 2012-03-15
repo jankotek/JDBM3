@@ -33,7 +33,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
      */
     public void testBasics() throws IOException {
 
-        DB db = newRecordManager();
+        DB db = newDBCache();
 
         HTree tree = (HTree) db.createHashMap("test");
 
@@ -84,7 +84,7 @@ public class HTreeBucketTest extends TestCaseWithTestFile {
         Serializer<Long> ser = new LongSerializer();
 
 
-        DB db = newRecordManager();
+        DB db = newDBCache();
         Map<Long, Long> s = db.createHashMap("test", ser, ser);
 
         s.put(new Long(1), new Long(2));

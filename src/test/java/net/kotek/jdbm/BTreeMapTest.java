@@ -59,7 +59,7 @@ public class BTreeMapTest
     DBAbstract r;
 
     public void setUp() throws Exception {
-        r = TestCaseWithTestFile.newBaseRecordManager();
+        r = TestCaseWithTestFile.newDBNoCache();
     }
 
     @Override

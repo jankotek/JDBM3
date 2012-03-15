@@ -43,13 +43,13 @@ public class TestLazyRecordsInTree extends TestCaseWithTestFile {
     }
 
     public void testBTree() throws IOException {
-        DBStore r = newBaseRecordManager();
+        DBStore r = newDBNoCache();
         Map<Integer, String> m = r.createTreeMap("test");
         doIt(r, m);
     }
 
     public void testHTree() throws IOException {
-        DBStore r = newBaseRecordManager();
+        DBStore r = newDBNoCache();
         Map<Integer, String> m = r.createHashMap("test");
         doIt(r, m);
     }

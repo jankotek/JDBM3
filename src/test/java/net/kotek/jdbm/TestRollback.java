@@ -31,7 +31,7 @@ public class TestRollback
             throws Exception {
 
         // Note: We start out with an empty file
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree tree = (HTree) db.createHashMap("test");
 
@@ -56,7 +56,7 @@ public class TestRollback
     public void testRollback2()
             throws Exception {
 
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree tree = (HTree) db.createHashMap("test");
 
@@ -80,7 +80,7 @@ public class TestRollback
             throws Exception {
 
         // Note: We start out with an empty file
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
 
         HTree<Object, Object> tree = (HTree<Object, Object>) db.createHashMap("test");
 
@@ -108,7 +108,7 @@ public class TestRollback
         long root;
 
         // Note: We start out with an empty file
-        db = newRecordManager();
+        db = newDBCache();
 
         root = db.getNamedObject("xyz");
 

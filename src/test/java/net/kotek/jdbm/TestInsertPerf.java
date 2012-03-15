@@ -30,7 +30,7 @@ public class TestInsertPerf extends TestCaseWithTestFile {
 
 
         long start, finish;
-        DBAbstract db = newRecordManager();
+        DBAbstract db = newDBCache();
         BTree btree = BTree.createInstance(db);
 
         // Note:  One can use specialized serializers for better performance / database size

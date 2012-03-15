@@ -68,7 +68,7 @@ public class StreamCorrupted
         iterations = 100; // 23 works :-(((((
 
         // open database
-        db = newRecordManager();
+        db = newDBCache();
 
         // create a new B+Tree data structure
         btree = BTree.createInstance(db);
