@@ -1,7 +1,6 @@
 package net.kotek.jdbm;
 
-import junit.framework.TestCase;
-
+import java.util.Map;
 import java.util.Set;
 
 
@@ -36,6 +35,32 @@ public class DBCacheTest extends TestCaseWithTestFile {
             assertTrue(set.contains(i));
         }
 
-        
+    }
+
+
+    public void test_issue_xyz(){
+        net.kotek.jdbm.DB db = new DBMaker(newTestFile())
+                .enableSoftCache()
+                .build();
+        Map m = db.createTreeMap("test");
+
+        for(int i=0;i<1e5;i++){
+            m.put("test"+i,"test"+i);
+        }
+        db.close();
+//
+//   problem in cache, throws;
+//        java.lang.IllegalArgumentException: Argument 'recid' is invalid: 0
+//        at net.kotek.jdbm.DBStore.fetch(DBStore.java:356)
+//        at net.kotek.jdbm.DBCache.fetch(DBCache.java:292)
+//        at net.kotek.jdbm.BTreeNode.loadNode(BTreeNode.java:833)
+//        at net.kotek.jdbm.BTreeNode.insert(BTreeNode.java:391)
+//        at net.kotek.jdbm.BTreeNode.insert(BTreeNode.java:392)
+//        at net.kotek.jdbm.BTreeNode.insert(BTreeNode.java:392)
+//        at net.kotek.jdbm.BTree.insert(BTree.java:281)
+//        at net.kotek.jdbm.BTreeMap.put(BTreeMap.java:285)
+//        at net.kotek.jdbm.DBCacheTest.test_some_random_shit(DBCacheTest.java:48)
+//
+
     }
 }

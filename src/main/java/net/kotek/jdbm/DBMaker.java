@@ -30,7 +30,7 @@ import java.security.spec.KeySpec;
  */
 public class DBMaker {
 
-    private byte cacheType = DBCache.MRU;
+    private byte cacheType = DBCacheRef.MRU;
     private int mruCacheSize = 2048;
 
     private String location = null;
@@ -67,7 +67,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableWeakCache() {
-        cacheType = DBCache.WEAK;
+        cacheType = DBCacheRef.WEAK;
         return this;
     }
 
@@ -79,7 +79,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableSoftCache() {
-        cacheType = DBCache.SOFT;
+        cacheType = DBCacheRef.SOFT;
         return this;
     }
 
@@ -92,7 +92,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableHardCache() {
-        cacheType = DBCache.SOFT;
+        cacheType = DBCacheRef.SOFT;
         return this;
     }
 
@@ -107,7 +107,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableMRUCache() {
-        cacheType = DBCache.MRU;
+        cacheType = DBCacheRef.MRU;
         return this;
     }
 
@@ -120,7 +120,7 @@ public class DBMaker {
      */
     public DBMaker setMRUCacheSize(int cacheSize) {
         if (cacheSize < 0) throw new IllegalArgumentException("Cache size is smaller than zero");
-        cacheType = DBCache.MRU;
+        cacheType = DBCacheRef.MRU;
         return this;
     }
 
@@ -179,7 +179,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker disableCache() {
-        cacheType = DBCache.NONE;
+        cacheType = DBCacheRef.NONE;
         return this;
     }
 
@@ -314,9 +314,11 @@ public class DBMaker {
         }
 
 
-        if (cacheType == DBCache.MRU || cacheType == DBCache.SOFT || cacheType == DBCache.HARD || cacheType == DBCache.WEAK) {
-            db = new DBCache((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
-        } else if (cacheType == DBCache.NONE) {
+        if (cacheType == DBCacheRef.MRU){
+          db = new DBCacheMRU((DBStore) db,mruCacheSize);
+        }else if( cacheType == DBCacheRef.SOFT || cacheType == DBCacheRef.HARD || cacheType == DBCacheRef.WEAK) {
+            db = new DBCacheRef((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
+        } else if (cacheType == DBCacheRef.NONE) {
             //do nothing
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
