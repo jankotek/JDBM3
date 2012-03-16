@@ -327,7 +327,7 @@ public class DBMaker {
                     db2.close();    
               }
             };
-            Runtime.getRuntime().removeShutdownHook(t);
+            Runtime.getRuntime().addShutdownHook(t);
         }
 
         return db;
