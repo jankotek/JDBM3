@@ -493,6 +493,10 @@ public class DBCacheRef
 
     }
 
+    @Override
+    boolean needsAutoCommit() {
+        return super.needsAutoCommit()|| ( !commitInProgress && _hashDirties.size() > NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT);
+    }
 
 
 }
