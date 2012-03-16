@@ -116,6 +116,9 @@ Defragmentation
 
 Troubleshooting
 ===============
+
+Please report bug into Github error tracker. There is [mail-group](mailto:jdbm@googlegroups.com) if you would have questions, you may also browse [group archive](http://groups.google.com/group/jdbm).
+
 JDBM uses chained exception so user does not have to write try catch blocks. IOException is usually wrapped in IOError which is unchecked. So please always check first exception.
 
 **OutOfMemoryError**
