@@ -280,12 +280,15 @@ public class DBCacheRef
 
 
     public synchronized void commit() {
-        checkNotClosed();
-
-        updateCacheEntries();
-
-        super.commit();
+        try{
+            commitInProgress = true;
+            updateCacheEntries();
+            super.commit();
+        }finally {
+            commitInProgress = false;
+        }
     }
+
 
     public synchronized void rollback() {
         checkNotClosed();
@@ -316,20 +319,23 @@ public class DBCacheRef
         try {
             synchronized(_hashDirties){
 
-                //make defensive copy of values as _db.update() may trigger changes in db
+                while(!_hashDirties.isEmpty()){
+                    //make defensive copy of values as _db.update() may trigger changes in db
+                    CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
+                    Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
 
-                CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
-                Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
-                
-                for(int i = 0;i<vals.length;i++){
-                    vals[i] = iter.next();
+                    for(int i = 0;i<vals.length;i++){
+                        vals[i] = iter.next();
+                    }
+                    iter = null;
+
+                    for(CacheEntry entry:vals){
+                        super.update(entry._recid, _hashDirties.get(entry._recid)._obj, entry._serializer);
+                        _hashDirties.remove(entry._recid);
+                    }
+
+                    //update may have triggered more records to be added into dirties, so repeat until all records are written.
                 }
-                iter = null;
-                _hashDirties.clear();
-                for(CacheEntry entry:vals){
-                    super.update(entry._recid, entry._obj, entry._serializer);
-                }
-                //TODO what if dirties still contain some record? update could trigger recursive thingy... also check MRU
             }
         } catch (IOException e) {
             throw new IOError(e);

@@ -1,8 +1,6 @@
 package net.kotek.jdbm;
 
-import junit.framework.TestCase;
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 public class DBMakerTest extends TestCaseWithTestFile {

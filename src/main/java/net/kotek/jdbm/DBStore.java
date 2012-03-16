@@ -81,6 +81,8 @@ class DBStore
 
     private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
 
+    boolean commitInProgress = false;
+
 
     /**
      * cipher used for decryption, may be null
@@ -113,6 +115,10 @@ class DBStore
     public static final boolean DEBUG = false;
 
 
+    
+    static final long PREALOCATE_PHYS_RECID = Short.MIN_VALUE;
+    
+    static final Object PREALOCATE_OBJ = new Object();
 
 
 
@@ -225,7 +231,7 @@ class DBStore
     }
 
     boolean needsAutoCommit() {
-        return  transactionsDisabled &&
+        return  transactionsDisabled && !commitInProgress &&
                 (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES || _physMgr.freeman.needsDefragementation);
     }
 
@@ -234,9 +240,19 @@ class DBStore
             throws IOException {
         buf.reset();
 
-        serializer.serialize(buf, obj);
-        final long physRowId = _physMgr.insert(buf.getBuf(), 0, buf.getPos());
+
+        long physRowId;
+        if(obj==PREALOCATE_OBJ){
+            //if inserted record is  PREALOCATE_OBJ , it gets special handling.
+            //it is inserted only into _logicMgr with special value to indicate null
+            //this is used to preallocate recid for lazy inserts in cache            
+            physRowId = PREALOCATE_PHYS_RECID;
+        }else{
+            serializer.serialize(buf, obj);
+            physRowId = _physMgr.insert(buf.getBuf(), 0, buf.getPos());
+        }
         final long recid = _logicMgr.insert(physRowId);
+
         if (DEBUG) {
             System.out.println("BaseRecordManager.insert() recid " + recid + " length " + buf.getPos());
         }
@@ -266,8 +282,10 @@ class DBStore
         logRowId =  Location.decompressRecid(logRowId);
 
         long physRowId = _logicMgr.fetch(logRowId);
-        _physMgr.free(physRowId);
         _logicMgr.delete(logRowId);
+        if(physRowId!=PREALOCATE_PHYS_RECID){
+            _physMgr.free(physRowId);
+        }
     }
 
 
@@ -316,7 +334,11 @@ class DBStore
             System.out.println("BaseRecordManager.update() recid " + logRecid + " length " + buf.getPos());
         }
 
-        long newRecid = _physMgr.update(physRecid, buf.getBuf(), 0, buf.getPos());
+        long newRecid =
+            physRecid!=PREALOCATE_PHYS_RECID?
+            _physMgr.update(physRecid, buf.getBuf(), 0, buf.getPos()):
+            //previous record was only virtual and does not actually exist, so make new insert
+            _physMgr.insert(buf.getBuf(),0,buf.getPos());
 
         _logicMgr.update(logRecid, newRecid);
 
@@ -362,6 +384,10 @@ class DBStore
             //throw new IOException("Record not found, recid: "+recid);
             return null;
         }
+        if(physLocation == PREALOCATE_PHYS_RECID){
+            throw new InternalError("cache should prevent this!");
+        }
+
         _physMgr.fetch(buf, physLocation);
 
         if (DEBUG) {
@@ -407,6 +433,7 @@ class DBStore
 
     public synchronized void commit() {
         try {
+            commitInProgress = true;
             checkNotClosed();
             checkCanWrite();
             /** flush free phys rows into pages*/
@@ -424,6 +451,8 @@ class DBStore
             }
         } catch (IOException e) {
             throw new IOError(e);
+        }finally {
+            commitInProgress= false;
         }
     }
 
@@ -589,6 +618,10 @@ class DBStore
                             continue;
                         }
 
+                        if(physLoc == PREALOCATE_PHYS_RECID){
+                            continue;
+                        }
+
                         recordCount++;
 
                         //get size
@@ -710,6 +743,14 @@ class DBStore
 
                     if (physRowId == 0)
                         continue;
+
+
+                    if (physRowId == PREALOCATE_PHYS_RECID){
+                        db2._logicMgr.forceInsert(logicalRowId, physRowId);
+                        continue;
+                    }
+
+
 
                     //read from physical location at this db
                     DataInputOutput b = new DataInputOutput();

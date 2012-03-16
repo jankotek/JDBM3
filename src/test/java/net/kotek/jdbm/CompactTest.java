@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.util.Map;
 
 public class CompactTest extends TestCaseWithTestFile {
-    
+
     final int MAX = 1000 * 1000;
 
     public void testHashCompaction() throws IOException{
 
         String f = newTestFile();
-        
+
         DB db0 = new DBMaker(f).disableTransactions().build();
         Map<String,String> db = db0.createHashMap("db");
 

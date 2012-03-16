@@ -97,13 +97,15 @@ class DBCacheMRU
         if(super.needsAutoCommit())
             commit();
 
-        final long recid = super.insert(obj, serializer, disableCache);
+        if(disableCache)
+            return super.insert(obj, serializer, disableCache);
 
 
-        if(disableCache) return recid;
+        //prealocate recid so we have something to return
+        final long recid = super.insert(PREALOCATE_OBJ, null, disableCache);
 
-        cachePut(  recid , obj, serializer, false );
-
+        //and create new dirty record for future update
+        cachePut(  recid , obj, serializer, true );
 
         return recid;
     }
@@ -204,10 +206,13 @@ class DBCacheMRU
 
 
     public synchronized void commit() {
-
-        updateCacheEntries();
-
-        super.commit();
+        try{
+            commitInProgress = true;
+            updateCacheEntries();
+            super.commit();
+        }finally {
+            commitInProgress = false;
+        }
     }
 
     public synchronized void rollback() {
@@ -236,22 +241,25 @@ class DBCacheMRU
         try {
             synchronized(_hash){
 
-                //make defensive copy of values as _db.update() may trigger changes in db
+                while(!_hashDirties.isEmpty()){
+                    //make defensive copy of values as _db.update() may trigger changes in db
+                    CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
+                    Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
 
-                CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
-                Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
+                    for(int i = 0;i<vals.length;i++){
+                        vals[i] = iter.next();
+                    }
+                    iter = null;
 
-                for(int i = 0;i<vals.length;i++){
-                    vals[i] = iter.next();
+                    
+                    for(CacheEntry entry:vals){
+                        super.update(entry._recid, entry._obj, entry._serializer);
+                        _hashDirties.remove(entry._recid);
+                    }
+
+
+                    //update may have triggered more records to be added into dirties, so repeat until all records are written.
                 }
-                iter = null;
-                _hashDirties.clear();
-
-                for(CacheEntry entry:vals){
-                    super.update(entry._recid, entry._obj, entry._serializer);
-                }
-
-                //TODO entries are not dirty anymore, maybe _hash.clear()?
             }
         } catch (IOException e) {
             throw new IOError(e);
@@ -293,8 +301,6 @@ class DBCacheMRU
                     removeEntry(entry);
                     addEntry(entry);
                 }
-                //set dirty if needed
-                setCacheEntryDirty(entry,dirty);
             } else {
 
                 if (_hash.size() == _max) {
@@ -309,6 +315,10 @@ class DBCacheMRU
                 }
                 addEntry(entry);
                 _hash.put(entry._recid, entry);
+            }
+            if(dirty){
+                //set dirty if needed
+                setCacheEntryDirty(entry,true);
             }
         }
     }
