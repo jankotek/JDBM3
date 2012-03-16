@@ -47,7 +47,7 @@ final class PhysicalRowIdManager {
     /**
      * Inserts a new record. Returns the new physical rowid.
      */
-    long insert(byte[] data, int start, int length) throws IOException {
+    long insert(final byte[] data, final int start, final int length) throws IOException {
         if (length < 1)
             throw new IllegalArgumentException("Length is <1");
         if (start < 0)
@@ -61,7 +61,7 @@ final class PhysicalRowIdManager {
     /**
      * Updates an existing record. Returns the possibly changed physical rowid.
      */
-    long update(long rowid, byte[] data, int start, int length) throws IOException {
+    long update(long rowid, final byte[] data, final int start, final int length) throws IOException {
         // fetch the record header
         BlockIo block = file.get(Location.getBlock(rowid));
         short head = Location.getOffset(rowid);
@@ -85,7 +85,7 @@ final class PhysicalRowIdManager {
     }
 
 
-    void fetch(DataInputOutput out, long rowid) throws IOException {
+    void fetch(final DataInputOutput out, final long rowid) throws IOException {
         // fetch the record header
         long current = Location.getBlock(rowid);
         BlockIo block = file.get(current);

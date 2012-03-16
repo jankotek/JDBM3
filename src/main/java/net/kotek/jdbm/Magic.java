@@ -80,7 +80,7 @@ interface Magic {
     /**
      * The number of "root" rowids available in the file.
      */
-    int FILE_HEADER_NROOTS = (Storage.BLOCK_SIZE - FILE_HEADER_O_ROOTS) / Magic.SZ_LONG;
+    int FILE_HEADER_NROOTS = 16;
 
 
     short PAGE_HEADER_O_MAGIC = 0; // short magic

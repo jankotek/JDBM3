@@ -1,7 +1,6 @@
 package net.kotek.jdbm;
 
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -39,7 +38,7 @@ public class CompactTest extends TestCaseWithTestFile {
         for( int i=0 ; i < MAX; i++) {
             db.put("key"+i, "value"+i);
         }
-
+        System.out.println("Closing");
         db0.close();
     }
 
@@ -75,6 +74,7 @@ public class CompactTest extends TestCaseWithTestFile {
             db.put("key"+i, "value"+i);
         }
 
+        System.out.println("Closing");
         db0.close();
     }
 

@@ -1,10 +1,13 @@
 package net.kotek.jdbm;
 
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
-
 import net.kotek.jdbm.Serialization.FastArrayList;
+
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class stores information about serialized classes and fields.
@@ -44,22 +47,13 @@ abstract class SerialClassInfo {
         }
     };
 
-    private long serialClassInfoRecid;
+    long serialClassInfoRecid;
 
-    public SerialClassInfo(ArrayList<ClassInfo> registered) {
-        this.registered = registered;
-        this.db = null;
-    }
 
-    public SerialClassInfo(DBAbstract db, long serialClassInfoRecid) throws IOException {
+    public SerialClassInfo(DBAbstract db, long serialClassInfoRecid, ArrayList<ClassInfo> registered){
         this.db = db;
-        if (db != null) {
-            this.serialClassInfoRecid = serialClassInfoRecid;
-            this.registered = db.fetch(serialClassInfoRecid, serializer);
-        } else {
-            //db can be null for unit testing
-            this.registered = new ArrayList<ClassInfo>();
-        }
+        this.serialClassInfoRecid = serialClassInfoRecid;
+        this.registered = registered;
     }
 
     /**
@@ -148,7 +142,7 @@ abstract class SerialClassInfo {
     }
 
 
-    private ArrayList<ClassInfo> registered;
+    ArrayList<ClassInfo> registered;
 
     final DBAbstract db;
 
@@ -172,7 +166,7 @@ abstract class SerialClassInfo {
         registered.add(i);
 
         if (db != null)
-            db.update(serialClassInfoRecid, registered, serializer);
+            db.update(serialClassInfoRecid, (Serialization) this, db.defaultSerializationSerializer);
 
     }
 
@@ -297,7 +291,7 @@ abstract class SerialClassInfo {
                 //field does not exists in class definition stored in db,
                 //propably new field was added so add field descriptor
                 fieldId = classInfo.addFieldInfo(new FieldInfo(f));
-                db.update(serialClassInfoRecid, registered, serializer);
+                db.update(serialClassInfoRecid, (Serialization) this, db.defaultSerializationSerializer);
             }
             LongPacker.packInt(out, fieldId);
             //and write value

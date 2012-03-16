@@ -16,13 +16,13 @@
 
 package net.kotek.jdbm;
 
-import javax.crypto.*;
-
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOError;
-import java.io.IOException;
 import java.security.spec.KeySpec;
 
 /**
@@ -308,19 +308,13 @@ public class DBMaker {
 
         DBAbstract db = null;
 
-        try {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag);
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-
 
         if (cacheType == DBCacheRef.MRU){
-          db = new DBCacheMRU((DBStore) db,mruCacheSize);
+          db = new DBCacheMRU(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag, mruCacheSize);
         }else if( cacheType == DBCacheRef.SOFT || cacheType == DBCacheRef.HARD || cacheType == DBCacheRef.WEAK) {
-            db = new DBCacheRef((DBStore) db, mruCacheSize, cacheType,autoClearRefCacheOnLowMem);
+            db = new DBCacheRef(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag, cacheType,autoClearRefCacheOnLowMem);
         } else if (cacheType == DBCacheRef.NONE) {
-            //do nothing
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag);
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
         }

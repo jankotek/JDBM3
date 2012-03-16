@@ -1,10 +1,12 @@
 package net.kotek.jdbm;
 
 import javax.crypto.Cipher;
-import java.io.*;
-import java.lang.reflect.Constructor;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOError;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Comparator;
 
 /**
  * Various utilities used in JDBM
@@ -158,5 +160,17 @@ class Utils {
 
         return comp.compare(e1,e2)>0 ? e2:e1;
     }
+    
+    
+    static final Serializer<Object> NULL_SERIALIZER = new Serializer<Object>() {
+        public void serialize(DataOutput out, Object obj) throws IOException {
+            out.writeByte(11);
+        }
+
+        public Object deserialize(DataInput in) throws IOException, ClassNotFoundException {
+            in.readByte();
+            return null;
+        }
+    };
 
 }

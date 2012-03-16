@@ -89,7 +89,7 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
     SerialClassInfo s;
 
     public void setUp() throws IOException {
-        s = new Serialization(null, 0);
+        s = new Serialization();
     }
 
     Bean1 b = new Bean1("aa", "bb");
@@ -165,7 +165,7 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
 
 
     <E> E serialize(E e) throws ClassNotFoundException, IOException {
-        Serialization s2 = new Serialization(null, 0);
+        Serialization s2 = new Serialization();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         s2.serialize(new DataOutputStream(out), e);
 

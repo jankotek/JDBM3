@@ -15,13 +15,13 @@
  ******************************************************************************/
 package net.kotek.jdbm;
 
+import junit.framework.TestCase;
+
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-
-import junit.framework.TestCase;
+import java.util.*;
 
 @SuppressWarnings("unchecked")
 public class SerializationTest extends TestCase {
@@ -29,7 +29,7 @@ public class SerializationTest extends TestCase {
     Serialization ser;
 
     public SerializationTest() throws IOException {
-        ser = new Serialization(null, 0);
+        ser = new Serialization();
     }
 
     public void testInt() throws IOException, ClassNotFoundException {

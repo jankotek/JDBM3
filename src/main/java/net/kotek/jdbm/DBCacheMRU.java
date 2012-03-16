@@ -16,10 +16,10 @@
 
 package net.kotek.jdbm;
 
+import javax.crypto.Cipher;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * A DB wrapping and caching another DB.
@@ -31,15 +31,11 @@ import java.util.Map;
  * TODO add 'cache miss' statistics
  */
 class DBCacheMRU
-        extends DBAbstract {
+        extends DBStore {
 
 
     private static final boolean debug = false;
 
-    /**
-     * Wrapped DB
-     */
-    protected DBStore _db;
 
 
     /**
@@ -79,29 +75,29 @@ class DBCacheMRU
      * Construct a CacheRecordManager wrapping another DB and
      * using a given cache policy.
      */
-    public DBCacheMRU(DBStore db, int maxRecords) {
-        if (db == null) {
-            throw new IllegalArgumentException("Argument 'db' is null");
-        }
-        _hash = new LongHashMap<CacheEntry>(maxRecords);
+    public DBCacheMRU(String filename, boolean readonly, boolean transactionDisabled,
+                      Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
+                      boolean autodefrag,boolean deleteFilesAfterClose, int cacheMaxRecords)  {
+        super(filename, readonly, transactionDisabled,
+            cipherIn, cipherOut, useRandomAccessFile,
+            autodefrag,deleteFilesAfterClose);
+
+        _hash = new LongHashMap<CacheEntry>(cacheMaxRecords);
         _hashDirties = new LongHashMap<CacheEntry>();
-        _db = db;
-        _max = maxRecords;
-        db.wrappedInCache = true;
+
+        _max = cacheMaxRecords;
 
     }
 
 
     public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
-        if(_db.needsAutoCommit())
+        if(super.needsAutoCommit())
             commit();
 
-        final long recid = _db.insert(obj, serializer, disableCache);
+        final long recid = super.insert(obj, serializer, disableCache);
 
 
         if(disableCache) return recid;
@@ -116,7 +112,7 @@ class DBCacheMRU
     public synchronized <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache) throws IOException {
 
         if (disableCache)
-            return _db.fetch(recid, serializer, disableCache);
+            return super.fetch(recid, serializer, disableCache);
         else
             return fetch(recid, serializer);
     }
@@ -124,11 +120,9 @@ class DBCacheMRU
 
     public synchronized void delete(long recid)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
-        _db.delete(recid);
+        super.delete(recid);
         synchronized (_hash){
             CacheEntry entry = _hash.get(recid);
             if (entry != null) {
@@ -138,16 +132,13 @@ class DBCacheMRU
             }
         }
 
-        if(_db.needsAutoCommit())
+        if(super.needsAutoCommit())
             commit();
 
     }
 
     public synchronized <A> void update(final long recid, A obj, Serializer<A> serializer) throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
+        checkNotClosed();
 
         synchronized (_hash){
 
@@ -162,7 +153,7 @@ class DBCacheMRU
             }
         }
 
-        if(_db.needsAutoCommit())
+        if(super.needsAutoCommit())
             commit();
 
     }
@@ -170,10 +161,8 @@ class DBCacheMRU
 
     public synchronized <A> A fetch(long recid, Serializer<A> serializer)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
 
+        checkNotClosed();
 
         //MRU cache is enabled in any case, as it contains modified entries
         CacheEntry entry = cacheGet(recid);
@@ -183,15 +172,14 @@ class DBCacheMRU
 
         //check dirties
         if(_hashDirties.get(recid)!=null){
-            System.out.println("Yes");
             return (A) _hashDirties.get(recid)._obj;
         }
 
 
 
-        A value = _db.fetch(recid, serializer);
+        A value = super.fetch(recid, serializer);
 
-        if(_db.needsAutoCommit())
+        if(super.needsAutoCommit())
             commit();
 
 
@@ -203,38 +191,26 @@ class DBCacheMRU
 
 
     public synchronized void close() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+
+        if(isClosed())
+            return;
 
         updateCacheEntries();
-        _db.close();
-        _db = null;
+        super.close();
         _hash = null;
         _hashDirties = null;
     }
 
-    public synchronized boolean isClosed(){
-        return _db == null;
-    }
 
 
     public synchronized void commit() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
 
         updateCacheEntries();
 
-        _db.commit();
+        super.commit();
     }
 
     public synchronized void rollback() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        _db.rollback();
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
@@ -244,39 +220,13 @@ class DBCacheMRU
             _first = null;
             _last = null;
         }
+
+        super.rollback();
     }
 
 
-    public synchronized long getNamedObject(String name)
-            throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        return _db.getNamedObject(name);
-    }
 
 
-    public synchronized void setNamedObject(String name, long recid)
-            throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        _db.setNamedObject(name, recid);
-    }
-
-    public Serializer defaultSerializer() {
-        return _db.defaultSerializer();
-    }
-
-    public String calculateStatistics() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        return _db.calculateStatistics();
-    }
 
 
     /**
@@ -295,11 +245,12 @@ class DBCacheMRU
                     vals[i] = iter.next();
                 }
                 iter = null;
+                _hashDirties.clear();
 
                 for(CacheEntry entry:vals){
-                    _db.update(entry._recid, entry._obj, entry._serializer);
+                    super.update(entry._recid, entry._obj, entry._serializer);
                 }
-                _hashDirties.clear();
+
                 //TODO entries are not dirty anymore, maybe _hash.clear()?
             }
         } catch (IOException e) {
@@ -330,7 +281,8 @@ class DBCacheMRU
      *
      * @throws IOException
      */
-    protected void cachePut(long recid, Object value, Serializer serializer, boolean dirty) throws IOException {
+    protected void cachePut(final long recid, final Object value,
+                            final Serializer serializer, final boolean dirty) throws IOException {
         synchronized (_hash){
             CacheEntry entry = _hash.get(recid);
             if (entry != null) {
@@ -341,6 +293,8 @@ class DBCacheMRU
                     removeEntry(entry);
                     addEntry(entry);
                 }
+                //set dirty if needed
+                setCacheEntryDirty(entry,dirty);
             } else {
 
                 if (_hash.size() == _max) {
@@ -411,15 +365,14 @@ class DBCacheMRU
             if (entry == null)
                 return new CacheEntry(-1, null, null);
 
-            if (isCacheEntryDirty(entry)) try {
-                _db.update(entry._recid, entry._obj, entry._serializer);
-            } catch (IOException e) {
-                throw new IOError(e);
-            }
 
 
             removeEntry(entry);
             _hash.remove(entry._recid);
+            if (isCacheEntryDirty(entry))
+                return new CacheEntry(-1, null, null);
+                //is already in dirty cache, can not reuse node
+
             entry._obj = null;
             entry._serializer = null;
             setCacheEntryDirty(entry, false);
@@ -483,21 +436,7 @@ class DBCacheMRU
     }
 
 
-    public void defrag(boolean sortCollections) {
-        commit();
-        _db.defrag(sortCollections);
-    }
 
-
-
-    public Map<String,Object> getCollections(){
-        return  _db.getCollections();
-    }
-
-    /** completely remove collection from store*/
-    public void deleteCollection(String name){
-        _db.deleteCollection(name);
-    }
 
 
 }

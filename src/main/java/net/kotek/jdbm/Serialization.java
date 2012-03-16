@@ -48,12 +48,12 @@ class Serialization extends SerialClassInfo implements Serializer {
 
     private static final String UTF8 = "UTF-8";
 
-    Serialization(DBAbstract db, long serialClassInfoRecid) throws IOException {
-        super(db, serialClassInfoRecid);
+    Serialization(DBAbstract db, long serialClassInfoRecid, ArrayList<ClassInfo> info) throws IOException {
+        super(db, serialClassInfoRecid,info);
     }
 
-    public Serialization(ArrayList<ClassInfo> info) {
-        super(info);
+    public Serialization() {
+        super(null,0L,new ArrayList<ClassInfo>());
     }
 
     /**

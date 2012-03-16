@@ -16,13 +16,13 @@
 
 package net.kotek.jdbm;
 
+import javax.crypto.Cipher;
 import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * TODO add 'cache miss' statistics
  */
 public class DBCacheRef
-        extends DBAbstract {
+        extends DBStore {
 
 
     static final byte NONE = 1;
@@ -45,11 +45,6 @@ public class DBCacheRef
     static final byte HARD = 5;
 
     private static final boolean debug = false;
-
-    /**
-     * Wrapped DB
-     */
-    protected DBStore _db;
 
 
 
@@ -72,11 +67,6 @@ public class DBCacheRef
     protected ReferenceQueue<ReferenceCacheEntry> _refQueue;
 
 
-    /**
-     * Maximum number of objects in the cache.
-     */
-    protected int _max;
-
 
     /**
      * Thread in which Soft Cache references are disposed
@@ -97,17 +87,19 @@ public class DBCacheRef
      * Construct a CacheRecordManager wrapping another DB and
      * using a given cache policy.
      */
-    public DBCacheRef(DBStore db, int maxRecords,
-                   byte cacheType,
-                   boolean autoClearReferenceCacheOnLowMem) {
-        if (db == null) {
-            throw new IllegalArgumentException("Argument 'db' is null");
-        }
+    public DBCacheRef(String filename, boolean readonly, boolean transactionDisabled,
+                      Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
+                      boolean autodefrag,boolean deleteFilesAfterClose,
+                      byte cacheType, boolean cacheAutoClearOnLowMem) {
+
+        super(filename, readonly, transactionDisabled,
+                cipherIn, cipherOut, useRandomAccessFile,
+                autodefrag,deleteFilesAfterClose);
+
         _hashDirties = new LongHashMap<CacheEntry>();
-        _db = db;
-        _max = maxRecords;
+
         this._cacheType = cacheType;
-        _autoClearReferenceCacheOnLowMem = autoClearReferenceCacheOnLowMem;
+        _autoClearReferenceCacheOnLowMem = cacheAutoClearOnLowMem;
 
 
         _softHash = new LongHashMap<ReferenceCacheEntry>();
@@ -118,21 +110,17 @@ public class DBCacheRef
         _softRefThread.setDaemon(true);
         _softRefThread.start();
 
-        db.wrappedInCache = true;
-
     }
 
 
     public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
-        if(_db.needsAutoCommit())
+        if(needsAutoCommit())
             commit();
 
-        final long recid = _db.insert(obj, serializer, disableCache);
+        final long recid = super.insert(obj, serializer, disableCache);
 
 
         if(disableCache) return recid;
@@ -180,7 +168,7 @@ public class DBCacheRef
     public synchronized <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache) throws IOException {
 
         if (disableCache)
-            return _db.fetch(recid, serializer, disableCache);
+            return super.fetch(recid, serializer, disableCache);
         else
             return fetch(recid, serializer);
     }
@@ -188,11 +176,9 @@ public class DBCacheRef
 
     public synchronized void delete(long recid)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
-        _db.delete(recid);
+        super.delete(recid);
         synchronized (_hashDirties){
             _hashDirties.remove(recid);
         }
@@ -203,15 +189,13 @@ public class DBCacheRef
             }
         }
 
-        if(_db.needsAutoCommit())
+        if(needsAutoCommit())
             commit();
 
     }
 
     public synchronized <A> void update(final long recid, A obj, Serializer<A> serializer) throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
 
         synchronized (_softHash) {
@@ -230,7 +214,7 @@ public class DBCacheRef
             _hashDirties.put(recid,e);
         }
 
-        if(_db.needsAutoCommit())
+        if(needsAutoCommit())
             commit();
 
     }
@@ -238,9 +222,7 @@ public class DBCacheRef
 
     public synchronized <A> A fetch(long recid, Serializer<A> serializer)
             throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
         synchronized (_softHash) {
             Object e = _softHash.get(recid);
@@ -265,9 +247,9 @@ public class DBCacheRef
 
 
 
-        A value = _db.fetch(recid, serializer);
+        A value = super.fetch(recid, serializer);
 
-        if(_db.needsAutoCommit())
+        if(needsAutoCommit())
             commit();
 
            synchronized (_softHash) {
@@ -286,38 +268,27 @@ public class DBCacheRef
 
 
     public synchronized void close() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
         updateCacheEntries();
-        _db.close();
-        _db = null;
+        super.close();
         _hashDirties = null;
         _softHash = null;
         _softRefThread.interrupt();
     }
 
-    public synchronized boolean isClosed(){
-        return _db == null;
-    }
 
 
     public synchronized void commit() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
+        checkNotClosed();
 
         updateCacheEntries();
 
-        _db.commit();
+        super.commit();
     }
 
     public synchronized void rollback() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
+        checkNotClosed();
 
 
         // discard all cache entries since we don't know which entries
@@ -334,39 +305,7 @@ public class DBCacheRef
             _softHash.clear();
         }
 
-        _db.rollback();
-    }
-
-
-    public synchronized long getNamedObject(String name)
-            throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        return _db.getNamedObject(name);
-    }
-
-
-    public synchronized void setNamedObject(String name, long recid)
-            throws IOException {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        _db.setNamedObject(name, recid);
-    }
-
-    public Serializer defaultSerializer() {
-        return _db.defaultSerializer();
-    }
-
-    public String calculateStatistics() {
-        if (_db == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-
-        return _db.calculateStatistics();
+        super.rollback();
     }
 
 
@@ -386,11 +325,11 @@ public class DBCacheRef
                     vals[i] = iter.next();
                 }
                 iter = null;
-
-                for(CacheEntry entry:vals){
-                    _db.update(entry._recid, entry._obj, entry._serializer);
-                }                
                 _hashDirties.clear();
+                for(CacheEntry entry:vals){
+                    super.update(entry._recid, entry._obj, entry._serializer);
+                }
+                //TODO what if dirties still contain some record? update could trigger recursive thingy... also check MRU
             }
         } catch (IOException e) {
             throw new IOError(e);
@@ -548,22 +487,6 @@ public class DBCacheRef
 
     }
 
-
-    public void defrag(boolean sortCollections) {
-        commit();
-        _db.defrag(sortCollections);
-    }
-
-
-
-    public Map<String,Object> getCollections(){
-        return  _db.getCollections();
-    }
-
-    /** completely remove collection from store*/
-    public void deleteCollection(String name){
-        _db.deleteCollection(name);
-    }
 
 
 }

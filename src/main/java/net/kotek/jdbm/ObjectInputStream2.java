@@ -20,7 +20,7 @@ public class ObjectInputStream2 extends DataInputStream implements ObjectInput {
         //first read class data
         ArrayList<SerialClassInfo.ClassInfo> info = SerialClassInfo.serializer.deserialize(this);
 
-        Serialization ser = new Serialization(info);
+        Serialization ser = new Serialization(null,0,info);
         return ser.deserialize(this);
     }
 }

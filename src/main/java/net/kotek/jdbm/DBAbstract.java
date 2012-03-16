@@ -15,6 +15,8 @@
  ******************************************************************************/
 package net.kotek.jdbm;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -29,6 +31,24 @@ import java.util.concurrent.ConcurrentNavigableMap;
 abstract class DBAbstract implements DB {
 
 
+    /**
+     * Reserved slot for name directory recid.
+     */
+    static final byte NAME_DIRECTORY_ROOT = 0;
+
+
+    /**
+     * Reserved slot for version number
+     */
+    static final byte STORE_VERSION_NUMBER_ROOT = 1;
+
+    /**
+     * Reserved slot for recid where Serial class info is stored
+     *
+     * NOTE when introducing more roots, do not forget to update defrag
+     */
+    static final byte SERIAL_CLASS_INFO_RECID_ROOT = 2;
+
     /** to prevent double instances of the same collection, we use weak value map
      *
      * //TODO what to do when there is rollback?
@@ -37,7 +57,8 @@ abstract class DBAbstract implements DB {
     final private Map<String,WeakReference<Object>> collections = new HashMap<String,WeakReference<Object>>();
 
 
-   /**
+
+    /**
       * Inserts a new record using a custom serializer.
       *
       * @param obj        the object for the new record.
@@ -335,17 +356,160 @@ abstract class DBAbstract implements DB {
      * doesn't exist.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected abstract long getNamedObject(String name)
-            throws IOException;
+    protected long getNamedObject(String name) throws IOException{
+        long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
+        if(nameDirectory_recid == 0){
+            return 0;
+        }
+        HTree<String,Long> m = fetch(nameDirectory_recid);
+        Long res = m.get(name);
+        if(res == null)
+            return 0;
+        return res;
+    }
 
 
     /**
      * Set the record id of a named object.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected abstract void setNamedObject(String name, long recid)
-            throws IOException;
+    protected void setNamedObject(String name, long recid) throws IOException{
+        long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
+        HTree<String,Long> m = null;
+        if(nameDirectory_recid == 0){
+            //does not exists, create it
+            m = new HTree<String, Long>(this,null,null,true);
+            nameDirectory_recid = insert(m);
+            setRoot(NAME_DIRECTORY_ROOT,nameDirectory_recid);
+        }else{
+            //fetch it
+            m = fetch(nameDirectory_recid);
+        }
+        m.put(name,recid);
+    }
 
-    protected abstract Serializer defaultSerializer();
+
+
+
+    public Map<String,Object> getCollections(){
+        try{
+            Map<String,Object> ret = new LinkedHashMap<String, Object>();
+            long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
+            if(nameDirectory_recid==0)
+                return ret;
+            HTree<String,Long> m = fetch(nameDirectory_recid);
+
+            for(Map.Entry<String,Long> e:m.entrySet()){
+                Object o = fetch(e.getValue());
+                if(o instanceof BTree){
+                    if(((BTree) o).hasValues)
+                        o = getTreeMap(e.getKey());
+                    else
+                        o = getTreeSet(e.getKey());
+                }
+                else if( o instanceof  HTree){
+                    if(((HTree) o).hasValues)
+                        o = getHashMap(e.getKey());
+                    else
+                        o = getHashSet(e.getKey());
+                }
+
+                ret.put(e.getKey(), o);
+            }
+            return Collections.unmodifiableMap(ret);
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
+    }
+
+
+    public void deleteCollection(String name){
+        try{
+            long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
+            if(nameDirectory_recid==0)
+                throw new IOException("Collection not found");
+            HTree<String,Long> dir = fetch(nameDirectory_recid);
+
+            Long recid = dir.get(name);
+            if(recid == null) throw new IOException("Collection not found");
+
+            Object o = fetch(recid);
+            //we can not use O instance since it is not correctly initialized
+            if(o instanceof LinkedList2){
+                LinkedList2 l = (LinkedList2) o;
+                l.clear();
+                delete(l.rootRecid);
+            }else if(o instanceof BTree){
+                ((BTree) o).clear();
+            } else if( o instanceof  HTree){
+                HTree t = (HTree) o;
+                t.clear();
+                HTreeDirectory n = (HTreeDirectory) fetch(t.rootRecid,t.SERIALIZER);
+                n.deleteAllChildren();
+                delete(t.rootRecid);
+            }else{
+                throw new InternalError("unknown collection type: "+(o==null?null:o.getClass()));
+            }
+            delete(recid);
+
+
+            dir.remove(name);
+
+        }catch(IOException e){
+            throw new IOError(e);
+        }
+
+    }
+
+
+    /** we need to set reference to this DB instance, so serializer needs to be here*/
+    final Serializer<Serialization> defaultSerializationSerializer = new Serializer<Serialization>(){
+
+        public void serialize(DataOutput out, Serialization obj) throws IOException {
+            LongPacker.packLong(out,obj.serialClassInfoRecid);
+            SerialClassInfo.serializer.serialize(out,obj.registered);
+        }
+
+        public Serialization deserialize(DataInput in) throws IOException, ClassNotFoundException {
+            final long recid = LongPacker.unpackLong(in);
+            final ArrayList<SerialClassInfo.ClassInfo> classes = SerialClassInfo.serializer.deserialize(in);
+            return new Serialization(DBAbstract.this,recid,classes);
+        }
+    };
+
+    public synchronized Serializer defaultSerializer() {
+
+        try{
+            long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
+            if (serialClassInfoRecid == 0) {                
+                //allocate new recid 
+                serialClassInfoRecid = insert(null,Utils.NULL_SERIALIZER,false);
+                //and insert new serializer
+                Serialization ser = new Serialization(this,serialClassInfoRecid,new ArrayList<SerialClassInfo.ClassInfo>());
+
+                update(serialClassInfoRecid,ser, defaultSerializationSerializer);
+                setRoot(SERIAL_CLASS_INFO_RECID_ROOT, serialClassInfoRecid);
+                return ser;
+            }else{
+                return fetch(serialClassInfoRecid,defaultSerializationSerializer);
+            }
+
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+
+    }
+
+    
+    final protected void checkNotClosed(){
+        if(isClosed()) throw new IllegalStateException("db was closed");
+    }
+
+    protected abstract void setRoot(byte root, long recid);
+    protected abstract long getRoot(byte root);
+
+
+    
 
 }

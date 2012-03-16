@@ -45,7 +45,7 @@ import java.util.zip.ZipOutputStream;
  * @author Alex Boisvert
  * @author Cees de Groot
  */
-final class DBStore
+class DBStore
         extends DBAbstract {
 
 
@@ -92,9 +92,6 @@ final class DBStore
     private Cipher cipherIn;
     private boolean useRandomAccessFile;
 
-    /** If this DB is wrapped in DBCache, it is not responsible to drive the auto commits*/
-    boolean wrappedInCache = false;
-
 
     void checkCanWrite() {
         if (readonly)
@@ -116,30 +113,8 @@ final class DBStore
     public static final boolean DEBUG = false;
 
 
-    /**
-     * Directory of named JDBMHashtables.  This directory is a persistent
-     * directory, stored as a Hashtable.  It can be retrived by using
-     * the NAME_DIRECTORY_ROOT.
-     */
-    private Map<String, Long> _nameDirectory;
-
-    /**
-     * Reserved slot for name directory recid.
-     */
-    public static final byte NAME_DIRECTORY_ROOT = 0;
 
 
-    /**
-     * Reserved slot for version number
-     */
-    public static final byte STORE_VERSION_NUMBER_ROOT = 1;
-
-    /**
-     * Reserved slot for recid where Serial class info is stored
-     *
-     * NOTE when introducing more roots, do not forget to update defrag
-     */
-    public static final byte SERIAL_CLASS_INFO_RECID_ROOT = 2;
 
 
     private final DataInputOutput buffer = new DataInputOutput();
@@ -161,8 +136,7 @@ final class DBStore
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
                    Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                   boolean autodefrag,boolean deleteFilesAfterClose)
-            throws IOException {
+                   boolean autodefrag,boolean deleteFilesAfterClose){
         _filename = filename;
         this.readonly = readonly;
         this.transactionsDisabled = transactionDisabled;
@@ -175,7 +149,8 @@ final class DBStore
     }
 
 
-    private void reopen() throws IOException {
+    private void reopen()  {
+        try{
         _file = new RecordFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _pageman = new PageManager(_file);
         _physMgr = new PhysicalRowIdManager(_file, _pageman,
@@ -188,9 +163,9 @@ final class DBStore
             throw new IOException("Unsupported version of store. Please update JDBM. Minimal supported ver:" + STORE_FORMAT_VERSION + ", store ver:" + versionNumber);
         if (!readonly)
             setRoot(STORE_VERSION_NUMBER_ROOT, STORE_FORMAT_VERSION);
-
-        defaultSerializer = null;
-
+        }catch(IOException e){
+            throw new IOError(e);
+        }
     }
 
 
@@ -200,7 +175,7 @@ final class DBStore
      * @throws IOException when one of the underlying I/O operations fails.
      */
     public synchronized void close() {
-        checkIfClosed();
+        checkNotClosed();
         try {
             _pageman.close();
             _file.close();
@@ -224,10 +199,10 @@ final class DBStore
 
     public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
             throws IOException {
-        checkIfClosed();
+        checkNotClosed();
         checkCanWrite();
 
-        if (!wrappedInCache && needsAutoCommit()) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -273,14 +248,14 @@ final class DBStore
     public synchronized void delete(long logRowId)
             throws IOException {
 
-        checkIfClosed();
+        checkNotClosed();
         checkCanWrite();
         if (logRowId <= 0) {
             throw new IllegalArgumentException("Argument 'recid' is invalid: "
                     + logRowId);
         }
 
-        if (!wrappedInCache && needsAutoCommit()) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -298,14 +273,14 @@ final class DBStore
 
     public synchronized <A> void update(long recid, A obj, Serializer<A> serializer)
             throws IOException {
-        checkIfClosed();
+        checkNotClosed();
         checkCanWrite();
         if (recid <= 0) {
             throw new IllegalArgumentException("Argument 'recid' is invalid: "
                     + recid);
         }
 
-        if (!wrappedInCache && needsAutoCommit()) {
+        if (needsAutoCommit()) {
             commit();
         }
 
@@ -351,7 +326,7 @@ final class DBStore
     public synchronized <A> A fetch(final long recid, final Serializer<A> serializer)
             throws IOException {
 
-        checkIfClosed();
+        checkNotClosed();
         if (recid <= 0) {
             throw new IllegalArgumentException("Argument 'recid' is invalid: "
                     + recid);
@@ -413,166 +388,26 @@ final class DBStore
     }
 
 
-    public synchronized long getRoot(int id)
-            throws IOException {
-        checkIfClosed();
+    public synchronized long getRoot(final byte id){
+        checkNotClosed();
 
         return _pageman.getFileHeader().fileHeaderGetRoot(id);
     }
 
 
-    public synchronized void setRoot(int id, long rowid)
-            throws IOException {
-        checkIfClosed();
+    public synchronized void setRoot(final byte id, final long rowid){
+        checkNotClosed();
         checkCanWrite();
 
         _pageman.getFileHeader().fileHeaderSetRoot(id, rowid);
     }
 
 
-    public long getNamedObject(String name)
-            throws IOException {
-        checkIfClosed();
-
-        Map<String, Long> nameDirectory = getNameDirectory();
-        Long recid = (Long) nameDirectory.get(name);
-        if (recid == null) {
-            return 0;
-        }
-        return recid.longValue();
-    }
-
-    public void setNamedObject(String name, long recid)
-            throws IOException {
-        checkIfClosed();
-        checkCanWrite();
-
-        Map<String, Long> nameDirectory = getNameDirectory();
-        if (recid == 0) {
-            // remove from hashtable
-            nameDirectory.remove(name);
-        } else {
-            nameDirectory.put(name, new Long(recid));
-        }
-        saveNameDirectory(nameDirectory);
-    }
-
-    public Map<String,Object> getCollections(){
-        try{
-            Map<String,Object> ret = new LinkedHashMap<String, Object>();
-            for(Map.Entry<String,Long> e:getNameDirectory().entrySet()){
-                Object o = fetch(e.getValue());
-                if(o instanceof BTree){
-                    if(((BTree) o).hasValues)
-                        o = getTreeMap(e.getKey());
-                    else
-                        o = getTreeSet(e.getKey());
-                }
-                else if( o instanceof  HTree){
-                    if(((HTree) o).hasValues)
-                        o = getHashMap(e.getKey());
-                    else
-                        o = getHashSet(e.getKey());
-                }
-
-                ret.put(e.getKey(), o);
-            }
-            return Collections.unmodifiableMap(ret);
-        }catch(IOException e){
-            throw new IOError(e);
-        }
-
-    }
-
-
-    public void deleteCollection(String name){
-        try{
-            Map<String,Long> dir = getNameDirectory();
-            Long recid = dir.get(name);
-            if(recid == null) throw new IOException("Collection not found");
-
-            Object o = fetch(recid);
-            //we can not use O instance since it is not correctly initialized
-            if(o instanceof LinkedList2){
-                LinkedList2 l = (LinkedList2) o;
-                l.clear();
-                delete(l.rootRecid);
-            }else if(o instanceof BTree){
-                ((BTree) o).clear();
-            } else if( o instanceof  HTree){
-                HTree t = (HTree) o;
-                t.clear();
-                HTreeDirectory n = (HTreeDirectory) fetch(t.rootRecid,t.SERIALIZER);
-                n.deleteAllChildren();
-                delete(t.rootRecid);
-            }else{
-                throw new InternalError("unknown collection type: "+(o==null?null:o.getClass()));
-            }
-            delete(recid);
-
-
-            dir.remove(name);
-            saveNameDirectory(dir);
-
-        }catch(IOException e){
-            throw new IOError(e);
-        }
-
-    }
-
-
-    /**
-     * Load name directory
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Long> getNameDirectory()
-            throws IOException {
-        // retrieve directory of named hashtable
-        long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
-        if (nameDirectory_recid == 0) {
-            _nameDirectory = new HashMap<String, Long>();
-            nameDirectory_recid = insert(_nameDirectory);
-            setRoot(NAME_DIRECTORY_ROOT, nameDirectory_recid);
-        } else {
-            _nameDirectory = (Map<String, Long>) fetch(nameDirectory_recid);
-        }
-        return _nameDirectory;
-    }
-
-
-    private void saveNameDirectory(Map<String, Long> directory)
-            throws IOException {
-        checkCanWrite();
-        long recid = getRoot(NAME_DIRECTORY_ROOT);
-        if (recid == 0) {
-            throw new IOException("Name directory must exist");
-        }
-        update(recid, _nameDirectory);
-    }
-
-
-    private Serialization defaultSerializer;
-
-    public synchronized Serializer defaultSerializer() {
-        if (defaultSerializer == null) try {
-            long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
-            if (serialClassInfoRecid == 0) {
-                //insert new empty array list
-                serialClassInfoRecid = insert(new ArrayList<SerialClassInfo.ClassInfo>(0), SerialClassInfo.serializer,false);
-                setRoot(SERIAL_CLASS_INFO_RECID_ROOT, serialClassInfoRecid);
-            }
-
-            defaultSerializer = new Serialization(this, serialClassInfoRecid);
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-        return defaultSerializer;
-    }
 
 
     public synchronized void commit() {
         try {
-            checkIfClosed();
+            checkNotClosed();
             checkCanWrite();
             /** flush free phys rows into pages*/
             _physMgr.commit();
@@ -598,11 +433,10 @@ final class DBStore
             throw new IllegalAccessError("Transactions are disabled, can not rollback");
 
         try {
-            checkIfClosed();
+            checkNotClosed();
             _physMgr.rollback();
             _logicMgr.rollback();
             _pageman.rollback();
-            defaultSerializer = null;
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -677,16 +511,6 @@ final class DBStore
     }
 
 
-    /**
-     * Check if DB has been closed.  If so, throw an
-     * IllegalStateException.
-     */
-    private void checkIfClosed()
-            throws IllegalStateException {
-        if (_file == null) {
-            throw new IllegalStateException("DB has been closed");
-        }
-    }
 
 
     public synchronized void clearCache() {
@@ -710,7 +534,7 @@ final class DBStore
     }
 
     public synchronized String calculateStatistics() {
-        checkIfClosed();
+        checkNotClosed();
 
         try {
 
@@ -800,7 +624,7 @@ final class DBStore
     public synchronized void defrag(boolean sortCollections) {
 
         try {
-            checkIfClosed();
+            checkNotClosed();
             checkCanWrite();
             commit();
             final String filename2 = _filename + "_defrag" + System.currentTimeMillis();
@@ -839,7 +663,14 @@ final class DBStore
             //reinsert collections so physical records are located near each other
             //iterate over named object recids, it is sorted with TreeSet
             if(sortCollections){
-                for (Long namedRecid : new TreeSet<Long>(getNameDirectory().values())) {
+                long nameRecid = getRoot(NAME_DIRECTORY_ROOT);
+                Collection<Long> recids = new TreeSet<Long>();
+                if(nameRecid!=0){
+                    HTree<String,Long> m = fetch(nameRecid);
+                    recids.addAll(m.values());
+                }
+
+                for (Long namedRecid : recids) {
                     Object obj = fetch(namedRecid);
                     if (obj instanceof LinkedList) {
                         LinkedList2.defrag(namedRecid, this, db2);
@@ -893,12 +724,14 @@ final class DBStore
                 _file.release(io);
                 db2.commit();
             }
-            db2.setRoot(NAME_DIRECTORY_ROOT, getRoot(NAME_DIRECTORY_ROOT));
-            db2.setRoot(STORE_VERSION_NUMBER_ROOT, getRoot(STORE_VERSION_NUMBER_ROOT));
-            db2.setRoot(SERIAL_CLASS_INFO_RECID_ROOT, getRoot(SERIAL_CLASS_INFO_RECID_ROOT));
+            for(byte b = 0;b<Magic.FILE_HEADER_NROOTS;b++){
+                db2.setRoot(b, getRoot(b));
+            }
 
             db2.close();
-            close();
+            _pageman.close();
+            _file.close();
+
 
             List<File> filesToDelete = new ArrayList<File>();
             //now rename old files
@@ -964,7 +797,7 @@ final class DBStore
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
         logicalRowId = Location.decompressRecid(logicalRowId);
 
-        if (!wrappedInCache && needsAutoCommit()) {
+        if (needsAutoCommit()) {
             commit();
         }
 
