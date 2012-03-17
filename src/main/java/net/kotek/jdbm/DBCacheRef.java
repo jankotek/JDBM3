@@ -17,7 +17,6 @@
 package net.kotek.jdbm;
 
 import javax.crypto.Cipher;
-import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -35,23 +34,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * TODO add 'cache miss' statistics
  */
 public class DBCacheRef
-        extends DBStore {
+        extends DBCache {
 
 
-    static final byte NONE = 1;
-    static final byte MRU = 2;
-    static final byte WEAK = 3;
-    static final byte SOFT = 4;
-    static final byte HARD = 5;
 
     private static final boolean debug = false;
 
 
-
-    /**
-     * Dirty status of _hash CacheEntry Values
-     */
-    protected LongHashMap<CacheEntry> _hashDirties;
 
     /**
      * If Soft Cache is enabled, this contains softly referenced clean entries.
@@ -96,7 +85,6 @@ public class DBCacheRef
                 cipherIn, cipherOut, useRandomAccessFile,
                 autodefrag,deleteFilesAfterClose);
 
-        _hashDirties = new LongHashMap<CacheEntry>();
 
         this._cacheType = cacheType;
         _autoClearReferenceCacheOnLowMem = cacheAutoClearOnLowMem;
@@ -112,31 +100,6 @@ public class DBCacheRef
 
     }
 
-
-    public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
-            throws IOException {
-        checkNotClosed();
-
-        if(needsAutoCommit())
-            commit();
-
-        final long recid = super.insert(obj, serializer, disableCache);
-
-
-        if(disableCache) return recid;
-
-        synchronized(_softHash) {
-
-            if (_cacheType == SOFT)
-                _softHash.put(recid, new SoftCacheEntry(recid, obj, _refQueue));
-            else if (_cacheType == WEAK)
-                _softHash.put(recid, new WeakCacheEntry(recid, obj, _refQueue));
-            else
-                _softHash.put(recid,obj);
-        }
-
-        return recid;
-    }
 
     void clearCacheIfLowOnMem() {
 
@@ -207,7 +170,7 @@ public class DBCacheRef
         }
         synchronized (_hashDirties){
             //put into dirty cache
-            final CacheEntry e = new CacheEntry();
+            final DirtyCacheEntry e = new DirtyCacheEntry();
             e._recid = recid;
             e._obj = obj;
             e._serializer = serializer;
@@ -238,7 +201,7 @@ public class DBCacheRef
 
 
         synchronized (_hashDirties){
-            CacheEntry e2 = _hashDirties.get(recid);
+            DirtyCacheEntry e2 = _hashDirties.get(recid);
             if(e2!=null){
                 return (A) e2._obj;
             }
@@ -272,22 +235,11 @@ public class DBCacheRef
 
         updateCacheEntries();
         super.close();
-        _hashDirties = null;
         _softHash = null;
         _softRefThread.interrupt();
     }
 
 
-
-    public synchronized void commit() {
-        try{
-            commitInProgress = true;
-            updateCacheEntries();
-            super.commit();
-        }finally {
-            commitInProgress = false;
-        }
-    }
 
 
     public synchronized void rollback() {
@@ -296,9 +248,6 @@ public class DBCacheRef
 
         // discard all cache entries since we don't know which entries
         // where part of the transaction
-        synchronized (_hashDirties){
-            _hashDirties.clear();
-        }
         synchronized (_softHash) {
             Iterator<ReferenceCacheEntry> iter = _softHash.valuesIterator();
             while (iter.hasNext()) {
@@ -312,50 +261,14 @@ public class DBCacheRef
     }
 
 
-    /**
-     * Update all dirty cache objects to the underlying DB.
-     */
-    protected void updateCacheEntries() {
-        try {
-            synchronized(_hashDirties){
-
-                while(!_hashDirties.isEmpty()){
-                    //make defensive copy of values as _db.update() may trigger changes in db
-                    CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
-                    Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
-
-                    for(int i = 0;i<vals.length;i++){
-                        vals[i] = iter.next();
-                    }
-                    iter = null;
-
-                    for(CacheEntry entry:vals){
-                        super.update(entry._recid, _hashDirties.get(entry._recid)._obj, entry._serializer);
-                        _hashDirties.remove(entry._recid);
-                    }
-
-                    //update may have triggered more records to be added into dirties, so repeat until all records are written.
-                }
-            }
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-
-    }
-
-
-
-
-
-
 
 
     
-	protected boolean isCacheEntryDirty(CacheEntry entry) {
+	protected boolean isCacheEntryDirty(DirtyCacheEntry entry) {
 		return _hashDirties.get(entry._recid) != null;
 	}
 
-	protected void setCacheEntryDirty(CacheEntry entry, boolean dirty) {
+	protected void setCacheEntryDirty(DirtyCacheEntry entry, boolean dirty) {
 		if (dirty) {
 			_hashDirties.put(entry._recid, entry);
 		} else {
@@ -364,16 +277,6 @@ public class DBCacheRef
 	}
 
 
-    @SuppressWarnings("unchecked")
-    private static final class CacheEntry {
-
-        protected long _recid;
-        protected Object _obj;
-
-        protected Serializer _serializer;
-
-
-    }
 
     interface ReferenceCacheEntry {
         long getRecid();
@@ -493,10 +396,6 @@ public class DBCacheRef
 
     }
 
-    @Override
-    boolean needsAutoCommit() {
-        return super.needsAutoCommit()|| ( !commitInProgress && _hashDirties.size() > NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT);
-    }
 
 
 }

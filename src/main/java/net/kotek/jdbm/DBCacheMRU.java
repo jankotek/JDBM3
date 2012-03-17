@@ -17,9 +17,7 @@
 package net.kotek.jdbm;
 
 import javax.crypto.Cipher;
-import java.io.IOError;
 import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * A DB wrapping and caching another DB.
@@ -31,7 +29,7 @@ import java.util.Iterator;
  * TODO add 'cache miss' statistics
  */
 class DBCacheMRU
-        extends DBStore {
+        extends DBCache {
 
 
     private static final boolean debug = false;
@@ -42,12 +40,6 @@ class DBCacheMRU
      * Cached object hashtable
      */
     protected LongHashMap<CacheEntry> _hash;
-
-    /**
-     * Dirty status of _hash CacheEntry Values
-     */
-    protected LongHashMap<CacheEntry> _hashDirties;
-
 
 
 
@@ -83,32 +75,10 @@ class DBCacheMRU
             autodefrag,deleteFilesAfterClose);
 
         _hash = new LongHashMap<CacheEntry>(cacheMaxRecords);
-        _hashDirties = new LongHashMap<CacheEntry>();
-
         _max = cacheMaxRecords;
 
     }
 
-
-    public synchronized <A> long insert(final A obj, final Serializer<A> serializer, final boolean disableCache)
-            throws IOException {
-        checkNotClosed();
-
-        if(super.needsAutoCommit())
-            commit();
-
-        if(disableCache)
-            return super.insert(obj, serializer, disableCache);
-
-
-        //prealocate recid so we have something to return
-        final long recid = super.insert(PREALOCATE_OBJ, null, disableCache);
-
-        //and create new dirty record for future update
-        cachePut(  recid , obj, serializer, true );
-
-        return recid;
-    }
 
 
     public synchronized <A> A fetch(long recid, Serializer<A> serializer, boolean disableCache) throws IOException {
@@ -130,8 +100,8 @@ class DBCacheMRU
             if (entry != null) {
                 removeEntry(entry);
                 _hash.remove(entry._recid);
-                _hashDirties.remove(entry._recid);
             }
+            _hashDirties.remove(recid);
         }
 
         if(super.needsAutoCommit())
@@ -139,20 +109,32 @@ class DBCacheMRU
 
     }
 
-    public synchronized <A> void update(final long recid, A obj, Serializer<A> serializer) throws IOException {
+    public synchronized <A> void update(final long recid, final A obj, final Serializer<A> serializer) throws IOException {
         checkNotClosed();
 
         synchronized (_hash){
 
+            //remove entry if it already exists
             CacheEntry entry = cacheGet(recid);
             if (entry != null) {
-                // reuse existing cache entry
-                entry._obj = obj;
-                entry._serializer = serializer;
-                setCacheEntryDirty(entry, true);
-            } else {
-                cachePut(recid, obj, serializer, true);
+                removeEntry(entry);
             }
+
+            //check if entry is in dirties, in this case just update its object
+            DirtyCacheEntry e = _hashDirties.get(recid);
+            if(e!=null){
+                if(recid!=e._recid) throw new Error();
+                e._obj = obj;
+                e._serializer = serializer;
+                return;
+            }
+            
+            //create new dirty entry
+            e = new DirtyCacheEntry();
+            e._recid = recid;
+            e._obj = obj;
+            e._serializer = serializer;
+            _hashDirties.put(recid,e);
         }
 
         if(super.needsAutoCommit())
@@ -167,14 +149,15 @@ class DBCacheMRU
         checkNotClosed();
 
         //MRU cache is enabled in any case, as it contains modified entries
-        CacheEntry entry = cacheGet(recid);
+        final CacheEntry entry = cacheGet(recid);
         if (entry != null) {
             return (A) entry._obj;
         }
 
         //check dirties
-        if(_hashDirties.get(recid)!=null){
-            return (A) _hashDirties.get(recid)._obj;
+        final DirtyCacheEntry entry2 = _hashDirties.get(recid);
+        if(entry2!=null){
+            return (A) entry2._obj;
         }
 
 
@@ -186,7 +169,7 @@ class DBCacheMRU
 
 
         //put record into MRU cache
-        cachePut(recid, value, serializer, false);
+        cachePut(recid, value);
 
         return value;
     }
@@ -200,20 +183,9 @@ class DBCacheMRU
         updateCacheEntries();
         super.close();
         _hash = null;
-        _hashDirties = null;
     }
 
 
-
-    public synchronized void commit() {
-        try{
-            commitInProgress = true;
-            updateCacheEntries();
-            super.commit();
-        }finally {
-            commitInProgress = false;
-        }
-    }
 
     public synchronized void rollback() {
 
@@ -221,7 +193,6 @@ class DBCacheMRU
         // where part of the transaction
         synchronized (_hash){
             _hash.clear();
-            _hashDirties.clear();
             _first = null;
             _last = null;
         }
@@ -233,39 +204,6 @@ class DBCacheMRU
 
 
 
-
-    /**
-     * Update all dirty cache objects to the underlying DB.
-     */
-    protected void updateCacheEntries() {
-        try {
-            synchronized(_hash){
-
-                while(!_hashDirties.isEmpty()){
-                    //make defensive copy of values as _db.update() may trigger changes in db
-                    CacheEntry[] vals = new CacheEntry[_hashDirties.size()];
-                    Iterator<CacheEntry> iter = _hashDirties.valuesIterator();
-
-                    for(int i = 0;i<vals.length;i++){
-                        vals[i] = iter.next();
-                    }
-                    iter = null;
-
-                    
-                    for(CacheEntry entry:vals){
-                        super.update(entry._recid, entry._obj, entry._serializer);
-                        _hashDirties.remove(entry._recid);
-                    }
-
-
-                    //update may have triggered more records to be added into dirties, so repeat until all records are written.
-                }
-            }
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-
-    }
 
 
     /**
@@ -289,13 +227,11 @@ class DBCacheMRU
      *
      * @throws IOException
      */
-    protected void cachePut(final long recid, final Object value,
-                            final Serializer serializer, final boolean dirty) throws IOException {
+    protected void cachePut(final long recid, final Object value) throws IOException {
         synchronized (_hash){
             CacheEntry entry = _hash.get(recid);
             if (entry != null) {
                 entry._obj = value;
-                entry._serializer = serializer;
                 //touch entry
                 if (_last != entry) {
                     removeEntry(entry);
@@ -308,17 +244,11 @@ class DBCacheMRU
                     entry = purgeEntry();
                     entry._recid = recid;
                     entry._obj = value;
-                    setCacheEntryDirty(entry, dirty);
-                    entry._serializer = serializer;
                 } else {
-                    entry = new CacheEntry(recid, value, serializer);
+                    entry = new CacheEntry(recid, value);
                 }
                 addEntry(entry);
                 _hash.put(entry._recid, entry);
-            }
-            if(dirty){
-                //set dirty if needed
-                setCacheEntryDirty(entry,true);
             }
         }
     }
@@ -373,34 +303,17 @@ class DBCacheMRU
         synchronized (_hash){
             CacheEntry entry = _first;
             if (entry == null)
-                return new CacheEntry(-1, null, null);
-
+                return new CacheEntry(-1, null);
 
 
             removeEntry(entry);
             _hash.remove(entry._recid);
-            if (isCacheEntryDirty(entry))
-                return new CacheEntry(-1, null, null);
-                //is already in dirty cache, can not reuse node
-
             entry._obj = null;
-            entry._serializer = null;
-            setCacheEntryDirty(entry, false);
             return entry;
         }
     }
 
-    protected boolean isCacheEntryDirty(CacheEntry entry) {
-        return _hashDirties.get(entry._recid) != null;
-    }
 
-    protected void setCacheEntryDirty(CacheEntry entry, boolean dirty) {
-        if (dirty) {
-            _hashDirties.put(entry._recid, entry);
-        } else {
-            _hashDirties.remove(entry._recid);
-        }
-    }
 
 
     @SuppressWarnings("unchecked")
@@ -409,16 +322,14 @@ class DBCacheMRU
         protected long _recid;
         protected Object _obj;
 
-        protected Serializer _serializer;
 
         protected CacheEntry _previous;
         protected CacheEntry _next;
 
 
-        CacheEntry(long recid, Object obj, Serializer serializer) {
+        CacheEntry(long recid, Object obj) {
             _recid = recid;
             _obj = obj;
-            _serializer = serializer;
         }
 
     }
@@ -445,9 +356,4 @@ class DBCacheMRU
 
     }
 
-
-    @Override
-    boolean needsAutoCommit() {
-        return super.needsAutoCommit()|| ( !commitInProgress && _hashDirties.size() > NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT);
-    }
 }

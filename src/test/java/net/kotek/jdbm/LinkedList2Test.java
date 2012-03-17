@@ -360,9 +360,8 @@ public class LinkedList2Test extends TestCaseWithTestFile {
     public void test_setILjava_lang_Object() {
         // Test for method java.lang.Object java.util.LinkedList2.set(int,
         // java.lang.Object)
-        Object obj;
-        ll.set(65, obj = new Object());
-        assertEquals("Failed to set object", ll.get(65), obj);
+        ll.set(65, "aa");
+        assertEquals("Failed to set object", ll.get(65), "aa");
     }
 
     /**

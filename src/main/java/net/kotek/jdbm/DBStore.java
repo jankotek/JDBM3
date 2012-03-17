@@ -80,8 +80,7 @@ class DBStore
     private final boolean deleteFilesAfterClose;
 
     private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
-    
-    static final int NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT = 10000;
+
 
     boolean commitInProgress = false;
 

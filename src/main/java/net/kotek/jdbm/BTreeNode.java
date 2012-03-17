@@ -837,7 +837,7 @@ final class BTreeNode<K, V>
     }
 
 
-    private final int compare(final K value1, final K value2) {
+    private  final int compare(final K value1, final K value2) {
         if (value1 == null) {
             return 1;
         }

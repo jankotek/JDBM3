@@ -186,7 +186,10 @@ public class DBTest extends TestCaseWithTestFile {
             fail();
         } catch (IOError expected) {
 
+        } catch (IOException expected) {
+
         }
+
     }
 
     final static AtomicInteger i = new AtomicInteger(0);
