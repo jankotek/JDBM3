@@ -413,7 +413,7 @@ public class LinkedList2Test extends TestCaseWithTestFile {
         Iterator li = ll.iterator();
         Iterator ri = retList.iterator();
         while (li.hasNext())
-            assertTrue("Lists are not equal", li.next() == ri.next());
+            assertEquals( li.next() , ri.next());
         argArray = new Integer[1000];
         retArray = ll.toArray(argArray);
         assertNull("Failed to set first extra element to null", argArray[ll

@@ -342,9 +342,7 @@ class DBCacheMRU
         // discard all cache entries since we don't know which entries
         // where part of the transaction
         synchronized (_hash){
-            while (_hash.size() > 0){
-                purgeEntry();
-            }
+            _hash.clear();
             _first = null;
             _last = null;
 
