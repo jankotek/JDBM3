@@ -379,6 +379,18 @@ public class DBTest extends TestCaseWithTestFile {
 
     }
 
+    
+    public void testHugeRecord() throws IOException {
+        DBStore s = newDBNoCache();
+        try{
+            s.insert(new byte[50*1000*1000]);
+            s.commit();
+            fail();
+        }catch(IllegalArgumentException e){
+            //expected
+        }
+        
+    }
 
 
 
