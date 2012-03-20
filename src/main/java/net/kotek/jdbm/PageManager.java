@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
  */
 final class PageManager {
     // our record file
-    private RecordFile file;
+    final RecordFile file;
 
     private BlockIo headerBuf;
 
@@ -228,7 +228,6 @@ final class PageManager {
         file.release(headerBuf);
         file.commit();
         headerBuf = null;
-        file = null;
     }
 
 

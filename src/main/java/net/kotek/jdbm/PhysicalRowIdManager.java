@@ -44,6 +44,10 @@ final class PhysicalRowIdManager {
 
     }
 
+    public PhysicalRowIdManager(RecordFile f, PageManager pm) throws IOException {
+        this(f,pm,new PhysicalRowIdPageManagerFree(f, pm));
+    }
+
     /**
      * Inserts a new record. Returns the new physical rowid.
      */
@@ -260,16 +264,41 @@ final class PhysicalRowIdManager {
 
     void free(final long id) throws IOException {
         // get the rowid, and write a zero current size into it.
-        final BlockIo curBlock = file.get(Location.getBlock(id));
+        final long curBlockId = Location.getBlock(id);
+        final BlockIo curBlock = file.get(curBlockId);
         final short offset = Location.getOffset(id);
-        final int size = RecordHeader.getAvailableSize(curBlock, offset);
-        if(size>DATA_PER_PAGE){
-            //if record is large and spread across multiple pages, shrink it to current page and release pages it occupies
-            //TODO feel lucky? implement comment above
-        }
-
         RecordHeader.setCurrentSize(curBlock, offset, 0);
-        file.release(curBlock);
+        int size = RecordHeader.getAvailableSize(curBlock, offset);
+
+        //trim size if spreads across multiple pages
+        if(offset + RecordHeader.SIZE + size >BLOCK_SIZE + (BLOCK_SIZE-Magic.DATA_PAGE_O_DATA)){
+            int numOfPagesToSkip = (size -
+                    (Storage.BLOCK_SIZE-(offset - RecordHeader.SIZE))  //minus data remaining on this page
+                    )/(BLOCK_SIZE-Magic.DATA_PAGE_O_DATA);
+            size = size - numOfPagesToSkip * (BLOCK_SIZE-Magic.DATA_PAGE_O_DATA);
+            RecordHeader.setAvailableSize(curBlock, offset,size);
+            
+            //get next page 
+            long nextPage = curBlock.pageHeaderGetNext();
+            file.release(curBlock);
+
+
+            //release pages
+            for(int i = 0;i<numOfPagesToSkip;i++){
+                BlockIo block = file.get(nextPage);
+                long nextPage2 = block.pageHeaderGetNext();
+                file.release(block);
+                pageman.free(Magic.USED_PAGE,nextPage);
+                nextPage = nextPage2;
+            }
+
+        }else{
+            file.release(curBlock);
+        }
+        
+
+
+
 
         // write the rowid to the free list
         freeman.putFreeRecord(id, size);
