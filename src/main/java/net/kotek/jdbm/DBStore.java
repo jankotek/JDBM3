@@ -250,9 +250,8 @@ class DBStore
             physRowId = PREALOCATE_PHYS_RECID;
         }else{
             serializer.serialize(buf, obj);
-            final byte[] data =buf.getBuf();
-            if(data.length>RecordHeader.MAX_RECORD_SIZE){
-                throw new IllegalArgumentException("Too big record. JDBM only supports record size up to: "+RecordHeader.MAX_RECORD_SIZE+" bytes");
+            if(buf.getPos()>RecordHeader.MAX_RECORD_SIZE){
+                throw new IllegalArgumentException("Too big record. JDBM only supports record size up to: "+RecordHeader.MAX_RECORD_SIZE+" bytes. Record size was: "+buf.getPos());
             }
             physRowId = _physMgr.insert(buf.getBuf(), 0, buf.getPos());
         }

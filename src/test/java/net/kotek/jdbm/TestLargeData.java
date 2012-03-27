@@ -46,18 +46,13 @@ public class TestLargeData extends TestCaseWithTestFile {
     public void testAllSizes() throws IOException {
         //use in memory store to make it faster
         DBStore db = (DBStore) new DBMaker(newTestFile()).disableCache().disableTransactions().build();
-        try{
-        for(int i = 1;i<RecordHeader.MAX_RECORD_SIZE;i+=111111){
+        for(int i = 1;i<RecordHeader.MAX_RECORD_SIZE-100;i+=111111){
             //System.out.println(i);
             byte[] rec = UtilTT.makeRecord(i, (byte) 11);
             long recid = db.insert(rec);
             byte[] rec2 = db.fetch(recid);
             assertTrue("error at size: "+i, Arrays.equals(rec,rec2));
             db.delete(recid);
-        }
-        }catch(Throwable e){
-            e.printStackTrace();
-            System.in.read();
         }
     }
     
