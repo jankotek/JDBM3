@@ -68,6 +68,26 @@ public class DBMaker {
     }
 
     /**
+     * Open store in zip file
+     *
+     * @param zip file
+     * @return new DBMaker
+     */
+    public static DBMaker openZip(String zip) {
+        DBMaker m = new DBMaker();
+        m.location = "$$ZIP$$://"+zip;
+        return m;
+    }
+
+     static String  isZipFileLocation(String location){
+         String match = "$$ZIP$$://";
+         if( location.startsWith(match)){
+             return location.substring(match.length());
+         }
+         return null;
+     }
+
+    /**
      * Use WeakReference for cache.
      * This cache does not improve performance much,
      * but prevents JDBM from creating multiple instances of the same object.

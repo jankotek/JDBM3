@@ -19,10 +19,9 @@ class StorageZip implements Storage {
     private ZipFile z;
 
     StorageZip(String zipFile) throws IOException {
-        zip = zipFile.substring(0, zipFile.indexOf("!/")); //TODO does not work on windows
+        zip = zipFile;
         z = new ZipFile(zip);
-        zip2 = zipFile.substring(zipFile.indexOf("!/") + 2);
-
+        zip2 = "db";
     }
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {

@@ -87,8 +87,10 @@ final class RecordFile {
         this.transactionsDisabled = transactionsDisabled;
         if(fileName == null){
             this.storage = new StorageMemory(transactionsDisabled);
-        }else if (fileName.contains("!/"))
-            this.storage = new StorageZip(fileName);
+        }else if(DBMaker.isZipFileLocation(fileName)!=null)
+                this.storage = new StorageZip(DBMaker.isZipFileLocation(fileName));
+//        }else if (fileName.contains("!/"))
+//            this.storage = new StorageZip(fileName);
         else if(useRandomAccessFile)
             this.storage = new StorageDisk(fileName,readonly);
         else

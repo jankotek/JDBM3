@@ -71,6 +71,14 @@ public interface DB {
 
 
     /**
+     * Copy database content into ZIP file
+     * @param zipFile
+     */
+    void copyToZip(String zipFile);
+
+
+
+    /**
      * Get a <code>Map</code> which was already created and saved in DB.
      * This map uses disk based H*Tree and should have similar performance
      * as <code>HashMap</code>.

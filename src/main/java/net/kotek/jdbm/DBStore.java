@@ -476,15 +476,15 @@ class DBStore
 
     }
 
-    public void copyToZipStore(String zipFile) {
+    public void copyToZip(String zipFile) {
         try {
-            String zip = zipFile.substring(0, zipFile.indexOf("!/")); //TODO does not work on windows
-            String zip2 = zipFile.substring(zipFile.indexOf("!/") + 2);
+            String zip = zipFile;
+            String zip2 = "db";
             ZipOutputStream z = new ZipOutputStream(new FileOutputStream(zip));
 
             //copy zero pages
             {
-                String file = zip2 + StorageDiskMapped.DBR + 0;
+                String file = zip2 +  0;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, _pageman.getHeaderBufData()));
                 z.closeEntry();
@@ -496,7 +496,7 @@ class DBStore
                  pageid = _pageman.getNext(pageid)
                     ) {
                 BlockIo block = _file.get(pageid);
-                String file = zip2 + StorageDiskMapped.IDR + pageid;
+                String file = zip2 +  pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
@@ -507,7 +507,7 @@ class DBStore
                  pageid = _pageman.getNext(pageid)
                     ) {
                 BlockIo block = _file.get(pageid);
-                String file = zip2 + StorageDiskMapped.IDR + pageid;
+                String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
@@ -519,7 +519,7 @@ class DBStore
                  pageid = _pageman.getNext(pageid)
                     ) {
                 BlockIo block = _file.get(pageid);
-                String file = zip2 + StorageDiskMapped.DBR + pageid;
+                String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
@@ -530,7 +530,7 @@ class DBStore
                  pageid = _pageman.getNext(pageid)
                     ) {
                 BlockIo block = _file.get(pageid);
-                String file = zip2 + StorageDiskMapped.DBR + pageid;
+                String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
                 z.write(Utils.encrypt(cipherIn, block.getData()));
                 z.closeEntry();
