@@ -24,10 +24,10 @@ public class FileLockTest extends TestCaseWithTestFile {
     public void testLock() throws IOException {
         String file = newTestFile();
 
-        DB db1 = new DBMaker(file).build();
+        DB db1 = DBMaker.openFile(file).make();
         //now open same file second time, exception should be thrown
         try {
-            DB db2 = new DBMaker(file).build();
+            DB db2 = DBMaker.openFile(file).make();
             fail("Exception should be thrown if file was locked");
         } catch (IOError e) {
             //expected
@@ -36,7 +36,7 @@ public class FileLockTest extends TestCaseWithTestFile {
         db1.close();
 
         //after close lock should be released, reopen
-        DB db3 = new DBMaker(file).build();
+        DB db3 = DBMaker.openFile(file).make();
         db3.close();
     }
 }

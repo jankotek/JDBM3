@@ -11,10 +11,10 @@ import java.util.Set;
 public class RandomInsertLongs {
     
     public static void main(String[] args) throws IOException {
-        DB db = new DBMaker("/hugo/large/test"+System.currentTimeMillis())
+        DB db =  DBMaker.openFile("/hugo/large/test"+System.currentTimeMillis())
                 .disableTransactions()
                 .enableHardCache()
-                .build();
+                .make();
 
         Set<Long> m = db.createTreeSet("test");               
         Random r = new Random(234);

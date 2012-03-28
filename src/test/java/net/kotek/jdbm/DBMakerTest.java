@@ -6,9 +6,9 @@ import java.util.Set;
 public class DBMakerTest extends TestCaseWithTestFile {
     
     public void testMemory() throws IOException {
-        DBStore db = (DBStore) new DBMaker(null)
+        DBStore db = (DBStore) DBMaker.openMemory()
                 .disableCache()
-                .build();
+                .make();
         
         long recid = db.insert("aaa");
         db.commit();
@@ -18,9 +18,9 @@ public class DBMakerTest extends TestCaseWithTestFile {
         
         db.close();
         
-        db = (DBStore) new DBMaker(null)
+        db = (DBStore) DBMaker.openMemory()
                 .disableCache()
-                .build();
+                .make();
 
         //this will fail if 'test' already exists
         try{
@@ -33,9 +33,9 @@ public class DBMakerTest extends TestCaseWithTestFile {
     }
 
     public void testDisk() throws IOException {
-        DBStore db = (DBStore) new DBMaker(newTestFile())
+        DBStore db = (DBStore)DBMaker.openFile(newTestFile())
                 .disableCache()
-                .build();
+                .make();
 
         long recid = db.insert("aaa");
         db.commit();
@@ -49,9 +49,9 @@ public class DBMakerTest extends TestCaseWithTestFile {
 
     public void testEncrypt(){
         String file = newTestFile();
-        DB db = new DBMaker(file)
+        DB db = DBMaker.openFile(file)
                 .enableEncryption("password",false)
-                .build();
+                .make();
         
         Set l = db.createHashSet("test");
         for(int i = 0;i<10000;i++){
@@ -59,9 +59,9 @@ public class DBMakerTest extends TestCaseWithTestFile {
         }
         db.commit();
         db.close();
-        db = new DBMaker(file)
+        db = DBMaker.openFile(file)
                 .enableEncryption("password",false)
-                .build();
+                .make();
         l = db.getHashSet("test");
         for(int i = 0;i<10000;i++){
             assertTrue(l.contains("aa"+i));

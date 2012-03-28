@@ -33,7 +33,7 @@ News
 
 	/** create (or open existing) database using builder pattern*/
 	String fileName = "helloWorld";
-	DB db = new DBMaker(fileName).build();
+	DB db = DBMaker.openFile(fileName).make();
 
 	/** Creates TreeMap which stores data in database. */
 	SortedMap<Integer,String> map = db.createTreeMap("mapName");

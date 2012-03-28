@@ -47,7 +47,7 @@ public class TestIssues extends TestCaseWithTestFile {
 
     public void test_issue_17_double_concurrent_get() throws InterruptedException {
 
-        final DB db = new DBMaker(newTestFile()).disableTransactions().disableCache().build();
+        final DB db = DBMaker.openFile(newTestFile()).disableTransactions().disableCache().make();
         db.createHashMap("map");
 
         class RR implements Runnable{

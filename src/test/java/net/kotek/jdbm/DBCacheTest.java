@@ -12,10 +12,10 @@ public class DBCacheTest extends TestCaseWithTestFile {
         long MAX = (long) 1e6;
 
         String file = newTestFile();
-        DB d = new DBMaker(file)
+        DB d = DBMaker.openFile(file)
                 .disableTransactions()
                 .enableSoftCache()
-                .build();
+                .make();
         
         Set<Integer> set = d.createHashSet("1");
         
@@ -25,10 +25,10 @@ public class DBCacheTest extends TestCaseWithTestFile {
         
         d.close();
 
-        d = new DBMaker(file)
+        d = DBMaker.openFile(file)
                 .disableTransactions()
                 .enableSoftCache()
-                .build();
+                .make();
 
         set = d.getHashSet("1");
         for(Integer i = 0;i<MAX;i++){
@@ -39,9 +39,9 @@ public class DBCacheTest extends TestCaseWithTestFile {
 
 
     public void test_issue_xyz(){
-        net.kotek.jdbm.DB db = new DBMaker(newTestFile())
+        net.kotek.jdbm.DB db = DBMaker.openFile(newTestFile())
                 .enableSoftCache()
-                .build();
+                .make();
         Map m = db.createTreeMap("test");
 
         for(int i=0;i<1e5;i++){

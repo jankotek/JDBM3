@@ -119,7 +119,7 @@ public class HTreeTest extends TestCaseWithTestFile {
     public void testIssue(){
         int size = 100000;
         int commitSize = 100000;
-        DB build = new DBMaker(newTestFile()).setMRUCacheSize(100).build();
+        DB build = DBMaker.openFile(newTestFile()).setMRUCacheSize(100).make();
         Map<String, String> hashMap = build.createHashMap("hashMap");
         for (int i = 0; i < size; i++) {
             hashMap.put(i + "asdddfdgf" + i + "sddfdfsf" + i, "dsfgfg.dfcdfsgfg");

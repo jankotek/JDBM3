@@ -216,12 +216,12 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
     public void testPersistedSimple() throws Exception {
 
         String f = newTestFile();
-        DBAbstract r1 = (DBAbstract) new DBMaker(f).build();
+        DBAbstract r1 = (DBAbstract) DBMaker.openFile(f).make();
         long recid = r1.insert("AA");
         r1.commit();
         r1.close();
 
-        DBAbstract r2 = (DBAbstract) new DBMaker(f).build();
+        DBAbstract r2 = (DBAbstract) DBMaker.openFile(f).make();
 
         String a2 = r2.fetch(recid);
         r2.close();
@@ -233,12 +233,12 @@ public class SerialClassInfoTest extends TestCaseWithTestFile {
     public void testPersisted() throws Exception {
         Bean1 b1 = new Bean1("abc", "dcd");
         String f = newTestFile();
-        DBAbstract r1 = (DBAbstract) new DBMaker(f).build();
+        DBAbstract r1 = (DBAbstract) DBMaker.openFile(f).make() ;
         long recid = r1.insert(b1);
         r1.commit();
         r1.close();
 
-        DBAbstract r2 = (DBAbstract) new DBMaker(f).build();
+        DBAbstract r2 = (DBAbstract) DBMaker.openFile(f).make();
 
         Bean1 b2 = (Bean1) r2.fetch(recid);
         r2.close();

@@ -17,19 +17,15 @@
 
 package net.kotek.jdbm;
 
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
 
 /**
  * This class contains all Unit tests for {@link BTree}.
@@ -525,7 +521,7 @@ public class BTreeTest
 
         long previousdbSize = 0;
         for (int i = 0; i < 5; i++) {
-            DBAbstract db = (DBAbstract) new DBMaker(recordManagerBasename).disableCache().build();
+            DBAbstract db = (DBAbstract) DBMaker.openFile(recordManagerBasename).disableCache().make();
 
 
                 BTree<String, Serializable> tree = BTree.createInstance(db);
@@ -798,7 +794,7 @@ public class BTreeTest
     public void testIssue2(){
         //this causes stack overflow
         // https://github.com/jankotek/JDBM3/issues/2
-        DB build = new DBMaker(newTestFile()).setMRUCacheSize(100).build();
+        DB build = DBMaker.openFile(newTestFile()).setMRUCacheSize(100).make();
         Map<String, String> treeMap = build.createTreeMap("treeMap");
         for (int i = 0; i < 100000; i++) {
             treeMap.put(i + "asdddfffffffffffffffffffdgf" + i + "sddfdfsfddddddddddddddddd" + i, "dsfgfg.dfcdfsgfgfffffffffffffffffdddddddddd");

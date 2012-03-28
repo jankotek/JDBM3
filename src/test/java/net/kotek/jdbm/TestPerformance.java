@@ -16,9 +16,9 @@
 
 package net.kotek.jdbm;
 
-import java.util.Random;
-
 import junit.framework.TestCase;
+
+import java.util.Random;
 
 /**
  * This class contains performance tests for this package.
@@ -49,7 +49,7 @@ public class TestPerformance extends TestCase {
     public void testInserts() {
 
 
-        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
+        DBAbstract db = (DBAbstract) DBMaker.openFile(testfile).make();
 
         int inserts = 0;
         long start = System.currentTimeMillis();
@@ -84,7 +84,7 @@ public class TestPerformance extends TestCase {
      * Create a database, return array of rowids.
      */
     private long[] makeRows() throws Exception {
-        DBAbstract db = (DBAbstract) new DBMaker(testfile).disableTransactions().build();
+        DBAbstract db = (DBAbstract) DBMaker.openFile(testfile).disableTransactions().make();
         long[] retval = new long[RECORDS];
         System.out.print("Creating test database");
         long start = System.currentTimeMillis();
@@ -113,7 +113,7 @@ public class TestPerformance extends TestCase {
     public void testFetches() throws Exception {
         long[] rowids = makeRows();
 
-        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
+        DBAbstract db = (DBAbstract) DBMaker.openFile(testfile).make();
 
         int fetches = 0;
         long start = System.currentTimeMillis();
@@ -146,7 +146,7 @@ public class TestPerformance extends TestCase {
     public void testUpdates() throws Exception {
         long[] rowids = makeRows();
 
-        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
+        DBAbstract db = (DBAbstract) DBMaker.openFile(testfile).make();
 
         int updates = 0;
         long start = System.currentTimeMillis();
@@ -183,7 +183,7 @@ public class TestPerformance extends TestCase {
 
         long[] rowids = makeRows();
 
-        DBAbstract db = (DBAbstract) new DBMaker(testfile).build();
+        DBAbstract db = (DBAbstract) DBMaker.openFile(testfile).make();
 
         int deletes = 0;
         long start = System.currentTimeMillis();

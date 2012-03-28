@@ -42,22 +42,30 @@ public class DBMaker {
     private boolean useRandomAccessFile = false;
     private boolean autoClearRefCacheOnLowMem = true;
     private boolean autoDefrag = true;
-    protected boolean closeOnJVMExit = false;
-    protected boolean deleteFilesAfterCloseFlag = false;
+    private  boolean closeOnJVMExit = false;
+    private  boolean deleteFilesAfterCloseFlag = false;
 
+
+    private DBMaker(){}
 
     /**
-     * Creates new DBMaker and sets location where database is located.
-     * <p>
-     * If location is null, in-memory store will be used. In this case data will be
-     * lost after JVM exits.
-     *
-     * @param location on disk where db is located, Null for in-memory store
+     * Creates new DBMaker and sets file to load data from.
+     * @param file to load data from
+     * @return new DBMaker
      */
-    public DBMaker(String location) {
-        this.location = location;
+    public static DBMaker openFile(String file){
+        DBMaker m = new DBMaker();
+        m.location = file;
+        return m;
     }
 
+    /**
+     * Creates new DBMaker which uses in memory store. Data will be lost after JVM exits.
+     * @return new DBMaker
+     */
+    public static DBMaker openMemory(){
+        return new DBMaker();
+    }
 
     /**
      * Use WeakReference for cache.
@@ -268,7 +276,7 @@ public class DBMaker {
      * @return new DB
      * @throws java.io.IOError if db could not be opened
      */
-    public DB build() {
+    public DB make() {
 
         Cipher cipherIn = null;
         Cipher cipherOut = null;

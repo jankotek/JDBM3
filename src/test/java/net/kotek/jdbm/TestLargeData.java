@@ -45,7 +45,7 @@ public class TestLargeData extends TestCaseWithTestFile {
     
     public void testAllSizes() throws IOException {
         //use in memory store to make it faster
-        DBStore db = (DBStore) new DBMaker(newTestFile()).disableCache().disableTransactions().build();
+        DBStore db = (DBStore) DBMaker.openFile(newTestFile()).disableCache().disableTransactions().make();
         for(int i = 1;i<RecordHeader.MAX_RECORD_SIZE-100;i+=111111){
             //System.out.println(i);
             byte[] rec = UtilTT.makeRecord(i, (byte) 11);

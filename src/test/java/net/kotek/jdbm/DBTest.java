@@ -253,7 +253,7 @@ public class DBTest extends TestCaseWithTestFile {
     }
     
     public void testRegisterShutdown(){
-        DB d = new DBMaker(newTestFile()).closeOnExit().build();
+        DB d = DBMaker.openFile(newTestFile()).closeOnExit().make();
         //do nothing
     }
     
@@ -265,7 +265,7 @@ public class DBTest extends TestCaseWithTestFile {
         assertFalse(f1.exists());
         assertFalse(f2.exists());
         
-        DB d = new DBMaker(f).deleteFilesAfterClose().build();
+        DB d = DBMaker.openFile(f).deleteFilesAfterClose().make();
         d.createHashSet("test");
         assertTrue(f1.exists());
         assertTrue(f2.exists());
@@ -284,7 +284,7 @@ public class DBTest extends TestCaseWithTestFile {
         assertFalse(f1.exists());
         assertFalse(f2.exists());
 
-        DB d = new DBMaker(f).deleteFilesAfterClose().useRandomAccessFile().build();
+        DB d = DBMaker.openFile(f).deleteFilesAfterClose().useRandomAccessFile().make();
         d.createHashSet("test");
         assertTrue(f1.exists());
         assertTrue(f2.exists());

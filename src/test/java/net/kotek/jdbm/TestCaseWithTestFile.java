@@ -57,11 +57,11 @@ abstract class TestCaseWithTestFile extends TestCase {
     }
 
     static public DBAbstract newDBCache() throws IOException {
-        return (DBAbstract) new DBMaker(newTestFile()).build();
+        return (DBAbstract) DBMaker.openFile(newTestFile()).make();
     }
 
     static public DBStore newDBNoCache() throws IOException {
-        return (DBStore) new DBMaker(newTestFile()).disableCache().build();
+        return (DBStore) DBMaker.openFile(newTestFile()).disableCache().make();
     }
 
 

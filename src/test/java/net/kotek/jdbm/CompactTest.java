@@ -12,7 +12,7 @@ public class CompactTest extends TestCaseWithTestFile {
 
         String f = newTestFile();
 
-        DB db0 = new DBMaker(f).disableTransactions().build();
+        DB db0 = DBMaker.openFile(f).disableTransactions().make();
         Map<String,String> db = db0.createHashMap("db");
 
         System.out.println("Adding");
@@ -21,7 +21,7 @@ public class CompactTest extends TestCaseWithTestFile {
         }
 
         db0.close();
-        db0 = new DBMaker(f).disableTransactions().build();
+        db0 = DBMaker.openFile(f).disableTransactions().make();
         db =  db0.getHashMap("db");
 
         System.out.println("Deleting");
@@ -30,7 +30,7 @@ public class CompactTest extends TestCaseWithTestFile {
         }
 
         db0.close();
-        db0 = new DBMaker(f).disableTransactions().build();
+        db0 = DBMaker.openFile(f).disableTransactions().make();
         db =  db0.getHashMap("db");
 
 
@@ -46,7 +46,7 @@ public class CompactTest extends TestCaseWithTestFile {
 
         String f = newTestFile();
 
-        DB db0 = new DBMaker(f).disableTransactions().build();
+        DB db0 = DBMaker.openFile(f).disableTransactions().make();
         Map<String,String> db = db0.createTreeMap("db");
 
         System.out.println("Adding");
@@ -55,7 +55,7 @@ public class CompactTest extends TestCaseWithTestFile {
         }
 
         db0.close();
-        db0 = new DBMaker(f).disableTransactions().build();
+        db0 = DBMaker.openFile(f).disableTransactions().make();
         db =  db0.getTreeMap("db");
 
         System.out.println("Deleting");
@@ -64,7 +64,7 @@ public class CompactTest extends TestCaseWithTestFile {
         }
 
         db0.close();
-        db0 = new DBMaker(f).disableTransactions().build();
+        db0 = DBMaker.openFile(f).disableTransactions().make();
         db =  db0.getTreeMap("db");
 
 

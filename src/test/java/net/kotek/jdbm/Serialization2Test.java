@@ -31,14 +31,14 @@ public class Serialization2Test extends TestCaseWithTestFile {
         String file = newTestFile();
         
         Serialized2DerivedBean att = new Serialized2DerivedBean();
-        DB db = new DBMaker(file).disableCache().build();
+        DB db = DBMaker.openFile(file).disableCache().make();
 
         Map<Object, Object> map =  db.createHashMap("test");
 
         map.put("att", att);
         db.commit();
         db.close();
-        db = new DBMaker(file).disableCache().build();
+        db = DBMaker.openFile(file).disableCache().make();
         map =  db.getHashMap("test");
 
 
@@ -57,9 +57,9 @@ public class Serialization2Test extends TestCaseWithTestFile {
 
         String f = newTestFile();
 
-        DB db = new DBMaker(f)
+        DB db = DBMaker.openFile(f)
                 .disableTransactions()
-                .build();
+                .make();
 
         Map<Integer,AAA> map = db.createTreeMap("test");
         map.put(1,new AAA());
@@ -67,9 +67,9 @@ public class Serialization2Test extends TestCaseWithTestFile {
         db.defrag(true);
         db.close();
 
-        db = new DBMaker(f)
+        db = DBMaker.openFile(f)
                 .disableTransactions()
-                .build();
+                .make();
 
         map = db.getTreeMap("test");
         assertNotNull(map.get(1));

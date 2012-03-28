@@ -3,9 +3,7 @@ package net.kotek.jdbm.junk;
 import net.kotek.jdbm.DB;
 import net.kotek.jdbm.DBMaker;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,9 +15,9 @@ public class HugeData {
 
         long startTime = System.currentTimeMillis();
         //new File("/media/b0beb325-d9fe-4a30-9f58-77e6b15e6b7d/lost+found/large/").mkdirs();
-        DB db = new DBMaker("/media/b0beb325-d9fe-4a30-9f58-77e6b15e6b7d/db")
+        DB db = DBMaker.openFile("/media/b0beb325-d9fe-4a30-9f58-77e6b15e6b7d/db")
                 .disableTransactions()
-                .build();
+                .make();
 
         Map<Long,Integer> map = db.createTreeMap("test");
 //        List<Long> test = db.createLinkedList("test");
