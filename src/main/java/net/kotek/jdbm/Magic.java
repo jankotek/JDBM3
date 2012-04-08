@@ -100,16 +100,6 @@ interface Magic {
 
 
 
-    // offsets
-    short FreeLogicalRowId_O_COUNT = Magic.PAGE_HEADER_SIZE; // short count
-    /** keeps track of the most recent found free slot so we can locate it again quickly*/
-    short FreeLogicalRowId_O_LAST_FREE = (short) (FreeLogicalRowId_O_COUNT + Magic.SZ_SHORT);
-    /**keeps track of the most recent found allocated slot so we can locate it again quickly*/
-    short FreeLogicalRowId_O_LAST_ALOC = (short) (FreeLogicalRowId_O_LAST_FREE + Magic.SZ_SHORT);
-    short FreeLogicalRowId_O_FREE = (short) (FreeLogicalRowId_O_LAST_ALOC + Magic.SZ_SHORT);
-    short FreeLogicalRowId_ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - FreeLogicalRowId_O_FREE) / Magic.PhysicalRowId_SIZE);
-
-
 
 
 }

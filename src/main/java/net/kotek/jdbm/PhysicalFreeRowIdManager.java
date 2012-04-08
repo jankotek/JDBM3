@@ -81,9 +81,7 @@ final class PhysicalFreeRowIdManager {
 
         short recidCount = slotPage.readShort(OFFSET_SLOT_PAGE_REC_COUNT);
         if(recidCount<=0){
-            file.release(slotPage);
-            file.release(root);
-            return 0;
+            throw new InternalError();
         }
 
         final int offset = (recidCount-1) * 6 + SLOT_PAGE_HEADER_SIZE;
