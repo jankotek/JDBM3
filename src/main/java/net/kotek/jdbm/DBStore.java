@@ -75,7 +75,7 @@ class DBStore
      * If true, store will throw UnsupportedOperationException when update/insert/delete operation is called
      */
     private final boolean readonly;
-    private final boolean transactionsDisabled;
+    final boolean transactionsDisabled;
     private final boolean deleteFilesAfterClose;
 
     private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;

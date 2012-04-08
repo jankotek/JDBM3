@@ -11,8 +11,7 @@ import java.util.Iterator;
  */
 abstract class DBCache extends DBStore{
 
-    //TODO increase this after solving problems with freePhysRec
-    static final int NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT = 100;
+    static final int NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT = 1024;
 
     static final byte NONE = 1;
     static final byte MRU = 2;
@@ -49,7 +48,8 @@ abstract class DBCache extends DBStore{
 
     @Override
     boolean needsAutoCommit() {
-        return super.needsAutoCommit()|| ( !commitInProgress && _hashDirties.size() > NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT);
+        return super.needsAutoCommit()||
+                (transactionsDisabled &&  !commitInProgress && _hashDirties.size() > NUM_OF_DIRTY_RECORDS_BEFORE_AUTOCOMIT);
     }
 
 

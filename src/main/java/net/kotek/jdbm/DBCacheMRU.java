@@ -149,7 +149,6 @@ class DBCacheMRU
 
         checkNotClosed();
 
-        //MRU cache is enabled in any case, as it contains modified entries
         final CacheEntry entry = cacheGet(recid);
         if (entry != null) {
             return (A) entry._obj;
@@ -202,11 +201,6 @@ class DBCacheMRU
     }
 
 
-
-
-
-
-
     /**
      * Obtain an object in the cache
      */
@@ -240,7 +234,7 @@ class DBCacheMRU
                 }
             } else {
 
-                if (_hash.size() == _max) {
+                if (_hash.size() >= _max) {
                     // purge and recycle entry
                     entry = purgeEntry();
                     entry._recid = recid;
@@ -306,7 +300,6 @@ class DBCacheMRU
             if (entry == null)
                 return new CacheEntry(-1, null);
 
-
             removeEntry(entry);
             _hash.remove(entry._recid);
             entry._obj = null;
@@ -351,8 +344,7 @@ class DBCacheMRU
             updateCacheEntries();
 
         }
-
-
     }
+
 
 }
