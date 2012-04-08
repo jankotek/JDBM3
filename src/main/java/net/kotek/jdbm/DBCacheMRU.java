@@ -117,6 +117,7 @@ class DBCacheMRU
             //remove entry if it already exists
             CacheEntry entry = cacheGet(recid);
             if (entry != null) {
+                _hash.remove(recid);
                 removeEntry(entry);
             }
 
