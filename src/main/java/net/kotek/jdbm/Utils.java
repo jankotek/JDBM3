@@ -107,9 +107,10 @@ class Utils {
 
 
     /** quick sort which also sorts elements in second array*/
-    static void quickSort(final long array[], final int array2[], final int low, final int n){
+    static void quickSort(final long array[], final short array2[], final int low, final int n){
         long temp;
         int temp2;
+        short temp3;
         int lo = low;
         int hi = n;
         if (lo >= n) {
@@ -127,9 +128,9 @@ class Utils {
                 temp = array[lo];
                 array[lo] = array[hi];
                 array[hi] = temp;
-                temp2 = array2[lo];
+                temp3 = array2[lo];
                 array2[lo] = array2[hi];
-                array2[hi] = temp2;
+                array2[hi] = temp3;
             }
         }
         if (hi < lo) {

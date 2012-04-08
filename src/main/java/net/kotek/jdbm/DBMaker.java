@@ -41,7 +41,6 @@ public class DBMaker {
     private boolean useAES256Bit = true;
     private boolean useRandomAccessFile = false;
     private boolean autoClearRefCacheOnLowMem = true;
-    private boolean autoDefrag = true;
     private  boolean closeOnJVMExit = false;
     private  boolean deleteFilesAfterCloseFlag = false;
 
@@ -246,29 +245,6 @@ public class DBMaker {
         return this;
     }
 
-    /**
-     * JDBM is not very good at reclaiming free space after massive deletes.
-     * For this reason JDBM tracks store fragmentation and if performance
-     * penalty is too high, it automatically triggers defragmentation.
-     * <p/>
-     * Autodefragmentation always takes place after commit, so it is
-     * transparent to user, except delay while store is defragmented.
-     * With disabled transactions autodefrag may take place any time
-     * after write operation.
-     * <p/>
-     * Use this option to disable automatic defragmentation.
-     * You can reach better performance with manual defrag.
-     * For example when doing massive delete, it is best to
-     * trigger defrag after delete completed. Auto defrag could trigger
-     * more then once during delete operation.
-     *
-     * @return this builder
-     */
-    public DBMaker disableAutoDefrag(){
-        this.autoDefrag = false;
-        return this;
-    }
-
 
     /**
      * Registers shutdown hook and close database on JVM exit, if it was not already closed; 
@@ -338,11 +314,11 @@ public class DBMaker {
 
 
         if (cacheType == DBCacheRef.MRU){
-          db = new DBCacheMRU(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag, mruCacheSize);
+          db = new DBCacheMRU(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, mruCacheSize);
         }else if( cacheType == DBCacheRef.SOFT || cacheType == DBCacheRef.HARD || cacheType == DBCacheRef.WEAK) {
-            db = new DBCacheRef(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag, cacheType,autoClearRefCacheOnLowMem);
+            db = new DBCacheRef(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, cacheType,autoClearRefCacheOnLowMem);
         } else if (cacheType == DBCacheRef.NONE) {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,autoDefrag,deleteFilesAfterCloseFlag);
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag);
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
         }

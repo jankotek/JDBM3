@@ -372,7 +372,7 @@ final class BlockIo {
      */
     boolean pageHeaderMagicOk() {
         int magic = pageHeaderGetMagic();
-        return magic >= Magic.BLOCK  && magic <= (Magic.BLOCK + Magic.FREEPHYSIDS_PAGE);
+        return magic >= Magic.BLOCK  && magic <= (Magic.BLOCK + Magic.FREEPHYSIDS_ROOT_PAGE);
     }
 
     /**
@@ -421,21 +421,6 @@ final class BlockIo {
     }
 
 
-//    long pageHeaderGetLocationBlock(short pos) {
-//        return readSixByteLong(pos + PhysicalRowId_O_LOCATION);
-//    }
-//
-//    void pageHeaderSetLocationBlock(short pos, long value) {
-//        writeSixByteLong(pos + PhysicalRowId_O_LOCATION, value);
-//    }
-
-//    short pageHeaderGetLocationOffset(short pos) {
-//        return readShort(pos + PhysicalRowId_O_OFFSET);
-//    }
-//
-//    void pageHeaderSetLocationOffset(short pos, short value) {
-//        writeShort(pos + PhysicalRowId_O_OFFSET, value);
-//    }
 
     short dataPageGetFirst() {
         return readShort(DATA_PAGE_O_FIRST);
@@ -448,91 +433,6 @@ final class BlockIo {
         writeShort(DATA_PAGE_O_FIRST, value);
     }
 
-
-    /**
-     * Returns the number of free rowids
-     */
-    short FreePhysicalRowId_getCount() {
-        return readShort(FreePhysicalRowId_O_COUNT);
-    }
-
-    /**
-     * Sets the number of free rowids
-     */
-    private void FreePhysicalRowId_setCount(short i) {
-        writeShort(FreePhysicalRowId_O_COUNT, i);
-    }
-
-    /**
-     * Frees a slot
-     */
-    void FreePhysicalRowId_free(int slot) {
-        short pos = FreePhysicalRowId_slotToOffset(slot);
-        FreePhysicalRowId_setSize(pos, 0);
-        //get(slot).setSize(0);
-        FreePhysicalRowId_setCount((short) (FreePhysicalRowId_getCount() - 1));
-    }
-
-    /**
-     * Allocates a slot
-     */
-    short FreePhysicalRowId_alloc(int slot) {
-        FreePhysicalRowId_setCount((short) (FreePhysicalRowId_getCount() + 1));
-        return FreePhysicalRowId_slotToOffset(slot);
-    }
-
-    /**
-     * Returns true if a slot is free
-     */
-    boolean FreePhysicalRowId_isFree(int slot) {
-        short pos = FreePhysicalRowId_slotToOffset(slot);
-        return FreePhysicalRowId_getSize(pos) == 0;
-    }
-
-    /**
-     * Converts slot to offset
-     */
-    short FreePhysicalRowId_slotToOffset(int slot) {
-        return (short) (FreePhysicalRowId_O_FREE + (slot * FreePhysicalRowId_SIZE));
-    }
-
-    int FreePhysicalRowId_offsetToSlot(short pos) {
-        int pos2 = pos;
-        return (pos2 - FreePhysicalRowId_O_FREE) / FreePhysicalRowId_SIZE;
-    }
-
-
-    /**
-     * Returns first free slot, -1 if no slots are available
-     */
-    int FreePhysicalRowId_getFirstFree() {
-        if(FreeLogicalRowId_getCount()==FreePhysicalRowId_ELEMS_PER_PAGE)
-            return -1;
-        for (int i = 0; i < FreePhysicalRowId_ELEMS_PER_PAGE; i++) {
-            if (FreePhysicalRowId_isFree(i))
-                return i;
-        }
-        return -1;
-    }
-
-    /**
-     * Returns the size
-     */
-    int FreePhysicalRowId_getSize(short pos) {
-        return readInt(pos + FreePhysicalRowId_O_SIZE);
-    }
-
-    /**
-     * Sets the size
-     */
-    void FreePhysicalRowId_setSize(short pos, int value) {
-        writeInt(pos + FreePhysicalRowId_O_SIZE, value);
-    }
-
-    public long FreePhysicalRowId_slotToLocation(int slot) {
-        short pos = FreePhysicalRowId_slotToOffset(slot);
-        return pageHeaderGetLocation(pos);
-    }
 
 
     short FreeLogicalRowId_getCount() {

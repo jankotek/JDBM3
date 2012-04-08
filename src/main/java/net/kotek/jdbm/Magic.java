@@ -38,11 +38,12 @@ interface Magic {
     short TRANSLATION_PAGE = 2;
     short FREELOGIDS_PAGE = 3;
     short FREEPHYSIDS_PAGE = 4;
+    short FREEPHYSIDS_ROOT_PAGE = 5;
 
     /**
      * Number of lists in a file
      */
-    short NLISTS = 5;
+    short NLISTS = 6;
 
     /**
      * Magic for transaction file
@@ -97,13 +98,6 @@ interface Magic {
     short DATA_PER_PAGE = (short) (Storage.BLOCK_SIZE - DATA_PAGE_O_DATA);
 
 
-    short FreePhysicalRowId_O_SIZE = Magic.PhysicalRowId_SIZE; // int size
-    short FreePhysicalRowId_SIZE = FreePhysicalRowId_O_SIZE + Magic.SZ_INT;
-
-    // offsets
-    short FreePhysicalRowId_O_COUNT = Magic.PAGE_HEADER_SIZE; // short count
-    short FreePhysicalRowId_O_FREE = FreePhysicalRowId_O_COUNT + Magic.SZ_SHORT;
-    short FreePhysicalRowId_ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - FreePhysicalRowId_O_FREE) / FreePhysicalRowId_SIZE);
 
 
     // offsets

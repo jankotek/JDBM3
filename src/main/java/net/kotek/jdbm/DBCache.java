@@ -39,11 +39,11 @@ abstract class DBCache extends DBStore{
      */
     public DBCache(String filename, boolean readonly, boolean transactionDisabled,
                       Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                      boolean autodefrag,boolean deleteFilesAfterClose){
+                     boolean deleteFilesAfterClose){
 
         super(filename, readonly, transactionDisabled,
                 cipherIn, cipherOut, useRandomAccessFile,
-                autodefrag,deleteFilesAfterClose);
+                deleteFilesAfterClose);
 
     }
 

@@ -37,7 +37,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         RecordFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
 
-        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm, new PhysicalRowIdPageManagerFree(free, pmfree));
+        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
 
         f.forceClose();
     }
@@ -51,7 +51,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         PageManager pm = new PageManager(f);
         RecordFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
-        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm, new PhysicalRowIdPageManagerFree(free, pmfree));
+        PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
 
         // insert a 10,000 byte record.
         byte[] data = UtilTT.makeRecord(10000, (byte) 1);

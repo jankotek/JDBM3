@@ -76,7 +76,6 @@ class DBStore
      */
     private final boolean readonly;
     private final boolean transactionsDisabled;
-    private final boolean autodefrag;
     private final boolean deleteFilesAfterClose;
 
     private static final int AUTOCOMMIT_AFTER_N_PAGES = 1024 * 5;
@@ -131,7 +130,7 @@ class DBStore
     private final String _filename;
 
     public DBStore(String filename, boolean readonly, boolean transactionDisabled) throws IOException {
-        this(filename, readonly, transactionDisabled, null, null, false,true,false);
+        this(filename, readonly, transactionDisabled, null, null, false,false);
     }
 
 
@@ -143,14 +142,13 @@ class DBStore
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
                    Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                   boolean autodefrag,boolean deleteFilesAfterClose){
+                   boolean deleteFilesAfterClose){
         _filename = filename;
         this.readonly = readonly;
         this.transactionsDisabled = transactionDisabled;
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
         this.useRandomAccessFile = useRandomAccessFile;
-        this.autodefrag = autodefrag;
         this.deleteFilesAfterClose = deleteFilesAfterClose;
         reopen();
     }
@@ -160,8 +158,7 @@ class DBStore
         try{
         _file = new RecordFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _pageman = new PageManager(_file);
-        _physMgr = new PhysicalRowIdManager(_file, _pageman,
-                new PhysicalRowIdPageManagerFree(_file, _pageman));
+        _physMgr = new PhysicalRowIdManager(_file, _pageman);
 
         _logicMgr = new LogicalRowIdManager(_file, _pageman);
 
@@ -233,7 +230,7 @@ class DBStore
 
     boolean needsAutoCommit() {
         return  transactionsDisabled && !commitInProgress &&
-                (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES || _physMgr.freeman.needsDefragementation);
+                (_file.getDirtyPageCount() >= AUTOCOMMIT_AFTER_N_PAGES );
     }
 
 
@@ -448,11 +445,6 @@ class DBStore
             _pageman.commit();
 
 
-            if(autodefrag && _physMgr.freeman.needsDefragementation){
-
-                _physMgr.freeman.needsDefragementation = false;
-                defrag(false);
-            }
         } catch (IOException e) {
             throw new IOError(e);
         }finally {
@@ -536,6 +528,18 @@ class DBStore
                 z.closeEntry();
                 _file.release(block);
             }
+            for (long pageid = _pageman.getFirst(Magic.FREEPHYSIDS_ROOT_PAGE);
+                 pageid != 0;
+                 pageid = _pageman.getNext(pageid)
+                    ) {
+                BlockIo block = _file.get(pageid);
+                String file = zip2 + pageid;
+                z.putNextEntry(new ZipEntry(file));
+                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.closeEntry();
+                _file.release(block);
+            }
+
             z.close();
 
         } catch (IOException e) {
@@ -666,7 +670,7 @@ class DBStore
             commit();
             final String filename2 = _filename + "_defrag" + System.currentTimeMillis();
             final String filename1 = _filename;
-            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false,true,false);
+            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false,false);
 
             //recreate logical file with original page layout
             {
