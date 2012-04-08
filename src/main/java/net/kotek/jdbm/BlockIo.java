@@ -66,6 +66,19 @@ final class BlockIo {
         this.data = data;
     }
 
+    /** Frequent reads on direct buffer may be slower then on heap buffer.
+     * This method converts native direct to heap buffer
+     */
+    void ensureHeapBuffer(){
+        if(data.isDirect()){
+            final byte[] bb = new byte[Storage.BLOCK_SIZE];
+            data.get(bb,0,Storage.BLOCK_SIZE);
+            data = ByteBuffer.wrap(bb);
+            if(data.isReadOnly()) throw new InternalError();
+        }
+
+    }
+
     /**
      * Returns the underlying array
      */
@@ -88,11 +101,9 @@ final class BlockIo {
         
         if(data.isReadOnly()){
             // make copy if needed, so we can write into buffer
-            ByteBuffer old = data;
-            data = ByteBuffer.allocate(Storage.BLOCK_SIZE);
-            old.rewind();
-            old.get(data.array(),0,Storage.BLOCK_SIZE);
-            data.rewind();
+            byte[] buf = new byte[Storage.BLOCK_SIZE];
+            data.get(buf,0,Storage.BLOCK_SIZE);
+            data = ByteBuffer.wrap(buf);
         }
     }
 

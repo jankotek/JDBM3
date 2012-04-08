@@ -38,6 +38,7 @@ final class PageManager {
         // check the file headerBuf.fileHeader If the magic is 0, we assume a new
         // file. Note that we hold on to the file header node.
         headerBuf = file.get(0);
+        headerBuf.ensureHeapBuffer();
         headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 
@@ -204,6 +205,7 @@ final class PageManager {
 
         // and obtain it again
         headerBuf = file.get(0);
+        headerBuf.ensureHeapBuffer();
         headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 
@@ -217,6 +219,7 @@ final class PageManager {
         file.rollback();
         // and obtain it again
         headerBuf = file.get(0);
+        headerBuf.ensureHeapBuffer();
         headerBuf.fileHeaderCheckHead(headerBuf.readShort(0) == 0);
     }
 

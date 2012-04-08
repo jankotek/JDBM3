@@ -46,7 +46,7 @@ final class HTreeBucket<K, V> {
      * The maximum number of elements (key, value) a non-leaf bucket
      * can contain.
      */
-    public static final int OVERFLOW_SIZE = 8;
+    public static final int OVERFLOW_SIZE = 16;
 
 
     /**
