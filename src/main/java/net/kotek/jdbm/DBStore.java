@@ -243,7 +243,7 @@ class DBStore
         if(obj==PREALOCATE_OBJ){
             //if inserted record is  PREALOCATE_OBJ , it gets special handling.
             //it is inserted only into _logicMgr with special value to indicate null
-            //this is used to preallocate recid for lazy inserts in cache            
+            //this is used to preallocate recid for lazy inserts in cache
             physRowId = PREALOCATE_PHYS_RECID;
         }else{
             serializer.serialize(buf, obj);
@@ -351,8 +351,7 @@ class DBStore
 
         checkNotClosed();
         if (recid <= 0) {
-            throw new IllegalArgumentException("Argument 'recid' is invalid: "
-                    + recid);
+            throw new IllegalArgumentException("Argument 'recid' is invalid: "  + recid);
         }
 
         if (bufferInUse) {

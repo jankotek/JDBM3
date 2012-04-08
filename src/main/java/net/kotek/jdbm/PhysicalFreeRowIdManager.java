@@ -43,18 +43,18 @@ final class PhysicalFreeRowIdManager {
     static final int OFFSET_SLOT_PAGE_NEXT = Magic.PAGE_HEADER_SIZE + Magic.SZ_SHORT;
 
     /** number of size slots held in root page */
-    static final int ROOT_SLOT_NUM = (Storage.BLOCK_SIZE  -ROOT_HEADER_SIZE-6) / 6; //6 is size of page pointer
+    static final int MAX_RECIDS_PER_PAGE = (Storage.BLOCK_SIZE  -ROOT_HEADER_SIZE-6) / 6; //6 is size of page pointer
 
     /** free records are grouped into slots by record size. Here is max diff in record size per group */
-    static final int ROOT_SLOT_SIZE = 1+MAX_REC_SIZE/ ROOT_SLOT_NUM;
+    static final int ROOT_SLOT_SIZE = 1+MAX_REC_SIZE/ MAX_RECIDS_PER_PAGE;
 
 
     protected final RecordFile file;
 
     protected final PageManager pageman;
 
-    private long[] inTransRecid = new long[8];
-    private short[] inTransCapacity = new short[8];
+    /** list of free phys slots in current transaction. First two bytes are size, last 6 bytes are recid*/
+    private long[] inTrans = new long[8];
     private int inTransSize = 0;
 
     /**
@@ -78,6 +78,8 @@ final class PhysicalFreeRowIdManager {
         }
 
         BlockIo slotPage = file.get(slotPageId);
+        if(slotPage.readShort(Magic.PAGE_HEADER_O_MAGIC) != Magic.BLOCK + Magic.FREEPHYSIDS_PAGE)
+            throw new InternalError();
 
         short recidCount = slotPage.readShort(OFFSET_SLOT_PAGE_REC_COUNT);
         if(recidCount<=0){
@@ -117,12 +119,10 @@ final class PhysicalFreeRowIdManager {
      */
     void putFreeRecord(final long rowid, final int size) throws IOException {
         //ensure capacity
-        if(inTransSize==inTransRecid.length){
-            inTransRecid = Arrays.copyOf(inTransRecid, inTransRecid.length * 2);
-            inTransCapacity = Arrays.copyOf(inTransCapacity, inTransCapacity.length * 2);
+        if(inTransSize==inTrans.length){
+            inTrans = Arrays.copyOf(inTrans, inTrans.length * 2);
         }
-        inTransRecid[inTransSize] = rowid;
-        inTransCapacity[inTransSize] = (short) size;
+        inTrans[inTransSize] = rowid + (((long)size)<<48);
         inTransSize++;
     }
 
@@ -132,54 +132,35 @@ final class PhysicalFreeRowIdManager {
         if(inTransSize==0)
             return;
 
-        Utils.quickSort(inTransRecid, inTransCapacity, 0, inTransSize - 1);
+        Arrays.sort(inTrans,0,inTransSize-1);
 
-        //try to merge records released next to each other into single one
-        int prevIndex = 0;
-        for(int i=1;i<inTransSize;i++){
-            if(inTransCapacity[i] == 0) continue;
-
-            if(inTransCapacity[i] + inTransCapacity[prevIndex]<Short.MAX_VALUE &&
-                inTransRecid[prevIndex] + inTransCapacity[i] == inTransRecid[i]){
-                //increase previous record size and effectively delete old record size
-                final long blockId = Location.getBlock(inTransRecid[prevIndex]);
-                BlockIo b = file.get(blockId);
-                RecordHeader.setCurrentSize(b,Location.getOffset(inTransRecid[prevIndex]), 0);
-                inTransCapacity[prevIndex]+=inTransCapacity[i];
-                RecordHeader.setAvailableSize(b,Location.getOffset(inTransRecid[prevIndex]), inTransCapacity[prevIndex]);
-                file.release(b);
-                //zero out curr record, so it does not get added to list
-                inTransRecid[i] = 0;
-                inTransCapacity[i] = 0;
-                //move to next, without leaving previous record
-                i++;
-                continue;
-            }
-            prevIndex = i;
-        }
 
         //write all uncommited free records
         final BlockIo root = getRootPage();
-
+        BlockIo slotPage = null;
         for(int rowIdPos = 0; rowIdPos<inTransSize; rowIdPos++){
-                final int size = inTransCapacity[rowIdPos];
-                if(size == 0){
-                    continue;
-                }
+                final int size = (int) (inTrans[rowIdPos] >>>48);
 
-                final long rowid = inTransRecid[rowIdPos];
+                final long rowid = inTrans[rowIdPos] & 0x0000FFFFFFFFFFFFL;
                 final int rootPageOffset = sizeToRootOffset(size);
 
                 long slotPageId  = root.readSixByteLong(rootPageOffset);
                 if(slotPageId == 0){
+                        if(slotPage!=null) file.release(slotPage);
                         //create new page for this slot
                         slotPageId = pageman.allocate(Magic.FREEPHYSIDS_PAGE);
                         root.writeSixByteLong(rootPageOffset,slotPageId);
                 }
-                BlockIo slotPage = file.get(slotPageId);
+
+                if(slotPage == null || slotPage.getBlockId()!=slotPageId){
+                    if(slotPage!=null) file.release(slotPage);
+                    slotPage = file.get(slotPageId);
+                }
+                if(slotPage.readShort(Magic.PAGE_HEADER_O_MAGIC) != Magic.BLOCK + Magic.FREEPHYSIDS_PAGE)
+                    throw new InternalError();
 
                 short recidCount = slotPage.readShort(OFFSET_SLOT_PAGE_REC_COUNT);
-                if(recidCount==ROOT_SLOT_NUM){
+                if(recidCount== MAX_RECIDS_PER_PAGE){
                     file.release(slotPage);
                     //allocate new slot page and update links
                     final long newSlotPageId = pageman.allocate(Magic.FREEPHYSIDS_PAGE);
@@ -197,8 +178,10 @@ final class PhysicalFreeRowIdManager {
                 //and increase count
                 recidCount++;
                 slotPage.writeShort(OFFSET_SLOT_PAGE_REC_COUNT,recidCount);
-                file.release(slotPage);
+
         }
+        if(slotPage!=null)
+            file.release(slotPage);
 
         file.release(root);
         clearFreeInTrans();
@@ -210,10 +193,8 @@ final class PhysicalFreeRowIdManager {
     }
 
     private void clearFreeInTrans() {
-        if(inTransRecid.length>128)
-            inTransRecid = new long[8];
-        if(inTransCapacity.length>128)
-            inTransCapacity = new short[8];
+        if(inTrans.length>128)
+            inTrans = new long[8];
         inTransSize = 0;
     }
 
