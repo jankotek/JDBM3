@@ -258,7 +258,7 @@ class DBStore
             System.out.println("BaseRecordManager.insert() recid " + recid + " length " + buf.getPos());
         }
 
-        return Location.compressRecid(recid);
+        return compressRecid(recid);
     }
 
 
@@ -280,7 +280,7 @@ class DBStore
             System.out.println("BaseRecordManager.delete() recid " + logRowId);
         }
 
-        logRowId =  Location.decompressRecid(logRowId);
+        logRowId =  decompressRecid(logRowId);
 
         long physRowId = _logicMgr.fetch(logRowId);
         _logicMgr.delete(logRowId);
@@ -322,7 +322,7 @@ class DBStore
     private <A> void update2(long logRecid, final A obj, final Serializer<A> serializer, final DataInputOutput buf)
             throws IOException {
 
-        logRecid =  Location.decompressRecid(logRecid);
+        logRecid =  decompressRecid(logRecid);
 
         long physRecid = _logicMgr.fetch(logRecid);
         if (physRecid == 0)
@@ -376,7 +376,7 @@ class DBStore
     private <A> A fetch2(long recid, final Serializer<A> serializer, final DataInputOutput buf)
             throws IOException {
 
-        recid =  Location.decompressRecid(recid);
+        recid =  decompressRecid(recid);
 
         buf.reset();
         long physLocation = _logicMgr.fetch(recid);
@@ -402,7 +402,7 @@ class DBStore
     }
 
     byte[] fetchRaw(long recid) throws IOException {
-        recid =  Location.decompressRecid(recid);
+        recid =  decompressRecid(recid);
         long physLocation = _logicMgr.fetch(recid);
         if (physLocation == 0) {
             //throw new IOException("Record not found, recid: "+recid);
@@ -632,8 +632,8 @@ class DBStore
                         recordCount++;
 
                         //get size
-                        BlockIo block = _file.get(Location.getBlock(physLoc));
-                        final short physOffset = Location.getOffset(physLoc);
+                        BlockIo block = _file.get(physLoc>>> Storage.BLOCK_SIZE_SHIFT);
+                        final short physOffset =(short) (physLoc & Storage.OFFSET_MASK);
                         int availSize = RecordHeader.getAvailableSize(block, physOffset);
                         int currentSize = RecordHeader.getCurrentSize(block, physOffset);
                         _file.release(block);
@@ -735,7 +735,7 @@ class DBStore
                         throw new Error();
 
                     //write to new file
-                    final long logicalRowId = Location.toLong(-pageid, (short) pos);
+                    final long logicalRowId =  ((-pageid) << Storage.BLOCK_SIZE_SHIFT) + (long) pos;
 
                     //read from logical location in second db,
                     //check if record was already inserted as part of collections
@@ -843,7 +843,7 @@ class DBStore
      * @throws IOException
      */
     void forceInsert(long logicalRowId, byte[] data) throws IOException {
-        logicalRowId = Location.decompressRecid(logicalRowId);
+        logicalRowId = decompressRecid(logicalRowId);
 
         if (needsAutoCommit()) {
             commit();
@@ -881,6 +881,44 @@ class DBStore
         }
         return counter;
     }
+
+
+    private  static int COMPRESS_RECID_BLOCK_SHIFT = Integer.MIN_VALUE;
+    static{
+        int shift = 1;
+        while((1<<shift) <LogicalRowIdManager.ELEMS_PER_PAGE )
+        shift++;
+        COMPRESS_RECID_BLOCK_SHIFT = shift;
+    }
+
+
+    private final static long COMPRESS_RECID_OFFSET_MASK =  0xFFFFFFFFFFFFFFFFL >>> (64-COMPRESS_RECID_BLOCK_SHIFT);
+
+
+    /**
+     * Compress recid from physical form (block - offset) to (block - slot).
+     * This way resulting number is smaller and can be easier packed with LongPacker
+     */
+    static long compressRecid(final long recid) {
+        final long block = recid>>> Storage.BLOCK_SIZE_SHIFT;
+        short offset =  (short) (recid & Storage.OFFSET_MASK);
+
+        offset = (short) (offset - Magic.PAGE_HEADER_SIZE);
+        if (offset % Magic.PhysicalRowId_SIZE != 0)
+            throw new InternalError("recid not dividable "+Magic.PhysicalRowId_SIZE);
+        long slot = offset / Magic.PhysicalRowId_SIZE;
+
+        return (block << COMPRESS_RECID_BLOCK_SHIFT) + slot;
+
+    }
+
+    static long decompressRecid(final long recid) {
+
+        final long block = recid >>> COMPRESS_RECID_BLOCK_SHIFT;
+        final short offset = (short) ((recid & COMPRESS_RECID_OFFSET_MASK) * Magic.PhysicalRowId_SIZE + Magic.PAGE_HEADER_SIZE);
+        return  (block << Storage.BLOCK_SIZE_SHIFT) + (long) offset;
+    }
+
 
 
 }

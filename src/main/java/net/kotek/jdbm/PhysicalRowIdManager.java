@@ -64,8 +64,8 @@ final class PhysicalRowIdManager {
      */
     long update(long rowid, final byte[] data, final int start, final int length) throws IOException {
         // fetch the record header
-        BlockIo block = file.get(Location.getBlock(rowid));
-        short head = Location.getOffset(rowid);
+        BlockIo block = file.get(rowid>>> Storage.BLOCK_SIZE_SHIFT);
+        short head =  (short) (rowid & Storage.OFFSET_MASK);
         int availSize = RecordHeader.getAvailableSize(block, head);
         if (length > availSize ||
                 //difference between free and available space can be only 254.
@@ -88,9 +88,9 @@ final class PhysicalRowIdManager {
 
     void fetch(final DataInputOutput out, final long rowid) throws IOException {
         // fetch the record header
-        long current = Location.getBlock(rowid);
+        long current = rowid >>> Storage.BLOCK_SIZE_SHIFT;
         BlockIo block = file.get(current);
-        short head = Location.getOffset(rowid);
+        final short head =  (short) (rowid & Storage.OFFSET_MASK);
 
         // allocate a return buffer
         // byte[] retval = new byte[ head.getCurrentSize() ];
@@ -102,7 +102,7 @@ final class PhysicalRowIdManager {
 
         // copy bytes in
         int leftToRead = size;
-        short dataOffset = (short) (Location.getOffset(rowid) + RecordHeader.SIZE);
+        short dataOffset = (short) ( head + RecordHeader.SIZE);
         while (leftToRead > 0) {
             // copy current page's data to return buffer
             int toCopy = BLOCK_SIZE - dataOffset;
@@ -207,7 +207,7 @@ final class PhysicalRowIdManager {
 
         // we have the position, now tack on extra pages until we've got
         // enough space.
-        long retval = Location.toLong(start, pos);
+        long retval =(start << Storage.BLOCK_SIZE_SHIFT) + (long) pos;
         int freeHere = BLOCK_SIZE - pos - RecordHeader.SIZE;
         if (freeHere < size) {
             // check whether the last page would have only a small bit left.
@@ -261,9 +261,9 @@ final class PhysicalRowIdManager {
 
     void free(final long id) throws IOException {
         // get the rowid, and write a zero current size into it.
-        final long curBlockId = Location.getBlock(id);
+        final long curBlockId = id >>> Storage.BLOCK_SIZE_SHIFT;
         final BlockIo curBlock = file.get(curBlockId);
-        final short offset = Location.getOffset(id);
+        final short offset =  (short) (id & Storage.OFFSET_MASK);
         RecordHeader.setCurrentSize(curBlock, offset, 0);
         int size = RecordHeader.getAvailableSize(curBlock, offset);
 
@@ -304,10 +304,10 @@ final class PhysicalRowIdManager {
     /**
      * Writes out data to a rowid. Assumes that any resizing has been done.
      */
-    private void write(long rowid, byte[] data, int start, int length) throws IOException {
-        long current = Location.getBlock(rowid);
+    private void write(final long rowid, final  byte[] data,final  int start, final  int length) throws IOException {
+        long current =  rowid >>> Storage.BLOCK_SIZE_SHIFT;
         BlockIo block = file.get(current);
-        short hdr = Location.getOffset(rowid);
+        final short hdr =  (short) (rowid & Storage.OFFSET_MASK);
         RecordHeader.setCurrentSize(block, hdr, length);
         if (length == 0) {
             file.release(current, true);
@@ -317,7 +317,7 @@ final class PhysicalRowIdManager {
         // copy bytes in
         int offsetInBuffer = start;
         int leftToWrite = length;
-        short dataOffset = (short) (Location.getOffset(rowid) + RecordHeader.SIZE);
+        short dataOffset = (short) (hdr + RecordHeader.SIZE);
         while (leftToWrite > 0) {
             // copy current page's data to return buffer
             int toCopy = BLOCK_SIZE - dataOffset;

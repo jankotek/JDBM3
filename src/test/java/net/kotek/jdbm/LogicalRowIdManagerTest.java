@@ -45,12 +45,12 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
         RecordFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
         LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
-        long physid = Location.toLong(20, (short) 234);
+        long physid = 20<< Storage.BLOCK_SIZE_SHIFT + 234;
 
         long logid = logMgr.insert(physid);
         assertEquals("check one", physid, logMgr.fetch(logid));
 
-        physid = Location.toLong(10, (short) 567);
+        physid = 10 << Storage.BLOCK_SIZE_SHIFT + 567;
         logMgr.update(logid, physid);
         assertEquals("check two", physid, logMgr.fetch(logid));
 

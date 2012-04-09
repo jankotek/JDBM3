@@ -62,7 +62,8 @@ final class LogicalRowIdManager {
             long firstPage = pageman.allocate(Magic.TRANSLATION_PAGE);
             short curOffset = Magic.PAGE_HEADER_SIZE;
             for (int i = 0; i < ELEMS_PER_PAGE; i++) {
-                putFreeSlot(Location.toLong(-firstPage, curOffset));
+                putFreeSlot(((-firstPage) << Storage.BLOCK_SIZE_SHIFT) + (long) curOffset);
+
                 curOffset += Magic.PhysicalRowId_SIZE;
             }
 
@@ -96,9 +97,9 @@ final class LogicalRowIdManager {
      */
     void delete(final long logicalrowid) throws IOException {
         //zero out old location, is needed for defragmentation
-        final long block = -Location.getBlock(logicalrowid);
+        final long block = -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
         final BlockIo xlatPage = file.get(block);
-        xlatPage.pageHeaderSetLocation(Location.getOffset(logicalrowid), 0);
+        xlatPage.pageHeaderSetLocation((short) (logicalrowid & Storage.OFFSET_MASK), 0);
         file.release(block, true);
         putFreeSlot(logicalrowid);
     }
@@ -111,9 +112,9 @@ final class LogicalRowIdManager {
      */
     void update(final long logicalrowid, final long physloc) throws IOException {
 
-        final long block = -Location.getBlock(logicalrowid);
+        final long block =  -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
         final BlockIo xlatPage = file.get(block);
-        xlatPage.pageHeaderSetLocation(Location.getOffset(logicalrowid), physloc);
+        xlatPage.pageHeaderSetLocation((short) (logicalrowid & Storage.OFFSET_MASK), physloc);
         file.release(block, true);
     }
 
@@ -124,12 +125,12 @@ final class LogicalRowIdManager {
      * @return The physical rowid, 0 if does not exist
      */
     long fetch(long logicalrowid) throws IOException {
-        final long block = -Location.getBlock(logicalrowid);
+        final long block = -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
         final long last = pageman.getLast(Magic.TRANSLATION_PAGE);
         if (last - 1 > block)
             return 0;
 
-        final short offset = Location.getOffset(logicalrowid);
+        final short offset = (short) (logicalrowid & Storage.OFFSET_MASK);
 
         final BlockIo xlatPage = file.get(block);
         final long ret =  xlatPage.pageHeaderGetLocation(offset);
