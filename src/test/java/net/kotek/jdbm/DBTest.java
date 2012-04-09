@@ -405,5 +405,38 @@ public class DBTest extends TestCaseWithTestFile {
     }
 
 
+    public void testCollectionSize() throws IOException {
+        DB d= newDBNoCache();
+
+
+        Map tm = d.createTreeMap("t1");
+        tm.put(1,1);
+        tm.put(2,2);
+        assertEquals(d.collectionSize(tm),2);
+
+        tm = d.createHashMap("t2");
+        tm.put(1,1);
+        tm.put(2,2);
+        assertEquals(d.collectionSize(tm),2);
+
+
+        Collection c = d.createLinkedList("t3");
+        c.add(1);
+        c.add(2);
+        assertEquals(d.collectionSize(c),2);
+
+        c = d.createTreeSet("t4");
+        c.add(1);
+        c.add(2);
+        assertEquals(d.collectionSize(c),2);
+
+        c = d.createHashSet("t5");
+        c.add(1);
+        c.add(2);
+        assertEquals(d.collectionSize(c),2);
+
+    }
+
+
 }
 

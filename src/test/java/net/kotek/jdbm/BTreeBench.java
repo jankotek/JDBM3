@@ -55,7 +55,7 @@ public class BTreeBench extends TestCaseWithTestFile {
 
             if ((i % 5000) == 0) {
                 long elapsed = System.currentTimeMillis() - beginTime;
-                System.out.println("Iterations=" + i + " Objects=" + tree.size() + ", elapsed=" + elapsed + "ms");
+                System.out.println("Iterations=" + i + " Objects=" + tree._entries + ", elapsed=" + elapsed + "ms");
                 db.commit();
             }
             if (hash.get(random) == null) {
@@ -84,8 +84,8 @@ public class BTreeBench extends TestCaseWithTestFile {
         boolean failed = false;
         Enumeration<Long> enumeration;
 
-        if (tree.size() != hash.size()) {
-            throw new IllegalStateException("Tree size " + tree.size() + " Hash size " + hash.size());
+        if (tree._entries != hash.size()) {
+            throw new IllegalStateException("Tree size " + tree._entries + " Hash size " + hash.size());
         }
 
         enumeration = hash.keys();

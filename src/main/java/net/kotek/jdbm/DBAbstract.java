@@ -510,6 +510,24 @@ abstract class DBAbstract implements DB {
     protected abstract long getRoot(byte root);
 
 
+    public long collectionSize(Object collection){
+        if(collection instanceof BTreeMap){
+            BTreeMap t = (BTreeMap) collection;
+            if(t.fromKey!=null|| t.toKey!=null) throw new IllegalArgumentException("collectionSize does not work on BTree submap");
+            return t.tree._entries;
+        }else if(collection instanceof  HTree){
+          return ((HTree)collection).getRoot().size;
+        }else if(collection instanceof  HTreeSet){
+            return collectionSize(((HTreeSet) collection).map);
+        }else if(collection instanceof  BTreeSet){
+            return collectionSize(((BTreeSet) collection).map);
+        }else if(collection instanceof LinkedList2){
+            return ((LinkedList2)collection).getRoot().size;
+        }else{
+            throw new IllegalArgumentException("Not JDBM collection");
+        }
+    }
+
     
 
 }

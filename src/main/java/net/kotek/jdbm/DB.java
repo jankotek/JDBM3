@@ -162,4 +162,12 @@ public interface DB {
     /** completely remove collection from store*/
     void deleteCollection(String name);
 
+    /** Java Collections returns their size as int. This may not be enought for JDBM collections.
+     * This method returns number of elements in JDBM collection as long.
+     *
+     * @param collection created by JDBM
+     * @return number of elements in collection as long
+     */
+    long collectionSize(Object collection);
+
 }

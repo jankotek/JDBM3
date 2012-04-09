@@ -39,7 +39,7 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
-    static private final class Root{
+    static final class Root{
         long first;
         long last;
         long size;
@@ -115,7 +115,7 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
 
     }
 
-    private Root getRoot(){
+    Root getRoot(){
         //expect that caller already holds lock
         try {
            return db.fetch(rootRecid,ROOT_SERIALIZER);

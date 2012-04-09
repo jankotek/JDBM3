@@ -142,7 +142,7 @@ class BTree<K, V> {
     /**
      * Total number of entries in the BTree
      */
-    protected volatile int _entries;
+    protected volatile long _entries;
 
 
     /**
@@ -478,14 +478,6 @@ class BTree<K, V> {
 
 
     /**
-     * Return the number of entries (size) of the BTree.
-     */
-    public int size() {
-        return _entries;
-    }
-
-
-    /**
      * Return the persistent record identifier of the BTree.
      */
     public long getRecid() {
@@ -517,7 +509,7 @@ class BTree<K, V> {
         tree._height = in.readInt();
         tree._recid = in.readLong();
         tree._root = in.readLong();
-        tree._entries = in.readInt();
+        tree._entries = in.readLong();
         tree.hasValues = in.readBoolean();
         tree._comparator = (Comparator) ser.deserialize(in);
         tree.keySerializer = (Serializer) ser.deserialize(in);
@@ -531,7 +523,7 @@ class BTree<K, V> {
         out.writeInt(_height);
         out.writeLong(_recid);
         out.writeLong(_root);
-        out.writeInt(_entries);
+        out.writeLong(_entries);
         out.writeBoolean(hasValues);
         _db.defaultSerializer().serialize(out, _comparator);
         _db.defaultSerializer().serialize(out, keySerializer);

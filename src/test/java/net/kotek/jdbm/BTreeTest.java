@@ -328,7 +328,7 @@ public class BTreeTest
             tree.insert("num" + count, new Integer(count), false);
         }
 
-        assertEquals(iterations, tree.size());
+        assertEquals(iterations, tree._entries);
 
         for (int count = 0; count < iterations; count++) {
             assertEquals(new Integer(count), tree.get("num" + count));
@@ -338,7 +338,7 @@ public class BTreeTest
             tree.remove("num" + count);
         }
 
-        assertEquals(0, tree.size());
+        assertEquals(0, tree._entries);
 
         db.close();
     }
@@ -437,7 +437,7 @@ public class BTreeTest
             assertEquals(new Integer(count), tree.remove("num" + count));
         }
 
-        assertEquals(0, tree.size());
+        assertEquals(0, tree._entries);
 
         db.close();
     }
@@ -708,7 +708,7 @@ public class BTreeTest
             // as other threads are filling the btree as well, the size
             // of the btree is unknown (but must be at least the size of
             // the content map)
-            assertTrue(_content.size() <= _btree.size());
+            assertTrue(_content.size() <= _btree._entries);
 
             iterator = _content.entrySet().iterator();
             if (DEBUG) {

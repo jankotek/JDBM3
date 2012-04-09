@@ -30,9 +30,9 @@ class BTreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {
     /**
      * use keyset from this map
      */
-    final private NavigableMap<E, Object> map;
+    final BTreeMap<E, Object> map;
 
-    BTreeSet(NavigableMap<E, Object> map) {
+    BTreeSet(BTreeMap<E, Object> map) {
         this.map = map;
     }
 
@@ -154,7 +154,7 @@ class BTreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {
         int compare = (c == null) ? ((Comparable<E>) start).compareTo(end) : c
                 .compare(start, end);
         if (compare <= 0) {
-            return new BTreeSet<E>(map.subMap(start, true,end,false));
+            return new BTreeSet<E>((BTreeMap<E,Object>) map.subMap(start, true,end,false));
         }
         throw new IllegalArgumentException();
     }
@@ -168,7 +168,7 @@ class BTreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {
         } else {
             c.compare(end, end);
         }
-        return new BTreeSet<E>(map.headMap(end,false));
+        return new BTreeSet<E>((BTreeMap<E,Object>) map.headMap(end,false));
     }
 
 
@@ -180,7 +180,7 @@ class BTreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {
         } else {
             c.compare(start, start);
         }
-        return new BTreeSet<E>(map.tailMap(start,true));
+        return new BTreeSet<E>((BTreeMap<E,Object>) map.tailMap(start,true));
     }
 
 

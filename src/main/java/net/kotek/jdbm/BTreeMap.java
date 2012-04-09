@@ -489,7 +489,7 @@ class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap
 
     public NavigableSet<K> navigableKeySet() {
         if(keySet2 == null)
-            keySet2 = new BTreeSet<K>((NavigableMap<K,Object>) this);
+            keySet2 = new BTreeSet<K>((BTreeMap<K,Object>) this);
         return keySet2;
     }
 
@@ -544,7 +544,7 @@ class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap
 
     public int size() {
         if (fromKey == null && toKey == null)
-            return tree.size(); //use fast counter on tree if Map has no bounds
+            return (int) tree._entries; //use fast counter on tree if Map has no bounds
         else {
             //had to count items in iterator
             Iterator iter = keySet().iterator();

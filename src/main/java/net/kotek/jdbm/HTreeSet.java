@@ -3,16 +3,15 @@ package net.kotek.jdbm;
 
 import java.util.AbstractSet;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Wrapper for HTree to implement java.util.Map interface
  */
 class HTreeSet<E> extends AbstractSet<E> {
 
-    private Map<E, Object> map;
+    final HTree<E, Object> map;
 
-    HTreeSet(Map map) {
+    HTreeSet(HTree map) {
         this.map = map;
     }
 
