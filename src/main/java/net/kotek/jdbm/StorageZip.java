@@ -29,11 +29,11 @@ class StorageZip implements Storage {
     }
 
     public ByteBuffer read(long pageNumber) throws IOException {
-        ByteBuffer data = ByteBuffer.allocate(BLOCK_SIZE);
+        ByteBuffer data = ByteBuffer.allocate(PAGE_SIZE);
 
         ZipEntry e = z.getEntry(zip2 + pageNumber);
         if(e == null)
-            return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+            return ByteBuffer.wrap(PageFile.CLEAN_DATA).asReadOnlyBuffer();
 
         InputStream i = z.getInputStream(e);
         new DataInputStream(i).readFully(data.array());

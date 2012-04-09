@@ -26,9 +26,9 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
      * Test constructor
      */
     public void testCtor() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        RecordFile free = newRecordFile();
+        PageFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
 
         LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
@@ -40,17 +40,17 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
      * Test basics
      */
     public void testBasics() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        RecordFile free = newRecordFile();
+        PageFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
         LogicalRowIdManager logMgr = new LogicalRowIdManager(f, pm);
-        long physid = 20<< Storage.BLOCK_SIZE_SHIFT + 234;
+        long physid = 20<< Storage.PAGE_SIZE_SHIFT + 234;
 
         long logid = logMgr.insert(physid);
         assertEquals("check one", physid, logMgr.fetch(logid));
 
-        physid = 10 << Storage.BLOCK_SIZE_SHIFT + 567;
+        physid = 10 << Storage.PAGE_SIZE_SHIFT + 567;
         logMgr.update(logid, physid);
         assertEquals("check two", physid, logMgr.fetch(logid));
 
@@ -61,7 +61,7 @@ public class LogicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void testFreeBasics() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         LogicalRowIdManager freeMgr = new LogicalRowIdManager(
                 f, pm);

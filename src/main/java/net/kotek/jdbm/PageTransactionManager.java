@@ -28,15 +28,15 @@ import java.util.TreeSet;
 
 /**
  * This class manages the transaction log that belongs to every
- * {@link RecordFile}. The transaction log is either clean, or
+ * {@link PageFile}. The transaction log is either clean, or
  * in progress. In the latter case, the transaction manager
  * takes care of a roll forward.
  */
 // TODO: Handle the case where we are recovering lg9 and lg0, were we
 // should start with lg9 instead of lg0!
 
-final class TransactionManager {
-    private RecordFile owner;
+final class PageTransactionManager {
+    private PageFile owner;
 
     // streams for transaction log.
     private DataOutputStream oos;
@@ -44,11 +44,11 @@ final class TransactionManager {
 
     /**
      * In-core copy of transactions. We could read everything back from
-     * the log file, but the RecordFile needs to keep the dirty blocks in
+     * the log file, but the PageFile needs to keep the dirty pages in
      * core anyway, so we might as well point to them and spare us a lot
      * of hassle.
      */
-    private ArrayList<BlockIo> txn = new ArrayList<BlockIo>();
+    private ArrayList<PageIo> txn = new ArrayList<PageIo>();
     private int curTxn = -1;
 
     private Storage storage;
@@ -59,12 +59,12 @@ final class TransactionManager {
      * Instantiates a transaction manager instance. If recovery
      * needs to be performed, it is done.
      *
-     * @param owner     the RecordFile instance that owns this transaction mgr.
+     * @param owner     the PageFile instance that owns this transaction mgr.
      * @param storage
      * @param cipherIn
      * @param cipherOut
      */
-    TransactionManager(RecordFile owner, Storage storage, Cipher cipherIn, Cipher cipherOut) throws IOException {
+    PageTransactionManager(PageFile owner, Storage storage, Cipher cipherIn, Cipher cipherOut) throws IOException {
         this.owner = owner;
         this.storage = storage;
         this.cipherIn = cipherIn;
@@ -95,30 +95,30 @@ final class TransactionManager {
     private void synchronizeLogFromMemory() throws IOException {
         close();
 
-        TreeSet<BlockIo> blockList = new TreeSet<BlockIo>(BLOCK_IO_COMPARTOR);
+        TreeSet<PageIo> pageList = new TreeSet<PageIo>(PAGE_IO_COMPARTOR);
 
-        int numBlocks = 0;
-        int writtenBlocks = 0;
+        int numPages = 0;
+        int writtenPages = 0;
 
         if(txn!=null){
-            // Add each block to the blockList, replacing the old copy of this
-            // block if necessary, thus avoiding writing the same block twice
-            for (Iterator<BlockIo> k = txn.iterator(); k.hasNext(); ) {
-                BlockIo block = k.next();
-                if (blockList.contains(block)) {
-                    block.decrementTransactionCount();
+            // Add each page to the pageList, replacing the old copy of this
+            // page if necessary, thus avoiding writing the same page twice
+            for (Iterator<PageIo> k = txn.iterator(); k.hasNext(); ) {
+                PageIo page = k.next();
+                if (pageList.contains(page)) {
+                    page.decrementTransactionCount();
                 } else {
-                    writtenBlocks++;
-                    boolean result = blockList.add(block);
+                    writtenPages++;
+                    boolean result = pageList.add(page);
                 }
-                numBlocks++;
+                numPages++;
             }
 
             txn = null;
         }
 
-        // Write the blocks from the blockList to disk
-        synchronizeBlocks(blockList, true);
+        // Write the page from the pageList to disk
+        synchronizePages(pageList, true);
 
         owner.sync();
         open();
@@ -147,20 +147,20 @@ final class TransactionManager {
         if (ois == null) return;
 
         while (true) {
-            ArrayList<BlockIo> blocks = null;
+            ArrayList<PageIo> pages = null;
             try {
                 int size = LongPacker.unpackInt(ois);
-                blocks = new ArrayList<BlockIo>(size);
+                pages = new ArrayList<PageIo>(size);
                 for (int i = 0; i < size; i++) {
-                    BlockIo b = new BlockIo();
+                    PageIo b = new PageIo();
                     b.readExternal(ois, cipherOut);
-                    blocks.add(b);
+                    pages.add(b);
                 }
             } catch (IOException e) {
                 // corrupted logfile, ignore rest of transactions
                 break;
             }
-            synchronizeBlocks(blocks, false);
+            synchronizePages(pages, false);
 
         }
         owner.sync();
@@ -169,12 +169,12 @@ final class TransactionManager {
     }
 
     /**
-     * Synchronizes the indicated blocks with the owner.
+     * Synchronizes the indicated pages with the owner.
      */
-    private void synchronizeBlocks(Iterable<BlockIo> blocks, boolean fromCore)
+    private void synchronizePages(Iterable<PageIo> pages, boolean fromCore)
             throws IOException {
-        // write block vector elements to the data file.
-        for (BlockIo cur : blocks) {
+        // write pages vector elements to the data file.
+        for (PageIo cur : pages) {
             owner.synch(cur);
             if (fromCore) {
                 cur.decrementTransactionCount();
@@ -187,21 +187,21 @@ final class TransactionManager {
 
 
     /**
-     * Set clean flag on the blocks.
+     * Set clean flag on the pages.
      */
-    private void setClean(ArrayList<BlockIo> blocks)
+    private void setClean(ArrayList<PageIo> pages)
             throws IOException {
-        for (BlockIo cur : blocks) {
+        for (PageIo cur : pages) {
             cur.setClean();
         }
     }
 
     /**
-     * Discards the indicated blocks and notify the owner.
+     * Discards the indicated pages and notify the owner.
      */
-    private void discardBlocks(ArrayList<BlockIo> blocks)
+    private void discardPages(ArrayList<PageIo> pages)
             throws IOException {
-        for (BlockIo cur : blocks) {
+        for (PageIo cur : pages) {
 
             cur.decrementTransactionCount();
             if (!cur.isInTransaction()) {
@@ -211,7 +211,7 @@ final class TransactionManager {
     }
 
     /**
-     * Starts a transaction. This can block if all slots have been filled
+     * Starts a transaction. This can pages if all slots have been filled
      * with full transactions, waiting for the synchronization thread to
      * clean out slots.
      */
@@ -225,11 +225,11 @@ final class TransactionManager {
     }
 
     /**
-     * Indicates the block is part of the transaction.
+     * Indicates the page is part of the transaction.
      */
-    void add(BlockIo block) throws IOException {
-        block.incrementTransactionCount();
-        txn.add(block);
+    void add(PageIo page) throws IOException {
+        page.incrementTransactionCount();
+        txn.add(page);
     }
 
     /**
@@ -237,18 +237,18 @@ final class TransactionManager {
      */
     void commit() throws IOException {
         LongPacker.packInt(oos, txn.size());
-        for (BlockIo block : txn) {
-            block.writeExternal(oos, cipherIn);
+        for (PageIo page : txn) {
+            page.writeExternal(oos, cipherIn);
         }
 
 
         sync();
 
-        // set clean flag to indicate blocks have been written to log
+        // set clean flag to indicate pages have been written to log
         setClean(txn);
 
         // open a new ObjectOutputStream in order to store
-        // newer states of BlockIo
+        // newer states of PageIo
 //        oos = new DataOutputStream(new BufferedOutputStream(fos));
     }
 
@@ -296,7 +296,7 @@ final class TransactionManager {
 
 
         if (txn != null){
-            discardBlocks(txn);
+            discardPages(txn);
             txn = null;
         }
 
@@ -307,17 +307,17 @@ final class TransactionManager {
 
     /**
      * INNER CLASS.
-     * Comparator class for use by the tree set used to store the blocks
-     * to write for this transaction.  The BlockIo objects are ordered by
-     * their blockIds.
+     * Comparator class for use by the tree set used to store the pages
+     * to write for this transaction.  The PageIo objects are ordered by
+     * their page ids.
      */
-    private static final Comparator<BlockIo> BLOCK_IO_COMPARTOR = new Comparator<BlockIo>() {
+    private static final Comparator<PageIo> PAGE_IO_COMPARTOR = new Comparator<PageIo>() {
 
-        public int compare(BlockIo block1, BlockIo block2) {
+        public int compare(PageIo page1, PageIo page2) {
 
-            if (block1.getBlockId() == block2.getBlockId()) {
+            if (page1.getPageId() == page2.getPageId()) {
                 return 0;
-            } else if (block1.getBlockId() < block2.getBlockId()) {
+            } else if (page1.getPageId() < page2.getPageId()) {
                 return -1;
             } else {
                 return 1;

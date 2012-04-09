@@ -23,9 +23,9 @@ class Utils {
     public static byte[] encrypt(Cipher cipherIn, ByteBuffer b) {
         if(cipherIn==null && b.hasArray())
             return b.array();
-        byte[] bb = new byte[Storage.BLOCK_SIZE];
+        byte[] bb = new byte[Storage.PAGE_SIZE];
         b.rewind();
-        b.get(bb,0,Storage.BLOCK_SIZE);
+        b.get(bb,0,Storage.PAGE_SIZE);
         return encrypt(cipherIn,bb);
     }
     

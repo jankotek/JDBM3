@@ -32,9 +32,9 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
      * Test constructor
      */
     public void testCtor() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        RecordFile free = newRecordFile();
+        PageFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
 
         PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
@@ -47,9 +47,9 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
      */
     public void testBasics() throws Exception {
 
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
-        RecordFile free = newRecordFile();
+        PageFile free = newRecordFile();
         PageManager pmfree = new PageManager(free);
         PhysicalRowIdManager physMgr = new PhysicalRowIdManager(f, pm);
 
@@ -69,7 +69,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         assertTrue("check data2",
                 UtilTT.checkRecord(a2.toByteArray(), 20000, (byte) 2));
 
-        // insert a third record. This'll effectively block the first one
+        // insert a third record. This'll effectively page the first one
         // from growing
         data = UtilTT.makeRecord(20, (byte) 3);
         long loc3 = physMgr.insert(data, 0, data.length);
@@ -94,7 +94,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
     }
 
     public void testTwoRecords() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -106,7 +106,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
     }
 
     public void testDeleteRecord() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -122,7 +122,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void testTwoLargeRecord() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -136,7 +136,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void testManyLargeRecord() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -156,7 +156,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void testSplitRecordAcrossPage() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -166,7 +166,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         physmgr.free(id);
 
         //record which crosses page should be sliced to two, so it does not cross the page
-        int firstSize = Storage.BLOCK_SIZE - Magic.DATA_PAGE_O_DATA - RecordHeader.SIZE - 3000 - RecordHeader.SIZE;
+        int firstSize = Storage.PAGE_SIZE - Magic.DATA_PAGE_O_DATA - RecordHeader.SIZE - 3000 - RecordHeader.SIZE;
         int secondSize = 3000-firstSize - RecordHeader.SIZE;
 
 
@@ -177,7 +177,7 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void testFreeMidPages() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalRowIdManager physmgr = new PhysicalRowIdManager(f, pm);
 
@@ -189,8 +189,8 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
         //if record occupies multiple pages, mid pages should be freed and record trimmed.
         int newSize = 30000;
 
-        while(newSize>Storage.BLOCK_SIZE - Magic.DATA_PAGE_O_DATA)
-            newSize = newSize - (Storage.BLOCK_SIZE - Magic.DATA_PAGE_O_DATA);
+        while(newSize>Storage.PAGE_SIZE - Magic.DATA_PAGE_O_DATA)
+            newSize = newSize - (Storage.PAGE_SIZE - Magic.DATA_PAGE_O_DATA);
 
 
         assertEquals(listRecords(pm), arrayList(3000, -newSize, 1000));
@@ -208,25 +208,25 @@ public class PhysicalRowIdManagerTest extends TestCaseWithTestFile {
            pageid!=0;
            pageid = pageman.getNext(pageid)){
            
-           BlockIo block = pageman.file.get(pageid);
+           PageIo page = pageman.file.get(pageid);
 
 
                       
-           while(pos < Storage.BLOCK_SIZE-RecordHeader.SIZE){
+           while(pos < Storage.PAGE_SIZE -RecordHeader.SIZE){
 
-               int size = RecordHeader.getAvailableSize(block, (short) pos);
+               int size = RecordHeader.getAvailableSize(page, (short) pos);
                if(size == 0) 
                    break;
-               int currSize =RecordHeader.getCurrentSize(block, (short) pos);
+               int currSize =RecordHeader.getCurrentSize(page, (short) pos);
                pos+=size+RecordHeader.SIZE;
                if(currSize==0)
                    size = -size;
                ret.add(size);
            }
            
-           pos = pos +Magic.DATA_PAGE_O_DATA - Storage.BLOCK_SIZE;
+           pos = pos +Magic.DATA_PAGE_O_DATA - Storage.PAGE_SIZE;
 
-           pageman.file.release(block);
+           pageman.file.release(page);
        }
                    
 

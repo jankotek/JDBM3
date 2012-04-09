@@ -52,8 +52,8 @@ abstract class TestCaseWithTestFile extends TestCase {
         return testFolder + File.separator + "test" + System.nanoTime();
     }
 
-    static public RecordFile newRecordFile() throws IOException {
-        return new RecordFile(newTestFile());
+    static public PageFile newRecordFile() throws IOException {
+        return new PageFile(newTestFile());
     }
 
     static public DBAbstract newDBCache() throws IOException {

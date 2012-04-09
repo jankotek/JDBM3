@@ -26,12 +26,12 @@ interface Magic {
     short FILE_HEADER = 0x1350;
 
     /**
-     * Magic for blocks. They're offset by the block type magic codes.
+     * Magic for pages. They're offset by the page type magic codes.
      */
-    short BLOCK = 0x1351;
+    short PAGE_MAGIC = 0x1351;
 
     /**
-     * Magics for blocks in certain lists. Offset by baseBlockMagic
+     * Magics for pages in certain lists.
      */
     short FREE_PAGE = 0;
     short USED_PAGE = 1;
@@ -89,13 +89,13 @@ interface Magic {
     short PAGE_HEADER_O_PREV = PAGE_HEADER_O_NEXT + Magic.SZ_SIX_BYTE_LONG;
     short PAGE_HEADER_SIZE = PAGE_HEADER_O_PREV + Magic.SZ_SIX_BYTE_LONG;
 
-    short PhysicalRowId_O_LOCATION = 0; // long block
+    short PhysicalRowId_O_LOCATION = 0; // long page
 //    short PhysicalRowId_O_OFFSET = Magic.SZ_SIX_BYTE_LONG; // short offset
     int PhysicalRowId_SIZE = Magic.SZ_SIX_BYTE_LONG;
     
     short DATA_PAGE_O_FIRST = PAGE_HEADER_SIZE; // short firstrowid
     short DATA_PAGE_O_DATA = (short) (DATA_PAGE_O_FIRST + Magic.SZ_SHORT);
-    short DATA_PER_PAGE = (short) (Storage.BLOCK_SIZE - DATA_PAGE_O_DATA);
+    short DATA_PER_PAGE = (short) (Storage.PAGE_SIZE - DATA_PAGE_O_DATA);
 
 
 

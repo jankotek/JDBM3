@@ -58,7 +58,7 @@ class DBStore
     /**
      * Underlying file for store records.
      */
-    private RecordFile _file;
+    private PageFile _file;
 
     /**
      * Page manager for physical manager.
@@ -156,7 +156,7 @@ class DBStore
 
     private void reopen()  {
         try{
-        _file = new RecordFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
+        _file = new PageFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
         _pageman = new PageManager(_file);
         _physMgr = new PhysicalRowIdManager(_file, _pageman);
 
@@ -486,57 +486,57 @@ class DBStore
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _file.get(pageid);
+                PageIo page = _file.get(pageid);
                 String file = zip2 +  pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, page.getData()));
                 z.closeEntry();
-                _file.release(block);
+                _file.release(page);
             }
             for (long pageid = _pageman.getFirst(Magic.FREELOGIDS_PAGE);
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _file.get(pageid);
+                PageIo page = _file.get(pageid);
                 String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, page.getData()));
                 z.closeEntry();
-                _file.release(block);
+                _file.release(page);
             }
 
             for (long pageid = _pageman.getFirst(Magic.USED_PAGE);
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _file.get(pageid);
+                PageIo page = _file.get(pageid);
                 String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, page.getData()));
                 z.closeEntry();
-                _file.release(block);
+                _file.release(page);
             }
             for (long pageid = _pageman.getFirst(Magic.FREEPHYSIDS_PAGE);
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _file.get(pageid);
+                PageIo page = _file.get(pageid);
                 String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, page.getData()));
                 z.closeEntry();
-                _file.release(block);
+                _file.release(page);
             }
             for (long pageid = _pageman.getFirst(Magic.FREEPHYSIDS_ROOT_PAGE);
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo block = _file.get(pageid);
+                PageIo page = _file.get(pageid);
                 String file = zip2 + pageid;
                 z.putNextEntry(new ZipEntry(file));
-                z.write(Utils.encrypt(cipherIn, block.getData()));
+                z.write(Utils.encrypt(cipherIn, page.getData()));
                 z.closeEntry();
-                _file.release(block);
+                _file.release(page);
             }
 
             z.close();
@@ -583,20 +583,20 @@ class DBStore
                 long total = 0;
                 long pages = statisticsCountPages(Magic.USED_PAGE);
                 total += pages;
-                b.append("  " + pages + " used pages with size " + Utils.formatSpaceUsage(pages * Storage.BLOCK_SIZE) + "\n");
+                b.append("  " + pages + " used pages with size " + Utils.formatSpaceUsage(pages * Storage.PAGE_SIZE) + "\n");
                 pages = statisticsCountPages(Magic.TRANSLATION_PAGE);
                 total += pages;
-                b.append("  " + pages + " record translation pages with size " + Utils.formatSpaceUsage(pages * Storage.BLOCK_SIZE) + "\n");
+                b.append("  " + pages + " record translation pages with size " + Utils.formatSpaceUsage(pages * Storage.PAGE_SIZE) + "\n");
                 pages = statisticsCountPages(Magic.FREE_PAGE);
                 total += pages;
-                b.append("  " + pages + " free (unused) pages with size " + Utils.formatSpaceUsage(pages * Storage.BLOCK_SIZE) + "\n");
+                b.append("  " + pages + " free (unused) pages with size " + Utils.formatSpaceUsage(pages * Storage.PAGE_SIZE) + "\n");
                 pages = statisticsCountPages(Magic.FREEPHYSIDS_PAGE);
                 total += pages;
-                b.append("  " + pages + " free (phys) pages with size " + Utils.formatSpaceUsage(pages * Storage.BLOCK_SIZE) + "\n");
+                b.append("  " + pages + " free (phys) pages with size " + Utils.formatSpaceUsage(pages * Storage.PAGE_SIZE) + "\n");
                 pages = statisticsCountPages(Magic.FREELOGIDS_PAGE);
                 total += pages;
-                b.append("  " + pages + " free (logical) pages with size " + Utils.formatSpaceUsage(pages * Storage.BLOCK_SIZE) + "\n");
-                b.append("  Total number of pages is " + total + " with size " + Utils.formatSpaceUsage(total * Storage.BLOCK_SIZE) + "\n");
+                b.append("  " + pages + " free (logical) pages with size " + Utils.formatSpaceUsage(pages * Storage.PAGE_SIZE) + "\n");
+                b.append("  Total number of pages is " + total + " with size " + Utils.formatSpaceUsage(total * Storage.PAGE_SIZE) + "\n");
 
             }
             {
@@ -614,7 +614,7 @@ class DBStore
                      pageid != 0;
                      pageid = _pageman.getNext(pageid)
                         ) {
-                    BlockIo io = _file.get(pageid);
+                    PageIo io = _file.get(pageid);
 
                     for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
                         final int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
@@ -632,11 +632,11 @@ class DBStore
                         recordCount++;
 
                         //get size
-                        BlockIo block = _file.get(physLoc>>> Storage.BLOCK_SIZE_SHIFT);
+                        PageIo page = _file.get(physLoc>>> Storage.PAGE_SIZE_SHIFT);
                         final short physOffset =(short) (physLoc & Storage.OFFSET_MASK);
-                        int availSize = RecordHeader.getAvailableSize(block, physOffset);
-                        int currentSize = RecordHeader.getCurrentSize(block, physOffset);
-                        _file.release(block);
+                        int availSize = RecordHeader.getAvailableSize(page, physOffset);
+                        int currentSize = RecordHeader.getCurrentSize(page, physOffset);
+                        _file.release(page);
 
                         maximalAvailSizeDiff = Math.max(maximalAvailSizeDiff, availSize - currentSize);
                         maximalRecordSize = Math.max(maximalRecordSize, currentSize);
@@ -727,7 +727,7 @@ class DBStore
                  pageid != 0;
                  pageid = _pageman.getNext(pageid)
                     ) {
-                BlockIo io = _file.get(pageid);
+                PageIo io = _file.get(pageid);
 
                 for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
                     final int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
@@ -735,7 +735,7 @@ class DBStore
                         throw new Error();
 
                     //write to new file
-                    final long logicalRowId =  ((-pageid) << Storage.BLOCK_SIZE_SHIFT) + (long) pos;
+                    final long logicalRowId =  ((-pageid) << Storage.PAGE_SIZE_SHIFT) + (long) pos;
 
                     //read from logical location in second db,
                     //check if record was already inserted as part of collections
@@ -864,7 +864,7 @@ class DBStore
 
         long page = _pageman.getFirst(Magic.TRANSLATION_PAGE);
         while (page != 0) {
-            BlockIo io = _file.get(page);
+            PageIo io = _file.get(page);
             for (int i = 0; i < _logicMgr.ELEMS_PER_PAGE; i += 1) {
                 int pos = Magic.PAGE_HEADER_SIZE + i * Magic.PhysicalRowId_SIZE;
                 if (pos > Short.MAX_VALUE)
@@ -883,16 +883,16 @@ class DBStore
     }
 
 
-    private  static int COMPRESS_RECID_BLOCK_SHIFT = Integer.MIN_VALUE;
+    private  static int COMPRESS_RECID_PAGE_SHIFT = Integer.MIN_VALUE;
     static{
         int shift = 1;
         while((1<<shift) <LogicalRowIdManager.ELEMS_PER_PAGE )
         shift++;
-        COMPRESS_RECID_BLOCK_SHIFT = shift;
+        COMPRESS_RECID_PAGE_SHIFT = shift;
     }
 
 
-    private final static long COMPRESS_RECID_OFFSET_MASK =  0xFFFFFFFFFFFFFFFFL >>> (64-COMPRESS_RECID_BLOCK_SHIFT);
+    private final static long COMPRESS_RECID_OFFSET_MASK =  0xFFFFFFFFFFFFFFFFL >>> (64- COMPRESS_RECID_PAGE_SHIFT);
 
 
     /**
@@ -900,7 +900,7 @@ class DBStore
      * This way resulting number is smaller and can be easier packed with LongPacker
      */
     static long compressRecid(final long recid) {
-        final long block = recid>>> Storage.BLOCK_SIZE_SHIFT;
+        final long page = recid>>> Storage.PAGE_SIZE_SHIFT;
         short offset =  (short) (recid & Storage.OFFSET_MASK);
 
         offset = (short) (offset - Magic.PAGE_HEADER_SIZE);
@@ -908,15 +908,15 @@ class DBStore
             throw new InternalError("recid not dividable "+Magic.PhysicalRowId_SIZE);
         long slot = offset / Magic.PhysicalRowId_SIZE;
 
-        return (block << COMPRESS_RECID_BLOCK_SHIFT) + slot;
+        return (page << COMPRESS_RECID_PAGE_SHIFT) + slot;
 
     }
 
     static long decompressRecid(final long recid) {
 
-        final long block = recid >>> COMPRESS_RECID_BLOCK_SHIFT;
+        final long page = recid >>> COMPRESS_RECID_PAGE_SHIFT;
         final short offset = (short) ((recid & COMPRESS_RECID_OFFSET_MASK) * Magic.PhysicalRowId_SIZE + Magic.PAGE_HEADER_SIZE);
-        return  (block << Storage.BLOCK_SIZE_SHIFT) + (long) offset;
+        return  (page << Storage.PAGE_SIZE_SHIFT) + (long) offset;
     }
 
 

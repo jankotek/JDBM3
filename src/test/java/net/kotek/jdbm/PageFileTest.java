@@ -17,12 +17,11 @@
 package net.kotek.jdbm;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
- * This class contains all Unit tests for {@link RecordFile}.
+ * This class contains all Unit tests for {@link PageFile}.
  */
-final public class RecordFileTest
+final public class PageFileTest
         extends TestCaseWithTestFile {
 
 
@@ -47,7 +46,7 @@ final public class RecordFileTest
      */
     public void testCtor()
             throws Exception {
-        RecordFile file = newRecordFile();
+        PageFile file = newRecordFile();
         file.close();
     }
 
@@ -58,12 +57,12 @@ final public class RecordFileTest
     public void testAddZero()
             throws Exception {
         String f = newTestFile();
-        RecordFile file = new RecordFile(f);
-        BlockIo data = file.get(0);
+        PageFile file = new PageFile(f);
+        PageIo data = file.get(0);
         data.writeByte(14, (byte) 'b');
         file.release(0, true);
         file.close();
-        file = new RecordFile(f);
+        file = new PageFile(f);
         data = file.get(0);
         assertEquals((byte) 'b', data.readByte(14));
         file.release(0, false);
@@ -77,10 +76,10 @@ final public class RecordFileTest
     public void testWithHoles()
             throws Exception {
         String f = newTestFile();
-        RecordFile file = new RecordFile(f);
+        PageFile file = new PageFile(f);
 
         // Write recid 0, byte 0 with 'b'
-        BlockIo data = file.get(0);
+        PageIo data = file.get(0);
         data.writeByte(0,(byte) 'b');
         file.release(0, true);
 
@@ -96,7 +95,7 @@ final public class RecordFileTest
 
         file.close();
 
-        file = new RecordFile(f);
+        file = new PageFile(f);
         data = file.get(0);
         assertEquals("0 = b", (byte) 'b', data.readByte(0));
         file.release(0, false);
@@ -118,10 +117,10 @@ final public class RecordFileTest
      */
     public void testWrongRelease()
             throws Exception {
-        RecordFile file = newRecordFile();
+        PageFile file = newRecordFile();
 
         // Write recid 0, byte 0 with 'b'
-        BlockIo data = file.get(0);
+        PageIo data = file.get(0);
         data.writeByte(0,  (byte) 'b');
         try {
             file.release(1, true);
@@ -135,7 +134,7 @@ final public class RecordFileTest
 
         // @alex retry to open the file
         /*
-        file = new RecordFile( testFileName );
+        file = new PageFile( testFileName );
         PageManager pm = new PageManager( file );
         pm.close();
         file.close();

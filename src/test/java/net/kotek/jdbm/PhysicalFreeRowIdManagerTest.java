@@ -28,7 +28,7 @@ public class PhysicalFreeRowIdManagerTest extends TestCaseWithTestFile {
      * Test constructor
      */
     public void testCtor() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalFreeRowIdManager freeMgr = new PhysicalFreeRowIdManager(
                 f, pm);
@@ -42,7 +42,7 @@ public class PhysicalFreeRowIdManagerTest extends TestCaseWithTestFile {
      */
     public void testBasics() throws Exception {
 
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalFreeRowIdManager freeMgr = new PhysicalFreeRowIdManager(f, pm);
 
@@ -55,11 +55,11 @@ public class PhysicalFreeRowIdManagerTest extends TestCaseWithTestFile {
     }
 
     public void testPhysRecRootPage() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
 
         long pageid = pm.allocate(Magic.FREEPHYSIDS_ROOT_PAGE);
-        BlockIo p = f.get(pageid);
+        PageIo p = f.get(pageid);
         p.writeInt(100,100);
         f.release(p);
         pm.commit();
@@ -74,13 +74,13 @@ public class PhysicalFreeRowIdManagerTest extends TestCaseWithTestFile {
         for(int i = 1;i<PhysicalFreeRowIdManager.MAX_REC_SIZE;i++){
             int offset = PhysicalFreeRowIdManager.sizeToRootOffset(i);
 
-            assertTrue(offset<=Storage.BLOCK_SIZE);
+            assertTrue(offset<=Storage.PAGE_SIZE);
         }
     }
 
 
     public void test_record_reallocation() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalFreeRowIdManager freeMgr = new PhysicalFreeRowIdManager(f, pm);
 
@@ -94,7 +94,7 @@ public class PhysicalFreeRowIdManagerTest extends TestCaseWithTestFile {
 
 
     public void test_all_sizes_deallocation() throws IOException {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
         PhysicalFreeRowIdManager freeMgr = new PhysicalFreeRowIdManager(f, pm);
 

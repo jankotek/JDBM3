@@ -32,39 +32,39 @@ import java.util.Iterator;
  * The set of dirty records on the in-use list constitutes a transaction.
  * Later on, we will send these records to some recovery thingy.
  * <p/>
- * RecordFile is splited between more files, each with max size 1GB.
+ * PageFile is splited between more files, each with max size 1GB.
  */
-final class RecordFile {
-    final TransactionManager txnMgr;
+final class PageFile {
+    final PageTransactionManager txnMgr;
 
 
     /**
-     * Blocks currently locked for read/update ops. When released the block goes
-     * to the dirty or clean list, depending on a flag.  The file header block is
-     * normally locked plus the block that is currently being read or modified.
+     * Pages currently locked for read/update ops. When released the page goes
+     * to the dirty or clean list, depending on a flag.  The file header page  is
+     * normally locked plus the page that is currently being read or modified.
      *
-     * @see BlockIo#isDirty()
+     * @see PageIo#isDirty()
      */
-    private final LongHashMap<BlockIo> inUse = new LongHashMap<BlockIo>();
+    private final LongHashMap<PageIo> inUse = new LongHashMap<PageIo>();
 
     /**
-     * Blocks whose state is dirty.
+     * Pages whose state is dirty.
      */
-    private final LongHashMap<BlockIo> dirty = new LongHashMap<BlockIo>();
+    private final LongHashMap<PageIo> dirty = new LongHashMap<PageIo>();
     /**
-     * Blocks in a <em>historical</em> transaction(s) that have been written
+     * Pages in a <em>historical</em> transaction(s) that have been written
      * onto the log but which have not yet been committed to the database.
      */
-    private final LongHashMap<BlockIo> inTxn = new LongHashMap<BlockIo>();
+    private final LongHashMap<PageIo> inTxn = new LongHashMap<PageIo>();
 
 
     // transactions disabled?
     final boolean transactionsDisabled;
 
     /**
-     * A block of clean data to wipe clean pages.
+     * A array of clean data to wipe clean pages.
      */
-    static final byte[] CLEAN_DATA = new byte[Storage.BLOCK_SIZE];
+    static final byte[] CLEAN_DATA = new byte[Storage.PAGE_SIZE];
 
 
     final Storage storage;
@@ -81,7 +81,7 @@ final class RecordFile {
      * @throws IOException whenever the creation of the underlying
      *                     RandomAccessFile throws it.
      */
-    RecordFile(String fileName, boolean readonly,  boolean transactionsDisabled, Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile) throws IOException {
+    PageFile(String fileName, boolean readonly, boolean transactionsDisabled, Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile) throws IOException {
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
         this.transactionsDisabled = transactionsDisabled;
@@ -99,120 +99,121 @@ final class RecordFile {
         if (this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
         if (!readonly && !transactionsDisabled) {
-            txnMgr = new TransactionManager(this, storage, cipherIn, cipherOut);
+            txnMgr = new PageTransactionManager(this, storage, cipherIn, cipherOut);
         } else {
             txnMgr = null;
         }
     }
 
-    public RecordFile(String filename) throws IOException {
+    public PageFile(String filename) throws IOException {
         this(filename, false, false, null, null,false);
     }
 
 
     /**
-     * Gets a block from the file. The returned byte array is
+     * Gets a page from the file. The returned byte array is
      * the in-memory copy of the record, and thus can be written
      * (and subsequently released with a dirty flag in order to
-     * write the block back).
+     * write the page back). If transactions are disabled, changes
+     * may be written directly
      *
-     * @param blockid The record number to retrieve.
+     * @param pageId The record number to retrieve.
      */
-    BlockIo get(long blockid) throws IOException {
+    PageIo get(long pageId) throws IOException {
 
         // try in transaction list, dirty list, free list
-        BlockIo node = inTxn.get(blockid);
+        PageIo node = inTxn.get(pageId);
         if (node != null) {
-            inTxn.remove(blockid);
-            inUse.put(blockid, node);
+            inTxn.remove(pageId);
+            inUse.put(pageId, node);
             return node;
         }
-        node = dirty.get(blockid);
+        node = dirty.get(pageId);
         if (node != null) {
-            dirty.remove(blockid);
-            inUse.put(blockid, node);
+            dirty.remove(pageId);
+            inUse.put(pageId, node);
             return node;
         }
 
 
         // sanity check: can't be on in use list
-        if (inUse.get(blockid) != null) {
-            throw new Error("double get for block " + blockid);
+        if (inUse.get(pageId) != null) {
+            throw new Error("double get for page " + pageId);
         }
 
         //read node from file
         if (cipherOut == null) {
-            node = new BlockIo(blockid,storage.read(blockid));
+            node = new PageIo(pageId,storage.read(pageId));
         } else {
             //decrypt if needed
-            ByteBuffer b = storage.read(blockid);
+            ByteBuffer b = storage.read(pageId);
             byte[] bb;
             if(b.hasArray()){
                 bb = b.array();
             }else{
-                bb = new byte[Storage.BLOCK_SIZE];
+                bb = new byte[Storage.PAGE_SIZE];
                 b.position(0);
-                b.get(bb, 0, Storage.BLOCK_SIZE);
+                b.get(bb, 0, Storage.PAGE_SIZE);
             }
             if (!Utils.allZeros(bb)) try {
                 bb = cipherOut.doFinal(bb);
-                node = new BlockIo(blockid, ByteBuffer.wrap(bb));
+                node = new PageIo(pageId, ByteBuffer.wrap(bb));
                 } catch (Exception e) {
                 throw new IOError(e);
             }else {
-                node = new BlockIo(blockid, ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer());
+                node = new PageIo(pageId, ByteBuffer.wrap(PageFile.CLEAN_DATA).asReadOnlyBuffer());
             }
         }
 
 
-        inUse.put(blockid, node);
+        inUse.put(pageId, node);
         node.setClean();
         return node;
     }
 
 
     /**
-     * Releases a block.
+     * Releases a page.
      *
-     * @param blockid The record number to release.
-     * @param isDirty If true, the block was modified since the get().
+     * @param pageId The record number to release.
+     * @param isDirty If true, the page was modified since the get().
      */
-    void release(final long blockid, final boolean isDirty) throws IOException {
+    void release(final long pageId, final boolean isDirty) throws IOException {
 
-        final BlockIo block = inUse.remove(blockid);
-        if (!block.isDirty() && isDirty)
-            block.setDirty();
+        final PageIo page = inUse.remove(pageId);
+        if (!page.isDirty() && isDirty)
+            page.setDirty();
 
-        if (block.isDirty()) {
-            dirty.put(blockid, block);
-        } else if (!transactionsDisabled && block.isInTransaction()) {
-            inTxn.put(blockid, block);
+        if (page.isDirty()) {
+            dirty.put(pageId, page);
+        } else if (!transactionsDisabled && page.isInTransaction()) {
+            inTxn.put(pageId, page);
         }
     }
 
     /**
-     * Releases a block.
+     * Releases a page.
      *
-     * @param block The block to release.
+     * @param page The page to release.
      */
-    void release(final BlockIo block) throws IOException {
-        final long key = block.getBlockId();
+    void release(final PageIo page) throws IOException {
+        final long key = page.getPageId();
         inUse.remove(key);
-        if (block.isDirty()) {
-            // System.out.println( "Dirty: " + key + block );
-            dirty.put(key, block);
-        } else if (!transactionsDisabled && block.isInTransaction()) {
-            inTxn.put(key, block);
+        if (page.isDirty()) {
+            // System.out.println( "Dirty: " + key + page );
+            dirty.put(key, page);
+        } else if (!transactionsDisabled && page.isInTransaction()) {
+            inTxn.put(key, page);
         }
     }
 
     /**
-     * Discards a block (will not write the block even if it's dirty)
+     * Discards a page (will not write the page even if it's dirty)
      *
-     * @param block The block to discard.
+     * @param page The page to discard.
      */
-    void discard(BlockIo block) {
-        long key = block.getBlockId();
+    void discard(PageIo page) {
+        long key = page.getPageId();
         inUse.remove(key);
     }
 
@@ -231,7 +232,7 @@ final class RecordFile {
         //  System.out.println("committing...");
 
         if (dirty.size() == 0) {
-            // if no dirty blocks, skip commit process
+            // if no dirty pages, skip commit process
             return;
         }
 
@@ -239,28 +240,28 @@ final class RecordFile {
             txnMgr.start();
         }
 
-        //sort block by IDs
-        long[] blockIds = new long[dirty.size()];
+        //sort pages by IDs
+        long[] pageIds = new long[dirty.size()];
         int c = 0;
-        for (Iterator<BlockIo> i = dirty.valuesIterator(); i.hasNext(); ) {
-            blockIds[c] = i.next().getBlockId();
+        for (Iterator<PageIo> i = dirty.valuesIterator(); i.hasNext(); ) {
+            pageIds[c] = i.next().getPageId();
             c++;
         }
-        Arrays.sort(blockIds);
+        Arrays.sort(pageIds);
 
-        for (long blockid : blockIds) {
-            BlockIo node = dirty.get(blockid);
+        for (long pageId : pageIds) {
+            PageIo node = dirty.get(pageId);
 
             // System.out.println("node " + node + " map size now " + dirty.size());
             if (transactionsDisabled) {
                 if(cipherIn !=null)                    
-                   storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, node.getData())));
+                   storage.write(node.getPageId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, node.getData())));
                 else
-                   storage.write(node.getBlockId(),node.getData());
+                   storage.write(node.getPageId(),node.getData());
                 node.setClean();
             } else {
                 txnMgr.add(node);
-                inTxn.put(node.getBlockId(), node);
+                inTxn.put(node.getPageId(), node);
             }
         }
         dirty.clear();
@@ -312,14 +313,14 @@ final class RecordFile {
 
         // these actually ain't that bad in a production release
         if (!dirty.isEmpty()) {
-            System.out.println("ERROR: dirty blocks at close time");
+            System.out.println("ERROR: dirty pages at close time");
             showList(dirty.valuesIterator());
-            throw new Error("Dirty blocks at close time");
+            throw new Error("Dirty pages at close time");
         }
         if (!inUse.isEmpty()) {
-            System.out.println("ERROR: inUse blocks at close time");
+            System.out.println("ERROR: inUse pages at close time");
             showList(inUse.valuesIterator());
-            throw new Error("inUse blocks at close time");
+            throw new Error("inUse pages  at close time");
         }
 
         storage.sync();
@@ -341,7 +342,7 @@ final class RecordFile {
     /**
      * Prints contents of a list
      */
-    private void showList(Iterator<BlockIo> i) {
+    private void showList(Iterator<PageIo> i) {
         int cnt = 0;
         while (i.hasNext()) {
             System.out.println("elem " + cnt + ": " + i.next());
@@ -353,13 +354,13 @@ final class RecordFile {
      * Synchs a node to disk. This is called by the transaction manager's
      * synchronization code.
      */
-    void synch(BlockIo node) throws IOException {
+    void synch(PageIo node) throws IOException {
         ByteBuffer data = node.getData();
         if (data != null) {
             if(cipherIn!=null)
-                storage.write(node.getBlockId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, data)));
+                storage.write(node.getPageId(), ByteBuffer.wrap(Utils.encrypt(cipherIn, data)));
             else
-                storage.write(node.getBlockId(),  data);
+                storage.write(node.getPageId(),  data);
         }
     }
 
@@ -367,9 +368,9 @@ final class RecordFile {
      * Releases a node from the transaction list, if it was sitting
      * there.
      */
-    void releaseFromTransaction(BlockIo node)
+    void releaseFromTransaction(PageIo node)
             throws IOException {
-        inTxn.remove(node.getBlockId());
+        inTxn.remove(node.getPageId());
     }
 
     /**

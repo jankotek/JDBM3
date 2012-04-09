@@ -26,7 +26,7 @@ public class PageManagerTest extends TestCaseWithTestFile {
      * Test constructor
      */
     public void testCtor() throws Exception {
-        RecordFile f = newRecordFile();
+        PageFile f = newRecordFile();
         PageManager pm = new PageManager(f);
 
         f.forceClose();
@@ -37,7 +37,7 @@ public class PageManagerTest extends TestCaseWithTestFile {
      */
     public void testAllocSingleList() throws Exception {
         String file = newTestFile();
-        RecordFile f = new RecordFile(file);
+        PageFile f = new PageFile(file);
         PageManager pm = new PageManager(f);
         for (int i = 0; i < 100; i++) {
             assertEquals("allocate ", (long) i + 1,
@@ -46,7 +46,7 @@ public class PageManagerTest extends TestCaseWithTestFile {
         pm.close();
         f.close();
 
-        f = new RecordFile(file);
+        f = new PageFile(file);
         pm = new PageManager(f);
 
         long i = 1;

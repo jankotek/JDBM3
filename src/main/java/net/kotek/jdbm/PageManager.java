@@ -25,14 +25,14 @@ import java.nio.ByteBuffer;
  */
 final class PageManager {
     // our record file
-    final RecordFile file;
+    final PageFile file;
 
-    private BlockIo headerBuf;
+    private PageIo headerBuf;
 
     /**
      * Creates a new page manager using the indicated record file.
      */
-    PageManager(RecordFile file) throws IOException {
+    PageManager(PageFile file) throws IOException {
         this.file = file;
 
         // check the file headerBuf.fileHeader If the magic is 0, we assume a new
@@ -71,25 +71,25 @@ final class PageManager {
                 isNew = true;
             }
         }else{
-            //translation blocks have different allocation scheme
+            //translation pages have different allocation scheme
             //and also have negative address
            retval = headerBuf.fileHeaderGetLastOf(Magic.TRANSLATION_PAGE) - 1;
            isNew = true;
         }
 
         // Cool. We have a record, add it to the correct list
-        BlockIo pageHdr = file.get(retval);
+        PageIo pageHdr = file.get(retval);
         if(isNew){
             pageHdr.pageHeaderSetType(type);
         }else{
             if (!pageHdr.pageHeaderMagicOk())
-                throw new Error("CRITICAL: page header magic for block "+
-                        pageHdr.getBlockId() + " not OK "+ pageHdr.pageHeaderGetMagic());
+                throw new Error("CRITICAL: page header magic for page "+
+                        pageHdr.getPageId() + " not OK "+ pageHdr.pageHeaderGetMagic());
         }
         long oldLast = headerBuf.fileHeaderGetLastOf(type);
 
         // Clean data.
-        pageHdr.writeByteArray(RecordFile.CLEAN_DATA, 0, 0, Storage.BLOCK_SIZE);
+        pageHdr.writeByteArray(PageFile.CLEAN_DATA, 0, 0, Storage.PAGE_SIZE);
 
         pageHdr.pageHeaderSetType(type);
         pageHdr.pageHeaderSetPrev(oldLast);
@@ -125,7 +125,7 @@ final class PageManager {
             throw new Error("free header page?");
 
         // get the page and read next and previous pointers
-        BlockIo pageHdr = file.get(recid);
+        PageIo pageHdr = file.get(recid);
         long prev = pageHdr.pageHeaderGetPrev();
         long next = pageHdr.pageHeaderGetNext();
 
@@ -157,24 +157,24 @@ final class PageManager {
 
 
     /**
-     * Returns the page following the indicated block
+     * Returns the page following the indicated page
      */
-    long getNext(long block) throws IOException {
+    long getNext(long page) throws IOException {
         try {
-            return file.get(block).pageHeaderGetNext();
+            return file.get(page).pageHeaderGetNext();
         } finally {
-            file.release(block, false);
+            file.release(page, false);
         }
     }
 
     /**
-     * Returns the page before the indicated block
+     * Returns the page before the indicated page
      */
-    long getPrev(long block) throws IOException {
+    long getPrev(long page) throws IOException {
         try {
-            return file.get(block).pageHeaderGetPrev();
+            return file.get(page).pageHeaderGetPrev();
         } finally {
-            file.release(block, false);
+            file.release(page, false);
         }
     }
 
@@ -195,8 +195,8 @@ final class PageManager {
 
     /**
      * Commit all pending (in-memory) data by flushing the page manager.
-     * This forces a flush of all outstanding blocks (this it's an implicit
-     * {@link RecordFile#commit} as well).
+     * This forces a flush of all outstanding pages (this it's an implicit
+     * {@link PageFile#commit} as well).
      */
     void commit() throws IOException {
         // write the header out
@@ -211,7 +211,7 @@ final class PageManager {
 
     /**
      * Flushes the page manager. This forces a flush of all outstanding
-     * blocks (this it's an implicit {@link RecordFile#commit} as well).
+     * pages (this it's an implicit {@link PageFile#commit} as well).
      */
     void rollback() throws IOException {
         // release header
@@ -235,13 +235,13 @@ final class PageManager {
 
 
     /**
-     * PageManager pernamently locks zero block, and we need this for backups
+     * PageManager permanently locks zero page, and we need this for backups
      */
     ByteBuffer getHeaderBufData() {
         return headerBuf.getData();
     }
 
-    public BlockIo getFileHeader() {
+    public PageIo getFileHeader() {
         return headerBuf;
     }
 }

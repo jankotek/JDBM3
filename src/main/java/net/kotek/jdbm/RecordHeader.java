@@ -44,44 +44,44 @@ final class RecordHeader {
     /**
      * Returns the current size
      */
-    static int getCurrentSize(final BlockIo block, final short pos) {
-        int s = block.readByte(pos + O_CURRENTSIZE) & 0xFF;
+    static int getCurrentSize(final PageIo page, final short pos) {
+        int s = page.readByte(pos + O_CURRENTSIZE) & 0xFF;
         if (s == MAX_SIZE_SPACE + 1)
             return 0;
-        return getAvailableSize(block, pos) - s;
+        return getAvailableSize(page, pos) - s;
     }
 
     /**
      * Sets the current size
      */
-    static void setCurrentSize(final BlockIo block, final short pos, int value) {
+    static void setCurrentSize(final PageIo page, final short pos, int value) {
         if (value == 0) {
-            block.writeByte(pos + O_CURRENTSIZE, (byte) (MAX_SIZE_SPACE + 1));
+            page.writeByte(pos + O_CURRENTSIZE, (byte) (MAX_SIZE_SPACE + 1));
             return;
         }
-        int availSize = getAvailableSize(block, pos);
+        int availSize = getAvailableSize(page, pos);
         if (value < (availSize - MAX_SIZE_SPACE) || value > availSize)
             throw new IllegalArgumentException("currentSize out of bounds, need to realocate " + value + " - " + availSize);
-        block.writeByte(pos + O_CURRENTSIZE, (byte) (availSize - value));
+        page.writeByte(pos + O_CURRENTSIZE, (byte) (availSize - value));
     }
 
     /**
      * Returns the available size
      */
-    static int getAvailableSize(final BlockIo block, final short pos) {
-        return deconvertAvailSize(block.readShort(pos + O_AVAILABLESIZE));
+    static int getAvailableSize(final PageIo page, final short pos) {
+        return deconvertAvailSize(page.readShort(pos + O_AVAILABLESIZE));
     }
 
     /**
      * Sets the available size
      */
-    static void setAvailableSize(final BlockIo block, final short pos, int value) {
+    static void setAvailableSize(final PageIo page, final short pos, int value) {
         if (value != roundAvailableSize(value))
             throw new IllegalArgumentException("value is not rounded");
-        int oldCurrSize = getCurrentSize(block, pos);
+        int oldCurrSize = getCurrentSize(page, pos);
 
-        block.writeShort(pos + O_AVAILABLESIZE, convertAvailSize(value));
-        setCurrentSize(block, pos, oldCurrSize);
+        page.writeShort(pos + O_AVAILABLESIZE, convertAvailSize(value));
+        setCurrentSize(page, pos, oldCurrSize);
     }
 
 

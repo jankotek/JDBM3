@@ -24,9 +24,9 @@ import java.util.Arrays;
  */
 final class LogicalRowIdManager {
     // our record file and associated page manager
-    private final RecordFile file;
+    private final PageFile file;
     private final PageManager pageman;
-    static final short ELEMS_PER_PAGE = (short) ((Storage.BLOCK_SIZE - Magic.PAGE_HEADER_SIZE) / Magic.PhysicalRowId_SIZE);
+    static final short ELEMS_PER_PAGE = (short) ((Storage.PAGE_SIZE - Magic.PAGE_HEADER_SIZE) / Magic.PhysicalRowId_SIZE);
 
     private long[] freeRecordsInTransRowid = new long[4];
     private int freeRecordsInTransSize = 0;
@@ -36,13 +36,13 @@ final class LogicalRowIdManager {
     static final int OFFSET_FREE_COUNT = Magic.PAGE_HEADER_SIZE;
     static final int FREE_HEADER_SIZE = Magic.PAGE_HEADER_SIZE + Magic.SZ_SHORT;
     /** maximal number of free logical per page */
-    static final int FREE_RECORDS_PER_PAGE = (Storage.BLOCK_SIZE-FREE_HEADER_SIZE)/6;
+    static final int FREE_RECORDS_PER_PAGE = (Storage.PAGE_SIZE -FREE_HEADER_SIZE)/6;
 
 
     /**
      * Creates a log rowid manager using the indicated record file and page manager
      */
-    LogicalRowIdManager(RecordFile file, PageManager pageman) throws IOException {
+    LogicalRowIdManager(PageFile file, PageManager pageman) throws IOException {
         this.file = file;
         this.pageman = pageman;
     }
@@ -62,7 +62,7 @@ final class LogicalRowIdManager {
             long firstPage = pageman.allocate(Magic.TRANSLATION_PAGE);
             short curOffset = Magic.PAGE_HEADER_SIZE;
             for (int i = 0; i < ELEMS_PER_PAGE; i++) {
-                putFreeSlot(((-firstPage) << Storage.BLOCK_SIZE_SHIFT) + (long) curOffset);
+                putFreeSlot(((-firstPage) << Storage.PAGE_SIZE_SHIFT) + (long) curOffset);
 
                 curOffset += Magic.PhysicalRowId_SIZE;
             }
@@ -97,10 +97,10 @@ final class LogicalRowIdManager {
      */
     void delete(final long logicalrowid) throws IOException {
         //zero out old location, is needed for defragmentation
-        final long block = -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
-        final BlockIo xlatPage = file.get(block);
+        final long pageId = -(logicalrowid>>> Storage.PAGE_SIZE_SHIFT);
+        final PageIo xlatPage = file.get(pageId);
         xlatPage.pageHeaderSetLocation((short) (logicalrowid & Storage.OFFSET_MASK), 0);
-        file.release(block, true);
+        file.release(pageId, true);
         putFreeSlot(logicalrowid);
     }
 
@@ -112,10 +112,10 @@ final class LogicalRowIdManager {
      */
     void update(final long logicalrowid, final long physloc) throws IOException {
 
-        final long block =  -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
-        final BlockIo xlatPage = file.get(block);
+        final long pageId =  -(logicalrowid>>> Storage.PAGE_SIZE_SHIFT);
+        final PageIo xlatPage = file.get(pageId);
         xlatPage.pageHeaderSetLocation((short) (logicalrowid & Storage.OFFSET_MASK), physloc);
-        file.release(block, true);
+        file.release(pageId, true);
     }
 
     /**
@@ -125,18 +125,18 @@ final class LogicalRowIdManager {
      * @return The physical rowid, 0 if does not exist
      */
     long fetch(long logicalrowid) throws IOException {
-        final long block = -(logicalrowid>>> Storage.BLOCK_SIZE_SHIFT);
+        final long pageId = -(logicalrowid>>> Storage.PAGE_SIZE_SHIFT);
         final long last = pageman.getLast(Magic.TRANSLATION_PAGE);
-        if (last - 1 > block)
+        if (last - 1 > pageId)
             return 0;
 
         final short offset = (short) (logicalrowid & Storage.OFFSET_MASK);
 
-        final BlockIo xlatPage = file.get(block);
+        final PageIo xlatPage = file.get(pageId);
         final long ret =  xlatPage.pageHeaderGetLocation(offset);
 
 
-        file.release(block, false);
+        file.release(pageId, false);
         return ret;
     }
 
@@ -148,7 +148,7 @@ final class LogicalRowIdManager {
             //allocate new
             freeRecPageId = pageman.allocate(Magic.FREELOGIDS_PAGE);
         }
-        BlockIo freeRecPage = file.get(freeRecPageId);
+        PageIo freeRecPage = file.get(freeRecPageId);
         //write all uncommited free records
         for(int rowPos = 0;rowPos<freeRecordsInTransSize;rowPos++){
             short count = freeRecPage.readShort(OFFSET_FREE_COUNT);
@@ -196,7 +196,7 @@ final class LogicalRowIdManager {
         if(logicFreePageId == 0) {
             return 0;
         }
-        BlockIo logicFreePage = file.get(logicFreePageId);
+        PageIo logicFreePage = file.get(logicFreePageId);
         short recCount = logicFreePage.readShort(OFFSET_FREE_COUNT);
         if(recCount <= 0){
             throw new InternalError();

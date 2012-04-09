@@ -26,7 +26,7 @@ class StorageDiskMapped implements Storage {
      * Maximal number of pages in single file.
      * Calculated so that each file will have 1 GB
      */
-    final static long PAGES_PER_FILE = (1024*1024*1024)>>>Storage.BLOCK_SIZE_SHIFT;
+    final static long PAGES_PER_FILE = (1024*1024*1024)>>>Storage.PAGE_SIZE_SHIFT;
 
 
 
@@ -89,17 +89,17 @@ class StorageDiskMapped implements Storage {
         }
         
         FileChannel f = getChannel(pageNumber);
-        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)*BLOCK_SIZE);
+        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)* PAGE_SIZE);
         MappedByteBuffer b = buffers.get(f);
         if( b.limit()<=offsetInFile){
 
             //remapping buffer for each newly added page would be slow,
             //so allocate new size in chunks
-            int increment = Math.min(BLOCK_SIZE * 1024,offsetInFile/10);
-            increment  -= increment%BLOCK_SIZE;
+            int increment = Math.min(PAGE_SIZE * 1024,offsetInFile/10);
+            increment  -= increment% PAGE_SIZE;
 
-            long newFileSize = offsetInFile+BLOCK_SIZE + increment;
-            newFileSize = Math.min(PAGES_PER_FILE * BLOCK_SIZE, newFileSize);
+            long newFileSize = offsetInFile+ PAGE_SIZE + increment;
+            newFileSize = Math.min(PAGES_PER_FILE * PAGE_SIZE, newFileSize);
 
             //expand file size
             f.position(newFileSize - 1);
@@ -127,7 +127,7 @@ class StorageDiskMapped implements Storage {
 
     public ByteBuffer read(long pageNumber) throws IOException {
         FileChannel f = getChannel(pageNumber);
-        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)*BLOCK_SIZE);
+        int offsetInFile = (int) ((Math.abs(pageNumber) % PAGES_PER_FILE)* PAGE_SIZE);
         MappedByteBuffer b = buffers.get(f);
         
         if(b == null){ //not mapped yet
@@ -137,12 +137,12 @@ class StorageDiskMapped implements Storage {
         //check buffers size
         if(b.limit()<=offsetInFile){
                 //file is smaller, return empty data
-                return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+                return ByteBuffer.wrap(PageFile.CLEAN_DATA).asReadOnlyBuffer();
             }
 
         b.position(offsetInFile);
         ByteBuffer ret = b.slice();
-        ret.limit(BLOCK_SIZE);
+        ret.limit(PAGE_SIZE);
         if(!transactionsDisabled||readonly){
             // changes written into buffer will be directly written into file
             // so we need to protect buffer from modifications

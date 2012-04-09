@@ -23,20 +23,20 @@ import java.nio.ByteBuffer;
 import static net.kotek.jdbm.Magic.*;
 
 /**
- * Wraps a page sizes ByteBuffer for reading and writting.
+ * Wraps a page sizes ByteBuffer for reading and writing.
  * <p>
- * ByteBuffer may be subview of a larger buffer (ie large buffer mappedover a file).
+ * ByteBuffer may be subview of a larger buffer (ie large buffer mapped over a file).
  * In this case ByteBuffer will have set limit, mark and other variables to limit its size.
  * <p>
  * For reading buffered may be shared. For example StoreMemory just returns its pages without copying.
- * In this case buffer is marked as 'readonly' and needs to be copyed before write (Copy On Write - COW).
+ * In this case buffer is marked as 'readonly' and needs to be copied before write (Copy On Write - COW).
  * COW is not necessary if transactions are disabled and changes can not be rolled back.
  * <p>
 
  */
-final class BlockIo {
+final class PageIo {
 
-    private long blockId;
+    private long pageId;
 
     private ByteBuffer data; // work area
 
@@ -48,21 +48,21 @@ final class BlockIo {
     /**
      * Default constructor for serialization
      */
-    public BlockIo() {
+    public PageIo() {
         // empty
     }
 
     /**
-     * Constructs a new BlockIo instance working on the indicated
+     * Constructs a new PageIo instance working on the indicated
      * buffer.
      */
-    BlockIo(long blockId, byte[] data) {
-        this.blockId = blockId;
+    PageIo(long pageId, byte[] data) {
+        this.pageId = pageId;
         this.data = ByteBuffer.wrap(data);
     }
 
-    public BlockIo(long blockid, ByteBuffer data) {
-        this.blockId = blockid;
+    public PageIo(long pageId, ByteBuffer data) {
+        this.pageId = pageId;
         this.data = data;
     }
 
@@ -71,8 +71,8 @@ final class BlockIo {
      */
     void ensureHeapBuffer(){
         if(data.isDirect()){
-            final byte[] bb = new byte[Storage.BLOCK_SIZE];
-            data.get(bb,0,Storage.BLOCK_SIZE);
+            final byte[] bb = new byte[Storage.PAGE_SIZE];
+            data.get(bb,0,Storage.PAGE_SIZE);
             data = ByteBuffer.wrap(bb);
             if(data.isReadOnly()) throw new InternalError();
         }
@@ -87,10 +87,10 @@ final class BlockIo {
     }
 
     /**
-     * Returns the block number.
+     * Returns the page number.
      */
-    long getBlockId() {
-        return blockId;
+    long getPageId() {
+        return pageId;
     }
 
     /**
@@ -101,8 +101,8 @@ final class BlockIo {
         
         if(data.isReadOnly()){
             // make copy if needed, so we can write into buffer
-            byte[] buf = new byte[Storage.BLOCK_SIZE];
-            data.get(buf,0,Storage.BLOCK_SIZE);
+            byte[] buf = new byte[Storage.PAGE_SIZE];
+            data.get(buf,0,Storage.PAGE_SIZE);
             data = ByteBuffer.wrap(buf);
         }
     }
@@ -136,8 +136,6 @@ final class BlockIo {
      */
     void incrementTransactionCount() {
         transactionCount++;
-        // @fixme(alex)
-        setClean();
     }
 
     /**
@@ -147,8 +145,8 @@ final class BlockIo {
     void decrementTransactionCount() {
         transactionCount--;
         if (transactionCount < 0)
-            throw new Error("transaction count on block "
-                    + getBlockId() + " below zero!");
+            throw new Error("transaction count on page "
+                    + getPageId() + " below zero!");
 
     }
 
@@ -258,14 +256,14 @@ final class BlockIo {
     // overrides java.lang.Object
 
     public String toString() {
-        return "BlockIO("
-                + blockId + ","
+        return "PageIo("
+                + pageId + ","
                 + dirty +")";
     }
 
     public void readExternal(DataInputStream in, Cipher cipherOut) throws IOException {
-        blockId = in.readLong();
-        byte[] data2 = new byte[Storage.BLOCK_SIZE];
+        pageId = in.readLong();
+        byte[] data2 = new byte[Storage.PAGE_SIZE];
         in.readFully(data2);
         if (cipherOut == null || Utils.allZeros(data2))
             data = ByteBuffer.wrap(data2);
@@ -278,7 +276,7 @@ final class BlockIo {
 
 
     public void writeExternal(DataOutput out, Cipher cipherIn) throws IOException {
-        out.writeLong(blockId);
+        out.writeLong(pageId);
         out.write(Utils.encrypt(cipherIn, data.array()));
     }
 
@@ -286,9 +284,9 @@ final class BlockIo {
     public byte[] getByteArray() {
         if ( data.hasArray())
             return data.array();
-        byte[] d= new byte[Storage.BLOCK_SIZE];
+        byte[] d= new byte[Storage.PAGE_SIZE];
         data.rewind();
-        data.get(d,0,Storage.BLOCK_SIZE);
+        data.get(d,0,Storage.PAGE_SIZE);
         return d;
     }
 
@@ -310,28 +308,28 @@ final class BlockIo {
     }
 
     /**
-     * Returns the first block of the indicated list
+     * Returns the first page of the indicated list
      */
     long fileHeaderGetFirstOf(int list) {
         return readLong(fileHeaderOffsetOfFirst(list));
     }
 
     /**
-     * Sets the first block of the indicated list
+     * Sets the first page of the indicated list
      */
     void fileHeaderSetFirstOf(int list, long value) {
         writeLong(fileHeaderOffsetOfFirst(list), value);
     }
 
     /**
-     * Returns the last block of the indicated list
+     * Returns the last page of the indicated list
      */
     long fileHeaderGetLastOf(int list) {
         return readLong(fileHeaderOffsetOfLast(list));
     }
 
     /**
-     * Sets the last block of the indicated list
+     * Sets the last page of the indicated list
      */
     void fileHeaderSetLastOf(int list, long value) {
         writeLong(fileHeaderOffsetOfLast(list), value);
@@ -339,14 +337,14 @@ final class BlockIo {
 
 
     /**
-     * Returns the offset of the "first" block of the indicated list
+     * Returns the offset of the "first" page of the indicated list
      */
     private short fileHeaderOffsetOfFirst(int list) {
         return (short) (FILE_HEADER_O_LISTS + (2 * Magic.SZ_LONG * list));
     }
 
     /**
-     * Returns the offset of the "last" block of the indicated list
+     * Returns the offset of the "last" page of the indicated list
      */
     private short fileHeaderOffsetOfLast(int list) {
         return (short) (fileHeaderOffsetOfFirst(list) + Magic.SZ_LONG);
@@ -358,7 +356,7 @@ final class BlockIo {
      * Returns the indicated root rowid. A root rowid is a special rowid
      * that needs to be kept between sessions. It could conceivably be
      * stored in a special file, but as a large amount of space in the
-     * block header is wasted anyway, it's more useful to store it where
+     * page header is wasted anyway, it's more useful to store it where
      * it belongs.
      *
 
@@ -383,7 +381,7 @@ final class BlockIo {
      */
     boolean pageHeaderMagicOk() {
         int magic = pageHeaderGetMagic();
-        return magic >= Magic.BLOCK  && magic <= (Magic.BLOCK + Magic.FREEPHYSIDS_ROOT_PAGE);
+        return magic >= Magic.PAGE_MAGIC && magic <= (Magic.PAGE_MAGIC + Magic.FREEPHYSIDS_ROOT_PAGE);
     }
 
     /**
@@ -419,7 +417,7 @@ final class BlockIo {
         writeSixByteLong(PAGE_HEADER_O_PREV, prev);
     }
     void pageHeaderSetType(short type) {
-        writeShort(PAGE_HEADER_O_MAGIC, (short) (Magic.BLOCK + type));
+        writeShort(PAGE_HEADER_O_MAGIC, (short) (Magic.PAGE_MAGIC + type));
     }
 
     long pageHeaderGetLocation(final short pos){

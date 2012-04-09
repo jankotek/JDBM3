@@ -16,9 +16,9 @@
 
 package net.kotek.jdbm;
 
-import java.util.Random;
-
 import junit.framework.TestCase;
+
+import java.util.Random;
 
 /**
  * This class contains all Unit tests for {@link RecordHeader}.
@@ -30,8 +30,8 @@ public class RecordHeaderTest extends TestCase {
      * Test basics - read and write at an offset
      */
     public void testReadWrite() throws Exception {
-        byte[] data = new byte[Storage.BLOCK_SIZE];
-        BlockIo test = new BlockIo(0, data);
+        byte[] data = new byte[Storage.PAGE_SIZE];
+        PageIo test = new PageIo(0, data);
         //RecordHeader hdr = new RecordHeader(test, (short) 6);
         RecordHeader.setAvailableSize(test, (short) 6, 2345);
         RecordHeader.setCurrentSize(test, (short) 6, 2300);
@@ -47,8 +47,8 @@ public class RecordHeaderTest extends TestCase {
         assertEquals("inconsistent rounding at max rec size",
                 RecordHeader.MAX_RECORD_SIZE, RecordHeader.roundAvailableSize(RecordHeader.MAX_RECORD_SIZE));
 
-        byte[] data = new byte[Storage.BLOCK_SIZE];
-        BlockIo test = new BlockIo(0, data);
+        byte[] data = new byte[Storage.PAGE_SIZE];
+        PageIo test = new PageIo(0, data);
         Random r = new Random();
         //RecordHeader hdr = new RecordHeader(test, (short) 6);
 
@@ -118,7 +118,7 @@ public class RecordHeaderTest extends TestCase {
 
 
     public void testSetCurrentSize() {
-        BlockIo b = new BlockIo(4l, new byte[Storage.BLOCK_SIZE]);
+        PageIo b = new PageIo(4l, new byte[Storage.PAGE_SIZE]);
         short pos = 10;
 
         RecordHeader.setAvailableSize(b, pos, 1000);

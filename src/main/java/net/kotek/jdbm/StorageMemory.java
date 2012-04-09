@@ -2,7 +2,6 @@ package net.kotek.jdbm;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 /**
  * Storage which keeps all data in memory.
@@ -23,7 +22,7 @@ class StorageMemory implements Storage {
         byte[] data = pages.get(pageNumber);
         if (data == null) {
             //out of bounds, so just return empty data
-            return ByteBuffer.wrap(RecordFile.CLEAN_DATA).asReadOnlyBuffer();
+            return ByteBuffer.wrap(PageFile.CLEAN_DATA).asReadOnlyBuffer();
         }else{
             ByteBuffer b = ByteBuffer.wrap(data);
             if(!transactionsDisabled)
@@ -36,7 +35,7 @@ class StorageMemory implements Storage {
     }
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
-        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();
+        if (data.capacity() != PAGE_SIZE) throw new IllegalArgumentException();
 
         byte[] b = pages.get(pageNumber);
 
@@ -47,10 +46,10 @@ class StorageMemory implements Storage {
 
         
         if(b == null)
-            b = new byte[BLOCK_SIZE];
+            b = new byte[PAGE_SIZE];
         
         data.position(0);
-        data.get(b,0,BLOCK_SIZE);
+        data.get(b,0, PAGE_SIZE);
         pages.put(pageNumber,b);
     }
 

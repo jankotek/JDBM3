@@ -25,7 +25,7 @@ public class FileHeaderTest extends TestCase {
      * Test set, write, read
      */
     public void testSetWriteRead() throws Exception {
-        BlockIo b = new BlockIo(0, new byte[1000]);
+        PageIo b = new PageIo(0, new byte[1000]);
         b.fileHeaderCheckHead(true);        
         for (int i = 0; i < Magic.NLISTS; i++) {
             b.fileHeaderSetFirstOf(i, 100 * i);
@@ -43,7 +43,7 @@ public class FileHeaderTest extends TestCase {
      * Test root rowids
      */
     public void testRootRowids() throws Exception {
-        BlockIo b = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
+        PageIo b = new PageIo(0, new byte[Storage.PAGE_SIZE]);
         b.fileHeaderCheckHead(true);
         for (int i = 0; i < Magic.FILE_HEADER_NROOTS; i++) {
             b.fileHeaderSetRoot(i, 100 * i);

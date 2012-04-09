@@ -2,7 +2,6 @@ package net.kotek.jdbm;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,14 +61,14 @@ class StorageDisk implements Storage {
 
 
     public void write(long pageNumber, ByteBuffer data) throws IOException {
-        if (data.capacity() != BLOCK_SIZE) throw new IllegalArgumentException();        
+        if (data.capacity() != PAGE_SIZE) throw new IllegalArgumentException();
         
-        long offset = pageNumber * BLOCK_SIZE;
+        long offset = pageNumber * PAGE_SIZE;
 
         RandomAccessFile file = getRaf(pageNumber);
 
 //        if (lastPageNumber + 1 != pageNumber)      //TODO cache position again, so seek is not necessary
-            file.seek(Math.abs(offset % (PAGES_PER_FILE*BLOCK_SIZE)));
+            file.seek(Math.abs(offset % (PAGES_PER_FILE* PAGE_SIZE)));
 
         file.write(data.array());
         lastPageNumber = pageNumber;
@@ -78,18 +77,18 @@ class StorageDisk implements Storage {
 
     public ByteBuffer read(long pageNumber) throws IOException {
         
-        long offset = pageNumber * BLOCK_SIZE;
-        ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
+        long offset = pageNumber * PAGE_SIZE;
+        ByteBuffer buffer = ByteBuffer.allocate(PAGE_SIZE);
         
         RandomAccessFile file = getRaf(pageNumber);
 //        if (lastPageNumber + 1 != pageNumber) //TODO cache position again, so seek is not necessary
-            file.seek(Math.abs(offset % (PAGES_PER_FILE*BLOCK_SIZE)));
+            file.seek(Math.abs(offset % (PAGES_PER_FILE* PAGE_SIZE)));
         int remaining = buffer.limit();
         int pos = 0;
         while (remaining > 0) {
             int read = file.read(buffer.array(), pos, remaining);
             if (read == -1) {
-                System.arraycopy(RecordFile.CLEAN_DATA, 0, buffer.array(), pos, remaining);
+                System.arraycopy(PageFile.CLEAN_DATA, 0, buffer.array(), pos, remaining);
                 break;
             }
             remaining -= read;

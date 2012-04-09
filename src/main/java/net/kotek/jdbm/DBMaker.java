@@ -297,10 +297,10 @@ public class DBMaker {
             cipherOut.init(Cipher.DECRYPT_MODE, secret, params);
 
             //sanity check, try with page size
-            byte[] data = new byte[Storage.BLOCK_SIZE];
+            byte[] data = new byte[Storage.PAGE_SIZE];
             byte[] encData = cipherIn.doFinal(data);
-            if (encData.length != Storage.BLOCK_SIZE)
-                throw new Error("Block size changed after encryption, make sure you use '/NoPadding'");
+            if (encData.length != Storage.PAGE_SIZE)
+                throw new Error("Page size changed after encryption, make sure you use '/NoPadding'");
             byte[] data2 = cipherOut.doFinal(encData);
             for (int i = 0; i < data.length; i++) {
                 if (data[i] != data2[i]) throw new Error("Encryption provided by JRE does not work");

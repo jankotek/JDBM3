@@ -394,11 +394,11 @@ public class DBTest extends TestCaseWithTestFile {
 
 
     public void testCompressRecid(){
-        for(long l = Magic.PAGE_HEADER_SIZE;l<Storage.BLOCK_SIZE;l+=6){
-            assertEquals(l,DBStore.decompressRecid(DBStore.compressRecid(l)));
+        for(long l = Magic.PAGE_HEADER_SIZE;l<Storage.PAGE_SIZE;l+=6){
+            assertEquals(l, DBStore.decompressRecid(DBStore.compressRecid(l)));
         }
 
-        for(long l = Magic.PAGE_HEADER_SIZE+Storage.BLOCK_SIZE*5;l<Storage.BLOCK_SIZE*6;l+=6){
+        for(long l = Magic.PAGE_HEADER_SIZE+Storage.PAGE_SIZE *5;l<Storage.PAGE_SIZE *6;l+=6){
             assertEquals(l,DBStore.decompressRecid(DBStore.compressRecid(l)));
         }
 

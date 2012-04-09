@@ -9,29 +9,29 @@ import java.nio.ByteBuffer;
 interface Storage {
 
     /**
-     * Bite shift used to calculate block size.
-     * If you want to modify block size, do it here.
+     * Bite shift used to calculate page size.
+     * If you want to modify page size, do it here.
      *
      *  1<<9 = 512
      *  1<<10 = 1024
      *  1<<11 = 2048
      *  1<<12 = 4096
      */
-    int BLOCK_SIZE_SHIFT = 12;
+    int PAGE_SIZE_SHIFT = 12;
     
     /**
-     * the lenght of single block.
+     * the lenght of single page.
      * <p>
      *!!! DO NOT MODIFY THI DIRECTLY !!!
 
      */
-    int BLOCK_SIZE = 1<<BLOCK_SIZE_SHIFT;
+    int PAGE_SIZE = 1<< PAGE_SIZE_SHIFT;
 
 
     /**
-     * use 'val & OFFSET_MASK' to quickly get offset within the block page;
+     * use 'val & OFFSET_MASK' to quickly get offset within the page;
      */
-    long OFFSET_MASK = 0xFFFFFFFFFFFFFFFFL >>> (64-Storage.BLOCK_SIZE_SHIFT);
+    long OFFSET_MASK = 0xFFFFFFFFFFFFFFFFL >>> (64-Storage.PAGE_SIZE_SHIFT);
 
 
     void write(long pageNumber, ByteBuffer data) throws IOException;

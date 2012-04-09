@@ -19,10 +19,10 @@ package net.kotek.jdbm;
 import java.io.File;
 
 /**
- * This class contains all Unit tests for {@link TransactionManager}.
+ * This class contains all Unit tests for {@link PageTransactionManager}.
  * TODO sort out this testcase
  */
-public class TransactionManagerTest extends TestCaseWithTestFile {
+public class PageTransactionManagerTest extends TestCaseWithTestFile {
 
 
     String file = newTestFile();
@@ -31,7 +31,7 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      * Test constructor. Oops - can only be done indirectly :-)
      */
     public void testCtor() throws Exception {
-        RecordFile file2 = new RecordFile(file);
+        PageFile file2 = new PageFile(file);
 
         file2.forceClose();
     }
@@ -40,11 +40,11 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      * Test recovery
      */
     public void XtestRecovery() throws Exception {
-        RecordFile file1 = new RecordFile(file);
+        PageFile file1 = new PageFile(file);
 
         // Do three transactions.
         for (int i = 0; i < 3; i++) {
-            BlockIo node = file1.get(i);
+            PageIo node = file1.get(i);
             node.setDirty();
             file1.release(node);
             file1.commit();
@@ -56,15 +56,15 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file);
+        PageFile file2 = new PageFile(file);
 
-        assertDataSizeEquals("len2", 3 * Storage.BLOCK_SIZE);
+        assertDataSizeEquals("len2", 3 * Storage.PAGE_SIZE);
         assertLogSizeEquals("len2", 8);
 
         file2.forceClose();
 
         // assure we can recover this log file
-        RecordFile file3 = new RecordFile(file);
+        PageFile file3 = new PageFile(file);
 
         file3.forceClose();
     }
@@ -73,12 +73,12 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
      * Test background synching
      */
     public void XtestSynching() throws Exception {
-        RecordFile file1 = new RecordFile(file);
+        PageFile file1 = new PageFile(file);
 
         // Do enough transactions to fill the first slot
         int txnCount = 1;
         for (int i = 0; i < txnCount; i++) {
-            BlockIo node = file1.get(i);
+            PageIo node = file1.get(i);
             node.setDirty();
             file1.release(node);
             file1.commit();
@@ -87,14 +87,14 @@ public class TransactionManagerTest extends TestCaseWithTestFile {
 
         // The data file now has the first slotfull
         assertDataSizeEquals("len1", 1 *
-                Storage.BLOCK_SIZE + 6);
+                Storage.PAGE_SIZE + 6);
         assertLogSizeNotZero("len1");
 
         // Leave the old record file in flux, and open it again.
         // The second instance should start recovery.
-        RecordFile file2 = new RecordFile(file);
+        PageFile file2 = new PageFile(file);
 
-        assertDataSizeEquals("len2", txnCount * Storage.BLOCK_SIZE);
+        assertDataSizeEquals("len2", txnCount * Storage.PAGE_SIZE);
         assertLogSizeEquals("len2", 8);
 
         file2.forceClose();

@@ -16,18 +16,18 @@
 
 package net.kotek.jdbm;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
 /**
- * This class contains all Unit tests for {@link BlockIo}.
+ * This class contains all Unit tests for {@link PageIo}.
  */
-public class BlockIoTest extends TestCase {
+public class PageIoTest extends TestCase {
 
     private static final short SHORT_VALUE = 0x1234;
     private static final int INT_VALUE = 0xe7b3c8a1;
@@ -40,7 +40,7 @@ public class BlockIoTest extends TestCase {
      */
     public void testWrite() throws Exception {
         byte[] data = new byte[100];
-        BlockIo test = new BlockIo(0, data);
+        PageIo test = new PageIo(0, data);
         test.writeShort(0, SHORT_VALUE);
         test.writeLong(2, LONG_VALUE);
         test.writeInt(10, INT_VALUE);
@@ -72,7 +72,7 @@ public class BlockIoTest extends TestCase {
         os.writeLong(LONG_VALUE2);
 
         byte[] data = bos.toByteArray();
-        BlockIo test = new BlockIo(0, data);
+        PageIo test = new PageIo(0, data);
         assertEquals("short", SHORT_VALUE, test.readShort(0));
         assertEquals("long", LONG_VALUE, test.readLong(2));
         assertEquals("int", INT_VALUE, test.readInt(10));
@@ -82,7 +82,7 @@ public class BlockIoTest extends TestCase {
 
     public void testNegativeSixByte(){
         
-        BlockIo t = new BlockIo(0, ByteBuffer.allocate(Storage.BLOCK_SIZE));
+        PageIo t = new PageIo(0, ByteBuffer.allocate(Storage.PAGE_SIZE));
         
         t.writeSixByteLong(0,-11111);
         assertEquals(-11111,t.readSixByteLong(0));
@@ -95,8 +95,8 @@ public class BlockIoTest extends TestCase {
 
 
     public void testPageHeaderSetWriteRead() throws Exception {
-        BlockIo data = new BlockIo(0, new byte[Storage.BLOCK_SIZE]);
-        data.writeShort(0, Magic.BLOCK);
+        PageIo data = new PageIo(0, new byte[Storage.PAGE_SIZE]);
+        data.writeShort(0, Magic.PAGE_MAGIC);
 
         data.pageHeaderSetNext(10);
         data.pageHeaderSetPrev(33);
