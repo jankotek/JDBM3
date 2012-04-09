@@ -31,6 +31,8 @@ abstract class DBCache extends DBStore{
      */
     final protected LongHashMap<DirtyCacheEntry> _hashDirties = new LongHashMap<DirtyCacheEntry>();
 
+    private Serializer cachedDefaultSerializer = null;
+
 
     /**
      * Construct a CacheRecordManager wrapping another DB and
@@ -44,6 +46,14 @@ abstract class DBCache extends DBStore{
                 cipherIn, cipherOut, useRandomAccessFile,
                 deleteFilesAfterClose);
 
+    }
+
+
+    @Override
+    public synchronized  Serializer defaultSerializer(){
+        if(cachedDefaultSerializer==null)
+            cachedDefaultSerializer = super.defaultSerializer();
+        return cachedDefaultSerializer;
     }
 
     @Override
@@ -95,6 +105,7 @@ abstract class DBCache extends DBStore{
     }
 
     public synchronized  void rollback(){
+        cachedDefaultSerializer = null;
         _hashDirties.clear();
         super.rollback();
     }
@@ -145,5 +156,7 @@ abstract class DBCache extends DBStore{
         }
 
     }
+
+
 
 }
