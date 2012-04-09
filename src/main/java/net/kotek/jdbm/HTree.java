@@ -93,7 +93,7 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
     protected Serializer<V> valueSerializer;
     protected boolean readonly = false;
     final long rootRecid;
-    private DBAbstract db;
+    DBAbstract db;
     /** if false map contains only keys, used for set*/
     boolean hasValues = true;
 
@@ -163,13 +163,21 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
         try {
             if (key == null || value == null)
                 throw new NullPointerException("Null key or value");
-            V oldVal = get(key);
-            getRoot().put(key, value);
+
+            V oldVal = (V) getRoot().put(key, value);
             if (oldVal == null) {
                 modCount++;
+
+                //increase size
+                HTreeDirectory root = getRoot();
+                root.size++;
+                db.update(rootRecid,root,SERIALIZER);
+
                 for (RecordListener<K, V> r : recordListeners)
                     r.recordInserted(key, value);
             } else {
+
+                //notify listeners
                 for (RecordListener<K, V> r : recordListeners)
                     r.recordUpdated(key, oldVal, value);
             }
@@ -207,18 +215,23 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
         try {
             if (key == null)
                 return null;
-            V oldVal = get((K) key);
-            if (oldVal != null) {
-                V val = null;
-                if (recordListeners.length > 0)
-                    val = get(key);
-                getRoot().remove(key);
-                modCount++;
-                if (val != null)
-                    for (RecordListener r : recordListeners)
+
+            V val = (V) getRoot().remove(key);
+             modCount++;
+
+
+            if (val != null){
+                //decrease size
+                HTreeDirectory root = getRoot();
+                root.size--;
+                db.update(rootRecid,root,SERIALIZER);
+
+
+                  for (RecordListener r : recordListeners)
                         r.recordRemoved(key, val);
             }
-            return oldVal;
+
+            return val;
         } catch (ClassCastException e) {
             return null;
         } catch (IOException e) {
@@ -466,9 +479,9 @@ class HTree<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
         }
 
     }
-    
-    DBAbstract getDB(){
-        return db;
+
+    public int size(){
+        return (int) getRoot().size;
     }
 
     public boolean hasValues() {

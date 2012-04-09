@@ -66,12 +66,13 @@ final class HTreeDirectory<K, V> {
      */
     private byte _depth;
 
-
-
     /**
      * This directory's record ID in the DB.  (transient)
      */
-    private transient long _recid;
+    private long _recid;
+
+    /** if this is root (depth=0), it contains size, otherwise -1*/
+    long size;
 
     protected final HTree<K, V> tree;
 
@@ -145,7 +146,7 @@ final class HTreeDirectory<K, V> {
             // not bucket/node --> not found
             return null;
         } else {
-            Object node = tree.getDB().fetch(child_recid, tree.SERIALIZER);
+            Object node = tree.db.fetch(child_recid, tree.SERIALIZER);
             // System.out.println("HashDirectory.get() child is : "+node);
 
             if (node instanceof HTreeDirectory) {
@@ -199,15 +200,15 @@ final class HTreeDirectory<K, V> {
             // insert (key,value) pair in bucket
             Object existing = bucket.addElement(key, value);
 
-            long b_recid = tree.getDB().insert(bucket, tree.SERIALIZER,false);
+            long b_recid = tree.db.insert(bucket, tree.SERIALIZER,false);
             putRecid(hash, b_recid);
 
-            tree.getDB().update(_recid, this, tree.SERIALIZER);
+            tree.db.update(_recid, this, tree.SERIALIZER);
 
             // System.out.println("Added: "+bucket);
             return existing;
         } else {
-            Object node = tree.getDB().fetch(child_recid, tree.SERIALIZER);
+            Object node = tree.db.fetch(child_recid, tree.SERIALIZER);
 
             if (node instanceof HTreeDirectory) {
                 // recursive insert in next directory level
@@ -219,7 +220,7 @@ final class HTreeDirectory<K, V> {
                 HTreeBucket bucket = (HTreeBucket) node;
                 if (bucket.hasRoom()) {
                     Object existing = bucket.addElement(key, value);
-                    tree.getDB().update(child_recid, bucket, tree.SERIALIZER);
+                    tree.db.update(child_recid, bucket, tree.SERIALIZER);
                     // System.out.println("Added: "+bucket);
                     return existing;
                 } else {
@@ -229,14 +230,14 @@ final class HTreeDirectory<K, V> {
                                 + "Depth=" + _depth);
                     }
                     HTreeDirectory dir = new HTreeDirectory(tree, (byte) (_depth + 1));
-                    long dir_recid = tree.getDB().insert(dir, tree.SERIALIZER,false);
+                    long dir_recid = tree.db.insert(dir, tree.SERIALIZER,false);
                     dir.setPersistenceContext(dir_recid);
 
                     putRecid(hash, dir_recid);
-                    tree.getDB().update(_recid, this, tree.SERIALIZER);
+                    tree.db.update(_recid, this, tree.SERIALIZER);
 
                     // discard overflown bucket
-                    tree.getDB().delete(child_recid);
+                    tree.db.delete(child_recid);
 
                     // migrate existing bucket elements
                     ArrayList keys = bucket.getKeys();
@@ -270,7 +271,7 @@ final class HTreeDirectory<K, V> {
             // not bucket/node --> not found
             return null;
         } else {
-            Object node = tree.getDB().fetch(child_recid, tree.SERIALIZER);
+            Object node = tree.db.fetch(child_recid, tree.SERIALIZER);
             // System.out.println("HashDirectory.remove() child is : "+node);
 
             if (node instanceof HTreeDirectory) {
@@ -281,9 +282,9 @@ final class HTreeDirectory<K, V> {
                 if (existing != null) {
                     if (dir.isEmpty()) {
                         // delete empty directory
-                        tree.getDB().delete(child_recid);
+                        tree.db.delete(child_recid);
                         putRecid(hash, 0);
-                        tree.getDB().update(_recid, this, tree.SERIALIZER);
+                        tree.db.update(_recid, this, tree.SERIALIZER);
                     }
                 }
                 return existing;
@@ -293,12 +294,12 @@ final class HTreeDirectory<K, V> {
                 Object existing = bucket.removeElement(key);
                 if (existing != null) {
                     if (bucket.getElementCount() >= 1) {
-                        tree.getDB().update(child_recid, bucket, tree.SERIALIZER);
+                        tree.db.update(child_recid, bucket, tree.SERIALIZER);
                     } else {
                         // delete bucket, it's empty
-                        tree.getDB().delete(child_recid);
+                        tree.db.delete(child_recid);
                         putRecid(hash, 0);
-                        tree.getDB().update(_recid, this, tree.SERIALIZER);
+                        tree.db.update(_recid, this, tree.SERIALIZER);
                     }
                 }
                 return existing;
@@ -357,12 +358,12 @@ final class HTreeDirectory<K, V> {
     }
 
 
-    /**
-     * Implement Externalizable interface
-     */
     public void writeExternal(DataOutput out)
             throws IOException {
         out.writeByte(_depth);
+        if(_depth==0){
+            LongPacker.packLong(out,size);
+        }
 
         int zeroStart = 0;
         for (int i = 0; i < MAX_CHILDREN; i++) {
@@ -391,12 +392,14 @@ final class HTreeDirectory<K, V> {
     }
 
 
-    /**
-     * Implement Externalizable interface
-     */
     public void readExternal(DataInputOutput in)
             throws IOException, ClassNotFoundException {
         _depth = in.readByte();
+        if(_depth==0)
+            size = LongPacker.unpackLong(in);
+        else
+           size = -1;
+
         _children = new long[32][];
         int zeroStart = in.readUnsignedByte();
         int zeroEnd = in.readUnsignedByte();
@@ -429,7 +432,7 @@ final class HTreeDirectory<K, V> {
             if(ll!=null){
                 for(long l:ll ){
                     if(l!=0){
-                      tree.getDB().delete(l);
+                      tree.db.delete(l);
                     }
                 }
             }
@@ -556,7 +559,7 @@ final class HTreeDirectory<K, V> {
                 throw new Error("child_recid cannot be 0");
             }
 
-            Object node = tree.getDB().fetch(child_recid, tree.SERIALIZER);
+            Object node = tree.db.fetch(child_recid, tree.SERIALIZER);
             // System.out.println("HDEnumeration.get() child is : "+node);
 
             if (node instanceof HTreeDirectory) {
