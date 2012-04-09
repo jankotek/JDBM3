@@ -32,6 +32,10 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
     private DBAbstract db;
 
     final long rootRecid;
+    /** size limit, is not currently used, but needs to be here for future compatibility.
+     *  Zero means no limit.
+     */
+    long sizeLimit = 0;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
@@ -121,6 +125,7 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
     }
 
 
+
     public int size() {
         lock.readLock().lock();
         try{
@@ -130,6 +135,10 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
         }
     
             
+    }
+
+    public Iterator<E> descendingIterator() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean add(Object value) {
@@ -179,12 +188,15 @@ class LinkedList2<E> extends AbstractSequentialList<E> {
      */
     static LinkedList2 deserialize(DataInput is, Serialization ser) throws IOException, ClassNotFoundException {
         long rootrecid = LongPacker.unpackLong(is);
+        long sizeLimit = LongPacker.unpackLong(is);
+        if(sizeLimit!=0) throw new InternalError("LinkedList.sizeLimit not supported in this JDBM version");
         Serializer serializer = (Serializer)  ser.deserialize(is);
         return new LinkedList2(ser.db,rootrecid, serializer);
     }
 
     void serialize(DataOutput out) throws IOException {
         LongPacker.packLong(out, rootRecid);
+        LongPacker.packLong(out, sizeLimit);
         db.defaultSerializer().serialize(out, valueSerializer);
     }
 
