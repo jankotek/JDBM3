@@ -21,6 +21,8 @@ Last but not least, JDBM is opensource and free-as-beer under Apache 2.0 license
 
 News
 ====
+10th Apr 2013 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)
+
 24th Feb 2012 - Alpha2 released with tons of bugfixes. Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha2.jar)
 
 18th Jan 2012 - Alpha1 released, [announcement](http://kotek.net/blog/jdbm_3.0_alpha_1_released) and
