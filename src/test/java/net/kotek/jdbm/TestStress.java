@@ -79,7 +79,7 @@ public class TestStress extends TestCaseWithTestFile {
     public void testBasics() throws Exception {
 
         String file = newTestFile();
-        DBStore db = new DBStore(file, false, false);
+        DBStore db = new DBStore(file, false, false,false);
 
         // as this code is meant to test data structure calculcations
         // and stuff like that, we may want to disable transactions
@@ -105,7 +105,7 @@ public class TestStress extends TestCaseWithTestFile {
                     System.out.print(" (reopened at round "
                             + i / RPPROMILLE + ")");
                     db.close();
-                    db = new DBStore(file, false, false);
+                    db = new DBStore(file, false, false,false);
                     //        db.disableTransactions();
                 }
 

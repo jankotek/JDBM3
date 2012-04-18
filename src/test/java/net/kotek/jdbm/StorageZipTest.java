@@ -15,7 +15,7 @@ public class StorageZipTest extends TestCaseWithTestFile {
         tmp.deleteOnExit();
 
         //first create archie and put it in zip file
-        DBStore r = new DBStore(newTestFile(), false, true);
+        DBStore r = new DBStore(newTestFile(), false, true,false);
         Set<Long> h = r.createHashSet("hash");
         for (Long l = 0L; l < 1e3; l++) {
             h.add(l);

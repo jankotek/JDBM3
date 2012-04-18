@@ -81,7 +81,7 @@ final class PageFile {
      * @throws IOException whenever the creation of the underlying
      *                     RandomAccessFile throws it.
      */
-    PageFile(String fileName, boolean readonly, boolean transactionsDisabled, Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile) throws IOException {
+    PageFile(String fileName, boolean readonly, boolean transactionsDisabled, Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile, boolean lockingDisabled) throws IOException {
         this.cipherIn = cipherIn;
         this.cipherOut = cipherOut;
         this.transactionsDisabled = transactionsDisabled;
@@ -92,9 +92,9 @@ final class PageFile {
 //        }else if (fileName.contains("!/"))
 //            this.storage = new StorageZip(fileName);
         else if(useRandomAccessFile)
-            this.storage = new StorageDisk(fileName,readonly);
+            this.storage = new StorageDisk(fileName,readonly,lockingDisabled);
         else
-            this.storage = new StorageDiskMapped(fileName,readonly,transactionsDisabled);
+            this.storage = new StorageDiskMapped(fileName,readonly,transactionsDisabled,lockingDisabled);
 
         if (this.storage.isReadonly() && !readonly)
             throw new IllegalArgumentException("This type of storage is readonly, you should call readonly() on DBMaker");
@@ -106,7 +106,7 @@ final class PageFile {
     }
 
     public PageFile(String filename) throws IOException {
-        this(filename, false, false, null, null,false);
+        this(filename, false, false, null, null,false,false);
     }
 
 

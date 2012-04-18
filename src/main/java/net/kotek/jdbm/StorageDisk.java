@@ -21,14 +21,16 @@ class StorageDisk implements Storage {
 
     private long lastPageNumber = Long.MIN_VALUE;
     private boolean readonly;
+    private boolean lockingDisabled;
 
-    public StorageDisk(String fileName,boolean readonly) throws IOException {
+    public StorageDisk(String fileName,boolean readonly, boolean lockingDisabled) throws IOException {
         this.fileName = fileName;
         this.readonly = readonly;
+        this.lockingDisabled = lockingDisabled;
         //make sure first file can be opened
         //lock it
         try {
-            if(!readonly)
+            if(!readonly && !lockingDisabled)
                 getRaf(0).getChannel().tryLock();
         } catch (IOException e) {
             throw new IOException("Could not lock DB file: " + fileName, e);

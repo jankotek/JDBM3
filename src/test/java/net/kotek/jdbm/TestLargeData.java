@@ -7,7 +7,7 @@ public class TestLargeData extends TestCaseWithTestFile {
 
     public void testLargeData() throws IOException {
 
-        DBAbstract db = new DBStore(newTestFile(), false, false);
+        DBAbstract db = new DBStore(newTestFile(), false, false,false);
 
         byte[] data = UtilTT.makeRecord(1000000, (byte) 12);
         final long id = db.insert(data);
