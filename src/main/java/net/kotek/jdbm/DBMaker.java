@@ -36,6 +36,7 @@ public class DBMaker {
     private String location = null;
 
     private boolean disableTransactions = false;
+    private boolean lockingDisabled = false;
     private boolean readonly = false;
     private String password = null;
     private boolean useAES256Bit = true;
@@ -231,7 +232,24 @@ public class DBMaker {
         this.disableTransactions = true;
         return this;
     }
-
+    
+    /**
+     * Disable file system based locking (for file systems that do not support it).
+     * 
+     * Locking is not supported by many remote or distributed file systems; such
+     * as Lustre and NFS. Attempts to perform locks will result in an 
+     * IOException with the message "Function not implemented".
+     * 
+     * Disabling locking will avoid this issue, though of course it comes with
+     * all the issues of uncontrolled file access.
+     * 
+     * @return this builder
+     */
+    public DBMaker disableLocking(){
+        this.lockingDisabled = true;
+        return this;
+    }
+    
     /**
      * By default JDBM uses mapped memory buffers to read from files.
      * But this may behave strangely on some platforms.
@@ -314,11 +332,11 @@ public class DBMaker {
 
 
         if (cacheType == DBCacheRef.MRU){
-          db = new DBCacheMRU(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, mruCacheSize);
+          db = new DBCacheMRU(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, mruCacheSize,lockingDisabled);
         }else if( cacheType == DBCacheRef.SOFT || cacheType == DBCacheRef.HARD || cacheType == DBCacheRef.WEAK) {
-            db = new DBCacheRef(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, cacheType,autoClearRefCacheOnLowMem);
+            db = new DBCacheRef(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag, cacheType,autoClearRefCacheOnLowMem,lockingDisabled);
         } else if (cacheType == DBCacheRef.NONE) {
-            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag);
+            db = new DBStore(location, readonly, disableTransactions, cipherIn, cipherOut,useRandomAccessFile,deleteFilesAfterCloseFlag,lockingDisabled);
         } else {
             throw new IllegalArgumentException("Unknown cache type: " + cacheType);
         }

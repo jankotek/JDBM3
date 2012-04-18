@@ -69,10 +69,10 @@ class DBCacheMRU
      */
     public DBCacheMRU(String filename, boolean readonly, boolean transactionDisabled,
                       Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                     boolean deleteFilesAfterClose, int cacheMaxRecords)  {
+                     boolean deleteFilesAfterClose, int cacheMaxRecords, boolean lockingDisabled)  {
         super(filename, readonly, transactionDisabled,
             cipherIn, cipherOut, useRandomAccessFile,
-            deleteFilesAfterClose);
+            deleteFilesAfterClose,lockingDisabled);
 
         _hash = new LongHashMap<CacheEntry>(cacheMaxRecords);
         _max = cacheMaxRecords;
