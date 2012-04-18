@@ -13,7 +13,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
     public void testExpand() throws IOException {
         long init = Long.MAX_VALUE - size * 2;
         String file = newTestFile();
-        DB db = new DBStore(file, false, false);
+        DB db = new DBStore(file, false, false,false);
         SortedMap<Long, String> map = db.createTreeMap("aa");
         for (long i = init; i < init + size; i++) {
             map.put(i, "");
@@ -104,7 +104,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
     public void testStrings() throws IOException {
         long init = Long.MAX_VALUE - size * 2;
         String file = newTestFile();
-        DB db = new DBStore(file, false, false);
+        DB db = new DBStore(file, false, false,false);
         SortedMap<String, String> map = db.createTreeMap("aa");
         for (long i = init; i < init + size / 10; i++) {
             map.put("aaaaa" + i, "");
@@ -112,7 +112,7 @@ public class BTreeKeyCompressionTest extends TestCaseWithTestFile {
         db.commit();
         db.defrag(true);
         db.close();
-        db = new DBStore(file, false, false);
+        db = new DBStore(file, false, false,false);
         map = db.getTreeMap("aa");
         for (long i = init; i < init + size / 10; i++) {
             assertTrue(map.containsKey("aaaaa" + i));

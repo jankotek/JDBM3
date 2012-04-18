@@ -40,11 +40,11 @@ abstract class DBCache extends DBStore{
      */
     public DBCache(String filename, boolean readonly, boolean transactionDisabled,
                       Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                     boolean deleteFilesAfterClose){
+                     boolean deleteFilesAfterClose,boolean lockingDisabled){
 
         super(filename, readonly, transactionDisabled,
                 cipherIn, cipherOut, useRandomAccessFile,
-                deleteFilesAfterClose);
+                deleteFilesAfterClose,lockingDisabled);
 
     }
 

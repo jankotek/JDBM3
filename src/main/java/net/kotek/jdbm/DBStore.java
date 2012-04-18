@@ -93,7 +93,7 @@ class DBStore
      */
     private Cipher cipherIn;
     private boolean useRandomAccessFile;
-
+    private boolean lockingDisabled;
 
     void checkCanWrite() {
         if (readonly)
@@ -129,8 +129,8 @@ class DBStore
 
     private final String _filename;
 
-    public DBStore(String filename, boolean readonly, boolean transactionDisabled) throws IOException {
-        this(filename, readonly, transactionDisabled, null, null, false,false);
+    public DBStore(String filename, boolean readonly, boolean transactionDisabled, boolean lockingDisabled) throws IOException {
+        this(filename, readonly, transactionDisabled, null, null, false,false,false);
     }
 
 
@@ -142,7 +142,7 @@ class DBStore
      */
     public DBStore(String filename, boolean readonly, boolean transactionDisabled,
                    Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
-                   boolean deleteFilesAfterClose){
+                   boolean deleteFilesAfterClose, boolean lockingDisabled){
         _filename = filename;
         this.readonly = readonly;
         this.transactionsDisabled = transactionDisabled;
@@ -150,13 +150,14 @@ class DBStore
         this.cipherOut = cipherOut;
         this.useRandomAccessFile = useRandomAccessFile;
         this.deleteFilesAfterClose = deleteFilesAfterClose;
+        this.lockingDisabled = lockingDisabled;
         reopen();
     }
 
 
     private void reopen()  {
         try{
-        _file = new PageFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile);
+        _file = new PageFile(_filename, readonly, transactionsDisabled, cipherIn, cipherOut,useRandomAccessFile,lockingDisabled);
         _pageman = new PageManager(_file);
         _physMgr = new PhysicalRowIdManager(_file, _pageman);
 
@@ -669,7 +670,7 @@ class DBStore
             commit();
             final String filename2 = _filename + "_defrag" + System.currentTimeMillis();
             final String filename1 = _filename;
-            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false,false);
+            DBStore db2 = new DBStore(filename2, false, true, cipherIn, cipherOut, false,false,false);
 
             //recreate logical file with original page layout
             {

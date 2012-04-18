@@ -79,11 +79,11 @@ public class DBCacheRef
     public DBCacheRef(String filename, boolean readonly, boolean transactionDisabled,
                       Cipher cipherIn, Cipher cipherOut, boolean useRandomAccessFile,
                       boolean deleteFilesAfterClose,
-                      byte cacheType, boolean cacheAutoClearOnLowMem) {
+                      byte cacheType, boolean cacheAutoClearOnLowMem, boolean lockingDisabled) {
 
         super(filename, readonly, transactionDisabled,
                 cipherIn, cipherOut, useRandomAccessFile,
-                deleteFilesAfterClose);
+                deleteFilesAfterClose, lockingDisabled);
 
 
         this._cacheType = cacheType;

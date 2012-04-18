@@ -37,16 +37,19 @@ class StorageDiskMapped implements Storage {
     private String fileName;
     private boolean transactionsDisabled;
     private boolean readonly;
+    private boolean lockingDisabled;
 
 
-    public StorageDiskMapped(String fileName, boolean readonly, boolean transactionsDisabled) throws IOException {
+    public StorageDiskMapped(String fileName, boolean readonly, boolean transactionsDisabled, boolean lockingDisabled) throws IOException {
         this.fileName = fileName;
         this.transactionsDisabled = transactionsDisabled;
         this.readonly = readonly;
+        this.lockingDisabled = lockingDisabled;
         //make sure first file can be opened
         //lock it
         try {
-            getChannel(0).lock();
+            if(!lockingDisabled)
+                getChannel(0).lock();
         } catch (IOException e) {
             throw new IOException("Could not lock DB file: " + fileName, e);
         } catch (OverlappingFileLockException e) {
