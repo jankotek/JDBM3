@@ -122,6 +122,9 @@ final class SerializationHeader {
 
     final static int DATE = 127;
 
+    final static int NOTUSED_IDENTITYHASHMAP = 128;
+    final static int IDENTITYHASHMAP = 129;
+
     static final int JDBMLINKEDLIST = 159;
     static final int HTREE = 160;
 
