@@ -409,6 +409,26 @@ public class SerializationTest extends TestCase {
 
     }
 
+    enum Order
+    {
+        ASCENDING,
+        DESCENDING
+    }
+    public void testEnum() throws Exception{
+        Order o = Order.ASCENDING;
+        o = (Order) ser.deserialize(ser.serialize(o));
+        assertEquals(o,Order.ASCENDING );
+        assertEquals(o.ordinal(),Order.ASCENDING .ordinal());
+        assertEquals(o.name(),Order.ASCENDING .name());
+
+        o = Order.DESCENDING;
+        o = (Order) ser.deserialize(ser.serialize(o));
+        assertEquals(o,Order.DESCENDING );
+        assertEquals(o.ordinal(),Order.DESCENDING .ordinal());
+        assertEquals(o.name(),Order.DESCENDING .name());
+
+    }
+
 
 
 }
