@@ -1,8 +1,6 @@
 package net.kotek.jdbm;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -12,7 +10,7 @@ import java.util.Arrays;
  *
  * @author Jan Kotek
  */
-class DataInputOutput implements DataInput, DataOutput {
+class DataInputOutput implements DataInput, DataOutput, ObjectInput, ObjectOutput {
 
     private int pos = 0;
     private int count = 0;
@@ -156,6 +154,7 @@ class DataInputOutput implements DataInput, DataOutput {
     }
 
 
+
     public void write(int b) throws IOException {
         ensureAvail(1);
         buf[pos++] = (byte) b;
@@ -242,4 +241,57 @@ class DataInputOutput implements DataInput, DataOutput {
         b.get(buf,pos,length);
         pos+=length;
     }
+
+
+    //temp var used for Externalizable
+    SerialClassInfo serializer;
+    //temp var used for Externalizable
+    Serialization.FastArrayList objectStack;
+
+    public Object readObject() throws ClassNotFoundException, IOException {
+        //is here just to implement ObjectInput
+        //Fake method which reads data from serializer.
+        //We could probably implement separate wrapper for this, but I want to safe class space
+        return serializer.deserialize(this, objectStack);
+    }
+
+    public int read() throws IOException {
+        //is here just to implement ObjectInput
+        return readUnsignedByte();
+    }
+
+    public int read(byte[] b) throws IOException {
+        //is here just to implement ObjectInput
+        readFully(b);
+        return b.length;
+    }
+
+    public int read(byte[] b, int off, int len) throws IOException {
+        //is here just to implement ObjectInput
+        readFully(b,off,len);
+        return len;
+    }
+
+    public long skip(long n) throws IOException {
+        //is here just to implement ObjectInput
+        pos += n;
+        return n;
+    }
+
+    public void close() throws IOException {
+        //is here just to implement ObjectInput
+        //do nothing
+    }
+
+    public void writeObject(Object obj) throws IOException {
+        //is here just to implement ObjectOutput
+        serializer.serialize(this,obj,objectStack);
+    }
+
+
+    public void flush() throws IOException {
+        //is here just to implement ObjectOutput
+        //do nothing
+    }
+
 }

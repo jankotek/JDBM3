@@ -56,7 +56,7 @@ public class Serialization extends SerialClassInfo implements Serializer {
     public Serialization() {
         super(null,0L,new ArrayList<ClassInfo>());
         // Add java.lang.Object as registered class
-        registered.add(new ClassInfo(Object.class.getName(), new FieldInfo[]{}));
+        registered.add(new ClassInfo(Object.class.getName(), new FieldInfo[]{},false,false));
     }
 
     /**
@@ -64,11 +64,10 @@ public class Serialization extends SerialClassInfo implements Serializer {
      */
     public byte[] serialize(Object obj)
             throws IOException {
-        ByteArrayOutputStream ba = new ByteArrayOutputStream();
-        DataOutputStream da = new DataOutputStream(ba);
-        serialize(da, obj);
+        DataInputOutput ba = new DataInputOutput();
 
-        da.close();
+        serialize(ba, obj);
+
         return ba.toByteArray();
     }
 
@@ -592,9 +591,8 @@ public class Serialization extends SerialClassInfo implements Serializer {
      * @throws ClassNotFoundException
      */
     public Object deserialize(byte[] buf) throws ClassNotFoundException, IOException {
-        ByteArrayInputStream bs = new ByteArrayInputStream(buf);
-        DataInputStream das = new DataInputStream(bs);
-        Object ret = deserialize(das);
+        DataInputOutput bs = new DataInputOutput(buf);
+        Object ret = deserialize(bs);
         if (bs.available() != 0)
             throw new InternalError("bytes left: " + bs.available());
 
