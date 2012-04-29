@@ -16,9 +16,12 @@
 package net.kotek.jdbm;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+
+import net.kotek.jdbm.SerialClassInfo.ClassInfo;
 
 import static net.kotek.jdbm.SerializationHeader.*;
 
@@ -37,7 +40,7 @@ import static net.kotek.jdbm.SerializationHeader.*;
  * @author Jan Kotek
  */
 @SuppressWarnings("unchecked")
-class Serialization extends SerialClassInfo implements Serializer {
+public class Serialization extends SerialClassInfo implements Serializer {
 
 
     /**
@@ -54,12 +57,14 @@ class Serialization extends SerialClassInfo implements Serializer {
 
     public Serialization() {
         super(null,0L,new ArrayList<ClassInfo>());
+        // Add java.lang.Object as registered class
+        registered.add(new ClassInfo(Object.class.getName(), new FieldInfo[]{}));
     }
 
     /**
      * Serialize the object into a byte array.
      */
-    byte[] serialize(Object obj)
+    public byte[] serialize(Object obj)
             throws IOException {
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         DataOutputStream da = new DataOutputStream(ba);
@@ -310,6 +315,14 @@ class Serialization extends SerialClassInfo implements Serializer {
             } else {
                 out.write(ARRAY_OBJECT);
                 LongPacker.packInt(out, b.length);
+                
+                // Write class id for components
+                Class<?> componentType = obj.getClass().getComponentType();
+                registerClass(componentType);
+                //write class header
+                int classId = getClassId(componentType);
+                LongPacker.packInt(out, classId);
+                
                 for (Object o : b)
                     serialize(out, o, objectStack);
 
@@ -366,6 +379,8 @@ class Serialization extends SerialClassInfo implements Serializer {
             }
         } else if (clazz == HashMap.class) {
             serializeMap(HASHMAP, out, obj, objectStack);
+        } else if (clazz == IdentityHashMap.class) {
+            serializeMap(IDENTITYHASHMAP, out, obj, objectStack);
         } else if (clazz == LinkedHashMap.class) {
             serializeMap(LINKEDHASHMAP, out, obj, objectStack);
         } else if (clazz == Hashtable.class) {
@@ -572,7 +587,7 @@ class Serialization extends SerialClassInfo implements Serializer {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    Object deserialize(byte[] buf) throws ClassNotFoundException, IOException {
+    public Object deserialize(byte[] buf) throws ClassNotFoundException, IOException {
         ByteArrayInputStream bs = new ByteArrayInputStream(buf);
         DataInputStream das = new DataInputStream(bs);
         Object ret = deserialize(das);
@@ -913,6 +928,9 @@ class Serialization extends SerialClassInfo implements Serializer {
             case HASHMAP:
                 ret = deserializeHashMap(is, objectStack);
                 break;
+            case IDENTITYHASHMAP:
+                ret = deserializeIdentityHashMap(is, objectStack);
+                break;
             case LINKEDHASHMAP:
                 ret = deserializeLinkedHashMap(is, objectStack);
                 break;
@@ -1062,7 +1080,11 @@ class Serialization extends SerialClassInfo implements Serializer {
 
     private Object[] deserializeArrayObject(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
         int size = LongPacker.unpackInt(is);
-        Object[] s = new Object[size];
+        // Read class id for components
+        int classId = LongPacker.unpackInt(is);
+        Class clazz = classId2class.get(classId);
+        
+        Object[] s = (Object[])Array.newInstance(clazz, size);
         objectStack.add(s);
         for (int i = 0; i < size; i++)
             s[i] = deserialize(is, objectStack);
@@ -1188,6 +1210,15 @@ class Serialization extends SerialClassInfo implements Serializer {
         return s;
     }
 
+    private IdentityHashMap<Object, Object> deserializeIdentityHashMap(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
+        int size = LongPacker.unpackInt(is);
+
+        IdentityHashMap<Object, Object> s = new IdentityHashMap<Object, Object>(size);
+        objectStack.add(s);
+        for (int i = 0; i < size; i++)
+            s.put(deserialize(is, objectStack), deserialize(is, objectStack));
+        return s;
+    }
 
     private LinkedHashMap<Object, Object> deserializeLinkedHashMap(DataInput is, FastArrayList objectStack) throws IOException, ClassNotFoundException {
         int size = LongPacker.unpackInt(is);
