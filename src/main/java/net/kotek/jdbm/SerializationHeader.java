@@ -113,17 +113,14 @@ final class SerializationHeader {
 
     final static int NOTUSED_VECTOR_255 = 120;
     final static int VECTOR = 121;
-    final static int NOTUSED_HASHTABLE_255 = 122;
+    final static int IDENTITYHASHMAP = 122;
     final static int HASHTABLE = 123;
-    final static int NOTUSED_PROPERTIES_255 = 124;
+    final static int LOCALE = 124;
     final static int PROPERTIES = 125;
 
     final static int CLASS = 126;
-
     final static int DATE = 127;
 
-    final static int NOTUSED_IDENTITYHASHMAP = 128;
-    final static int IDENTITYHASHMAP = 129;
 
     static final int JDBMLINKEDLIST = 159;
     static final int HTREE = 160;

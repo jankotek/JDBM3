@@ -401,6 +401,14 @@ public class SerializationTest extends TestCase {
     }
 
 
+    public void testLocale() throws Exception{
+        assertEquals(Locale.FRANCE, ser.deserialize(ser.serialize(Locale.FRANCE)));
+        assertEquals(Locale.CANADA_FRENCH, ser.deserialize(ser.serialize(Locale.CANADA_FRENCH)));
+        assertEquals(Locale.SIMPLIFIED_CHINESE, ser.deserialize(ser.serialize(Locale.SIMPLIFIED_CHINESE)));
+        assertEquals(Locale.UNICODE_LOCALE_EXTENSION, ser.deserialize(ser.serialize(Locale.UNICODE_LOCALE_EXTENSION)));
+
+    }
+
 
 
 }

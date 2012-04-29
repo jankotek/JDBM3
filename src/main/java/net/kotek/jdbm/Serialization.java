@@ -21,8 +21,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import net.kotek.jdbm.SerialClassInfo.ClassInfo;
-
 import static net.kotek.jdbm.SerializationHeader.*;
 
 /**
@@ -387,6 +385,12 @@ public class Serialization extends SerialClassInfo implements Serializer {
             serializeMap(HASHTABLE, out, obj, objectStack);
         } else if (clazz == Properties.class) {
             serializeMap(PROPERTIES, out, obj, objectStack);
+        } else if (clazz == Locale.class){
+            out.write(LOCALE);
+            Locale l = (Locale) obj;
+            out.writeUTF(l.getLanguage());
+            out.writeUTF(l.getCountry());
+            out.writeUTF(l.getVariant());
         } else {
             out.write(NORMAL);
             writeObject(out, obj, objectStack);
@@ -857,6 +861,9 @@ public class Serialization extends SerialClassInfo implements Serializer {
                 break;
             case ARRAY_BYTE_INT:
                 ret = deserializeArrayByteInt(is);
+                break;
+            case LOCALE :
+                ret = new Locale(is.readUTF(),is.readUTF(),is.readUTF());
                 break;
             case JDBMLINKEDLIST:
                 ret = LinkedList2.deserialize(is, this);
