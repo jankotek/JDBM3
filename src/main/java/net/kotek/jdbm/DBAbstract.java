@@ -452,6 +452,7 @@ abstract class DBAbstract implements DB {
                 throw new InternalError("unknown collection type: "+(o==null?null:o.getClass()));
             }
             delete(recid);
+            collections.remove(name);
 
 
             dir.remove(name);

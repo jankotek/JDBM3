@@ -437,6 +437,21 @@ public class DBTest extends TestCaseWithTestFile {
 
     }
 
+    public void testDeleteAndPutCollection() throws IOException {
+        DB db = newDBNoCache();
+        db = DBMakerTest.newDBCache();
+        Map toAdd = new HashMap() ;
+        toAdd.put("description","test");
+        toAdd.put("descriptio1","test");
+        Map<String,Object> map = db.createHashMap("test");
+        map.putAll(toAdd);
+        db.commit();
+        db.deleteCollection("test");
+        map = db.getHashMap("test");
+        assertNull(map);
+
+    }
+
 
 }
 
