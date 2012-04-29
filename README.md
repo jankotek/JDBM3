@@ -86,30 +86,30 @@ JDBM is not currently in any Maven repository. TODO: We should have soon custom 
 Quick example
 -------------
 
-  import net.kotek.jdbm.*;
+    import net.kotek.jdbm.*;
 
-  //Open database using builder pattern. 
-  //All options are available with code autocompletion.
-  DB db = DBMaker.openFile("test")  
-      .deleteAfterClose()
-      .enableEncryption("password",false)
-      .make();
+    //Open database using builder pattern. 
+    //All options are available with code autocompletion.
+    DB db = DBMaker.openFile("test")  
+        .deleteAfterClose()
+        .enableEncryption("password",false)
+        .make();
   
-  //open an collection, TreeMap has better performance then HashMap
-  SortedMap<Integer,String> map = db.createMap("collectionName");
+    //open an collection, TreeMap has better performance then HashMap
+    SortedMap<Integer,String> map = db.createMap("collectionName");
 
-  map.put(1,"one");
-  map.put(2,"two");
-  //map.keySet() is now [1,2] even before commit
+    map.put(1,"one");
+    map.put(2,"two");
+    //map.keySet() is now [1,2] even before commit
 
-  db.commit();  //persist changes into disk
+    db.commit();  //persist changes into disk
 
-  map.put(3,"three");
-  //map.keySet() is now [1,2,3] 
-  db.rollback(); //revert recent changes
-  //map.keySet() is now [1,2] 
+    map.put(3,"three");
+    //map.keySet() is now [1,2,3] 
+    db.rollback(); //revert recent changes
+    //map.keySet() is now [1,2] 
 
-  db.close();  
+    db.close();  
 
 A few quick tricks
 ------------------
