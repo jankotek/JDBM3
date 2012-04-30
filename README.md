@@ -1,5 +1,5 @@
 JDBM provides TreeMap, HashMap and other collections backed up by disk storage.
-Now you can handle bilions of items without ever running out of memory. 
+Now you can handle billions of items without ever running out of memory.
 JDBM is probably the fastest and the simpliest pure Java database. 
 
 JDBM is tiny (160KB nodeps jar), but packed with features such as transactions, 
@@ -13,7 +13,7 @@ There is no catch and no strings attached.
 
 News
 ====
-30th Apr 2012 - JDBM3 may soon become part of Apache Foundation. This will not affect github site, but package may be renamed in a few days.
+30th Apr 2012 - JDBM3 [may soon become part of Apache Foundation](https://groups.google.com/forum/?fromgroups#!topic/jdbm/pb4LWr6qTxM). This will not affect github site, but package may be renamed in a few days.
 
 10th Apr 201 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)
 
@@ -30,6 +30,7 @@ Features
   * Small values stored inside tree nodes, large values lazily fetched.
   * Self-balancing, great performance even with 1e12 items.
   * Delta compression on keys
+  * Submaps (aka cursors) to view limited collection subsets
   * Custom comparators
 * H*Tree with `ConcurrentMap` interface
   * Optimized for random reads/writes
@@ -46,7 +47,7 @@ Features
   * If data fits into cache, reads are almost as fast as in-memory collections.
   * Minimal overhead, works well even with 16MB heap.
   * Scales well into 64GB RAM heaps.
-  * Various yet simple tunning options
+  * Various yet simple tuning options
 * Transactions
   * Single transaction per store, avoids concurrent modification stuff
   * Transactions are ACID (with limits for single concurrent transaction)
@@ -68,7 +69,7 @@ Features
   * Supports `Externalizable`  
   * Possible to plug your own `Serializer`
 * Performance 
-  * Blazing fast 1 million inserts / 10 million reads per second (on my 5GHz machine, but you should get 300000 insert p.s. easily)
+  * Blazing fast 1 million inserts / 10 million reads per second (on my 5GHz machine, but you should get 300000 inserts p.s. easily)
   * Tightly optimized code 
   * Uses NIO stuff you read about, but never see in action.
   * Minimal heap usage, prevents `java.lang.OutOfMemoryError: GC overhead limit`
