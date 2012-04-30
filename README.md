@@ -13,7 +13,9 @@ There is no catch and no strings attached.
 
 News
 ====
-10th Apr 2013 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)
+30th Apr 2012 - JDBM3 may soon become part of Apache Foundation. This will not affect github site, but package may be renamed in a few days.
+
+10th Apr 201 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)
 
 24th Feb 2012 - Alpha2 released with tons of bugfixes. Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha2.jar)
 
