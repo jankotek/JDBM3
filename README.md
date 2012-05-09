@@ -13,7 +13,7 @@ There is no catch and no strings attached.
 
 News
 ====
-30th Apr 2012 - JDBM3 [may soon become part of Apache Foundation](https://groups.google.com/forum/?fromgroups#!topic/jdbm/pb4LWr6qTxM). This will not affect github site, but package may be renamed in a few days.
+30th Apr 2012 - JDBM3 [may soon become part of Apache Foundation](https://groups.google.com/forum/?fromgroups#!topic/jdbm/pb4LWr6qTxM). This will not affect github site, but package may be renamed in a few days (done).
 
 10th Apr 2012 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)
 
@@ -79,7 +79,7 @@ Features
 
 Introduction
 ============
-All classes are contained in package `net.kotek.jdbm`. There are only two important classes: `DBMaker` is builder which configures and opens database. `DB` is database itself, it opens collections and controls transactions. Collections in JDBM mimic their `java.util` counter parts. TreeMap uses an on-disk ordered auto-balanced B*Tree index, LinkedList is stored as self referencing entries and so on. Everything should be thread safe (currently under testing).
+All classes are contained in package `org.apache..jdbm`. There are only two important classes: `DBMaker` is builder which configures and opens database. `DB` is database itself, it opens collections and controls transactions. Collections in JDBM mimic their `java.util` counter parts. TreeMap uses an on-disk ordered auto-balanced B*Tree index, LinkedList is stored as self referencing entries and so on. Everything should be thread safe (currently under testing).
 
 Maven Dependency
 ----------------
