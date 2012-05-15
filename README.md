@@ -89,7 +89,7 @@ JDBM is not currently in any Maven repository. TODO: We should have soon custom 
 Quick example
 -------------
 
-    import net.kotek.jdbm.*;
+    import org.apache.jdbm.*;
 
     //Open database using builder pattern. 
     //All options are available with code autocompletion.
