@@ -10,7 +10,7 @@ import java.util.Arrays;
  *
  * @author Jan Kotek
  */
-class DataInputOutput implements DataInput, DataOutput, ObjectInput, ObjectOutput {
+public class DataInputOutput implements DataInput, DataOutput, ObjectInput, ObjectOutput {
 
     private int pos = 0;
     private int count = 0;
