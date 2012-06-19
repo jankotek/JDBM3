@@ -302,7 +302,7 @@ final class PageFile {
             commit();
         }
 
-        if(!transactionsDisabled){
+        if(!transactionsDisabled && txnMgr!=null){
             txnMgr.shutdown();
         }
 
