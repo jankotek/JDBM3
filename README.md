@@ -89,17 +89,17 @@ JDBM is not currently in any Maven repository. TODO: We should have soon custom 
 Quick example
 -------------
 
-    import net.kotek.jdbm.*;
+    import org.apache.jdbm.*;
 
     //Open database using builder pattern. 
     //All options are available with code autocompletion.
     DB db = DBMaker.openFile("test")  
-        .deleteAfterClose()
+        .deleteFilesAfterClose()
         .enableEncryption("password",false)
         .make();
   
     //open an collection, TreeMap has better performance then HashMap
-    SortedMap<Integer,String> map = db.createMap("collectionName");
+    SortedMap<Integer,String> map = db.createTreeMap("collectionName");
 
     map.put(1,"one");
     map.put(2,"two");
