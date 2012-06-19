@@ -182,6 +182,7 @@ class DBStore
     public synchronized void close() {
         checkNotClosed();
         try {
+            super.close();
             _pageman.close();
             _file.close();
             if(deleteFilesAfterClose)

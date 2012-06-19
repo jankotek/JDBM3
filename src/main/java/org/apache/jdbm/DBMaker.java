@@ -342,14 +342,7 @@ public class DBMaker {
         }
         
         if(closeOnJVMExit){
-            final DB db2 = db;
-            Thread t = new Thread("JDBM shutdown"){
-              public void run(){
-                  if(!db2.isClosed())
-                    db2.close();    
-              }
-            };
-            Runtime.getRuntime().addShutdownHook(t);
+            db.addShutdownHook();
         }
 
         return db;

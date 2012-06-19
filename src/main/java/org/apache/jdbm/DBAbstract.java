@@ -529,6 +529,39 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    
 
+    void addShutdownHook(){
+        if(shutdownCloseThread!=null){
+            shutdownCloseThread = new ShutdownCloseThread();
+            Runtime.getRuntime().addShutdownHook(shutdownCloseThread);
+        }
+    }
+
+    public void close(){
+        if(shutdownCloseThread!=null){
+            Runtime.getRuntime().removeShutdownHook(shutdownCloseThread);
+            shutdownCloseThread.dbToClose = null;
+            shutdownCloseThread = null;
+        }
+    }
+
+
+    ShutdownCloseThread shutdownCloseThread = null;
+
+    private static class ShutdownCloseThread extends Thread{
+
+        DBAbstract dbToClose = null;
+
+        ShutdownCloseThread(){
+            super("JDBM shutdown");
+        }
+
+        public void run(){
+            if(dbToClose!=null && !dbToClose.isClosed()){
+                dbToClose.shutdownCloseThread = null;
+                dbToClose.close();
+            }
+        }
+
+    }
 }
