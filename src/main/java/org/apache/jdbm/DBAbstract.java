@@ -398,6 +398,9 @@ abstract class DBAbstract implements DB {
             if(nameDirectory_recid==0)
                 return ret;
             HTree<String,Long> m = fetch(nameDirectory_recid);
+	    if (m == null) {
+		return null;
+	    }
 
             for(Map.Entry<String,Long> e:m.entrySet()){
                 Object o = fetch(e.getValue());
