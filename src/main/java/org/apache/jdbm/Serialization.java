@@ -47,7 +47,7 @@ public class Serialization extends SerialClassInfo implements Serializer {
     static final boolean DEBUG = false;
 
 
-    private static final String UTF8 = "UTF-8";
+    static final String UTF8 = "UTF-8";
 
     Serialization(DBAbstract db, long serialClassInfoRecid, ArrayList<ClassInfo> info) throws IOException {
         super(db, serialClassInfoRecid,info);
