@@ -59,13 +59,13 @@ abstract class DBAbstract implements DB {
 
 
     /**
-      * Inserts a new record using a custom serializer.
-      *
-      * @param obj        the object for the new record.
-      * @param serializer a custom serializer
-      * @return the rowid for the new record.
-      * @throws java.io.IOException when one of the underlying I/O operations fails.
-      */
+     * Inserts a new record using a custom serializer.
+     *
+     * @param obj        the object for the new record.
+     * @param serializer a custom serializer
+     * @return the rowid for the new record.
+     * @throws java.io.IOException when one of the underlying I/O operations fails.
+     */
     abstract <A> long insert(A obj, Serializer<A> serializer,boolean disableCache) throws IOException;
 
     /**
@@ -236,9 +236,9 @@ abstract class DBAbstract implements DB {
 
 
     public synchronized <K, V> ConcurrentNavigableMap<K, V> createTreeMap(String name,
-                                                             Comparator<K> keyComparator,
-                                                             Serializer<K> keySerializer,
-                                                             Serializer<V> valueSerializer) {
+                                                                          Comparator<K> keyComparator,
+                                                                          Serializer<K> keySerializer,
+                                                                          Serializer<V> valueSerializer) {
         try {
             assertNameNotExist(name);
             BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer,true);
@@ -332,7 +332,7 @@ abstract class DBAbstract implements DB {
             throw new IOError(e);
         }
     }
-    
+
     private synchronized  Object getCollectionInstance(String name){
         WeakReference ref = collections.get(name);
         if(ref==null)return null;
@@ -356,7 +356,7 @@ abstract class DBAbstract implements DB {
      * doesn't exist.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected long getNamedObject(String name) throws IOException{
+    synchronized protected long getNamedObject(String name) throws IOException{
         long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
         if(nameDirectory_recid == 0){
             return 0;
@@ -373,7 +373,7 @@ abstract class DBAbstract implements DB {
      * Set the record id of a named object.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected void setNamedObject(String name, long recid) throws IOException{
+    synchronized protected void setNamedObject(String name, long recid) throws IOException{
         long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
         HTree<String,Long> m = null;
         if(nameDirectory_recid == 0){
@@ -391,7 +391,7 @@ abstract class DBAbstract implements DB {
 
 
 
-    public Map<String,Object> getCollections(){
+    synchronized public Map<String,Object> getCollections(){
         try{
             Map<String,Object> ret = new LinkedHashMap<String, Object>();
             long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
@@ -424,7 +424,7 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public void deleteCollection(String name){
+    synchronized public void deleteCollection(String name){
         try{
             long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
             if(nameDirectory_recid==0)
@@ -483,7 +483,7 @@ abstract class DBAbstract implements DB {
 
         try{
             long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
-            if (serialClassInfoRecid == 0) {                
+            if (serialClassInfoRecid == 0) {
                 //allocate new recid 
                 serialClassInfoRecid = insert(null,Utils.NULL_SERIALIZER,false);
                 //and insert new serializer
@@ -502,7 +502,7 @@ abstract class DBAbstract implements DB {
 
     }
 
-    
+
     final protected void checkNotClosed(){
         if(isClosed()) throw new IllegalStateException("db was closed");
     }
@@ -511,13 +511,13 @@ abstract class DBAbstract implements DB {
     protected abstract long getRoot(byte root);
 
 
-    public long collectionSize(Object collection){
+    synchronized public long collectionSize(Object collection){
         if(collection instanceof BTreeMap){
             BTreeMap t = (BTreeMap) collection;
             if(t.fromKey!=null|| t.toKey!=null) throw new IllegalArgumentException("collectionSize does not work on BTree submap");
             return t.tree._entries;
         }else if(collection instanceof  HTree){
-          return ((HTree)collection).getRoot().size;
+            return ((HTree)collection).getRoot().size;
         }else if(collection instanceof  HTreeSet){
             return collectionSize(((HTreeSet) collection).map);
         }else if(collection instanceof  BTreeSet){
