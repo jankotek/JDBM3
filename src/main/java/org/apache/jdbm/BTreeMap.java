@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
  */
 class BTreeMap<K, V> extends AbstractMap<K, V> implements ConcurrentNavigableMap<K, V> {
 
-    protected final BTree<K, V> tree;
+    protected BTree<K, V> tree;
 
     protected final K fromKey;
 

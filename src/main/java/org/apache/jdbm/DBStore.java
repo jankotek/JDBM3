@@ -463,6 +463,8 @@ class DBStore
             _physMgr.rollback();
             _logicMgr.rollback();
             _pageman.rollback();
+
+            super.rollback();
         } catch (IOException e) {
             throw new IOError(e);
         }

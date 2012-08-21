@@ -564,4 +564,27 @@ abstract class DBAbstract implements DB {
         }
 
     }
+
+    synchronized public void   rollback() {
+        try {
+        for(WeakReference<Object> o:collections.values()){
+            Object c =  o.get();
+            if(c != null && c instanceof BTreeMap){
+                //reload tree
+                BTreeMap m = (BTreeMap) c;
+                m.tree = fetch(m.tree.getRecid());
+            }
+            if(c != null && c instanceof BTreeSet){
+                //reload tree
+                BTreeSet m = (BTreeSet) c;
+                m.map.tree = fetch(m.map.tree.getRecid());
+            }
+
+
+        }
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+
+    }
 }
