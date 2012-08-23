@@ -332,7 +332,7 @@ abstract class DBAbstract implements DB {
             throw new IOError(e);
         }
     }
-    
+
     private synchronized  Object getCollectionInstance(String name){
         WeakReference ref = collections.get(name);
         if(ref==null)return null;
@@ -356,7 +356,7 @@ abstract class DBAbstract implements DB {
      * doesn't exist.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected long getNamedObject(String name) throws IOException{
+    synchronized protected long getNamedObject(String name) throws IOException{
         long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
         if(nameDirectory_recid == 0){
             return 0;
@@ -373,7 +373,7 @@ abstract class DBAbstract implements DB {
      * Set the record id of a named object.
      * Named objects are used to store Map views and other well known objects.
      */
-    protected void setNamedObject(String name, long recid) throws IOException{
+    synchronized protected void setNamedObject(String name, long recid) throws IOException{
         long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
         HTree<String,Long> m = null;
         if(nameDirectory_recid == 0){
@@ -391,16 +391,13 @@ abstract class DBAbstract implements DB {
 
 
 
-    public Map<String,Object> getCollections(){
+    synchronized public Map<String,Object> getCollections(){
         try{
             Map<String,Object> ret = new LinkedHashMap<String, Object>();
             long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
             if(nameDirectory_recid==0)
                 return ret;
             HTree<String,Long> m = fetch(nameDirectory_recid);
-	    if (m == null) {
-		return null;
-	    }
 
             for(Map.Entry<String,Long> e:m.entrySet()){
                 Object o = fetch(e.getValue());
@@ -427,7 +424,7 @@ abstract class DBAbstract implements DB {
     }
 
 
-    public void deleteCollection(String name){
+    synchronized public void deleteCollection(String name){
         try{
             long nameDirectory_recid = getRoot(NAME_DIRECTORY_ROOT);
             if(nameDirectory_recid==0)
@@ -486,7 +483,7 @@ abstract class DBAbstract implements DB {
 
         try{
             long serialClassInfoRecid = getRoot(SERIAL_CLASS_INFO_RECID_ROOT);
-            if (serialClassInfoRecid == 0) {                
+            if (serialClassInfoRecid == 0) {
                 //allocate new recid 
                 serialClassInfoRecid = insert(null,Utils.NULL_SERIALIZER,false);
                 //and insert new serializer
@@ -505,7 +502,7 @@ abstract class DBAbstract implements DB {
 
     }
 
-    
+
     final protected void checkNotClosed(){
         if(isClosed()) throw new IllegalStateException("db was closed");
     }
@@ -514,7 +511,7 @@ abstract class DBAbstract implements DB {
     protected abstract long getRoot(byte root);
 
 
-    public long collectionSize(Object collection){
+    synchronized public long collectionSize(Object collection){
         if(collection instanceof BTreeMap){
             BTreeMap t = (BTreeMap) collection;
             if(t.fromKey!=null|| t.toKey!=null) throw new IllegalArgumentException("collectionSize does not work on BTree submap");
@@ -532,6 +529,62 @@ abstract class DBAbstract implements DB {
         }
     }
 
-    
 
+    void addShutdownHook(){
+        if(shutdownCloseThread!=null){
+            shutdownCloseThread = new ShutdownCloseThread();
+            Runtime.getRuntime().addShutdownHook(shutdownCloseThread);
+        }
+    }
+
+    public void close(){
+        if(shutdownCloseThread!=null){
+            Runtime.getRuntime().removeShutdownHook(shutdownCloseThread);
+            shutdownCloseThread.dbToClose = null;
+            shutdownCloseThread = null;
+        }
+    }
+
+
+    ShutdownCloseThread shutdownCloseThread = null;
+
+    private static class ShutdownCloseThread extends Thread{
+
+        DBAbstract dbToClose = null;
+
+        ShutdownCloseThread(){
+            super("JDBM shutdown");
+        }
+
+        public void run(){
+            if(dbToClose!=null && !dbToClose.isClosed()){
+                dbToClose.shutdownCloseThread = null;
+                dbToClose.close();
+            }
+        }
+
+    }
+
+    synchronized public void   rollback() {
+        try {
+        for(WeakReference<Object> o:collections.values()){
+            Object c =  o.get();
+            if(c != null && c instanceof BTreeMap){
+                //reload tree
+                BTreeMap m = (BTreeMap) c;
+                m.tree = fetch(m.tree.getRecid());
+            }
+            if(c != null && c instanceof BTreeSet){
+                //reload tree
+                BTreeSet m = (BTreeSet) c;
+                m.map.tree = fetch(m.map.tree.getRecid());
+            }
+
+
+        }
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+
+    }
 }

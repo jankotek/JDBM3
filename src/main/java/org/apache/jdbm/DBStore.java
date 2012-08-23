@@ -182,6 +182,7 @@ class DBStore
     public synchronized void close() {
         checkNotClosed();
         try {
+            super.close();
             _pageman.close();
             _file.close();
             if(deleteFilesAfterClose)
@@ -462,6 +463,8 @@ class DBStore
             _physMgr.rollback();
             _logicMgr.rollback();
             _pageman.rollback();
+
+            super.rollback();
         } catch (IOException e) {
             throw new IOError(e);
         }

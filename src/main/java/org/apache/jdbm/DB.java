@@ -90,7 +90,7 @@ public interface DB {
     <K, V> ConcurrentMap<K, V> getHashMap(String name);
 
     /**
-     * Creates or load existing Map which persists data into DB.
+     * Creates Map which persists data into DB.
      *
      * @param name record name
      * @return
@@ -99,7 +99,7 @@ public interface DB {
 
 
     /**
-     * Creates or load existing Primary Hash Map which persists data into DB.
+     * Creates  Hash Map which persists data into DB.
      * Map will use custom serializers for Keys and Values.
      * Leave keySerializer null to use default serializer for keys
      *
@@ -121,7 +121,7 @@ public interface DB {
     <K, V> ConcurrentNavigableMap<K, V> getTreeMap(String name);
 
     /**
-     * Creates or load existing Primary TreeMap which persists data into DB.
+     * Create  TreeMap which persists data into DB.
      *
      * @param <K>  Key type
      * @param <V>  Value type
@@ -131,7 +131,7 @@ public interface DB {
     <K extends Comparable, V> NavigableMap<K, V> createTreeMap(String name);
 
     /**
-     * Creates or load existing TreeMap which persists data into DB.
+     * Creates TreeMap which persists data into DB.
      *
      * @param <K>             Key type
      * @param <V>             Value type

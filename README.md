@@ -1,3 +1,5 @@
+**NOTE: this project is in maintenance mode (bug fix only), I redirected my effort to JDBM4 which should provide better concurrent scalability**
+
 JDBM provides TreeMap, HashMap and other collections backed up by disk storage.
 Now you can handle billions of items without ever running out of memory.
 JDBM is probably the fastest and the simpliest pure Java database. 
@@ -13,6 +15,8 @@ There is no catch and no strings attached.
 
 News
 ====
+18st Aug 2012 - First version of JDBM4 is available on [GitHub](https://github.com/jankotek/JDBM4)
+
 30th Apr 2012 - JDBM3 [may soon become part of Apache Foundation](https://groups.google.com/forum/?fromgroups#!topic/jdbm/pb4LWr6qTxM). This will not affect github site, but package may be renamed in a few days (done).
 
 10th Apr 2012 - Alpha3 was just released.  Get [binary jar](https://github.com/downloads/jankotek/JDBM3/JDBM-3.0-alpha3.jar) and [read some notes](http://groups.google.com/group/jdbm/browse_thread/thread/db1f0ed52ce5fb3c)

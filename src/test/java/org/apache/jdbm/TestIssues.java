@@ -69,4 +69,13 @@ public class TestIssues extends TestCaseWithTestFile {
         thread.join();
         db.close();
     }
+
+    public void test_issue_84_reopen_after_close(){
+        String f = newTestFile();
+        DB db = DBMaker.openFile(f).make();
+        db.close();
+
+        db = DBMaker.openFile(f).readonly().make();
+        db.close();
+    }
 }

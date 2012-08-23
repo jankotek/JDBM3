@@ -47,7 +47,7 @@ class Utils {
      */
     static final Comparator COMPARABLE_COMPARATOR = new Comparator<Comparable>() {
         public int compare(Comparable o1, Comparable o2) {
-            return o1.compareTo(o2);
+            return o1 == null && o2 != null ? -1 : (o1 != null && o2 == null ? 1 : o1.compareTo(o2));
         }
     };
 
