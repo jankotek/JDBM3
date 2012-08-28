@@ -1088,6 +1088,7 @@ public class Serialization extends SerialClassInfo implements Serializer {
         // Read class id for components
         int classId = LongPacker.unpackInt(is);
         Class clazz = classId2class.get(classId);
+        if (clazz == null) clazz = Object.class;
         
         Object[] s = (Object[])Array.newInstance(clazz, size);
         objectStack.add(s);
