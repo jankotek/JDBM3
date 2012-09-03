@@ -398,6 +398,18 @@ public class SerializationTest extends TestCase {
         d = new BigInteger("-535345345345344456567889889895165654423236");
         assertEquals(d, ser.deserialize(ser.serialize(d)));
     }
+    
+    public void testUUID() throws IOException, ClassNotFoundException {
+    	//try a bunch of UUIDs.
+    	for(int i = 0; i < 1000;i++)
+    	{
+    		UUID uuid = UUID.randomUUID();
+    		SimpleEntry a = new SimpleEntry(uuid, "11");
+    		byte[] buf = ser.serialize(a);
+    		SimpleEntry b = (SimpleEntry) ser.deserialize(buf);
+    		assertEquals(b, a);
+    	}
+    }
 
 
     public void testLocale() throws Exception{
