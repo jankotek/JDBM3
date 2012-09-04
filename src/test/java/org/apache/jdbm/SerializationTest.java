@@ -330,24 +330,24 @@ public class SerializationTest extends TestCase {
     }
 
     public void testNegativeLongsArray() throws ClassNotFoundException, IOException {
-       long[] l = new long[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
-       assertTrue(Arrays.equals(l, (long[]) deserialize));
-     }
+        long[] l = new long[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (long[]) deserialize));
+    }
 
 
     public void testNegativeIntArray() throws ClassNotFoundException, IOException {
-       int[] l = new int[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
-       assertTrue(Arrays.equals(l, (int[]) deserialize));
-     }
+        int[] l = new int[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (int[]) deserialize));
+    }
 
 
     public void testNegativeShortArray() throws ClassNotFoundException, IOException {
-       short[] l = new short[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
+        short[] l = new short[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
         assertTrue(Arrays.equals(l, (short[]) deserialize));
-     }
+    }
 
     public void testBooleanArray() throws ClassNotFoundException, IOException {
         boolean[] l = new boolean[] { true,false };
@@ -399,6 +399,18 @@ public class SerializationTest extends TestCase {
         assertEquals(d, ser.deserialize(ser.serialize(d)));
         d = new BigInteger("-535345345345344456567889889895165654423236");
         assertEquals(d, ser.deserialize(ser.serialize(d)));
+    }
+
+    public void testUUID() throws IOException, ClassNotFoundException {
+        //try a bunch of UUIDs.
+        for(int i = 0; i < 1000;i++)
+        {
+            UUID uuid = UUID.randomUUID();
+            SimpleEntry a = new SimpleEntry(uuid, "11");
+            byte[] buf = ser.serialize(a);
+            SimpleEntry b = (SimpleEntry) ser.deserialize(buf);
+            assertEquals(b, a);
+        }
     }
 
 
