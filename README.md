@@ -15,7 +15,8 @@ There is no catch and no strings attached.
 
 News
 ====
-4th Sep 2012 - JDBM3 alpha4 was just released. [Just bugfixes](https://groups.google.com/forum/?fromgroups=#!topic/jdbm/yBB4dLW54Pk)
+4th Sep 2012 - JDBM3 alpha4 was released. [Just bugfixes](https://groups.google.com/forum/?fromgroups=#!topic/jdbm/yBB4dLW54Pk)
+
 18st Aug 2012 - First version of JDBM4 is available on [GitHub](https://github.com/jankotek/JDBM4)
 
 30th Apr 2012 - JDBM3 [may soon become part of Apache Foundation](https://groups.google.com/forum/?fromgroups#!topic/jdbm/pb4LWr6qTxM). This will not affect github site, but package may be renamed in a few days (done).
