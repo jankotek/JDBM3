@@ -120,6 +120,7 @@ final class SerializationHeader {
 
     final static int CLASS = 126;
     final static int DATE = 127;
+    final static int UUID = 128;
 
 
     static final int JDBMLINKEDLIST = 159;

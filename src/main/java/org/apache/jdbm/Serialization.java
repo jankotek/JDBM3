@@ -263,6 +263,10 @@ public class Serialization extends SerialClassInfo implements Serializer {
             out.write(DATE);
             out.writeLong(((Date) obj).getTime());
             return;
+        } else if (clazz == UUID.class) {
+            out.write(UUID);
+            serializeUUID(out,(UUID) obj);
+            return;
         } else if (clazz == BTree.class) {
             out.write(BTREE);
             ((BTree) obj).writeExternal(out);
@@ -406,7 +410,13 @@ public class Serialization extends SerialClassInfo implements Serializer {
         }
 
     }
-
+   
+    private void serializeUUID(DataOutput out, UUID uuid) throws IOException
+    {
+    	out.writeLong(uuid.getMostSignificantBits());
+    	out.writeLong(uuid.getLeastSignificantBits());
+    }
+    
     private void serializeMap(int header, DataOutput out, Object obj, FastArrayList objectStack) throws IOException {
         Map l = (Map) obj;
         out.write(header);
@@ -431,7 +441,6 @@ public class Serialization extends SerialClassInfo implements Serializer {
         LongPacker.packInt(out, b.length);
         out.write(b);
     }
-
 
     private void writeLongArray(DataOutput da, long[] obj) throws IOException {
         long max = Long.MIN_VALUE;
@@ -824,6 +833,9 @@ public class Serialization extends SerialClassInfo implements Serializer {
             case DATE:
                 ret = new Date(is.readLong());
                 break;
+            case UUID:
+            	ret = deserializeUUID(is);
+            	break;
             case ARRAY_INT_B_255:
                 ret = deserializeArrayIntB255(is);
                 break;
@@ -1066,6 +1078,11 @@ public class Serialization extends SerialClassInfo implements Serializer {
             ret[i] = LongPacker.unpackLong(is);
         }
         return ret;
+    }
+    
+    private UUID deserializeUUID(DataInput is) throws IOException
+    {
+    	return new UUID(is.readLong(), is.readLong());
     }
 
     private int[] deserializeArrayIntB255(DataInput is) throws IOException {
