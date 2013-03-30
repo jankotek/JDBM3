@@ -1085,11 +1085,6 @@ public class Serialization extends SerialClassInfo implements Serializer {
     	return new UUID(is.readLong(), is.readLong());
     }
 
-    private UUID deserializeUUID(DataInput is) throws IOException
-    {
-        return new UUID(is.readLong(), is.readLong());
-    }
-
     private int[] deserializeArrayIntB255(DataInput is) throws IOException {
         int size = is.readUnsignedByte();
         if (size < 0)
