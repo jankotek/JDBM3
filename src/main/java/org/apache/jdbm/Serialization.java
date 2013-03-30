@@ -1079,10 +1079,10 @@ public class Serialization extends SerialClassInfo implements Serializer {
         }
         return ret;
     }
-
+    
     private UUID deserializeUUID(DataInput is) throws IOException
     {
-        return new UUID(is.readLong(), is.readLong());
+    	return new UUID(is.readLong(), is.readLong());
     }
 
     private int[] deserializeArrayIntB255(DataInput is) throws IOException {

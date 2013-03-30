@@ -154,7 +154,10 @@ final class HTreeDirectory<K, V> {
                 HTreeDirectory<K, V> dir = (HTreeDirectory<K, V>) node;
                 dir.setPersistenceContext(child_recid);
                 return dir.get(key);
-            } else {
+            } else if (node == null) {
+		putRecid(hash, 0L);
+		return null;
+	    } else {
                 // node is a bucket
                 HTreeBucket<K, V> bucket = (HTreeBucket) node;
                 return bucket.getValue(key);
@@ -164,7 +167,7 @@ final class HTreeDirectory<K, V> {
 
     private long getRecid(int hash) {
         long[] sub = _children[hash>>>3];
-        return sub==null? 0 : sub[hash%8];
+        return sub == null ? 0 : sub[hash%8];
     }
 
     private void putRecid(int hash, long recid) {

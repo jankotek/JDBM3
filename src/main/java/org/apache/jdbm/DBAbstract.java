@@ -59,13 +59,13 @@ abstract class DBAbstract implements DB {
 
 
     /**
-     * Inserts a new record using a custom serializer.
-     *
-     * @param obj        the object for the new record.
-     * @param serializer a custom serializer
-     * @return the rowid for the new record.
-     * @throws java.io.IOException when one of the underlying I/O operations fails.
-     */
+      * Inserts a new record using a custom serializer.
+      *
+      * @param obj        the object for the new record.
+      * @param serializer a custom serializer
+      * @return the rowid for the new record.
+      * @throws java.io.IOException when one of the underlying I/O operations fails.
+      */
     abstract <A> long insert(A obj, Serializer<A> serializer,boolean disableCache) throws IOException;
 
     /**
@@ -236,9 +236,9 @@ abstract class DBAbstract implements DB {
 
 
     public synchronized <K, V> ConcurrentNavigableMap<K, V> createTreeMap(String name,
-                                                                          Comparator<K> keyComparator,
-                                                                          Serializer<K> keySerializer,
-                                                                          Serializer<V> valueSerializer) {
+                                                             Comparator<K> keyComparator,
+                                                             Serializer<K> keySerializer,
+                                                             Serializer<V> valueSerializer) {
         try {
             assertNameNotExist(name);
             BTree<K, V> tree = BTree.createInstance(this, keyComparator, keySerializer, valueSerializer,true);
@@ -517,7 +517,7 @@ abstract class DBAbstract implements DB {
             if(t.fromKey!=null|| t.toKey!=null) throw new IllegalArgumentException("collectionSize does not work on BTree submap");
             return t.tree._entries;
         }else if(collection instanceof  HTree){
-            return ((HTree)collection).getRoot().size;
+          return ((HTree)collection).getRoot().size;
         }else if(collection instanceof  HTreeSet){
             return collectionSize(((HTreeSet) collection).map);
         }else if(collection instanceof  BTreeSet){

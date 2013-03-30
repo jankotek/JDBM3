@@ -349,7 +349,6 @@ abstract class SerialClassInfo {
 				return f.get(object);
 			}
 		} catch (Exception e) {
-
 		}
 		
 		throw new NoSuchFieldError(object.getClass() + "." + fieldInfo.getName());
