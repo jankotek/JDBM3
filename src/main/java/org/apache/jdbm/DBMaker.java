@@ -120,7 +120,7 @@ public class DBMaker {
      * @return this builder
      */
     public DBMaker enableHardCache() {
-        cacheType = DBCacheRef.SOFT;
+        cacheType = DBCacheRef.HARD;
         return this;
     }
 

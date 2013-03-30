@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 @SuppressWarnings("unchecked")
 public class SerializationTest extends TestCase {
 
@@ -328,24 +330,24 @@ public class SerializationTest extends TestCase {
     }
 
     public void testNegativeLongsArray() throws ClassNotFoundException, IOException {
-       long[] l = new long[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
-       assertTrue(Arrays.equals(l, (long[]) deserialize));
-     }
+        long[] l = new long[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (long[]) deserialize));
+    }
 
 
     public void testNegativeIntArray() throws ClassNotFoundException, IOException {
-       int[] l = new int[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
-       assertTrue(Arrays.equals(l, (int[]) deserialize));
-     }
+        int[] l = new int[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
+        assertTrue(Arrays.equals(l, (int[]) deserialize));
+    }
 
 
     public void testNegativeShortArray() throws ClassNotFoundException, IOException {
-       short[] l = new short[] { -12 };
-       Object deserialize = ser.deserialize(ser.serialize(l));
+        short[] l = new short[] { -12 };
+        Object deserialize = ser.deserialize(ser.serialize(l));
         assertTrue(Arrays.equals(l, (short[]) deserialize));
-     }
+    }
 
     public void testBooleanArray() throws ClassNotFoundException, IOException {
         boolean[] l = new boolean[] { true,false };
@@ -411,6 +413,18 @@ public class SerializationTest extends TestCase {
     	}
     }
 
+    public void testUUID() throws IOException, ClassNotFoundException {
+        //try a bunch of UUIDs.
+        for(int i = 0; i < 1000;i++)
+        {
+            UUID uuid = UUID.randomUUID();
+            SimpleEntry a = new SimpleEntry(uuid, "11");
+            byte[] buf = ser.serialize(a);
+            SimpleEntry b = (SimpleEntry) ser.deserialize(buf);
+            assertEquals(b, a);
+        }
+    }
+
 
     public void testLocale() throws Exception{
         assertEquals(Locale.FRANCE, ser.deserialize(ser.serialize(Locale.FRANCE)));
@@ -467,6 +481,16 @@ public class SerializationTest extends TestCase {
         assertEquals(e.aaa,16); //was incremented during serialization
         assertEquals(e.l,"pakla");
 
+    }
+
+    public void testObjectArrayArray() throws IOException, ClassNotFoundException {
+        Object[][] arr = new Object[][] {
+                {(int)25, (short)20, (short)32, (short)16, (short)20},
+        };
+        Object[][] arr2 = (Object[][]) ser.deserialize(ser.serialize(arr));
+
+        for(int i=0;i<arr.length;i++)
+            assertEquals(asList(arr[i]), asList(arr2[i]));
     }
 
 }

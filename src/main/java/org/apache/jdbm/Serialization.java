@@ -197,7 +197,7 @@ public class Serialization extends SerialClassInfo implements Serializer {
             else if (val == 1)
                 out.write(BYTE_1);
             else {
-                out.write(SHORT_FULL);
+                out.write(BYTE_FULL);
                 out.writeByte(val);
             }
             return;
@@ -316,14 +316,14 @@ public class Serialization extends SerialClassInfo implements Serializer {
             } else {
                 out.write(ARRAY_OBJECT);
                 LongPacker.packInt(out, b.length);
-                
+
                 // Write class id for components
                 Class<?> componentType = obj.getClass().getComponentType();
                 registerClass(componentType);
                 //write class header
                 int classId = getClassId(componentType);
                 LongPacker.packInt(out, classId);
-                
+
                 for (Object o : b)
                     serialize(out, o, objectStack);
 
@@ -410,13 +410,13 @@ public class Serialization extends SerialClassInfo implements Serializer {
         }
 
     }
-   
+
     private void serializeUUID(DataOutput out, UUID uuid) throws IOException
     {
-    	out.writeLong(uuid.getMostSignificantBits());
-    	out.writeLong(uuid.getLeastSignificantBits());
+        out.writeLong(uuid.getMostSignificantBits());
+        out.writeLong(uuid.getLeastSignificantBits());
     }
-    
+
     private void serializeMap(int header, DataOutput out, Object obj, FastArrayList objectStack) throws IOException {
         Map l = (Map) obj;
         out.write(header);
@@ -834,8 +834,8 @@ public class Serialization extends SerialClassInfo implements Serializer {
                 ret = new Date(is.readLong());
                 break;
             case UUID:
-            	ret = deserializeUUID(is);
-            	break;
+                ret = deserializeUUID(is);
+                break;
             case ARRAY_INT_B_255:
                 ret = deserializeArrayIntB255(is);
                 break;
@@ -1085,6 +1085,11 @@ public class Serialization extends SerialClassInfo implements Serializer {
     	return new UUID(is.readLong(), is.readLong());
     }
 
+    private UUID deserializeUUID(DataInput is) throws IOException
+    {
+        return new UUID(is.readLong(), is.readLong());
+    }
+
     private int[] deserializeArrayIntB255(DataInput is) throws IOException {
         int size = is.readUnsignedByte();
         if (size < 0)
@@ -1105,7 +1110,8 @@ public class Serialization extends SerialClassInfo implements Serializer {
         // Read class id for components
         int classId = LongPacker.unpackInt(is);
         Class clazz = classId2class.get(classId);
-        
+        if (clazz == null) clazz = Object.class;
+
         Object[] s = (Object[])Array.newInstance(clazz, size);
         objectStack.add(s);
         for (int i = 0; i < size; i++)
